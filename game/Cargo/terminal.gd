@@ -15,6 +15,3 @@ func update_location(new_location: Vector2i):
 
 func get_player_owner() -> int:
 	return player_owner
-
-func calculate_reward(_type: int, _amount: int) -> int:
-	return 0

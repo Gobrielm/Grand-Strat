@@ -23,6 +23,3 @@ autostart = true
 [node name="background_music" parent="." instance=ExtResource("5_k18o7")]
 
 [connection signal="timeout" from="ai_timer" to="." method="_on_ai_timer_timeout"]
-
-[editable path="cargo_map"]
-[editable path="cargo_map/cargo_values"]

@@ -19,8 +19,7 @@ class Terminal : public Object {
 
     void set_location(const Vector2i p_location);
     Vector2i get_location() const;
-    int get_player_id() const;
-    int calculate_reward(int type, int amount) const;
+    int get_player_owner() const;
     static Terminal* create(const Vector2i p_location, const int p_owner);
     
     void initialize(const Vector2i p_location = Vector2i(), const int p_owner = 0);

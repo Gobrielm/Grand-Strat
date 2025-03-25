@@ -6,13 +6,12 @@ void Terminal::_bind_methods() {
     ClassDB::bind_method(D_METHOD("initialize", "location", "owner"), &Terminal::initialize);
     ClassDB::bind_method(D_METHOD("set_location", "location"), &Terminal::set_location);
     ClassDB::bind_method(D_METHOD("get_location"), &Terminal::get_location);
-    ClassDB::bind_method(D_METHOD("get_player_id"), &Terminal::get_player_id);
-    ClassDB::bind_method(D_METHOD("calculate_reward", "type", "amount"), &Terminal::calculate_reward);
+    ClassDB::bind_method(D_METHOD("get_player_owner"), &Terminal::get_player_owner);
 
     ClassDB::bind_static_method(Terminal::get_class_static(), D_METHOD("create", "location", "owner"), &Terminal::create);
 
     ClassDB::add_property(get_class_static(),  PropertyInfo(Variant::VECTOR2I, "location"), "set_location", "get_location");
-    ClassDB::add_property(get_class_static(),  PropertyInfo(Variant::INT, "player_id"), "", "get_player_id");
+    ClassDB::add_property(get_class_static(),  PropertyInfo(Variant::INT, "player_owner"), "", "get_player_owner");
 }
 
 void Terminal::set_location(const Vector2i p_location) {
@@ -22,12 +21,8 @@ Vector2i Terminal::get_location() const {
     return location;
 }
 
-int Terminal::get_player_id() const {
+int Terminal::get_player_owner() const {
     return player_owner;
-}
-
-int Terminal::calculate_reward(int type, int amount) const {
-    return type * amount;
 }
 
 Terminal* Terminal::create(const Vector2i p_location, const int p_owner) {

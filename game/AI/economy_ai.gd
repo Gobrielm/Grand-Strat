@@ -61,12 +61,12 @@ func run_ai_cycle():
 
 func choose_type_of_action() -> ai_actions:
 	#Criteria to choose later
-	if are_there_unconnected_towns():
-		return ai_actions.CONNECT_TOWN
-	if are_there_unconnected_buildings():
-		return ai_actions.CONNECT_FACTORY
-	elif are_there_unconnected_stations():
-		return ai_actions.CONNECT_STATION
+	#if are_there_unconnected_towns():
+		#return ai_actions.CONNECT_TOWN
+	#if are_there_unconnected_buildings():
+		#return ai_actions.CONNECT_FACTORY
+	#elif are_there_unconnected_stations():
+		#return ai_actions.CONNECT_STATION
 	return ai_actions.PLACE_FACTORY
 
 func are_there_unconnected_towns() -> bool:
@@ -113,7 +113,10 @@ func place_factory(type: int):
 
 func create_factory(location: Vector2i, type: int):
 	cargo_map.create_factory(id, location)
-	#TODO: Pick Recipe
+	for recipe_set: Array in recipe.get_set_recipes():
+		for output: String in recipe_set[1]:
+			if output == terminal_map.get_cargo_name(type):
+				terminal_map.set_construction_site_recipe(location, recipe_set)
 
 func get_optimal_primary_industry(type: int) -> Vector2i:
 	var best_location: Vector2i
@@ -125,8 +128,8 @@ func get_optimal_primary_industry(type: int) -> Vector2i:
 		var current_score = get_cargo_magnitude(tile, type) - round(distance / 7.0)
 		if distance == 1:
 			current_score += 5
-		var free_tile := false
-		for cell in world_map.get_surrounding_cells(tile):
+		var free_tile: bool = false
+		for cell: Vector2i in world_map.get_surrounding_cells(tile):
 			if is_tile_connected_to_world(cell):
 				free_tile = true
 				break
@@ -138,10 +141,9 @@ func get_optimal_primary_industry(type: int) -> Vector2i:
 	return best_location
 
 func is_tile_connected_to_world(coords: Vector2i) -> bool:
-	var queue := [coords]
-	var visited := {}
+	var queue: Array = [coords]
+	var visited: Dictionary = {}
 	visited[coords] = 0
-	var closest_city = null
 	
 	while !queue.is_empty():
 		var curr: Vector2i = queue.pop_front()
@@ -149,7 +151,7 @@ func is_tile_connected_to_world(coords: Vector2i) -> bool:
 			if !visited.has(tile):
 				if terminal_map.is_town(tile) or terminal_map.is_station(tile):
 					return true
-				elif Utils.is_tile_open(tile, id):
+				elif Utils.just_has_rails(tile, id):
 					visited[tile] = 0
 					queue.append(tile)
 	return false

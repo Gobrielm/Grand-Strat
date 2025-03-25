@@ -1,6 +1,6 @@
 class_name firm extends terminal
 
-const INITIAL_CASH = 1000
+const INITIAL_CASH: int = 1000
 
 var cash: int
 
