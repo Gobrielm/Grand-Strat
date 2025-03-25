@@ -94,7 +94,7 @@ func _on_month_tick_timeout():
 
 #Ai
 func create_ai():
-	ai[1] = load("res://AI/economy_ai.gd").new(main_map)
+	ai[1] = load("res://AI/economy_ai.gd").new(1, main_map)
 
 func acknowledge_pending_deferred_call(id: int):
 	if ai.has(id):
