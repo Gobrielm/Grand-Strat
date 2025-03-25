@@ -1,0 +1,28 @@
+[gd_scene load_steps=6 format=4 uid="uid://dlmwgwie45non"]
+
+[ext_resource type="Script" uid="uid://bb01noce8wuix" path="res://Game/map_node.gd" id="1_4blso"]
+[ext_resource type="PackedScene" uid="uid://bpj5gy156fc3x" path="res://Map/Main_Maps/world_map.tscn" id="2_6stc2"]
+[ext_resource type="PackedScene" uid="uid://dbdsinyte2gu1" path="res://Map/tile_ownership.tscn" id="3_3b3ai"]
+[ext_resource type="PackedScene" uid="uid://dkoyapss2hyif" path="res://Map/Cargo_Maps/cargo_map.tscn" id="4_jxo5k"]
+[ext_resource type="PackedScene" uid="uid://c4wm8wphno506" path="res://Music/background_music.tscn" id="5_k18o7"]
+
+[node name="map_node" type="CanvasGroup"]
+script = ExtResource("1_4blso")
+
+[node name="main_map" parent="." instance=ExtResource("2_6stc2")]
+
+[node name="tile_ownership" parent="." instance=ExtResource("3_3b3ai")]
+
+[node name="cargo_map" parent="." instance=ExtResource("4_jxo5k")]
+tile_map_data = PackedByteArray("AABxAI7/AAAAAAEAAAB4AJv/AAAAAAEAAACAAI//AAAAAAEAAABdAJD/AAAAAAEAAABwAIb/AAAAAAEAAABpAKD/AAAAAAEAAAA=")
+
+[node name="ai_timer" type="Timer" parent="."]
+wait_time = 0.05
+autostart = true
+
+[node name="background_music" parent="." instance=ExtResource("5_k18o7")]
+
+[connection signal="timeout" from="ai_timer" to="." method="_on_ai_timer_timeout"]
+
+[editable path="cargo_map"]
+[editable path="cargo_map/cargo_values"]

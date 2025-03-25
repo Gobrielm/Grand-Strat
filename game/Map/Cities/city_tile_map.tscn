@@ -1,0 +1,18 @@
+[gd_scene load_steps=5 format=3 uid="uid://bruqpviu5i3oq"]
+
+[ext_resource type="Texture2D" uid="uid://bhpv0ygbwmtfn" path="res://Map/Cities/city_tileset.png" id="1_fdsht"]
+[ext_resource type="Script" uid="uid://khifvb6ww41g" path="res://Map/Cities/city_tile_map.gd" id="2_wlmn3"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_aiohw"]
+texture = ExtResource("1_fdsht")
+texture_region_size = Vector2i(64, 64)
+0:0/0 = 0
+1:0/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_28xkk"]
+tile_size = Vector2i(64, 64)
+sources/1 = SubResource("TileSetAtlasSource_aiohw")
+
+[node name="City_Tile_Map" type="TileMapLayer"]
+tile_set = SubResource("TileSet_28xkk")
+script = ExtResource("2_wlmn3")

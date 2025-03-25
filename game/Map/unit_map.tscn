@@ -1,0 +1,46 @@
+[gd_scene load_steps=7 format=3 uid="uid://du4xxwp8ky6v6"]
+
+[ext_resource type="Texture2D" uid="uid://cu6gtw4s5yi8j" path="res://Map_Icons/unit_models.png" id="1_sa2cv"]
+[ext_resource type="Script" uid="uid://dvp7l2bp0drna" path="res://Map/unit_map.gd" id="2_cuon8"]
+[ext_resource type="AudioStream" uid="uid://bmoxstbk6x7w" path="res://Sounds/pick-92276.mp3" id="3_ods04"]
+[ext_resource type="AudioStream" uid="uid://closnylfsplm2" path="res://Sounds/interface-124464.mp3" id="4_dn7ni"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_hwa8g"]
+resource_name = "unit_models"
+texture = ExtResource("1_sa2cv")
+margins = Vector2i(0, 64)
+separation = Vector2i(0, 64)
+texture_region_size = Vector2i(128, 128)
+use_texture_padding = false
+0:0/0 = 0
+0:1/0 = 0
+0:2/0 = 0
+0:3/0 = 0
+0:4/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_ojujq"]
+tile_shape = 3
+tile_offset_axis = 1
+tile_size = Vector2i(128, 110)
+sources/0 = SubResource("TileSetAtlasSource_hwa8g")
+
+[node name="unit_map" type="TileMapLayer"]
+z_index = 2
+y_sort_enabled = true
+tile_set = SubResource("TileSet_ojujq")
+script = ExtResource("2_cuon8")
+
+[node name="select_unit_sound" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("3_ods04")
+volume_db = -21.667
+
+[node name="dest_sound" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("4_dn7ni")
+volume_db = -21.667
+pitch_scale = 0.5
+
+[node name="regen_timer" type="Timer" parent="."]
+wait_time = 10.0
+autostart = true
+
+[connection signal="timeout" from="regen_timer" to="." method="_on_regen_timer_timeout"]

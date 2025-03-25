@@ -1,0 +1,159 @@
+[gd_scene load_steps=10 format=3 uid="uid://c6spn0m6m85vs"]
+
+[ext_resource type="Script" uid="uid://xbopekwwthhq" path="res://Player/player_camera.gd" id="1_7vtmc"]
+[ext_resource type="PackedScene" uid="uid://pbahdxufv0k5" path="res://Gui/Building_Buttons/track_button.tscn" id="2_f342f"]
+[ext_resource type="PackedScene" uid="uid://dv4710kbsjsqm" path="res://Gui/Building_Buttons/station_button.tscn" id="3_qhawj"]
+[ext_resource type="Script" uid="uid://dlmsmp31afkil" path="res://Player/start_or_ready.gd" id="5_c6rps"]
+[ext_resource type="Script" uid="uid://b0d6nkxwvec3r" path="res://Gui/Building_Buttons/station_button.gd" id="5_x18jc"]
+[ext_resource type="PackedScene" uid="uid://ctitj2crm0uil" path="res://Gui/Mapmodes/map_modes.tscn" id="6_6d4dc"]
+[ext_resource type="Texture2D" uid="uid://cnt0fnx73uuf8" path="res://Gui/Icons/go.png" id="7_cyv1u"]
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_lfvmj"]
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_83rbs"]
+width = 50
+height = 50
+noise = SubResource("FastNoiseLite_lfvmj")
+
+[node name="player_camera" type="Camera2D"]
+position_smoothing_enabled = true
+position_smoothing_speed = 10.0
+script = ExtResource("1_7vtmc")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+offset = Vector2(1000, 570)
+transform = Transform2D(1, 0, 0, 1, 1000, 570)
+
+[node name="station_button" parent="CanvasLayer" instance=ExtResource("3_qhawj")]
+anchors_preset = 0
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 58.0
+offset_bottom = 58.0
+grow_horizontal = 1
+grow_vertical = 1
+
+[node name="track_button" parent="CanvasLayer" instance=ExtResource("2_f342f")]
+offset_left = 79.0
+offset_top = -1.0
+offset_right = 137.0
+offset_bottom = 57.0
+
+[node name="depot_button" parent="CanvasLayer" instance=ExtResource("2_f342f")]
+offset_left = -89.0
+offset_top = 2.0
+offset_right = -31.0
+offset_bottom = 60.0
+
+[node name="single_track_button" parent="CanvasLayer" instance=ExtResource("2_f342f")]
+offset_left = 79.0
+offset_top = -87.0
+offset_right = 137.0
+offset_bottom = -29.0
+
+[node name="factory_button" parent="CanvasLayer" instance=ExtResource("3_qhawj")]
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = -0.00195313
+offset_top = -85.0001
+offset_right = 57.998
+offset_bottom = -27.0001
+
+[node name="road_depot_button" type="Button" parent="CanvasLayer"]
+anchors_preset = -1
+offset_left = -89.002
+offset_top = -81.0001
+offset_right = -31.002
+offset_bottom = -23.0001
+grow_horizontal = 2
+grow_vertical = 2
+toggle_mode = true
+icon = SubResource("NoiseTexture2D_83rbs")
+flat = true
+script = ExtResource("5_x18jc")
+metadata/_edit_use_anchors_ = true
+
+[node name="Coordinate_Label" type="Label" parent="CanvasLayer"]
+offset_left = -989.0
+offset_top = 44.0
+offset_right = -949.0
+offset_bottom = 67.0
+grow_vertical = 0
+text = "(0, 0)"
+
+[node name="Cash_Label" type="Label" parent="CanvasLayer"]
+offset_left = 88.0
+offset_top = -560.0
+offset_right = 135.0
+offset_bottom = -537.0
+text = "0"
+
+[node name="Desync_Label" type="Label" parent="CanvasLayer"]
+anchors_preset = -1
+anchor_left = 0.084
+anchor_top = -0.813
+anchor_right = 0.084
+anchor_bottom = -0.813
+offset_left = -6.76801
+offset_top = -0.175964
+offset_right = 36.232
+offset_bottom = 32.824
+text = "0"
+
+[node name="map_modes" parent="CanvasLayer" instance=ExtResource("6_6d4dc")]
+anchors_preset = -1
+anchor_left = -0.868
+anchor_top = 0.12
+anchor_right = -0.868
+anchor_bottom = 0.12
+offset_left = -0.0639648
+offset_top = -99.76
+offset_right = 399.936
+offset_bottom = 0.239998
+
+[node name="nation_picker" type="CanvasLayer" parent="."]
+
+[node name="start_or_ready" type="Button" parent="nation_picker"]
+anchors_preset = -1
+anchor_left = 0.952
+anchor_top = 0.394
+anchor_right = 0.952
+anchor_bottom = 0.394
+offset_left = -2.70398
+offset_top = -2.31201
+offset_right = 5.29602
+offset_bottom = 5.68799
+focus_mode = 0
+script = ExtResource("5_c6rps")
+
+[node name="CanvasLayer2" type="CanvasLayer" parent="."]
+
+[node name="Music" type="Button" parent="CanvasLayer2"]
+anchors_preset = -1
+anchor_left = 0.944
+anchor_top = 0.12
+anchor_right = 0.944
+anchor_bottom = 0.12
+offset_left = 0.511963
+offset_top = 0.239998
+offset_right = 108.512
+offset_bottom = 58.24
+scale = Vector2(0.5, 0.5)
+text = "Music"
+icon = ExtResource("7_cyv1u")
+
+[connection signal="pressed" from="CanvasLayer/station_button" to="." method="_on_station_button_pressed"]
+[connection signal="pressed" from="CanvasLayer/track_button" to="." method="_on_track_button_pressed"]
+[connection signal="pressed" from="CanvasLayer/depot_button" to="." method="_on_depot_button_pressed"]
+[connection signal="pressed" from="CanvasLayer/single_track_button" to="." method="_on_single_track_button_pressed"]
+[connection signal="pressed" from="CanvasLayer/factory_button" to="." method="_on_factory_button_pressed"]
+[connection signal="pressed" from="CanvasLayer/road_depot_button" to="." method="_on_road_depot_button_pressed"]
+[connection signal="pressed" from="CanvasLayer/road_depot_button" to="CanvasLayer/road_depot_button" method="_on_pressed"]
+[connection signal="pressed" from="nation_picker/start_or_ready" to="." method="_on_start_or_ready_pressed"]
+[connection signal="pressed" from="CanvasLayer2/Music" to="." method="_on_music_pressed"]

@@ -1,0 +1,170 @@
+[gd_scene load_steps=7 format=3 uid="uid://iatfblcckp0p"]
+
+[ext_resource type="Script" uid="uid://b0mk2u44nv4j7" path="res://Gui/tile_window.gd" id="1_lgrtb"]
+[ext_resource type="Texture2D" uid="uid://clv00atxg4q2q" path="res://Gui/Icons/close.png" id="3_47p3e"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_47p3e"]
+font_color = Color(0, 0, 0, 1)
+
+[sub_resource type="LabelSettings" id="LabelSettings_86m3j"]
+font_color = Color(0, 0, 0, 1)
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_jleib"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_pqrux"]
+font_color = Color(0, 0, 0, 1)
+
+[node name="tile_window" type="Window"]
+position = Vector2i(0, 124)
+size = Vector2i(500, 400)
+unresizable = true
+borderless = true
+script = ExtResource("1_lgrtb")
+
+[node name="Background" type="ColorRect" parent="."]
+offset_right = 500.0
+offset_bottom = 400.0
+color = Color(0.579649, 0.762968, 1, 1)
+
+[node name="Close" type="Button" parent="Background"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -31.0
+offset_right = 27.0
+offset_bottom = 58.0
+grow_horizontal = 0
+scale = Vector2(0.5, 0.5)
+icon = ExtResource("3_47p3e")
+flat = true
+
+[node name="Province_control" type="Control" parent="."]
+visible = false
+layout_mode = 3
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -229.0
+offset_top = -160.5
+offset_right = 229.0
+offset_bottom = 160.5
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Biome" type="Label" parent="Province_control"]
+layout_mode = 1
+offset_right = 86.0
+offset_bottom = 23.0
+text = "Grasslands"
+label_settings = SubResource("LabelSettings_47p3e")
+
+[node name="Coords" type="Label" parent="Province_control"]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = 0.086
+anchor_bottom = 0.086
+offset_top = -0.106001
+offset_right = 37.0
+offset_bottom = 22.894
+text = "(3, 5)"
+label_settings = SubResource("LabelSettings_86m3j")
+
+[node name="ItemList" type="ItemList" parent="Province_control"]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.458
+anchor_top = 0.034
+anchor_right = 0.458
+anchor_bottom = 0.034
+offset_left = -0.0700073
+offset_top = 22.888
+offset_right = 199.93
+offset_bottom = 249.888
+grow_horizontal = 0
+focus_mode = 0
+theme_override_colors/guide_color = Color(0.273873, 0.273873, 0.273873, 1)
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_styles/panel = SubResource("StyleBoxEmpty_jleib")
+allow_search = false
+
+[node name="Label" type="Label" parent="Province_control"]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.458
+anchor_top = 0.041
+anchor_right = 0.458
+anchor_bottom = 0.041
+offset_left = 0.929993
+offset_top = -0.988
+offset_right = 128.93
+offset_bottom = 22.012
+text = "Available Goods:"
+label_settings = SubResource("LabelSettings_pqrux")
+
+[node name="State_control" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -222.0
+offset_top = -164.0
+offset_right = 222.0
+offset_bottom = 164.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Label" type="Label" parent="State_control"]
+layout_mode = 1
+offset_right = 40.0
+offset_bottom = 23.0
+text = "Province ID: "
+
+[node name="Province_ID" type="Label" parent="State_control"]
+layout_mode = 0
+offset_left = 96.0
+offset_top = -0.5
+offset_right = 136.0
+offset_bottom = 48.5
+text = "1
+"
+
+[node name="Label2" type="Label" parent="State_control"]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.002
+anchor_top = 0.131
+anchor_right = 0.002
+anchor_bottom = 0.131
+offset_left = 0.112
+offset_top = 0.0319977
+offset_right = 97.112
+offset_bottom = 23.032
+text = "Population: "
+
+[node name="Population" type="Label" parent="State_control"]
+layout_mode = 0
+offset_left = 95.0
+offset_top = 46.0
+offset_right = 135.0
+offset_bottom = 95.0
+text = "10000"
+
+[node name="TabBar" type="TabBar" parent="."]
+offset_right = 253.0
+offset_bottom = 31.0
+focus_mode = 0
+current_tab = 0
+tab_count = 2
+tab_0/title = "Province Info"
+tab_1/title = "State Info"
+
+[connection signal="about_to_popup" from="." to="." method="_on_about_to_popup"]
+[connection signal="close_requested" from="." to="." method="_on_close_requested"]
+[connection signal="focus_exited" from="." to="." method="_on_focus_exited"]
+[connection signal="pressed" from="Background/Close" to="." method="_on_close_pressed"]
+[connection signal="tab_changed" from="TabBar" to="." method="_on_tab_bar_tab_changed"]

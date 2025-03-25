@@ -1,0 +1,68 @@
+[gd_scene load_steps=4 format=3 uid="uid://d2x16vqu0dy7j"]
+
+[ext_resource type="Script" uid="uid://dw22poh175g2x" path="res://Units/unit_managers/unit_creator_window.gd" id="1_0g32x"]
+[ext_resource type="Texture2D" uid="uid://cu6gtw4s5yi8j" path="res://Map_Icons/unit_models.png" id="1_xvqgx"]
+[ext_resource type="Texture2D" uid="uid://c5lsxwni74ah6" path="res://Map_Icons/selected.png" id="2_1kpif"]
+
+[node name="unit_creator_window" type="Window"]
+position = Vector2i(0, 36)
+size = Vector2i(500, 500)
+script = ExtResource("1_0g32x")
+
+[node name="TextureRect" type="TextureRect" parent="."]
+offset_right = 40.0
+offset_bottom = 40.0
+scale = Vector2(0.5, 0.5)
+texture = ExtResource("1_xvqgx")
+
+[node name="infantry_button" type="Button" parent="."]
+offset_left = 80.0
+offset_top = 40.0
+offset_right = 216.0
+offset_bottom = 176.0
+scale = Vector2(0.25, 0.25)
+focus_mode = 0
+icon = ExtResource("2_1kpif")
+
+[node name="calvary_button" type="Button" parent="."]
+offset_left = 80.0
+offset_top = 140.0
+offset_right = 216.0
+offset_bottom = 276.0
+scale = Vector2(0.25, 0.25)
+focus_mode = 0
+icon = ExtResource("2_1kpif")
+
+[node name="artillery_button" type="Button" parent="."]
+offset_left = 80.0
+offset_top = 240.0
+offset_right = 216.0
+offset_bottom = 376.0
+scale = Vector2(0.25, 0.25)
+focus_mode = 0
+icon = ExtResource("2_1kpif")
+
+[node name="engineer_button" type="Button" parent="."]
+offset_left = 80.0
+offset_top = 340.0
+offset_right = 216.0
+offset_bottom = 476.0
+scale = Vector2(0.25, 0.25)
+focus_mode = 0
+icon = ExtResource("2_1kpif")
+
+[node name="officer_button" type="Button" parent="."]
+offset_left = 80.0
+offset_top = 440.0
+offset_right = 216.0
+offset_bottom = 576.0
+scale = Vector2(0.25, 0.25)
+focus_mode = 0
+icon = ExtResource("2_1kpif")
+
+[connection signal="close_requested" from="." to="." method="_on_close_requested"]
+[connection signal="pressed" from="infantry_button" to="." method="_on_infantry_button_pressed"]
+[connection signal="pressed" from="calvary_button" to="." method="_on_calvary_button_pressed"]
+[connection signal="pressed" from="artillery_button" to="." method="_on_artillery_button_pressed"]
+[connection signal="pressed" from="engineer_button" to="." method="_on_engineer_button_pressed"]
+[connection signal="pressed" from="officer_button" to="." method="_on_officer_button_pressed"]

@@ -1,0 +1,55 @@
+[gd_scene load_steps=3 format=3 uid="uid://l3xw71d3y3e7"]
+
+[ext_resource type="Texture2D" uid="uid://cfcpxbgu2gtyd" path="res://Gui/Icons/revert.png" id="1_pj0e2"]
+[ext_resource type="Script" uid="uid://bd6datscynm4u" path="res://Gui/Player_Factory_Gui's/factory_construction_gui.gd" id="1_pl2le"]
+
+[node name="factory_construction_gui" type="Window"]
+position = Vector2i(0, 36)
+size = Vector2i(400, 300)
+script = ExtResource("1_pl2le")
+
+[node name="Control" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -150.0
+offset_right = 200.0
+offset_bottom = 150.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Material_List" type="ItemList" parent="Control"]
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -150.0
+offset_bottom = 150.0
+grow_horizontal = 0
+grow_vertical = 2
+focus_mode = 0
+
+[node name="Current_Recipe" type="Label" parent="Control"]
+layout_mode = 1
+offset_right = 200.0
+offset_bottom = 30.0
+
+[node name="Wipe_Recipe" type="Button" parent="Control"]
+layout_mode = 0
+offset_top = 29.0
+offset_right = 58.0
+offset_bottom = 87.0
+scale = Vector2(0.5, 0.5)
+focus_mode = 0
+icon = ExtResource("1_pj0e2")
+flat = true
+
+[connection signal="close_requested" from="." to="." method="_on_close_requested"]
+[connection signal="pressed" from="Control/Wipe_Recipe" to="." method="_on_wipe_recipe_pressed"]

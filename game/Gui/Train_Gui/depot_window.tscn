@@ -1,0 +1,64 @@
+[gd_scene load_steps=4 format=3 uid="uid://bsap4yl65x1wd"]
+
+[ext_resource type="Script" uid="uid://todpsxowb2ao" path="res://Gui/Train_Gui/depot_window.gd" id="1_rlkep"]
+[ext_resource type="Texture2D" uid="uid://cnt0fnx73uuf8" path="res://Gui/Icons/go.png" id="2_v8xd3"]
+[ext_resource type="Texture2D" uid="uid://dbdjkc3txkt6y" path="res://Gui/Icons/add.png" id="3_sf22e"]
+
+[node name="depot_window" type="Window"]
+initial_position = 1
+size = Vector2i(750, 500)
+script = ExtResource("1_rlkep")
+
+[node name="Name" type="RichTextLabel" parent="."]
+offset_right = 750.0
+offset_bottom = 40.0
+bbcode_enabled = true
+
+[node name="Train_Node" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 540.0
+offset_top = 130.0
+offset_right = 580.0
+offset_bottom = 170.0
+
+[node name="Train_List" type="ItemList" parent="Train_Node"]
+layout_mode = 0
+offset_right = 300.0
+offset_bottom = 300.0
+focus_mode = 0
+
+[node name="ColorRect" type="ColorRect" parent="Train_Node"]
+layout_mode = 0
+offset_top = -40.0
+offset_right = 300.0
+color = Color(0.176419, 0.176419, 0.176419, 1)
+
+[node name="Label" type="Label" parent="Train_Node/ColorRect"]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 23.0
+text = "Trains:"
+
+[node name="go_button" type="Button" parent="Train_Node/ColorRect"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -120.0
+offset_right = -62.0
+offset_bottom = 58.0
+grow_horizontal = 0
+scale = Vector2(0.5, 0.5)
+icon = ExtResource("2_v8xd3")
+
+[node name="new_train_button" type="Button" parent="Train_Node/ColorRect"]
+layout_mode = 0
+offset_left = 151.0
+offset_right = 209.0
+offset_bottom = 58.0
+scale = Vector2(0.5, 0.5)
+icon = ExtResource("3_sf22e")
+
+[connection signal="close_requested" from="." to="." method="_on_close_requested"]
+[connection signal="pressed" from="Train_Node/ColorRect/go_button" to="." method="_on_go_button_pressed"]

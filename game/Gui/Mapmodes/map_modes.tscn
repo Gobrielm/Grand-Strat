@@ -1,0 +1,79 @@
+[gd_scene load_steps=3 format=3 uid="uid://ctitj2crm0uil"]
+
+[ext_resource type="Script" uid="uid://bmwh24odl8wsv" path="res://Gui/Mapmodes/map_modes.gd" id="1_nt0ct"]
+[ext_resource type="PackedScene" uid="uid://dycu0hxqcqbt" path="res://Gui/Mapmodes/resource_window.tscn" id="2_ed5lp"]
+
+[node name="map_modes" type="Control"]
+layout_mode = 3
+anchor_top = 0.154
+anchor_bottom = 0.154
+offset_top = -99.792
+offset_right = 400.0
+offset_bottom = 0.207993
+script = ExtResource("1_nt0ct")
+
+[node name="background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -50.0
+offset_right = 200.0
+offset_bottom = 50.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.154876, 0.154876, 0.154876, 0.2)
+
+[node name="cargo" type="Button" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.165
+anchor_top = 0.315
+anchor_right = 0.165
+anchor_bottom = 0.315
+offset_left = -27.0
+offset_top = -15.5
+offset_right = 27.0
+offset_bottom = 15.5
+focus_mode = 0
+text = "Cargo"
+
+[node name="diplomatic" type="Button" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.404
+anchor_top = 0.315
+anchor_right = 0.404
+anchor_bottom = 0.315
+offset_left = -23.6
+offset_top = -15.5
+offset_right = 23.4
+offset_bottom = 15.5
+focus_mode = 0
+text = "diplo"
+
+[node name="strat" type="Button" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.674
+anchor_top = 0.275
+anchor_right = 0.674
+anchor_bottom = 0.275
+offset_left = -22.6
+offset_top = -15.5
+offset_right = 22.4
+offset_bottom = 15.5
+focus_mode = 0
+text = "strat
+"
+
+[node name="Resource_Window" parent="." instance=ExtResource("2_ed5lp")]
+visible = false
+
+[connection signal="pressed" from="cargo" to="." method="_on_cargo_pressed"]
+[connection signal="pressed" from="diplomatic" to="." method="_on_diplomatic_pressed"]
+[connection signal="pressed" from="strat" to="." method="_on_strat_pressed"]
+[connection signal="resource_window_picked" from="Resource_Window" to="." method="_on_resource_window_resource_window_picked"]

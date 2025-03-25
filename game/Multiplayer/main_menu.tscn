@@ -1,0 +1,52 @@
+[gd_scene load_steps=2 format=3 uid="uid://b0pecsmwtehx"]
+
+[ext_resource type="Script" uid="uid://c1vu2pnxv408v" path="res://Multiplayer/main_menu.gd" id="1_gs3as"]
+
+[node name="Main_Menu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_gs3as")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+layout_mode = 0
+offset_right = 1152.0
+offset_bottom = 648.0
+
+[node name="Title" type="RichTextLabel" parent="ColorRect"]
+layout_mode = 0
+offset_right = 1152.0
+offset_bottom = 100.0
+bbcode_enabled = true
+text = "
+[color=red][font_size=50][center]Train Europe[/center][/font_size][/color]"
+
+[node name="Create_Game" type="Button" parent="ColorRect"]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.497
+anchor_top = 0.437
+anchor_right = 0.497
+anchor_bottom = 0.437
+offset_left = -24.544
+offset_top = -25.176
+offset_right = 25.456
+offset_bottom = 24.824
+
+[node name="Join_Game" type="Button" parent="ColorRect"]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.497
+anchor_top = 0.696
+anchor_right = 0.497
+anchor_bottom = 0.696
+offset_left = -25.544
+offset_top = -25.008
+offset_right = 24.456
+offset_bottom = 24.992
+
+[connection signal="pressed" from="ColorRect/Create_Game" to="." method="_on_create_game_pressed"]
+[connection signal="pressed" from="ColorRect/Join_Game" to="." method="_on_join_game_pressed"]

@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://d3pjcve808mqa"
+path="res://.godot/imported/On the hills of Manchuria.mp3-e8234d82446191fac42387eb8e2709e3.mp3str"
+
+[deps]
+
+source_file="res://Music/On the hills of Manchuria.mp3"
+dest_files=["res://.godot/imported/On the hills of Manchuria.mp3-e8234d82446191fac42387eb8e2709e3.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

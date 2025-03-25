@@ -1,0 +1,51 @@
+[gd_scene load_steps=4 format=3 uid="uid://ddsk0bc0ixiwt"]
+
+[ext_resource type="Texture2D" uid="uid://dbdjkc3txkt6y" path="res://Gui/Icons/add.png" id="1_hqvb6"]
+[ext_resource type="Script" uid="uid://kvjhmee1kf3l" path="res://Gui/order_screen.gd" id="1_lb7yq"]
+[ext_resource type="PackedScene" uid="uid://cwxvajubclxrm" path="res://Gui/order_window.tscn" id="2_1si1q"]
+
+[node name="Order_Screen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_lb7yq")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+layout_mode = 0
+offset_left = 107.52
+offset_top = 128.48
+offset_right = 327.52
+offset_bottom = 468.48
+color = Color(0.18359, 0.18359, 0.18359, 1)
+
+[node name="Label" type="Label" parent="ColorRect"]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 23.0
+text = "Trade Orders:"
+
+[node name="Add_Order" type="Button" parent="."]
+layout_mode = 0
+offset_left = 298.52
+offset_top = 130.48
+offset_right = 356.52
+offset_bottom = 188.48
+scale = Vector2(0.5, 0.5)
+icon = ExtResource("1_hqvb6")
+flat = true
+
+[node name="Cargo_List" type="ItemList" parent="."]
+layout_mode = 0
+offset_left = 107.52
+offset_top = 168.48
+offset_right = 327.52
+offset_bottom = 468.48
+focus_mode = 0
+
+[node name="Order_Window" parent="." instance=ExtResource("2_1si1q")]
+
+[connection signal="pressed" from="Add_Order" to="." method="_on_add_order_pressed"]
+[connection signal="placed_order" from="Order_Window" to="." method="_on_order_window_placed_order"]

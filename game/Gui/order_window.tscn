@@ -1,0 +1,113 @@
+[gd_scene load_steps=3 format=3 uid="uid://cwxvajubclxrm"]
+
+[ext_resource type="Script" uid="uid://yeagdm8d2gpm" path="res://Gui/order_window.gd" id="1_qxeqy"]
+[ext_resource type="Texture2D" uid="uid://dbdjkc3txkt6y" path="res://Gui/Icons/add.png" id="2_anp4o"]
+
+[node name="Order_Window" type="Window"]
+initial_position = 1
+size = Vector2i(300, 300)
+script = ExtResource("1_qxeqy")
+
+[node name="Control" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -50.0
+offset_right = -50.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ColorRect" type="ColorRect" parent="Control"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -100.0
+offset_top = -150.0
+offset_right = 200.0
+offset_bottom = 150.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.18359, 0.18359, 0.18359, 1)
+
+[node name="Label" type="Label" parent="Control/ColorRect"]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 23.0
+text = "Order Creator:"
+
+[node name="Cargo_List" type="ItemList" parent="Control"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -100.0
+offset_top = -100.0
+offset_right = 100.0
+offset_bottom = 150.0
+grow_horizontal = 2
+focus_mode = 0
+
+[node name="Amount" type="SpinBox" parent="."]
+offset_left = 200.0
+offset_right = 300.0
+offset_bottom = 50.0
+max_value = 500.0
+update_on_text_changed = true
+prefix = "Amt:"
+select_all_on_focus = true
+
+[node name="Buy_Button" type="CheckButton" parent="."]
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -44.0
+offset_top = -12.0
+offset_bottom = 12.0
+grow_horizontal = 0
+grow_vertical = 2
+focus_mode = 0
+button_pressed = true
+text = "Buy?"
+flat = true
+
+[node name="Sell_Button" type="CheckButton" parent="."]
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -83.0
+offset_top = -40.0
+offset_bottom = -9.0
+grow_horizontal = 0
+grow_vertical = 2
+focus_mode = 0
+text = "Sell?"
+flat = true
+
+[node name="Place_Order" type="Button" parent="."]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -58.0
+offset_top = -58.0
+grow_horizontal = 0
+grow_vertical = 0
+icon = ExtResource("2_anp4o")
+
+[connection signal="about_to_popup" from="." to="." method="_on_about_to_popup"]
+[connection signal="close_requested" from="." to="." method="_on_close_requested"]
+[connection signal="item_selected" from="Control/Cargo_List" to="." method="_on_cargo_list_item_selected"]
+[connection signal="pressed" from="Buy_Button" to="." method="_on_buy_button_pressed"]
+[connection signal="pressed" from="Sell_Button" to="." method="_on_sell_button_pressed"]
+[connection signal="pressed" from="Place_Order" to="." method="_on_place_order_pressed"]

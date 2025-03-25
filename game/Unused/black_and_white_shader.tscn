@@ -1,0 +1,11 @@
+[gd_scene load_steps=3 format=3 uid="uid://c2c5bvud4f64c"]
+
+[ext_resource type="Shader" uid="uid://cju3ifomdtohx" path="res://Map/Main_Maps/main_map.gdshader" id="1_wjhh0"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ehase"]
+shader = ExtResource("1_wjhh0")
+
+[node name="black_and_white_shader" type="CanvasGroup"]
+self_modulate = Color(1, 1, 1, 0)
+show_behind_parent = true
+material = SubResource("ShaderMaterial_ehase")

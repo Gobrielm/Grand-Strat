@@ -1,0 +1,41 @@
+
+Game Info:
+	Terminal: An object that deals with cargo/goods
+	Source -> Only Produces cargo
+		Base Industries
+	Sink <- Only takes cargo
+		Apex Industries
+	Hold <-> Takes and recieves cargo
+		Trains, Warehouses, stations
+		Fixed Hold <-> Specifies goods it can recieve
+			Cities, Middle Industries
+		
+	0: Rail
+	1: Depot
+	2: Station
+	
+	Types of Industry Chains:
+		Base -> City
+		Base -> Middle -> City
+		Base -> Middle -> Apex
+	
+	Trains/Routes Stuff:
+		Questions/Assumptions:
+			Can stations border multiple factories? -- No
+			Can multiple stations take from the same factory? -- Yes
+			If there are extra goods is it random or priority on who gets it? -- Random
+			Can you control how much you are willing to buy and at what price? -- No
+			Do stations or trains get control over automation? -- Trains and Stations
+		
+		
+	
+	
+	Unit Stuff:
+		Two enemies cannot be on the same tile
+		Units can attack each other if they adjacent or 1 tile away depending on range
+		Can walk through friendly units but suffer speed penalty and potential attrition penalties
+		
+		Micro: Unit is told to attack a tile and every tick it attacks, once it wins it will move into that tile...
+		the other unit will either retreat or die depending on circumstances
+		
+		Macro: A collection of units is told to push a certain way and they will push based on parameters

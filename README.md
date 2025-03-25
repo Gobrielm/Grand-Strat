@@ -29,15 +29,15 @@ For getting started after cloning your own copy to your local machine, you shoul
 This repository comes with a GitHub action that builds the GDExtension for cross-platform use. It triggers automatically for each pushed change. You can find and edit it in [builds.yml](.github/workflows/builds.yml).
 After a workflow run is complete, you can find the file `godot-cpp-template.zip` on the `Actions` tab on GitHub.
 
-Note: for macos, you will have to build the binary as a `.dylib` in a `EXTENSION-NAME.framework` folder. The framework folder should also have a `Resources` folder with a file called `Info.plist`. Without this file, signing will fail.
+Note: for macos, you will have to build the binary as a `.dylib` in a `Grand_Strat.framework` folder. The framework folder should also have a `Resources` folder with a file called `Info.plist`. Without this file, signing will fail.
 
 Note: for iOS, the same should be as for MacOS, however the `Info.plist` file needs to be close to the `.dylib`, instead of in a `Resources` folder (If this is not done, the build will fail to upload to the App Store).
 
 So, in our case, the builds should be:
 
 ```sh
-bin/EXTENSION-NAME.macos.template_debug.framework/EXTENSION-NAME.macos.template_release
-bin/EXTENSION-NAME.ios.template_debug.framework/EXTENSION-NAME.ios.template_release.arm64.dylib
+bin/Grand_Strat.macos.template_debug.framework/Grand_Strat.macos.template_release
+bin/Grand_Strat.ios.template_debug.framework/Grand_Strat.ios.template_release.arm64.dylib
 
 Afterwards, you want to set in the `.gdextension` file the paths to the `.framework` folder, instead of the `.dylib` file (Note that for the `.dylib` binary, the extension is not needed, you could have a file without any extension and it would still work).
 

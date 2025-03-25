@@ -1,0 +1,103 @@
+[gd_scene load_steps=5 format=3 uid="uid://bipirwbhqdjb2"]
+
+[ext_resource type="Script" uid="uid://u1cjyumvamqp" path="res://Gui/Player_Factory_Gui's/factory_recipe_gui.gd" id="1_wfojr"]
+[ext_resource type="Texture2D" uid="uid://cnt0fnx73uuf8" path="res://Gui/Icons/go.png" id="2_m3ix3"]
+[ext_resource type="Texture2D" uid="uid://cfcpxbgu2gtyd" path="res://Gui/Icons/revert.png" id="3_yopma"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ia3vv"]
+
+[node name="factory_recipe_gui" type="Window"]
+position = Vector2i(0, 36)
+size = Vector2i(400, 300)
+script = ExtResource("1_wfojr")
+
+[node name="Control" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -150.0
+offset_right = 200.0
+offset_bottom = 150.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ColorRect" type="ColorRect" parent="Control"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -200.0
+offset_right = 200.0
+offset_bottom = 30.0
+grow_horizontal = 2
+color = Color(0.111197, 0.111197, 0.111197, 1)
+
+[node name="Recipes" type="ItemList" parent="Control"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -200.0
+offset_top = -270.0
+offset_right = 200.0
+grow_horizontal = 2
+grow_vertical = 0
+focus_mode = 0
+
+[node name="Search_Bar" type="LineEdit" parent="Control"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -200.0
+offset_right = 169.0
+offset_bottom = 31.0
+grow_horizontal = 2
+theme_override_styles/focus = SubResource("StyleBoxEmpty_ia3vv")
+placeholder_text = "Filter"
+alignment = 1
+flat = true
+
+[node name="Confirm" type="Button" parent="Control"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -29.0
+offset_top = -29.0
+offset_right = 29.0
+offset_bottom = 29.0
+grow_horizontal = 0
+grow_vertical = 0
+scale = Vector2(0.5, 0.5)
+icon = ExtResource("2_m3ix3")
+
+[node name="Switch_Type" type="Button" parent="Control"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -30.66
+offset_right = 27.34
+offset_bottom = 58.0
+grow_horizontal = 0
+scale = Vector2(0.515, 0.515)
+icon = ExtResource("3_yopma")
+
+[connection signal="close_requested" from="." to="." method="_on_close_requested"]
+[connection signal="focus_exited" from="." to="." method="_on_focus_exited"]
+[connection signal="focus_entered" from="Control/Search_Bar" to="." method="_on_search_bar_focus_entered"]
+[connection signal="focus_exited" from="Control/Search_Bar" to="." method="_on_search_bar_focus_exited"]
+[connection signal="text_changed" from="Control/Search_Bar" to="." method="_on_search_bar_text_changed"]
+[connection signal="pressed" from="Control/Confirm" to="." method="_on_confirm_pressed"]
+[connection signal="mouse_entered" from="Control/Switch_Type" to="." method="_on_switch_type_mouse_entered"]
+[connection signal="mouse_exited" from="Control/Switch_Type" to="." method="_on_switch_type_mouse_exited"]
+[connection signal="pressed" from="Control/Switch_Type" to="." method="_on_switch_type_pressed"]

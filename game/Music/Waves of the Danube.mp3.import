@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://8wb73keqfg1i"
+path="res://.godot/imported/Waves of the Danube.mp3-a7c6c3a94c5b658cab3fe9cbe0f0b47b.mp3str"
+
+[deps]
+
+source_file="res://Music/Waves of the Danube.mp3"
+dest_files=["res://.godot/imported/Waves of the Danube.mp3-a7c6c3a94c5b658cab3fe9cbe0f0b47b.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

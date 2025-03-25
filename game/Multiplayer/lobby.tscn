@@ -1,0 +1,9 @@
+[gd_scene load_steps=3 format=3 uid="uid://uqruu0curug2"]
+
+[ext_resource type="Script" uid="uid://2jc7qdvqglg7" path="res://Multiplayer/lobby.gd" id="1_7krqj"]
+[ext_resource type="PackedScene" uid="uid://b0pecsmwtehx" path="res://Multiplayer/main_menu.tscn" id="2_gs4mi"]
+
+[node name="lobby" type="Node"]
+script = ExtResource("1_7krqj")
+
+[node name="Main_Menu" parent="." instance=ExtResource("2_gs4mi")]

@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://ddn7hrelywwbw"
+path="res://.godot/imported/A Little Birch Tree.mp3-728e679acfc91e153b732a88a1f3b107.mp3str"
+
+[deps]
+
+source_file="res://Music/A Little Birch Tree.mp3"
+dest_files=["res://.godot/imported/A Little Birch Tree.mp3-728e679acfc91e153b732a88a1f3b107.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

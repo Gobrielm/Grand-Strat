@@ -1,0 +1,86 @@
+[gd_scene load_steps=5 format=3 uid="uid://denddx5f87r3r"]
+
+[ext_resource type="Script" uid="uid://bn6av3arbrb00" path="res://Map/Rails/rail_placer.gd" id="1_ccjj1"]
+[ext_resource type="Texture2D" uid="uid://c30xe7s7jgq5i" path="res://Map_Icons/small_train_set.png" id="2_e7qd2"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_vcvju"]
+texture = ExtResource("2_e7qd2")
+margins = Vector2i(0, 64)
+separation = Vector2i(0, 64)
+texture_region_size = Vector2i(128, 128)
+0:0/0 = 0
+1:0/0 = 0
+2:0/0 = 0
+2:1/0 = 0
+1:1/0 = 0
+0:1/0 = 0
+3:0/0 = 0
+4:0/0 = 0
+5:0/0 = 0
+3:1/0 = 0
+4:1/0 = 0
+5:1/0 = 0
+0:2/0 = 0
+1:2/0 = 0
+2:2/0 = 0
+3:2/0 = 0
+4:2/0 = 0
+5:2/0 = 0
+0:3/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_68oqx"]
+tile_shape = 3
+tile_offset_axis = 1
+tile_size = Vector2i(127, 110)
+sources/0 = SubResource("TileSetAtlasSource_vcvju")
+
+[node name="Rail_Placer" type="Node2D"]
+script = ExtResource("1_ccjj1")
+
+[node name="Rail_Layer_0" type="TileMapLayer" parent="."]
+z_index = 1
+tile_set = SubResource("TileSet_68oqx")
+
+[node name="Rail_Layer_1" type="TileMapLayer" parent="."]
+z_index = 1
+tile_set = SubResource("TileSet_68oqx")
+
+[node name="Rail_Layer_2" type="TileMapLayer" parent="."]
+z_index = 1
+tile_set = SubResource("TileSet_68oqx")
+
+[node name="Rail_Layer_3" type="TileMapLayer" parent="."]
+z_index = 1
+tile_set = SubResource("TileSet_68oqx")
+
+[node name="Rail_Layer_4" type="TileMapLayer" parent="."]
+z_index = 1
+tile_set = SubResource("TileSet_68oqx")
+
+[node name="Rail_Layer_5" type="TileMapLayer" parent="."]
+z_index = 1
+tile_set = SubResource("TileSet_68oqx")
+
+[node name="Rail_Temp_Layer0" type="TileMapLayer" parent="."]
+z_index = 1
+tile_set = SubResource("TileSet_68oqx")
+
+[node name="Rail_Temp_Layer1" type="TileMapLayer" parent="."]
+z_index = 1
+tile_set = SubResource("TileSet_68oqx")
+
+[node name="Rail_Temp_Layer2" type="TileMapLayer" parent="."]
+z_index = 1
+tile_set = SubResource("TileSet_68oqx")
+
+[node name="Rail_Temp_Layer3" type="TileMapLayer" parent="."]
+z_index = 1
+tile_set = SubResource("TileSet_68oqx")
+
+[node name="Rail_Temp_Layer4" type="TileMapLayer" parent="."]
+z_index = 1
+tile_set = SubResource("TileSet_68oqx")
+
+[node name="Rail_Temp_Layer5" type="TileMapLayer" parent="."]
+z_index = 1
+tile_set = SubResource("TileSet_68oqx")

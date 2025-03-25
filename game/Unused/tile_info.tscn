@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://bpfxqpu3nyf8k"]
+
+[ext_resource type="Script" uid="uid://b402w52dutvf8" path="res://Unused/tile_info.gd" id="1_d6h5k"]
+
+[node name="tile_info" type="Node2D"]
+script = ExtResource("1_d6h5k")

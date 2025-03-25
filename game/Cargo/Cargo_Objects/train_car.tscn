@@ -1,0 +1,9 @@
+[gd_scene load_steps=3 format=3 uid="uid://c4ocii3maqm"]
+
+[ext_resource type="Texture2D" uid="uid://cqdkw6b4bmsk5" path="res://Map_Icons/icon.svg" id="1_w28qm"]
+[ext_resource type="Script" uid="uid://cvcepgbrtgc33" path="res://Cargo/Cargo_Objects/train_car.gd" id="1_xw3cm"]
+
+[node name="train_car" type="Sprite2D"]
+scale = Vector2(0.75, 0.75)
+texture = ExtResource("1_w28qm")
+script = ExtResource("1_xw3cm")

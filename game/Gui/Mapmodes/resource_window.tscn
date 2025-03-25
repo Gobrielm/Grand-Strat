@@ -1,0 +1,37 @@
+[gd_scene load_steps=2 format=3 uid="uid://dycu0hxqcqbt"]
+
+[ext_resource type="Script" uid="uid://dyevpoepi7of8" path="res://Gui/Mapmodes/resource_window.gd" id="1_x21q4"]
+
+[node name="Resource_Window" type="Window"]
+initial_position = 1
+size = Vector2i(300, 300)
+script = ExtResource("1_x21q4")
+
+[node name="ItemList" type="ItemList" parent="."]
+offset_right = 300.0
+offset_bottom = 300.0
+item_count = 21
+item_0/text = "clay"
+item_1/text = "sand"
+item_2/text = "sulfur"
+item_3/text = "lead"
+item_4/text = "iron"
+item_5/text = "coal"
+item_6/text = "copper"
+item_7/text = "zinc"
+item_8/text = "wood"
+item_9/text = "salt"
+item_10/text = "grain"
+item_11/text = "livestock"
+item_12/text = "fish"
+item_13/text = "fruit"
+item_14/text = "cotton"
+item_15/text = "silk"
+item_16/text = "spices"
+item_17/text = "coffee"
+item_18/text = "tea"
+item_19/text = "tobacco"
+item_20/text = "gold"
+
+[connection signal="close_requested" from="." to="." method="_on_close_requested"]
+[connection signal="item_selected" from="ItemList" to="." method="_on_item_list_item_selected"]

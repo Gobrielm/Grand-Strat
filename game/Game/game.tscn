@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3 uid="uid://mvclhl55tpqw"]
+
+[ext_resource type="PackedScene" uid="uid://uqruu0curug2" path="res://Multiplayer/lobby.tscn" id="2_4iov0"]
+
+[node name="game" type="Node"]
+
+[node name="lobby" parent="." instance=ExtResource("2_4iov0")]

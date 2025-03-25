@@ -1,0 +1,57 @@
+[gd_scene load_steps=3 format=3 uid="uid://tgrwgdaijaeh"]
+
+[ext_resource type="Script" uid="uid://c5alndvpirx2x" path="res://Gui/station_window.gd" id="1_8pdlu"]
+[ext_resource type="PackedScene" uid="uid://ddsk0bc0ixiwt" path="res://Gui/order_screen.tscn" id="3_bfn1f"]
+
+[node name="station_window" type="Window"]
+position = Vector2i(201, 74)
+size = Vector2i(750, 500)
+content_scale_aspect = 1
+script = ExtResource("1_8pdlu")
+
+[node name="Cargo_Node" type="Control" parent="."]
+layout_mode = 3
+anchor_left = 0.706667
+anchor_top = 0.26
+anchor_right = 0.76
+anchor_bottom = 0.34
+grow_horizontal = 0
+grow_vertical = 2
+metadata/_edit_use_anchors_ = true
+
+[node name="ColorRect" type="ColorRect" parent="Cargo_Node"]
+layout_mode = 0
+offset_top = -40.0
+offset_right = 220.0
+offset_bottom = 300.0
+color = Color(0.18359, 0.18359, 0.18359, 1)
+
+[node name="Label" type="Label" parent="Cargo_Node/ColorRect"]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 23.0
+text = "Cargo:"
+
+[node name="Cargo_List" type="ItemList" parent="Cargo_Node"]
+layout_mode = 0
+offset_right = 220.0
+offset_bottom = 300.0
+focus_mode = 0
+
+[node name="Name" type="RichTextLabel" parent="."]
+offset_right = 750.0
+offset_bottom = 40.0
+bbcode_enabled = true
+scroll_active = false
+
+[node name="Cash" type="Label" parent="."]
+offset_right = 40.0
+offset_bottom = 23.0
+
+[node name="Order_Screen" parent="." instance=ExtResource("3_bfn1f")]
+offset_left = -40.0
+offset_top = -37.0
+offset_right = -40.0
+offset_bottom = -37.0
+
+[connection signal="close_requested" from="." to="." method="_on_close_requested"]
