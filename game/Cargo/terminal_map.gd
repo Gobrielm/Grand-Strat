@@ -34,26 +34,26 @@ static var map: TileMapLayer
 static var cargo_map: TileMapLayer
 static var tile_info
 
-static func _static_init():
+static func _static_init() -> void:
 	create_cargo_types()
 	create_base_prices()
 	create_amount_of_primary_goods()
 
-static func _on_day_tick_timeout():
+static func _on_day_tick_timeout() -> void:
 	for obj: terminal in cargo_map_terminals.values():
 		if obj.has_method("day_tick"):
 			obj.day_tick()
 
-static func _on_month_tick_timeout():
+static func _on_month_tick_timeout() -> void:
 	for obj: terminal in cargo_map_terminals.values():
 		if obj.has_method("month_tick"):
 			obj.month_tick()
 
-static func create(_map: TileMapLayer):
+static func create(_map: TileMapLayer) -> void:
 	map = _map
 	tile_info = map.get_tile_data()
 
-static func create_amount_of_primary_goods():
+static func create_amount_of_primary_goods() -> void:
 	for i in cargo_types.size():
 		var cargo_name = cargo_types[i]
 		if cargo_name == "gold":
@@ -65,16 +65,16 @@ static func get_available_resources(coords: Vector2i) -> Dictionary:
 static func assign_cargo_map(_cargo_map: TileMapLayer):
 	cargo_map = _cargo_map
 
-static func create_station(coords: Vector2i, new_owner: int):
+static func create_station(coords: Vector2i, new_owner: int) -> void:
 	var new_station = station.new(coords, new_owner)
 	create_terminal(new_station)
 	
-static func create_terminal(new_terminal: terminal):
+static func create_terminal(new_terminal: terminal) -> void:
 	var coords = new_terminal.get_location()
 	cargo_map_terminals[coords] = new_terminal
 	add_connected_terminals(coords, new_terminal)
 
-static func add_connected_terminals(coords: Vector2i, new_terminal: terminal):
+static func add_connected_terminals(coords: Vector2i, new_terminal: terminal) -> void:
 	for coord in map.get_surrounding_cells(coords):
 		if cargo_map_terminals.has(coord):
 			var term = cargo_map_terminals[coord]
@@ -100,7 +100,7 @@ static func is_owned_recipeless_construction_site(coords: Vector2i) -> bool:
 static func is_owned_construction_site(coords: Vector2i) -> bool:
 	return cargo_map_terminals.has(coords) and cargo_map_terminals[coords] is construction_site
 
-static func set_construction_site_recipe(coords: Vector2i, selected_recipe: Array):
+static func set_construction_site_recipe(coords: Vector2i, selected_recipe: Array) -> void:
 	if is_owned_recipeless_construction_site(coords):
 		cargo_map_terminals[coords].set_recipe(selected_recipe)
 
@@ -109,7 +109,7 @@ static func get_construction_site_recipe(coords: Vector2i) -> Array:
 		return cargo_map_terminals[coords].get_recipe()
 	return [{}, {}]
 
-static func destory_recipe(coords: Vector2i):
+static func destory_recipe(coords: Vector2i) -> void:
 	if is_owned_construction_site(coords):
 		return cargo_map_terminals[coords].destroy_recipe()
 
@@ -131,19 +131,19 @@ static func get_cash_of_firm(coords: Vector2i) -> int:
 			return firm_inst.get_cash()
 	return 0
 
-static func transform_construction_site_to_factory(coords: Vector2i):
+static func transform_construction_site_to_factory(coords: Vector2i) -> void:
 	var old_site: construction_site = cargo_map_terminals[coords]
 	var obj_recipe: Array = old_site.get_recipe()
 	cargo_map_terminals[coords] = player_factory.new(coords, old_site.get_player_owner(), obj_recipe[0], obj_recipe[1])
 	old_site.queue_free()
 	cargo_map.transform_construction_site_to_factory(coords)
 
-static func create_road_depot(coords: Vector2i, player_id):
+static func create_road_depot(coords: Vector2i, player_id) -> void:
 	if !cargo_map_terminals.has(coords):
 		var supply_map = create_supplied_tiles(coords)
 		cargo_map_terminals[coords] = road_depot.new(coords, player_id, supply_map)
 
-static func create_supplied_tiles(center: Vector2i):
+static func create_supplied_tiles(center: Vector2i) -> Dictionary:
 	var toReturn = {}
 	toReturn[center] = 5
 	var visited = {}
@@ -167,12 +167,12 @@ static func get_local_prices(coords: Vector2i) -> Dictionary:
 			return fact.get_local_prices()
 	return {}
 
-static func get_terminal(coords: Vector2i):
+static func get_terminal(coords: Vector2i) -> terminal:
 	if cargo_map_terminals.has(coords):
 		return cargo_map_terminals[coords]
 	return null
 
-static func is_station(coords: Vector2i):
+static func is_station(coords: Vector2i) -> bool:
 	return cargo_map_terminals.has(coords) and cargo_map_terminals[coords] is station
 
 static func get_station(coords: Vector2i) -> station:
@@ -188,19 +188,19 @@ static func get_station_orders(coords: Vector2i) -> Dictionary:
 			toReturn[type] = orders[type].convert_to_array()
 	return toReturn
 
-static func edit_order_station(coords: Vector2i, type: int, amount: int, buy: bool):
+static func edit_order_station(coords: Vector2i, type: int, amount: int, buy: bool) -> void:
 	if is_station(coords):
 		cargo_map_terminals[coords].edit_order(type, amount, buy)
 
-static func remove_order_station(coords: Vector2i, type: int):
+static func remove_order_station(coords: Vector2i, type: int) -> void:
 	if is_station(coords):
 		cargo_map_terminals[coords].remove_order(type)
 
-static func create_cargo_types():
+static func create_cargo_types() -> void:
 	for type in cargo_types.size():
 		cargo_names_to_types[cargo_types[type]] = type
 
-static func create_base_prices():
+static func create_base_prices() -> void:
 	var new_base_prices = {}
 	for good_name in base_prices:
 		new_base_prices[cargo_names_to_types[good_name]] = base_prices[good_name]

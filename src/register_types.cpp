@@ -4,7 +4,7 @@
 #include <godot_cpp/core/defs.hpp>
 #include <godot_cpp/godot.hpp>
 
-#include "summator.h"
+#include "terminal.hpp"
 
 using namespace godot;
 
@@ -14,7 +14,7 @@ void initialize_gdextension_types(ModuleInitializationLevel p_level)
 		return;
 	}
 	//GDREGISTER_CLASS(YourClass);
-	GDREGISTER_CLASS(Summator);
+	GDREGISTER_CLASS(Terminal);
 }
 
 void uninitialize_gdextension_types(ModuleInitializationLevel p_level) {
