@@ -2,63 +2,80 @@ extends Node
 
 var im_population: Image = preload("res://Map/Map_Images/population.png").get_image()
 var population: TileMapLayer
-var mutex := Mutex.new()
-var total := 0
+var mutex: Mutex = Mutex.new()
+var total: int = 0
 
-func _init():
+func _init() -> void:
 	pass
 
-func create_population_map():
+func create_population_map() -> void:
 	population = preload("res://Map/Map_Info/population.tscn").instantiate()
-	var tile_info = Utils.tile_info
+	var tile_info: Node = Utils.tile_info
 	assert(tile_info != null)
-	var thread := Thread.new()
-	var thread1 := Thread.new()
-	var thread2 := Thread.new()
-	var thread3 := Thread.new()
+	var thread: Thread = Thread.new()
+	var thread1: Thread = Thread.new()
+	var thread2: Thread = Thread.new()
+	var thread3: Thread = Thread.new()
 	thread.start(create_part_of_array.bind(-609, 0, -243, 0, tile_info))
 	thread1.start(create_part_of_array.bind(0, 671, -243, 0, tile_info))
 	thread2.start(create_part_of_array.bind(-609, 0, 0, 282, tile_info))
 	thread3.start(create_part_of_array.bind(0, 671, 0, 282, tile_info))
-	var threads := [thread, thread1, thread2, thread3]
+	var threads: Array = [thread, thread1, thread2, thread3]
 	for thd: Thread in threads:
 		thd.wait_to_finish()
 	#save_population()
 	#print(total)
+	disperse_random_industries(tile_info)
 	population.queue_free()
 
-func create_part_of_array(from_x: int, to_x: int, from_y: int, to_y: int, tile_info):
-	for real_x in range(from_x, to_x):
-		for real_y in range(from_y, to_y):
-			var x := (real_x + 609) * 3 / 2
-			var y := (real_y + 243) * 7 / 4
-			var tile := Vector2i(real_x, real_y)
+func disperse_random_industries(tile_info: Node) -> void:
+	var pop_tiles: Array = population.get_used_cells()
+	pop_tiles.shuffle()
+	for tile: Vector2i in pop_tiles:
+		if !Utils.is_tile_water(tile) and randi() % 100000000 / max(min(tile_info.get_province_population(tile), 1000000), 1) == 0:
+			Utils.cargo_map.place_random_industry(tile)
+		
+
+func create_part_of_array(from_x: int, to_x: int, from_y: int, to_y: int, tile_info: Node) -> void:
+	for real_x: int in range(from_x, to_x):
+		for real_y: int in range(from_y, to_y):
+			@warning_ignore("integer_division")
+			var x: int = (real_x + 609) * 3 / 2
+			@warning_ignore("integer_division")
+			var y: int = (real_y + 243) * 7 / 4
+			var tile: Vector2i = Vector2i(real_x, real_y)
 			helper(x, y, tile, tile_info)
 
-func helper(x: int, y: int, tile: Vector2i, tile_info):
+func helper(x: int, y: int, tile: Vector2i, tile_info: Node) -> void:
 	if Utils.is_tile_water(tile):
-		return 0
+		return
 	var color: Color = im_population.get_pixel(x, y)
-	var num := 0
-	var other_num := -1
-	var multipler := 0.2
+	var num: int= 0
+	var other_num: int = -1
+	const multipler: float = 0.2
 	if color.r > 0.9:
 		if color.b > 0.98:
+			@warning_ignore("narrowing_conversion")
 			num = (randi() % 100) * multipler
 			other_num = 0
 		elif color.b > 0.7:
+			@warning_ignore("narrowing_conversion")
 			num = (randi() % 40000 + 10000) * multipler
 			other_num = 1
 		elif color.b > 0.60:
+			@warning_ignore("narrowing_conversion")
 			num = (randi() % 50000 + 50000) * multipler
 			other_num = 2
 		elif color.b > 0.30:
+			@warning_ignore("narrowing_conversion")
 			num = (randi() % 200000 + 100000) * multipler
 			other_num = 3
 		elif color.b > 0.20:
+			@warning_ignore("narrowing_conversion")
 			num = (randi() % 200000 + 300000) * multipler
 			other_num = 4
 		elif color.b == 0.0:
+			@warning_ignore("narrowing_conversion")
 			num = (randi() % 300000 + 500000) * multipler
 			other_num = 5
 	else:
@@ -75,11 +92,11 @@ func helper(x: int, y: int, tile: Vector2i, tile_info):
 	mutex.unlock()
 	
 
-func save_population():
-	var scene := PackedScene.new()
-	var result = scene.pack(population)
+func save_population() -> void:
+	var scene: PackedScene = PackedScene.new()
+	var result: Error = scene.pack(population)
 	if result == OK:
-		var file = "res://Map/Map_Info/population.tscn"
-		var error = ResourceSaver.save(scene, file)
-		if error != OK:
+		var file: String = "res://Map/Map_Info/population.tscn"
+		result = ResourceSaver.save(scene, file)
+		if result != OK:
 			push_error("An error occurred while saving the scene to disk.")

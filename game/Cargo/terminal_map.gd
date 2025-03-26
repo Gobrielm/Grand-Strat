@@ -6,9 +6,9 @@ static var amount_of_primary_goods
 static var serviced = {}
 static var cargo_map_terminals = {} #Maps coords -> hold
 static var cargo_types: Array = [
-	"clay", "sand", "sulfur", "lead", "iron", "coal", "copper", "zinc",
-	"wood", "salt", "grain", "livestock", "fish", "fruit", "cotton",
-	"silk", "spices", "coffee", "tea", "tobacco", "gold",
+	"clay", "sand", "sulfur", "lead", "iron", "coal", "copper", "zinc", "wood", "salt", 
+	"grain", "livestock", "fish", "fruit", "cotton", "silk", "spices", "coffee", "tea", "tobacco", 
+	"gold",
 	
 	"bricks", "glass", "lumber", "paper", "tools", "steel", "brass", "dynamite",
 	"flour", "fabric", "liquor", "bread", "leather", "meat", "clothes",

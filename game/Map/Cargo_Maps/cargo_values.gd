@@ -2,15 +2,13 @@ extends Node2D
 
 var map: TileMapLayer
 
-
-const TILES_PER_ROW := 8
-const MAX_RESOURCES = [5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, -1, 5000
+const TILES_PER_ROW: int = 8
+const MAX_RESOURCES: Array = [5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, -1, 5000
 , -1, -1, -1, -1, 5000, 5000, 5000, 5000, 5000, 50000
 , 1000]
-var magnitude_layers := []
+var magnitude_layers: Array = []
 
-func _ready():
-	Utils.assign_cargo_values(self)
+func _ready() -> void:
 	create_magnitude_layers()
 
 func can_build_type(type: int, coords: Vector2i) -> bool:
@@ -30,17 +28,17 @@ func get_layers() -> Array:
 	return magnitude_layers
 
 func get_available_resources(coords: Vector2i) -> Dictionary:
-	var toReturn := {}
-	for type in get_child_count():
-		var mag := get_tile_magnitude(coords, type)
+	var toReturn: Dictionary = {}
+	for type: int in get_child_count():
+		var mag: int = get_tile_magnitude(coords, type)
 		if mag > 0:
 			toReturn[type] = mag
 	return toReturn
 
-func open_resource_map(type: int):
+func open_resource_map(type: int) -> void:
 	get_layer(type).visible = true
 
-func close_all_layers():
+func close_all_layers() -> void:
 	for i in terminal_map.amount_of_primary_goods:
 		get_layer(i).visible = false
 
@@ -70,8 +68,7 @@ func get_available_primary_recipes(coords: Vector2i) -> Array:
 			toReturn.append([{}, dict])
 	return toReturn
 
-func place_resources(_map: TileMapLayer):
-	
+func place_resources(_map: TileMapLayer) -> void:
 	map = _map
 	var helper: Node = load("res://Map/Cargo_Maps/cargo_values_helper.gd").new(map)
 	var resource_array: Array = helper.create_resource_array()
@@ -87,7 +84,7 @@ func place_resources(_map: TileMapLayer):
 	for thread: Thread in threads:
 		thread.wait_to_finish()
 
-func autoplace_resource(tiles: Dictionary, layer: TileMapLayer, max_resouces: int):
+func autoplace_resource(tiles: Dictionary, layer: TileMapLayer, max_resouces: int) -> void:
 	var array: Array = tiles.keys()
 	array.shuffle()
 	var count = 0
@@ -98,12 +95,12 @@ func autoplace_resource(tiles: Dictionary, layer: TileMapLayer, max_resouces: in
 		if count > max_resouces and max_resouces != -1:
 			return
 
-func place_population():
+func place_population() -> void:
 	var helper: Node = load("res://Map/Cargo_Maps/population_helper.gd").new()
 	helper.create_population_map()
 	helper.queue_free()
 
-func create_territories():
+func create_territories() -> void:
 	var provinces: TileMapLayer = preload("res://Map/Map_Info/provinces.tscn").instantiate()
 	var tile_info = Utils.tile_info
 	for real_x in range(-609, 671):
@@ -138,7 +135,7 @@ func create_territory(start: Vector2i, provinces: TileMapLayer) -> Array:
 	return toReturn
 
 
-func refresh_territories():
+func refresh_territories() -> void:
 	var im_provinces: Image = load("res://Map/Map_Info/provinces.png").get_image()
 	var provinces: TileMapLayer = preload("res://Map/Map_Info/provinces.tscn").instantiate()
 	var coords_to_province_id := {}
