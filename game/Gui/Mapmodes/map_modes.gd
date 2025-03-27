@@ -5,7 +5,6 @@ extends Control
 func _ready():
 	press_button($diplomatic)
 
-
 func is_gui_hovered() -> bool:
 	for child in get_children():
 		if child.has_method("is_hovered") and child.is_hovered():
@@ -16,17 +15,20 @@ func is_gui_hovered() -> bool:
 func _on_cargo_pressed():
 	close_other_mapmodes()
 	unpress_other_buttons()
+	Utils.turn_on_black_white_map()
 	$Resource_Window.popup()
 	press_button($cargo)
 
 func _on_diplomatic_pressed():
 	close_other_mapmodes()
+	Utils.turn_on_black_white_map()
 	Utils.tile_ownership.visible = true
 	unpress_other_buttons()
 	press_button($diplomatic)
 
 func _on_strat_pressed():
 	close_other_mapmodes()
+	Utils.turn_off_black_white_map()
 	unpress_other_buttons()
 	press_button($strat)
 

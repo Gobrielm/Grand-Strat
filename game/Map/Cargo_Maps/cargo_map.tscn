@@ -1,8 +1,13 @@
-[gd_scene load_steps=6 format=3 uid="uid://dkoyapss2hyif"]
+[gd_scene load_steps=8 format=3 uid="uid://dkoyapss2hyif"]
 
+[ext_resource type="Shader" uid="uid://cju3ifomdtohx" path="res://Map/Main_Maps/main_map.gdshader" id="1_0vbjp"]
 [ext_resource type="Texture2D" uid="uid://dr53rged12e1u" path="res://Map_Icons/cargo_set.png" id="1_innrs"]
 [ext_resource type="Script" uid="uid://c1cfo1esu26y1" path="res://Map/Cargo_Maps/cargo_map.gd" id="2_nrxwi"]
 [ext_resource type="PackedScene" uid="uid://d28r1d3b5w6hq" path="res://Map/Cargo_Maps/cargo_values.tscn" id="3_uyn2n"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_g6odn"]
+shader = ExtResource("1_0vbjp")
+shader_parameter/onoff = 0
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_c5pk0"]
 texture = ExtResource("1_innrs")
@@ -26,6 +31,7 @@ sources/0 = SubResource("TileSetAtlasSource_c5pk0")
 [node name="cargo_map" type="TileMapLayer"]
 z_as_relative = false
 y_sort_enabled = true
+material = SubResource("ShaderMaterial_g6odn")
 tile_set = SubResource("TileSet_toufl")
 script = ExtResource("2_nrxwi")
 

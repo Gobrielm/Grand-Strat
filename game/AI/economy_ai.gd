@@ -124,6 +124,7 @@ func get_optimal_primary_industry(type: int) -> Vector2i:
 	for tile: Vector2i in get_owned_tiles():
 		if !Utils.is_tile_open(tile, id):
 			continue
+		#TODO: Will kill runtime if station isn't close or doesn't exist
 		var distance = distance_to_closest_station(tile)
 		var current_score = get_cargo_magnitude(tile, type) - round(distance / 7.0)
 		if distance == 1:
@@ -178,9 +179,12 @@ func info_of_closest_target(coords: Vector2i, target: Callable, secondary_target
 	var visited := {}
 	visited[coords] = 0
 	var closest_secondary_target = null
-	
+	var cycles: int = 0
 	while !queue.is_empty():
 		var curr: Vector2i = queue.pop_front()
+		cycles += 1
+		if cycles > 1000 and closest_secondary_target != null:
+			break
 		for tile in world_map.get_surrounding_cells(curr):
 			#TODO: Add logic to account for docks and disconnected territory
 			#TODO: Add logic that the closest station isnt the best to connect to
