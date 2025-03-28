@@ -3,9 +3,7 @@ extends Node2D
 var map: TileMapLayer
 
 const TILES_PER_ROW: int = 8
-const MAX_RESOURCES: Array = [5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, -1, 5000
-, -1, -1, -1, -1, 5000, 5000, 5000, 5000, 5000, 50000
-, 1000]
+const MAX_RESOURCES: Array = [5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, -1, 5000, -1, -1, -1, -1, 5000, 5000, 5000, 5000, 5000, 50000, 1000]
 var magnitude_layers: Array = []
 
 func _ready() -> void:
@@ -14,8 +12,8 @@ func _ready() -> void:
 func can_build_type(type: int, coords: Vector2i) -> bool:
 	return get_tile_magnitude(coords, type) > 0
 
-func create_magnitude_layers():
-	for child in get_children():
+func create_magnitude_layers() -> void:
+	for child: Node in get_children():
 		if child is TileMapLayer:
 			magnitude_layers.append(child)
 
@@ -39,7 +37,7 @@ func open_resource_map(type: int) -> void:
 	get_layer(type).visible = true
 
 func close_all_layers() -> void:
-	for i in terminal_map.amount_of_primary_goods:
+	for i: int in terminal_map.amount_of_primary_goods:
 		get_layer(i).visible = false
 
 func get_tile_magnitude(coords: Vector2i, type: int) -> int:
@@ -53,17 +51,17 @@ func get_tile_magnitude(coords: Vector2i, type: int) -> int:
 func get_atlas_for_magnitude(num: int) -> Vector2i:
 	@warning_ignore("integer_division")
 	return Vector2i(num % TILES_PER_ROW, num / TILES_PER_ROW)
-	
+
 func get_good_name_uppercase(type: int) -> String:
 	var cargo_name: String = terminal_map.get_cargo_name(type)
 	cargo_name[0] = cargo_name[0].to_upper()
 	return cargo_name
 
 func get_available_primary_recipes(coords: Vector2i) -> Array:
-	var toReturn = []
-	for type in get_child_count():
+	var toReturn: Array = []
+	for type: int in get_child_count():
 		if can_build_type(type, coords):
-			var dict = {}
+			var dict: Dictionary = {}
 			dict[terminal_map.get_cargo_name(type)] = 1
 			toReturn.append([{}, dict])
 	return toReturn
@@ -73,12 +71,11 @@ func place_resources(_map: TileMapLayer) -> void:
 	var helper: Node = load("res://Map/Cargo_Maps/cargo_values_helper.gd").new(map)
 	var resource_array: Array = helper.create_resource_array()
 	helper.queue_free()
-	#refresh_territories()
 	create_territories()
 	place_population()
-	var threads := []
-	for i in get_child_count():
-		var thread = Thread.new()
+	var threads: Array = []
+	for i: int in get_child_count():
+		var thread: Thread = Thread.new()
 		threads.append(thread)
 		thread.start(autoplace_resource.bind(resource_array[i], get_child(i), MAX_RESOURCES[i]))
 	for thread: Thread in threads:
@@ -87,9 +84,9 @@ func place_resources(_map: TileMapLayer) -> void:
 func autoplace_resource(tiles: Dictionary, layer: TileMapLayer, max_resouces: int) -> void:
 	var array: Array = tiles.keys()
 	array.shuffle()
-	var count = 0
+	var count: int = 0
 	for cell: Vector2i in array:
-		var mag = randi() % 4 + tiles[cell]
+		var mag: int = randi() % 4 + tiles[cell]
 		layer.call_deferred_thread_group("set_cell", cell, 1, get_atlas_for_magnitude(mag))
 		count += mag
 		if count > max_resouces and max_resouces != -1:
@@ -102,29 +99,28 @@ func place_population() -> void:
 
 func create_territories() -> void:
 	var provinces: TileMapLayer = preload("res://Map/Map_Info/provinces.tscn").instantiate()
-	var tile_info = Utils.tile_info
-	for real_x in range(-609, 671):
-		for real_y in range(-243, 282):
-			var tile := Vector2i(real_x, real_y)
+	var tile_info: Node = Utils.tile_info
+	for real_x: int in range(-609, 671):
+		for real_y: int in range(-243, 282):
+			var tile: Vector2i = Vector2i(real_x, real_y)
 			if !tile_info.is_tile_a_province(tile) and !is_tile_water(tile):
 				var group: Array = create_territory(tile, provinces)
 				var province_id: int = tile_info.create_new_province()
 				tile_info.add_many_tiles_to_province(province_id, group)
 
 func create_territory(start: Vector2i, provinces: TileMapLayer) -> Array:
-	var atlas = provinces.get_cell_atlas_coords(start)
-	var visited := {}
+	var atlas: Vector2i = provinces.get_cell_atlas_coords(start)
+	var visited: Dictionary = {}
 	visited[start] = 0
-	var toReturn = [start]
-	var queue := [start]
+	var toReturn: Array = [start]
+	var queue: Array = [start]
 	while !queue.is_empty():
 		var curr: Vector2i = queue.pop_front()
-		for tile in provinces.get_surrounding_cells(curr):
+		for tile: Vector2i in provinces.get_surrounding_cells(curr):
 			if !visited.has(tile) and provinces.get_cell_atlas_coords(tile) == atlas:
 				visited[tile] = 0
 				toReturn.push_back(tile)
 				queue.push_back(tile)
-			#Broken
 			elif is_tile_water_and_real(tile):
 				if visited[curr] < 5 and !visited.has(tile):
 					visited[tile] = visited[curr] + 1
@@ -134,46 +130,45 @@ func create_territory(start: Vector2i, provinces: TileMapLayer) -> Array:
 					queue.push_back(tile)
 	return toReturn
 
-
 func refresh_territories() -> void:
 	var im_provinces: Image = load("res://Map/Map_Info/provinces.png").get_image()
 	var provinces: TileMapLayer = preload("res://Map/Map_Info/provinces.tscn").instantiate()
-	var coords_to_province_id := {}
-	var colors_to_province_id := {}
+	var coords_to_province_id: Dictionary = {}
+	var colors_to_province_id: Dictionary = {}
 	create_colors_to_province_id(colors_to_province_id)
-	for real_x in range(-609, 671):
-		for real_y in range(-243, 282):
+	for real_x: int in range(-609, 671):
+		for real_y: int in range(-243, 282):
 			@warning_ignore("integer_division")
-			var x := (real_x + 609) * 3 / 2
+			var x: int = (real_x + 609) * 3 / 2
 			@warning_ignore("integer_division")
-			var y := (real_y + 243) * 7 / 4
-			var tile := Vector2i(real_x, real_y)
-			var color = get_closest_color(im_provinces.get_pixel(x, y))
+			var y: int = (real_y + 243) * 7 / 4
+			var tile: Vector2i = Vector2i(real_x, real_y)
+			var color: Color = get_closest_color(im_provinces.get_pixel(x, y))
 			if is_tile_water(tile):
 				continue
-			
+
 			if !colors_to_province_id.has(color):
 				provinces.erase_cell(tile)
 				continue
-			
+
 			coords_to_province_id[tile] = colors_to_province_id[color]
 			provinces.add_tile_to_province(tile, colors_to_province_id[color])
-	var scene := PackedScene.new()
+	var scene: PackedScene = PackedScene.new()
 	scene.pack(provinces)
-	var file = "res://Map/Map_Info/provinces.tscn"
+	var file: String = "res://Map/Map_Info/provinces.tscn"
 	if FileAccess.file_exists(file):
-		var error = ResourceSaver.save(scene, file)
+		var error: int = ResourceSaver.save(scene, file)
 		if error != OK:
 			push_error("An error occurred while saving the scene to disk.")
-	
-	var new_image := Image.create(1920, 919, false, Image.FORMAT_RGBA8)
-	for real_x in range(-609, 671):
-		for real_y in range(-243, 282):
+
+	var new_image: Image = Image.create(1920, 919, false, Image.FORMAT_RGBA8)
+	for real_x: int in range(-609, 671):
+		for real_y: int in range(-243, 282):
 			@warning_ignore("integer_division")
-			var x := (real_x + 609) * 3 / 2
+			var x: int = (real_x + 609) * 3 / 2
 			@warning_ignore("integer_division")
-			var y := (real_y + 243) * 7 / 4
-			var tile := Vector2i(real_x, real_y)
+			var y: int = (real_y + 243) * 7 / 4
+			var tile: Vector2i = Vector2i(real_x, real_y)
 			if is_tile_water(tile):
 				continue
 			new_image.set_pixel(x, y, provinces.get_color(tile))
@@ -188,9 +183,9 @@ func refresh_territories() -> void:
 	provinces.queue_free()
 
 func get_closest_color(color: Color) -> Color:
-	var red := 0.0
-	var blue := 0.0
-	var green := 0.0
+	var red: float = 0.0
+	var blue: float = 0.0
+	var green: float = 0.0
 	if color.r > 0.45 and color.r < 0.55:
 		red = 0.5
 	if color.g > 0.45 and color.g < 0.55:
@@ -201,7 +196,7 @@ func get_closest_color(color: Color) -> Color:
 		return color
 	return Color(red, green, blue)
 
-func create_colors_to_province_id(colors_to_province_id: Dictionary):
+func create_colors_to_province_id(colors_to_province_id: Dictionary) -> void:
 	colors_to_province_id[Color(1, 0, 0, 1)] = 0
 	colors_to_province_id[Color(0, 1, 0, 1)] = 1
 	colors_to_province_id[Color(0, 0, 1, 1)] = 2
@@ -210,11 +205,11 @@ func create_colors_to_province_id(colors_to_province_id: Dictionary):
 	colors_to_province_id[Color(0, 0.5, 0.5, 1)] = 5
 
 func is_tile_water(coords: Vector2i) -> bool:
-	var atlas = map.get_cell_atlas_coords(coords)
+	var atlas: Vector2i = map.get_cell_atlas_coords(coords)
 	return atlas == Vector2i(6, 0) or atlas == Vector2i(7, 0) or atlas == Vector2i(-1, -1)
 
 func is_tile_water_and_real(coords: Vector2i) -> bool:
-	var atlas = map.get_cell_atlas_coords(coords)
+	var atlas: Vector2i = map.get_cell_atlas_coords(coords)
 	return atlas == Vector2i(6, 0) or atlas == Vector2i(7, 0)
 
 #func create_continents():

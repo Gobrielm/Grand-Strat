@@ -1,6 +1,6 @@
 extends TileMapLayer
 
-func set_population(tile: Vector2i, num: int):
+func set_population(tile: Vector2i, num: int) -> void:
 	var atlas: Vector2i
 	if num == 1:
 		atlas = Vector2i(3,1)

@@ -117,6 +117,7 @@ func create_factory(location: Vector2i, type: int):
 		for output: String in recipe_set[1]:
 			if output == terminal_map.get_cargo_name(type):
 				terminal_map.set_construction_site_recipe(location, recipe_set)
+				break
 
 func get_optimal_primary_industry(type: int) -> Vector2i:
 	var best_location: Vector2i

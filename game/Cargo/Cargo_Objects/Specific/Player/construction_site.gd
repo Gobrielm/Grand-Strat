@@ -34,7 +34,7 @@ func get_recipe() -> Array:
 	return [inputs, outputs]
 
 func has_recipe() -> bool:
-	return !inputs.is_empty()
+	return !inputs.is_empty() or !outputs.is_empty()
 
 #Construction_materials
 func create_construction_materials():

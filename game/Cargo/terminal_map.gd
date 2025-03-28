@@ -1,10 +1,10 @@
 class_name terminal_map extends Node
 #Represents Singleton
 
-static var amount_of_primary_goods
+static var amount_of_primary_goods: int
 
-static var serviced = {}
-static var cargo_map_terminals = {} #Maps coords -> hold
+static var serviced: Dictionary = {}
+static var cargo_map_terminals: Dictionary = {} #Maps coords -> hold
 static var cargo_types: Array = [
 	"clay", "sand", "sulfur", "lead", "iron", "coal", "copper", "zinc", "wood", "salt", 
 	"grain", "livestock", "fish", "fruit", "cotton", "silk", "spices", "coffee", "tea", "tobacco", 
@@ -16,8 +16,8 @@ static var cargo_types: Array = [
 	"furniture", "wagons", "boats", "lanterns", "trains",
 	"ammo", "guns", "artillery", "preserved_meat", "canned_food", "rations", "luxury_rations",
 ]
-static var cargo_names_to_types = {}
-static var base_prices = {
+static var cargo_names_to_types: Dictionary = {}
+static var base_prices: Dictionary = {
 	"clay" = 10, "sand" = 10, "sulfur" = 10, "lead" = 10, "iron" = 10, "coal" = 10, "copper" = 10, "zinc" = 10,
 	"wood" = 10, "salt" = 10, "grain" = 10, "livestock" = 10, "fish" = 10, "fruit" = 10, "cotton" = 10,
 	"silk" = 10, "spices" = 10, "coffee" = 10, "tea" = 10, "tobacco" = 10, "gold" = 10,
@@ -32,7 +32,7 @@ static var base_prices = {
 
 static var map: TileMapLayer
 static var cargo_map: TileMapLayer
-static var tile_info
+static var tile_info: Node
 
 static func _static_init() -> void:
 	create_cargo_types()
@@ -62,7 +62,7 @@ static func create_amount_of_primary_goods() -> void:
 static func get_available_resources(coords: Vector2i) -> Dictionary:
 	return cargo_map.cargo_values.get_available_resources(coords)
 
-static func assign_cargo_map(_cargo_map: TileMapLayer):
+static func assign_cargo_map(_cargo_map: TileMapLayer) -> void:
 	cargo_map = _cargo_map
 
 static func create_station(coords: Vector2i, new_owner: int) -> void:
