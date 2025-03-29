@@ -25,8 +25,7 @@ func create_population_map() -> void:
 		thd.wait_to_finish()
 	#save_population()
 	#print(total)
-	disperse_random_industries(tile_info)
-	population.queue_free()
+	call_deferred("disperse_random_industries", tile_info)
 
 func disperse_random_industries(tile_info: Node) -> void:
 	var pop_tiles: Array = population.get_used_cells()
@@ -34,7 +33,7 @@ func disperse_random_industries(tile_info: Node) -> void:
 	for tile: Vector2i in pop_tiles:
 		if !Utils.is_tile_water(tile) and randi() % 100000000 / max(min(tile_info.get_province_population(tile), 1000000), 1) == 0:
 			Utils.cargo_map.place_random_industry(tile)
-		
+	population.queue_free()
 
 func create_part_of_array(from_x: int, to_x: int, from_y: int, to_y: int, tile_info: Node) -> void:
 	for real_x: int in range(from_x, to_x):

@@ -111,7 +111,7 @@ func create_factory():
 
 @rpc("any_peer", "call_local", "unreliable")
 func create_factory_server(building_id: int, coords: Vector2i):
-	cargo_map.create_factory(building_id, coords)
+	cargo_map.create_construction_site(building_id, coords)
 
 #Tile_Ownership
 func is_owned(player_id: int, coords: Vector2i) -> bool:

@@ -112,10 +112,10 @@ func place_factory(type: int):
 			create_factory(best_tile, type)
 
 func create_factory(location: Vector2i, type: int):
-	cargo_map.create_factory(id, location)
+	cargo_map.create_construction_site(id, location)
 	for recipe_set: Array in recipe.get_set_recipes():
-		for output: String in recipe_set[1]:
-			if output == terminal_map.get_cargo_name(type):
+		for output: int in recipe_set[1]:
+			if output == type:
 				terminal_map.set_construction_site_recipe(location, recipe_set)
 				break
 

@@ -25,6 +25,17 @@ func get_layer(type: int) -> TileMapLayer:
 func get_layers() -> Array:
 	return magnitude_layers
 
+func get_best_resource(coords: Vector2i) -> int:
+	var resources: Dictionary = get_available_resources(coords)
+	var type: int = -1
+	var best_mag: int = -1
+	for type_to_check: int in resources:
+		var mag: int = resources[type_to_check]
+		if best_mag < mag:
+			best_mag = mag
+			type = type_to_check
+	return type
+
 func get_available_resources(coords: Vector2i) -> Dictionary:
 	var toReturn: Dictionary = {}
 	for type: int in get_child_count():

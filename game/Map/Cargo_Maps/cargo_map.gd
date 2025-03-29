@@ -21,9 +21,24 @@ func transform_construction_site_to_factory(coords: Vector2i) -> void:
 
 func place_random_industry(tile: Vector2i) -> void:
 	var tile_ownership: Node = Utils.tile_ownership
-	create_factory(tile_ownership.get_player_id_from_cell(tile), tile)
+	var best_resource: int = cargo_values.get_best_resource(tile)
+	if best_resource == -1:
+		return
+	create_factory(tile_ownership.get_player_id_from_cell(tile), tile, get_primary_recipe_for_type(best_resource))
 
-func create_factory(_player_id: int, coords: Vector2i) -> void:
+func get_primary_recipe_for_type(type: int) -> Array:
+	for recipe_set: Array in recipe.get_set_recipes():
+		for output: int in recipe_set[1]:
+			if output == type:
+				return recipe_set
+	return []
+
+func create_factory(_player_id: int, coords: Vector2i, obj_recipe: Array) -> void:
+	var new_factory: player_factory = player_factory.new(coords, _player_id, obj_recipe[0], obj_recipe[1])
+	set_cell(coords, 0, Vector2i(4, 1))
+	terminal_map.create_terminal(new_factory)
+
+func create_construction_site(_player_id: int, coords: Vector2i) -> void:
 	var new_factory: construction_site = load("res://Cargo/Cargo_Objects/Specific/Player/construction_site.gd").new(coords, _player_id)
 	set_cell(coords, 0, Vector2i(3, 1))
 	terminal_map.create_terminal(new_factory)

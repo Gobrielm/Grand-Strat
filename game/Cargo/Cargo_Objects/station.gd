@@ -2,7 +2,7 @@ class_name station extends fixed_hold
 
 var connected_terminals: Dictionary = {}
 
-var trade_orders = {}
+var trade_orders: Dictionary = {}
 
 func _init(new_location: Vector2i, _player_owner: int):
 	super._init(new_location, _player_owner)

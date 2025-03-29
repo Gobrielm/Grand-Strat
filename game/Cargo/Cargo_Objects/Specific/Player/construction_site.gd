@@ -26,7 +26,7 @@ func set_recipe(selected_recipe: Array):
 	outputs = selected_recipe[1]
 	create_construction_materials()
 
-func destroy_recipe():
+func destroy_recipe() -> void:
 	inputs = {}
 	outputs = {}
 
