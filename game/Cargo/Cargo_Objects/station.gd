@@ -47,7 +47,7 @@ func can_take_type(type: int, term: terminal) -> bool:
 		return term.does_accept(type)
 	return false
 
-func get_desired_cargo_to_load(type: int, price_per: int) -> int:
+func get_desired_cargo_to_load(type: int, price_per: float) -> int:
 	return min(max_amount - get_cargo_amount(type), get_amount_can_buy(price_per))
 
 func can_afford(price: int) -> bool:

@@ -1,29 +1,29 @@
 class_name hold extends firm
 
-const LOAD_TICK_AMOUNT = 5
+const LOAD_TICK_AMOUNT: int = 5
 
 var storage: Dictionary = {} #Cargo the hold has
 var max_amount: int = 50 #Max Amount of cargo the hold can hold
 
-func _init(new_location: Vector2i, _player_owner: int):
+func _init(new_location: Vector2i, _player_owner: int) -> void:
 	super._init(new_location, _player_owner)
-	for i in terminal_map.get_number_of_goods():
+	for i: int in terminal_map.get_number_of_goods():
 		storage[i] = 0
 
 #Return amount added
 func add_cargo(type: int, amount: int) -> int:
-	var amount_to_add = get_amount_to_add(type, amount)
+	var amount_to_add: int = get_amount_to_add(type, amount)
 	storage[type] += amount_to_add
 	return amount_to_add
 
 func get_cargo_amount(type: int) -> int:
 	return storage[type]
 
-func remove_cargo(type: int, amount: int):
+func remove_cargo(type: int, amount: int) -> void:
 	storage[type] -= amount
 
 func transfer_cargo(type: int, amount: int) -> int:
-	var val = min(amount, storage[type])
+	var val: int = min(amount, storage[type])
 	remove_cargo(type, val)
 	return val
 
@@ -34,8 +34,8 @@ func get_current_hold() -> Dictionary:
 	return storage
 
 func get_current_hold_total() -> int:
-	var total = 0
-	for index in storage:
+	var total: int = 0
+	for index: int in storage:
 		total += storage[index]
 	return total
 
@@ -45,8 +45,8 @@ func is_full() -> bool:
 func is_empty() -> bool:
 	return get_current_hold_total() == 0
 
-func change_max_storage(_type: int, amount: int):
+func change_max_storage(_type: int, amount: int) -> void:
 	max_amount += amount
 
-func does_accept(_type: int):
+func does_accept(_type: int) -> bool:
 	return get_current_hold_total() < max_amount

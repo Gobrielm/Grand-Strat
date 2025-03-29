@@ -3,7 +3,6 @@ extends apex_factory
 func _init(new_location: Vector2i, _player_id: int):
 	var dict = create_inputs()
 	super._init(new_location, _player_id, dict)
-	max_batch_size = 1
 
 func create_inputs() -> Dictionary:
 	var toReturn = {}
