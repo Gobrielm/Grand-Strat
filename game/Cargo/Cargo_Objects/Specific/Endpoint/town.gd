@@ -1,11 +1,11 @@
 extends apex_factory
 
-func _init(new_location: Vector2i, _player_id: int):
-	var dict = create_inputs()
+func _init(new_location: Vector2i, _player_id: int) -> void:
+	var dict: Dictionary = create_inputs()
 	super._init(new_location, _player_id, dict)
 
 func create_inputs() -> Dictionary:
-	var toReturn = {}
+	var toReturn: Dictionary = {}
 	toReturn[terminal_map.get_cargo_type("grain")] = 1
 	toReturn[terminal_map.get_cargo_type("wood")] = 1
 	toReturn[terminal_map.get_cargo_type("wine")] = 1
@@ -29,7 +29,7 @@ func create_inputs() -> Dictionary:
 func check_input(type: int) -> bool:
 	return inputs[type] <= storage[type]
 
-func remove_input(type: int):
+func remove_input(type: int) -> void:
 	remove_cargo(type, inputs[type])
 
 func get_fulfillment(type: int) -> float:
@@ -38,20 +38,20 @@ func get_fulfillment(type: int) -> float:
 func get_town_wants() -> Array:
 	return inputs.keys()
 
-func withdraw():
-	for type in inputs:
+func withdraw() -> void:
+	for type: int in inputs:
 		if check_input(type):
 			print(type)
 			#TODO: Do something if type is available to be used
 			remove_input(type)
 
-func day_tick():
+func day_tick() -> void:
 	withdraw()
 	if trade_orders.size() != 0:
 		distribute_cargo()
 
-func month_tick():
-	for type in inputs:
+func month_tick() -> void:
+	for type: int in inputs:
 		local_pricer.vary_input_price(get_monthly_demand(type), type)
-	for type in outputs:
+	for type: int in outputs:
 		local_pricer.vary_output_price(type)

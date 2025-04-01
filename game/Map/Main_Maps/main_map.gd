@@ -1,33 +1,33 @@
 extends TileMapLayer
 var start = null
-var unique_id
+var unique_id: int
 #Buttons
-@onready var camera = $player_camera
-@onready var track_button = $player_camera/CanvasLayer/track_button
-@onready var station_button = $player_camera/CanvasLayer/station_button
-@onready var depot_button = $player_camera/CanvasLayer/depot_button
-@onready var single_track_button = $player_camera/CanvasLayer/single_track_button
-@onready var unit_creator_window = $unit_creator_window
-@onready var tile_window := $tile_window
-@onready var game = get_parent().get_parent()
-@onready var rail_placer = $Rail_Placer
-@onready var map_node = get_parent()
-var tile_info
-var unit_map
-var money_interface
-var untraversable_tiles = {}
-var visible_tiles = []
+@onready var camera: Camera2D = $player_camera
+@onready var track_button: Button = $player_camera/CanvasLayer/track_button
+@onready var station_button: Button = $player_camera/CanvasLayer/station_button
+@onready var depot_button: Button = $player_camera/CanvasLayer/depot_button
+@onready var single_track_button: Button = $player_camera/CanvasLayer/single_track_button
+@onready var unit_creator_window: Window = $unit_creator_window
+@onready var tile_window: Window = $tile_window
+@onready var game: Node = get_parent().get_parent()
+@onready var rail_placer: Node = $Rail_Placer
+@onready var map_node: Node = get_parent()
+var tile_info: Node
+var unit_map: TileMapLayer
+var money_interface: Node
+var untraversable_tiles: Dictionary = {}
+var visible_tiles: Array = []
 
-const train_scene = preload("res://Cargo/Cargo_Objects/train.tscn")
-const train_scene_client = preload('res://Client_Objects/client_train.tscn')
-const depot = preload("res://Cargo/depot.gd")
+const train_scene: PackedScene = preload("res://Cargo/Cargo_Objects/train.tscn")
+const train_scene_client: PackedScene = preload('res://Client_Objects/client_train.tscn')
+const depot: Script = preload("res://Cargo/depot.gd")
 
-var testing
+var testing: Node
 
-var heart_beat = {}
+var heart_beat: Dictionary = {}
 
 
-func _on_timer_timeout():
+func _on_timer_timeout() -> void:
 	if unique_id == 1:
 		for peer in multiplayer.get_peers():
 			if heart_beat[peer] != 0:
@@ -399,6 +399,12 @@ func clear_highlights():
 		var node: Sprite2D = get_node("highlight")
 		remove_child(node)
 		node.queue_free()
+
+func make_cell_invisible(coords: Vector2i) -> void:
+	set_cell(coords, 1, get_cell_atlas_coords(coords))
+
+func make_cell_visible(coords: Vector2i) -> void:
+	set_cell(coords, 0, get_cell_atlas_coords(coords))
 
 #Money Stuff
 func get_cash_of_firm(coords: Vector2i) -> int:

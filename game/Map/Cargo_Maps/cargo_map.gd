@@ -17,7 +17,7 @@ func instance_preplaced_towns(coords: Vector2i) -> terminal:
 	return loaded_script.new(coords, Utils.tile_ownership.get_player_id_from_cell(coords))
 
 func transform_construction_site_to_factory(coords: Vector2i) -> void:
-	set_cell(coords, 0, Vector2i(4, 1))
+	set_tile(coords, Vector2i(4, 1))
 
 func place_random_industry(tile: Vector2i) -> void:
 	var tile_ownership: Node = Utils.tile_ownership
@@ -35,23 +35,36 @@ func get_primary_recipe_for_type(type: int) -> Array:
 
 func create_factory(_player_id: int, coords: Vector2i, obj_recipe: Array) -> void:
 	var new_factory: player_factory = player_factory.new(coords, _player_id, obj_recipe[0], obj_recipe[1])
-	set_cell(coords, 0, Vector2i(4, 1))
+	set_tile(coords, get_atlas_cell(obj_recipe))
 	terminal_map.create_terminal(new_factory)
+
+func get_atlas_cell(obj_recipe: Array) -> Vector2i:
+	var output: Dictionary = obj_recipe[1]
+	if obj_recipe[0].is_empty() and output.size() == 1:
+		var primary_type: int = output.keys()[0]
+		if (primary_type >= 2 and primary_type <= 7) or primary_type == 20:
+			return Vector2i(3, 0)
+		elif primary_type == 10 or primary_type == 13 or primary_type == 14 or (primary_type >= 16 and primary_type <= 19):
+			return Vector2i(4, 0)
+	return Vector2i(4, 1)
 
 func create_construction_site(_player_id: int, coords: Vector2i) -> void:
 	var new_factory: construction_site = load("res://Cargo/Cargo_Objects/Specific/Player/construction_site.gd").new(coords, _player_id)
-	set_cell(coords, 0, Vector2i(3, 1))
+	set_tile(coords, Vector2i(3, 1))
 	terminal_map.create_terminal(new_factory)
 
 func create_town(coords: Vector2i) -> void:
 	var tile_ownership: Node = Utils.tile_ownership
 	var new_town: terminal = load("res://Cargo/Cargo_Objects/Specific/Endpoint/town.gd").new(coords, tile_ownership.get_player_id_from_cell(coords))
-	set_cell(coords, 0, Vector2i(0, 1))
+	set_tile(coords, Vector2i(0, 1))
 	terminal_map.create_terminal(new_town)
 
-	
 func get_available_primary_recipes(coords: Vector2i) -> Array:
 	return cargo_values.get_available_primary_recipes(coords)
 
 func place_resources(map: TileMapLayer) -> void:
 	cargo_values.place_resources(map)
+
+func set_tile(coords: Vector2i, atlas: Vector2i) -> void:
+	set_cell(coords, 0, atlas)
+	Utils.world_map.make_cell_invisible(coords)
