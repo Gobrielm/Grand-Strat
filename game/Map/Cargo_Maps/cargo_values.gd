@@ -31,6 +31,9 @@ func get_best_resource(coords: Vector2i) -> int:
 	var best_mag: int = -1
 	for type_to_check: int in resources:
 		var mag: int = resources[type_to_check]
+		if type_to_check == 10 or type_to_check == 11:
+			@warning_ignore("narrowing_conversion")
+			mag = (mag * 0.7)
 		if best_mag < mag:
 			best_mag = mag
 			type = type_to_check

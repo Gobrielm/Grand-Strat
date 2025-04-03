@@ -19,6 +19,12 @@ func instance_preplaced_towns(coords: Vector2i) -> terminal:
 func transform_construction_site_to_factory(coords: Vector2i) -> void:
 	set_tile(coords, Vector2i(4, 1))
 
+func place_random_industries() -> void:
+	var tile_info: Node = Utils.tile_info
+	for province_id: int in tile_info.provinces:
+		var pop: int = tile_info.get_population(province_id)
+		
+
 func place_random_industry(tile: Vector2i) -> void:
 	var tile_ownership: Node = Utils.tile_ownership
 	var best_resource: int = cargo_values.get_best_resource(tile)
