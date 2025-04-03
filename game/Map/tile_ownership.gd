@@ -11,10 +11,9 @@ func _ready() -> void:
 	call_deferred("create_countries")
 
 func create_countries() -> void:
-	var tile_info: Node = Utils.tile_info
 	var provinces_to_add: Array = [Vector2i(89, -112), Vector2i(105, -116), Vector2i(103, -105), Vector2i(103, -97), Vector2i(114, -114)]
 	for cell: Vector2i in provinces_to_add:
-		var prov: province = tile_info.get_province(tile_info.get_province_id(cell))
+		var prov: province = map_data.get_instance().get_province(map_data.get_instance().get_province_id(cell))
 		for tile: Vector2i in prov.tiles:
 			add_tile_to_country(tile, 1)
 			set_cell(tile, 0, Vector2i(0, 0))

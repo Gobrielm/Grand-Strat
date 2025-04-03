@@ -10,7 +10,7 @@ func _init() -> void:
 
 func create_population_map() -> void:
 	population = preload("res://Map/Map_Info/population.tscn").instantiate()
-	var tile_info: Node = Utils.tile_info
+	var tile_info: map_data = map_data.get_instance()
 	assert(tile_info != null)
 	var thread: Thread = Thread.new()
 	var thread1: Thread = Thread.new()

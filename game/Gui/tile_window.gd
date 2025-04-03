@@ -28,8 +28,7 @@ func open_province_window():
 
 @rpc("any_peer", "call_local")
 func request_province_id(coords: Vector2i):
-	var tile_info = Utils.tile_info
-	set_province_id.rpc_id(multiplayer.get_remote_sender_id(), tile_info.get_province_id(coords))
+	set_province_id.rpc_id(multiplayer.get_remote_sender_id(), map_data.get_instance().get_province_id(coords))
 
 @rpc("authority", "call_local")
 func set_province_id(id: int):
@@ -37,8 +36,7 @@ func set_province_id(id: int):
 
 @rpc("any_peer", "call_local")
 func request_province_pop(coords: Vector2i):
-	var tile_info = Utils.tile_info
-	set_province_pop.rpc_id(multiplayer.get_remote_sender_id(), tile_info.get_province_population(coords))
+	set_province_pop.rpc_id(multiplayer.get_remote_sender_id(), map_data.get_instance().get_province_population(coords))
 
 @rpc("authority", "call_local")
 func set_province_pop(pop: int):

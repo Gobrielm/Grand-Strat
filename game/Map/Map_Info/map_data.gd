@@ -1,20 +1,29 @@
-extends Node
+class_name map_data extends Node
+
+#Singleton
 
 var map: TileMapLayer
 
-var depots = {}
+var depots: Dictionary = {}
 
-var holds = {}
+var holds: Dictionary = {}
 
-var provinces := {}
+var provinces: Dictionary = {}
 
-var tiles_to_province_id := {}
+var tiles_to_province_id: Dictionary = {}
 
-func _init(new_map):
+static var singleton_instance: map_data
+
+func _init(new_map: TileMapLayer) -> void:
+	assert(singleton_instance == null, "Cannot create multiple instances of singleton!")
+	singleton_instance = self
 	map = new_map
-	Utils.assign_tile_info(self)
 
-func add_depot(coords: Vector2i, depot: terminal, player_id: int):
+static func get_instance() -> map_data:
+	assert(singleton_instance != null, "Map_Data has not be created, and has been accessed")
+	return singleton_instance
+
+func add_depot(coords: Vector2i, depot: terminal, player_id: int) -> void:
 	depots[coords] = [depot, player_id]
 
 func get_depot(coords: Vector2i) -> terminal:
@@ -33,7 +42,7 @@ func is_depot(coords: Vector2i) -> bool:
 func is_owned_depot(coords: Vector2i, id: int) -> bool:
 	return depots.has(coords) and depots[coords][1] == id
 
-func add_hold(coords: Vector2i, hold_name: String, player_id: int):
+func add_hold(coords: Vector2i, hold_name: String, player_id: int) -> void:
 	holds[coords] = [hold_name, player_id]
 
 func get_hold_name(coords: Vector2i) -> String:
@@ -48,30 +57,33 @@ func is_owned_hold(coords: Vector2i, id: int) -> bool:
 	return holds.has(coords) and holds[coords][1] == id
 
 func create_new_province() -> int:
-	var province_id = provinces.size()
+	var province_id: int = provinces.size()
 	provinces[province_id] = province.new(province_id)
 	return province_id
 
-func create_new_if_empty(province_id: int):
+func create_new_if_empty(province_id: int) -> void:
 	if !provinces.has(province_id):
 		provinces[province_id] = province.new(province_id)
 
-func add_tile_to_province(province_id: int, tile: Vector2i):
+func add_tile_to_province(province_id: int, tile: Vector2i) -> void:
 	assert(!tiles_to_province_id.has(tile))
 	tiles_to_province_id[tile] = province_id
 	provinces[province_id].add_tile(tile)
 
-func add_many_tiles_to_province(province_id: int, tiles: Array):
-	for tile in tiles:
+func add_many_tiles_to_province(province_id: int, tiles: Array) -> void:
+	for tile: Vector2i in tiles:
 		add_tile_to_province(province_id, tile)
 
-func add_population_to_province(tile: Vector2i, pop: int):
-	var id := get_province_id(tile)
+func add_population_to_province(tile: Vector2i, pop: int) -> void:
+	var id: int = get_province_id(tile)
 	get_province(id).population += pop
 
 func get_province_population(tile: Vector2i) -> int:
 	var id: int = get_province_id(tile)
 	return get_province(id).population
+
+func get_population(province_id: int) -> int:
+	return get_province(province_id).population
 
 func is_tile_a_province(tile: Vector2i) -> bool:
 	return tiles_to_province_id.has(tile)

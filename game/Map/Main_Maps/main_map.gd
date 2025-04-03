@@ -12,7 +12,6 @@ var unique_id: int
 @onready var game: Node = get_parent().get_parent()
 @onready var rail_placer: Node = $Rail_Placer
 @onready var map_node: Node = get_parent()
-var tile_info: Node
 var unit_map: TileMapLayer
 var money_interface: Node
 var untraversable_tiles: Dictionary = {}
@@ -59,7 +58,7 @@ func _ready():
 		add_child(unit_map)
 		for cell in get_used_cells():
 			rail_placer.init_track_connection.rpc(cell)
-		tile_info = load("res://Map/tile_info.gd").new(self)
+		map_data.new(self)
 		create_client_tile_info.rpc(self)
 		var cargo_controller = load("res://Cargo/cargo_controller.tscn").instantiate()
 		cargo_controller.assign_map_node(map_node)
@@ -79,7 +78,8 @@ func _ready():
 #Constants
 @rpc("authority", "call_remote", "reliable")
 func create_client_tile_info(cities: Dictionary):
-	tile_info = load("res://Client_Objects/client_tile_info.gd").new(self, cities)
+	#TODO: Deal with client tile info
+	map_data.new(self)
 
 func is_owned(player_id: int, coords: Vector2i) -> bool:
 	return map_node.is_owned(player_id, coords)
@@ -164,16 +164,16 @@ func place_road_depot():
 
 #Cargo
 func is_depot(coords: Vector2i) -> bool:
-	return tile_info.is_depot(coords)
+	return map_data.get_instance().is_depot(coords)
 
 func is_owned_depot(coords: Vector2i) -> bool:
-	return tile_info.is_owned_depot(coords, unique_id)
+	return map_data.get_instance().is_owned_depot(coords, unique_id)
 
 func is_hold(coords: Vector2i) -> bool:
 	return terminal_map.is_hold(coords)
 
 func is_owned_hold(coords: Vector2i) -> bool:
-	return tile_info.is_owned_hold(coords, unique_id)
+	return map_data.get_instance().is_owned_hold(coords, unique_id)
 
 func is_factory(coords: Vector2i) -> bool:
 	return terminal_map.is_factory(coords)
@@ -182,10 +182,10 @@ func is_owned_station(coords: Vector2i) -> bool:
 	return terminal_map.is_station(coords)
 
 func is_location_valid_stop(coords: Vector2i) -> bool:
-	return tile_info.is_hold(coords) or tile_info.is_depot(coords)
+	return map_data.get_instance().is_hold(coords) or map_data.get_instance().is_depot(coords)
 
 func get_depot_or_terminal(coords: Vector2i) -> terminal:
-	var new_depot = tile_info.get_depot(coords)
+	var new_depot: terminal = map_data.get_instance().get_depot(coords)
 	if new_depot != null:
 		return new_depot
 	return terminal_map.get_terminal(coords)
@@ -214,8 +214,8 @@ func get_number_of_trains() -> int:
 	return count
 
 func get_trains_in_depot(coords: Vector2i) -> Array:
-	if tile_info.is_depot(coords):
-		return tile_info.get_depot(coords).get_trains_simplified()
+	if map_data.get_instance().is_depot(coords):
+		return map_data.get_instance().get_depot(coords).get_trains_simplified()
 	return []
 
 #Rail Builder
@@ -431,7 +431,7 @@ func update_money_label(amount: int):
 
 #Tile Data
 func get_tile_data():
-	return tile_info
+	return map_data.get_instance()
 
 func get_tile_connections(coords: Vector2i):
 	return rail_placer.get_track_connections(coords)
@@ -463,7 +463,7 @@ func set_cell_rail_placer_server(coords: Vector2i, orientation: int, type: int, 
 		place_tile.rpc(coords, orientation, type, new_owner)
 		if type == 1:
 			encode_depot(coords, new_owner)
-			var depot_name = tile_info.get_depot_name(coords)
+			var depot_name: String = map_data.get_instance().get_depot_name(coords)
 			encode_depot_client.rpc(coords, depot_name, new_owner)
 		elif type == 2:
 			encode_station.rpc(coords, new_owner)
@@ -473,13 +473,15 @@ func set_cell_rail_placer_server(coords: Vector2i, orientation: int, type: int, 
 
 @rpc("authority", "call_local", "unreliable")
 func encode_depot(coords: Vector2i, new_owner: int):
-	tile_info.add_depot(coords, depot.new(coords, new_owner, self), new_owner)
+	map_data.get_instance().add_depot(coords, depot.new(coords, new_owner, self), new_owner)
 @rpc("authority", "call_remote", "unreliable")
 func encode_depot_client(coords: Vector2i, depot_name: String, new_owner: int):
-	tile_info.add_depot(coords, depot_name, new_owner)
+	#TODO: Client map_data
+	pass
+	#map_data.get_instance().add_depot(coords, depot_name, new_owner)
 @rpc("authority", "call_local", "unreliable")
 func encode_station(coords: Vector2i, new_owner: int):
-	tile_info.add_hold(coords, "Station", new_owner)
+	map_data.get_instance().add_hold(coords, "Station", new_owner)
 
 #Rails, Depot, Station
 func place_rail_general(coords: Vector2i, orientation: int, type: int):

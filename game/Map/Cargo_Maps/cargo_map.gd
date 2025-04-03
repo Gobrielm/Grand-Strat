@@ -20,10 +20,13 @@ func transform_construction_site_to_factory(coords: Vector2i) -> void:
 	set_tile(coords, Vector2i(4, 1))
 
 func place_random_industries() -> void:
-	var tile_info: Node = Utils.tile_info
-	for province_id: int in tile_info.provinces:
-		var pop: int = tile_info.get_population(province_id)
-		
+	assert(false,"Resource mag broken, fix")
+	var map_data_singleton: map_data = map_data.get_instance()
+	for province_id: int in map_data_singleton.provinces:
+		var pop: int = map_data_singleton.get_population(province_id)
+		if (pop) % 100000 == 0:
+			var prov: province = map_data_singleton.get_province(province_id)
+			place_random_industry(prov.get_random_tile())
 
 func place_random_industry(tile: Vector2i) -> void:
 	var tile_ownership: Node = Utils.tile_ownership
@@ -74,3 +77,6 @@ func place_resources(map: TileMapLayer) -> void:
 func set_tile(coords: Vector2i, atlas: Vector2i) -> void:
 	set_cell(coords, 0, atlas)
 	Utils.world_map.make_cell_invisible(coords)
+
+func _on_cargo_values_finished_created_map_resources() -> void:
+	place_random_industries()

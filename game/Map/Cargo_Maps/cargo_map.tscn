@@ -39,3 +39,5 @@ y_sort_origin = 1
 script = ExtResource("2_nrxwi")
 
 [node name="cargo_values" parent="." instance=ExtResource("3_uyn2n")]
+
+[connection signal="finished_created_map_resources" from="cargo_values" to="." method="_on_cargo_values_finished_created_map_resources"]

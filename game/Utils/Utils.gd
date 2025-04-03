@@ -4,7 +4,6 @@ static var cargo_map: TileMapLayer
 static var cargo_values: Node
 static var tile_ownership: TileMapLayer
 static var world_map: TileMapLayer
-static var tile_info: Node
 static var rail_placer: Node
 static var background_music: AudioStreamPlayer
 
@@ -23,9 +22,6 @@ static func assign_rail_placer(_rail_placer: Node) -> void:
 
 static func assign_world_map(_world_map: TileMapLayer) -> void:
 	world_map = _world_map
-
-static func assign_tile_info(_tile_info: Node) -> void:
-	tile_info = _tile_info
 
 static func assign_background_music(_background_music: AudioStreamPlayer) -> void:
 	background_music = _background_music

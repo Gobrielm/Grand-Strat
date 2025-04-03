@@ -32,7 +32,6 @@ static var base_prices: Dictionary = {
 
 static var map: TileMapLayer
 static var cargo_map: TileMapLayer
-static var tile_info: Node
 
 static func _static_init() -> void:
 	create_cargo_types()
@@ -51,7 +50,6 @@ static func _on_month_tick_timeout() -> void:
 
 static func create(_map: TileMapLayer) -> void:
 	map = _map
-	tile_info = map.get_tile_data()
 
 static func create_amount_of_primary_goods() -> void:
 	for i: int in cargo_types.size():

@@ -22,7 +22,7 @@ func _init(_map: TileMapLayer):
 	map = _map
 
 func create_resource_array() -> Array:
-	var toReturn = []
+	var toReturn: Array = []
 	for i in terminal_map.amount_of_primary_goods:
 		toReturn.push_back({})
 	

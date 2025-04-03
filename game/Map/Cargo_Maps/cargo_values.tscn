@@ -37,6 +37,7 @@ sources/1 = SubResource("TileSetAtlasSource_v58i0")
 
 [node name="cargo_values" type="Node2D"]
 modulate = Color(1, 0, 1, 1)
+z_index = 1
 script = ExtResource("2_hxp8l")
 
 [node name="Layer0Clay" type="TileMapLayer" parent="."]

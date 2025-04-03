@@ -40,7 +40,7 @@ func refresh_window():
 
 @rpc("any_peer", "call_local", "unreliable")
 func request_current_name(coords: Vector2i):
-	var current_name = map.tile_info.get_depot_name(coords)
+	var current_name = map_data.get_instance().get_depot_name(coords)
 	update_current_name.rpc_id(multiplayer.get_remote_sender_id(), current_name)
 
 @rpc("any_peer", "call_local", "unreliable")

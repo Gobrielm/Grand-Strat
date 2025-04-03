@@ -6,6 +6,8 @@ const TILES_PER_ROW: int = 8
 const MAX_RESOURCES: Array = [5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, -1, 5000, -1, -1, -1, -1, 5000, 5000, 5000, 5000, 5000, 50000, 1000]
 var magnitude_layers: Array = []
 
+signal finished_created_map_resources
+
 func _ready() -> void:
 	create_magnitude_layers()
 
@@ -84,6 +86,7 @@ func place_resources(_map: TileMapLayer) -> void:
 	map = _map
 	var helper: Node = load("res://Map/Cargo_Maps/cargo_values_helper.gd").new(map)
 	var resource_array: Array = helper.create_resource_array()
+	assert(resource_array != null or resource_array.is_empty(), "Resources generated improperly")
 	helper.queue_free()
 	create_territories()
 	place_population()
@@ -94,6 +97,8 @@ func place_resources(_map: TileMapLayer) -> void:
 		thread.start(autoplace_resource.bind(resource_array[i], get_child(i), MAX_RESOURCES[i]))
 	for thread: Thread in threads:
 		thread.wait_to_finish()
+	finished_created_map_resources.emit()
+	
 
 func autoplace_resource(tiles: Dictionary, layer: TileMapLayer, max_resouces: int) -> void:
 	var array: Array = tiles.keys()
@@ -113,7 +118,7 @@ func place_population() -> void:
 
 func create_territories() -> void:
 	var provinces: TileMapLayer = preload("res://Map/Map_Info/provinces.tscn").instantiate()
-	var tile_info: Node = Utils.tile_info
+	var tile_info: map_data = map_data.get_instance()
 	for real_x: int in range(-609, 671):
 		for real_y: int in range(-243, 282):
 			var tile: Vector2i = Vector2i(real_x, real_y)
