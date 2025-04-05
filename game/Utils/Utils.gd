@@ -7,6 +7,8 @@ static var world_map: TileMapLayer
 static var rail_placer: Node
 static var background_music: AudioStreamPlayer
 
+static var mutex: Mutex = Mutex.new()
+
 static func round(num: float, places: int) -> float:
 	return round(num * pow(10, places)) / pow(10, places)
 
@@ -27,7 +29,9 @@ static func assign_background_music(_background_music: AudioStreamPlayer) -> voi
 	background_music = _background_music
 
 static func is_tile_water(coords: Vector2i) -> bool:
+	mutex.lock()
 	var atlas: Vector2i = world_map.get_cell_atlas_coords(coords)
+	mutex.unlock()
 	return atlas == Vector2i(6, 0) or atlas == Vector2i(7, 0) or atlas == Vector2i(-1, -1)
 
 static func is_tile_open(coords: Vector2i, id: int) -> bool:

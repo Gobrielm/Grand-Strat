@@ -12,6 +12,7 @@ var provinces: Dictionary = {}
 
 var tiles_to_province_id: Dictionary = {}
 
+var mutex: Mutex = Mutex.new()
 static var singleton_instance: map_data
 
 func _init(new_map: TileMapLayer) -> void:
@@ -75,8 +76,10 @@ func add_many_tiles_to_province(province_id: int, tiles: Array) -> void:
 		add_tile_to_province(province_id, tile)
 
 func add_population_to_province(tile: Vector2i, pop: int) -> void:
+	mutex.lock()
 	var id: int = get_province_id(tile)
 	get_province(id).population += pop
+	mutex.unlock()
 
 func get_province_population(tile: Vector2i) -> int:
 	var id: int = get_province_id(tile)

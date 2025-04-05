@@ -10,16 +10,16 @@ func _init() -> void:
 
 func create_population_map() -> void:
 	population = preload("res://Map/Map_Info/population.tscn").instantiate()
-	var tile_info: map_data = map_data.get_instance()
-	assert(tile_info != null)
+	var map_data_obj: map_data = map_data.get_instance()
+	assert(map_data_obj != null)
 	var thread: Thread = Thread.new()
 	var thread1: Thread = Thread.new()
 	var thread2: Thread = Thread.new()
 	var thread3: Thread = Thread.new()
-	thread.start(create_part_of_array.bind(-609, 0, -243, 0, tile_info))
-	thread1.start(create_part_of_array.bind(0, 671, -243, 0, tile_info))
-	thread2.start(create_part_of_array.bind(-609, 0, 0, 282, tile_info))
-	thread3.start(create_part_of_array.bind(0, 671, 0, 282, tile_info))
+	thread.start(create_part_of_array.bind(-609, 0, -243, 0, map_data_obj))
+	thread1.start(create_part_of_array.bind(0, 671, -243, 0, map_data_obj))
+	thread2.start(create_part_of_array.bind(-609, 0, 0, 282, map_data_obj))
+	thread3.start(create_part_of_array.bind(0, 671, 0, 282, map_data_obj))
 	var threads: Array = [thread, thread1, thread2, thread3]
 	for thd: Thread in threads:
 		thd.wait_to_finish()
@@ -27,7 +27,7 @@ func create_population_map() -> void:
 	#print(total)
 	population.queue_free()
 
-func create_part_of_array(from_x: int, to_x: int, from_y: int, to_y: int, tile_info: Node) -> void:
+func create_part_of_array(from_x: int, to_x: int, from_y: int, to_y: int, map_data_obj: map_data) -> void:
 	for real_x: int in range(from_x, to_x):
 		for real_y: int in range(from_y, to_y):
 			@warning_ignore("integer_division")
@@ -35,9 +35,9 @@ func create_part_of_array(from_x: int, to_x: int, from_y: int, to_y: int, tile_i
 			@warning_ignore("integer_division")
 			var y: int = (real_y + 243) * 7 / 4
 			var tile: Vector2i = Vector2i(real_x, real_y)
-			helper(x, y, tile, tile_info)
+			helper(x, y, tile, map_data_obj)
 
-func helper(x: int, y: int, tile: Vector2i, tile_info: Node) -> void:
+func helper(x: int, y: int, tile: Vector2i, map_data_obj: map_data) -> void:
 	if Utils.is_tile_water(tile):
 		return
 	var color: Color = im_population.get_pixel(x, y)
@@ -76,9 +76,9 @@ func helper(x: int, y: int, tile: Vector2i, tile_info: Node) -> void:
 		elif color.b > 0.25:
 			num = (randi() % 300000 + 1000000)
 			other_num = 7
-	mutex.lock()
-	tile_info.add_population_to_province(tile, num)
+	map_data_obj.add_population_to_province(tile, num)
 	population.set_population(tile, other_num)
+	mutex.lock()
 	total += num
 	mutex.unlock()
 	

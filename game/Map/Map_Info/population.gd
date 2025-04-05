@@ -1,5 +1,7 @@
 extends TileMapLayer
 
+var mutex: Mutex = Mutex.new()
+
 func set_population(tile: Vector2i, num: int) -> void:
 	var atlas: Vector2i
 	if num == 1:
@@ -19,4 +21,6 @@ func set_population(tile: Vector2i, num: int) -> void:
 		atlas = Vector2i(6,2)
 	else:
 		atlas = Vector2i(1, 3)
+	mutex.lock()
 	set_cell(tile, 0, atlas)
+	mutex.unlock()
