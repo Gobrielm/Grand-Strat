@@ -4,6 +4,8 @@ var connected_terminals: Dictionary = {}
 
 var trade_orders: Dictionary = {}
 
+const MAX_SUPPLY_DISTANCE: int = 5
+
 func _init(new_location: Vector2i, _player_owner: int) -> void:
 	super._init(new_location, _player_owner)
 
@@ -11,16 +13,7 @@ func get_orders() -> Dictionary:
 	return trade_orders
 
 func place_order(type: int, amount: int, buy: bool) -> void:
-	var fact: factory_template
-	for term: terminal in connected_terminals.values():
-		if term is factory_template and ((term.does_create(type) and buy) or (term.does_accept(type) and !buy)):
-			fact = term
-	var order: trade_order
-	if fact != null:
-		order = trade_order.new(type, amount, buy, fact.get_location())
-		fact.add_order(location, order)
-	else:
-		order = trade_order.new(type, amount, buy, location)
+	var order: trade_order = trade_order.new(type, amount, buy)
 	trade_orders[type] = order
 
 func edit_order(type: int, amount: int, buy: bool) -> void:
@@ -35,17 +28,8 @@ func edit_order(type: int, amount: int, buy: bool) -> void:
 func remove_order(type: int) -> void:
 	if trade_orders.has(type):
 		var order: trade_order = trade_orders[type]
-		var term_coords: Vector2i = order.get_coords_of_factory()
-		if term_coords != location:
-			var term: terminal = connected_terminals[term_coords]
-			term.remove_order(location, type)
 		trade_orders.erase(type)
 		order.queue_free()
-
-func can_take_type(type: int, term: terminal) -> bool:
-	if term is factory or term is apex_factory:
-		return term.does_accept(type)
-	return false
 
 func get_desired_cargo_to_load(type: int, price_per: float) -> int:
 	return min(max_amount - get_cargo_amount(type), get_amount_can_buy(price_per))
@@ -76,15 +60,37 @@ func randomize_trade_orders() -> Array:
 
 func complete_order(order: trade_order) -> void:
 	var type: int = order.get_type()
-	if order.get_coords_of_factory() == location:
-		return
-	var fact: factory_template = terminal_map.get_terminal(order.get_coords_of_factory())
-	var amount: int = min(fact.get_desired_cargo_to_load(type), order.get_amount(), LOAD_TICK_AMOUNT)
-	amount = transfer_cargo(type, amount)
-	assert(amount > -100000)
-	var price: float = fact.get_local_price(type)
-	fact.buy_cargo(type, amount)
-	add_cash(round(amount * price))
+	var target: terminal
+	var amount_traded: int
+	while (amount_traded < min(order.get_amount(), LOAD_TICK_AMOUNT)):
+		for term: terminal in get_road_supplied_terminals():
+			var amount: int = min(term.get_desired_cargo_to_load(type), order.get_amount(), LOAD_TICK_AMOUNT)
+			amount = transfer_cargo(type, amount)
+			assert(amount > -100000)
+			var price: float = term.get_local_price(type)
+			term.buy_cargo(type, amount)
+			add_cash(round(amount * price))
+
+func get_road_supplied_terminals() -> Array[terminal]:
+	var visited: Dictionary = {}
+	var world_map: TileMapLayer = Utils.world_map
+	var queue = [location]
+	var toReturn: Array[terminal] = []
+	while !queue.is_empty():
+		var curr: Vector2i = queue.pop_front()
+		
+		for tile: Vector2i in world_map.get_surrounding_cells(curr):
+			if !Utils.is_tile_water(tile):
+				if !visited.has(tile):
+					visited[tile] = visited[curr] + 1
+				elif visited[tile] > visited[curr] + 1:
+					visited[tile] = visited[curr] + 1
+				#TODO: Ensure this includes everything that needs trade
+				if terminal_map.is_factory(tile) or terminal_map.is_station(tile):
+					toReturn.push_back(terminal_map.get_terminal(tile))
+				if visited[tile] < MAX_SUPPLY_DISTANCE:
+					queue.push_back(tile)
+	return toReturn
 
 func add_connected_terminal(new_terminal: terminal) -> void:
 	connected_terminals[new_terminal.get_location()] = new_terminal
@@ -96,7 +102,7 @@ func remove_connected_terminal(new_terminal: terminal) -> void:
 
 func update_accepts_from_trains() -> void:
 	reset_accepts_train()
-	for obj:terminal in connected_terminals.values():
+	for obj: terminal in connected_terminals.values():
 		if obj is fixed_hold:
 			add_accepts(obj)
 

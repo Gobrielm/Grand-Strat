@@ -27,16 +27,20 @@ func _init(new_location: Vector2i, _player_owner: int, new_inputs: Dictionary, n
 	level = 1
 	employment_total = 1000
 
-func add_order(_coords: Vector2i, order: trade_order) -> void:
-	if !trade_orders.has(_coords):
-		trade_orders[_coords] = {}
-	trade_orders[_coords][order.get_type()] = order
+func add_order(order: trade_order) -> void:
+	var type: int = order.get_type()
+	if trade_orders.has(type):
+		edit_order(order)
+	trade_orders[type] = order
 
-func edit_order(_coords: Vector2i, order: trade_order) -> void:
-	trade_orders[_coords][order.get_type()] = order
+func edit_order(order: trade_order) -> void:
+	var type: int = order.get_type()
+	if trade_orders.has(type):
+		trade_orders[type].queue_free()
+	trade_orders[type] = order
 
-func remove_order(_coords: Vector2i, _type: int) -> void:
-	trade_orders[_coords].erase(_type)
+func remove_order(p_type: int) -> void:
+	trade_orders.erase(p_type)
 
 func does_create(type: int) -> bool:
 	return outputs.has(type)
@@ -143,7 +147,7 @@ func distribute_to_order(_station: station, order: trade_order) -> void:
 func get_level() -> int:
 	if employment == 0:
 		return 0
-	return round((level * 10) * employment_total / employment)
+	return round(float(level * 10) * employment_total / employment)
 
 func get_cost_for_upgrade() -> int:
 	return COST_FOR_UPGRADE
