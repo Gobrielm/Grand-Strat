@@ -20,19 +20,34 @@ func transform_construction_site_to_factory(coords: Vector2i) -> void:
 	set_tile(coords, Vector2i(4, 1))
 
 func place_random_industries() -> void:
-	assert(false,"Resource mag broken, fix")
+	#assert(false ,"Resource mag broken, fix")
 	var map_data_singleton: map_data = map_data.get_instance()
 	for province_id: int in map_data_singleton.provinces:
 		var pop: int = map_data_singleton.get_population(province_id)
-		if (pop) % 100000 == 0:
-			var prov: province = map_data_singleton.get_province(province_id)
-			place_random_industry(prov.get_random_tile())
+		var chances: Array = [
+			{ "threshold": 10000000, "mod": 1 },
+			{ "threshold": 1000000,  "mod": 3 },
+			{ "threshold": 100000,   "mod": 5 },
+			{ "threshold": 10000,    "mod": 10 },
+			{ "threshold": 0,        "mod": 30 }
+		]
+		for entry: Dictionary in chances:
+			if pop > entry.threshold and randi() % entry.mod == 0:
+				pick_and_place_random_industry(map_data_singleton, province_id)
+				break
+
+
+func pick_and_place_random_industry(map_data_singleton: map_data, province_id: int) -> void:
+	var prov: province = map_data_singleton.get_province(province_id)
+	place_random_industry(prov.get_random_tile())
 
 func place_random_industry(tile: Vector2i) -> void:
 	var tile_ownership: Node = Utils.tile_ownership
 	var best_resource: int = cargo_values.get_best_resource(tile)
 	if best_resource == -1:
+		print("attempted")
 		return
+	print("did")
 	create_factory(tile_ownership.get_player_id_from_cell(tile), tile, get_primary_recipe_for_type(best_resource))
 
 func get_primary_recipe_for_type(type: int) -> Array:

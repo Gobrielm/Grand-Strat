@@ -106,7 +106,8 @@ func autoplace_resource(tiles: Dictionary, layer: TileMapLayer, max_resouces: in
 	var count: int = 0
 	for cell: Vector2i in array:
 		var mag: int = randi() % 4 + tiles[cell]
-		layer.call_deferred_thread_group("set_cell", cell, 1, get_atlas_for_magnitude(mag))
+		layer.set_cell(cell, 1, get_atlas_for_magnitude(mag))
+		#layer.call_deferred_thread_group("set_cell", cell, 1, get_atlas_for_magnitude(mag))
 		count += mag
 		if count > max_resouces and max_resouces != -1:
 			return

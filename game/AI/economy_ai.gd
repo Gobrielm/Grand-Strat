@@ -4,14 +4,14 @@ extends Node
 var id: int
 var thread: Thread
 var stored_tile: Vector2i
-var pending_deferred_calls := 0
+var pending_deferred_calls: int = 0
 
 #Set of States
 var world_map: TileMapLayer
 var tile_ownership: TileMapLayer
-var cargo_map := terminal_map.cargo_map
-var cargo_values = cargo_map.cargo_values
-var rail_placer
+var cargo_map: TileMapLayer = terminal_map.cargo_map
+var cargo_values: Node = cargo_map.cargo_values
+var rail_placer: Node
 
 #Set of Actions
 enum ai_actions {
@@ -21,7 +21,7 @@ enum ai_actions {
 	CONNECT_TOWN
 }
 
-func _init(_id: int, _world_map: TileMapLayer): 
+func _init(_id: int, _world_map: TileMapLayer) -> void: 
 	thread = Thread.new()
 	world_map = _world_map
 	id = _id
@@ -29,7 +29,7 @@ func _init(_id: int, _world_map: TileMapLayer):
 	tile_ownership = Utils.tile_ownership
 	tile_ownership.add_player_to_country(id, Vector2i(96, -111))
 
-func process():
+func process() -> void:
 	if thread.is_alive():
 		return
 	elif thread.is_started():
@@ -38,15 +38,15 @@ func process():
 		OS.delay_msec(100)
 	thread.start(run_ai_cycle.bind())
 
-func _exit_tree():
+func _exit_tree() -> void:
 	thread.wait_to_finish()
 
-func acknowledge_pending_deferred_call():
+func acknowledge_pending_deferred_call() -> void:
 	pending_deferred_calls -= 1
 
-func run_ai_cycle():
+func run_ai_cycle() -> void:
 	var start: float = Time.get_ticks_msec()
-	var action_type := choose_type_of_action()
+	var action_type: ai_actions = choose_type_of_action()
 	#Add more actions later
 	if action_type == ai_actions.PLACE_FACTORY:
 		place_factory(get_most_needed_cargo())
@@ -70,20 +70,20 @@ func choose_type_of_action() -> ai_actions:
 	return ai_actions.PLACE_FACTORY
 
 func are_there_unconnected_towns() -> bool:
-	var callable := Callable(terminal_map, "is_town")
+	var callable: Callable = Callable(terminal_map, "is_town")
 	assert(callable.is_valid())
 	return search_for(callable)
 
 func are_there_unconnected_buildings() -> bool:
-	var callable := Callable(terminal_map, "is_owned_construction_site")
+	var callable: Callable = Callable(terminal_map, "is_owned_construction_site")
 	assert(callable.is_valid())
 	return search_for(callable)
 
 func search_for(target: Callable) -> bool:
 	for tile: Vector2i in get_owned_tiles():
 		if target.call(tile):
-			var found := false
-			for cell in world_map.get_surrounding_cells(tile):
+			var found: bool = false
+			for cell: Vector2i in world_map.get_surrounding_cells(tile):
 				if tile_ownership.is_owned(id, cell) and terminal_map.is_station(cell):
 					found = true
 			if !found:
@@ -94,8 +94,8 @@ func search_for(target: Callable) -> bool:
 func are_there_unconnected_stations() -> bool:
 	for tile: Vector2i in get_owned_tiles():
 		if terminal_map.is_station(tile):
-			var found := false
-			for cell in world_map.get_surrounding_cells(tile):
+			var found: bool = false
+			for cell: Vector2i in world_map.get_surrounding_cells(tile):
 				#Check if there is rail
 				if world_map.do_tiles_connect(tile, cell):
 					found = true
@@ -104,14 +104,14 @@ func are_there_unconnected_stations() -> bool:
 				return true
 	return false
 
-func place_factory(type: int):
+func place_factory(type: int) -> void:
 	var best_tile: Vector2i
 	if is_cargo_primary(type):
 		best_tile = get_optimal_primary_industry(type)
 		if best_tile != Vector2i(0, 0):
 			create_factory(best_tile, type)
 
-func create_factory(location: Vector2i, type: int):
+func create_factory(location: Vector2i, type: int) -> void:
 	cargo_map.create_construction_site(id, location)
 	for recipe_set: Array in recipe.get_set_recipes():
 		for output: int in recipe_set[1]:
@@ -121,13 +121,13 @@ func create_factory(location: Vector2i, type: int):
 
 func get_optimal_primary_industry(type: int) -> Vector2i:
 	var best_location: Vector2i
-	var score := -10000
+	var score: int = -10000
 	for tile: Vector2i in get_owned_tiles():
 		if !Utils.is_tile_open(tile, id):
 			continue
 		#TODO: Will kill runtime if station isn't close or doesn't exist
-		var distance = distance_to_closest_station(tile)
-		var current_score = get_cargo_magnitude(tile, type) - round(distance / 7.0)
+		var distance: int = distance_to_closest_station(tile)
+		var current_score: int = get_cargo_magnitude(tile, type) - round(distance / 7.0)
 		if distance == 1:
 			current_score += 5
 		var free_tile: bool = false
@@ -149,7 +149,7 @@ func is_tile_connected_to_world(coords: Vector2i) -> bool:
 	
 	while !queue.is_empty():
 		var curr: Vector2i = queue.pop_front()
-		for tile in world_map.get_surrounding_cells(curr):
+		for tile: Vector2i in world_map.get_surrounding_cells(curr):
 			if !visited.has(tile):
 				if terminal_map.is_town(tile) or terminal_map.is_station(tile):
 					return true
@@ -162,24 +162,24 @@ func get_cargo_magnitude(coords: Vector2i, type: int) -> int:
 	return cargo_values.get_tile_magnitude(coords, type)
 
 func distance_to_closest_station(coords: Vector2i) -> int:
-	var target1 := Callable(terminal_map, "is_station")
-	var target2 := Callable(terminal_map, "is_town")
+	var target1: Callable = Callable(terminal_map, "is_station")
+	var target2: Callable = Callable(terminal_map, "is_town")
 	assert(target1.is_valid())
 	assert(target2.is_valid())
 	return info_of_closest_target(coords, target1, target2)[0]
 
 func coords_of_closest_station(coords: Vector2i) -> Vector2i:
-	var target1 := Callable(terminal_map, "is_station")
-	var target2 := Callable(terminal_map, "is_town")
+	var target1: Callable = Callable(terminal_map, "is_station")
+	var target2: Callable = Callable(terminal_map, "is_town")
 	assert(target1.is_valid())
 	assert(target2.is_valid())
 	return info_of_closest_target(coords, target1, target2)[1]
 
 func info_of_closest_target(coords: Vector2i, target: Callable, secondary_target: Callable) -> Array:
-	var queue := [coords]
-	var visited := {}
+	var queue: Array = [coords]
+	var visited: Dictionary = {}
 	visited[coords] = 0
-	var closest_secondary_target = null
+	var closest_secondary_target: Array = []
 	var cycles: int = 0
 	while !queue.is_empty():
 		var curr: Vector2i = queue.pop_front()
@@ -198,7 +198,7 @@ func info_of_closest_target(coords: Vector2i, target: Callable, secondary_target
 					queue.append(tile)
 				if closest_secondary_target == null and secondary_target.call(tile):
 					closest_secondary_target = [visited[curr] + 1, tile]
-	if closest_secondary_target == null:
+	if closest_secondary_target.is_empty():
 		return [10000000, null]
 	return closest_secondary_target
 
@@ -232,11 +232,11 @@ func get_town_fulfillment() -> Dictionary:
 		total[type] = total[type] / towns
 	return total
 
-func connect_factory(coords: Vector2i):
+func connect_factory(coords: Vector2i) -> void:
 	var closest_station: Vector2i = coords_of_closest_station(coords)
 	place_station(coords, closest_station)
 
-func place_station(center: Vector2i, dest: Vector2i):
+func place_station(center: Vector2i, dest: Vector2i) -> void:
 	var info := get_closest_info(center, dest)
 	var orientation = info[1]
 	var best = info[0]
@@ -261,16 +261,16 @@ func get_closest_info(center: Vector2i, dest: Vector2i) -> Array:
 		orientation_tracker = (orientation_tracker + 1) % 6
 	return [best, orientation]
 
-func create_station(location: Vector2i, orientation: int):
+func create_station(location: Vector2i, orientation: int) -> void:
 	#Note: If needed on same process bad things will happen
 	world_map.call_deferred_thread_group("set_cell_rail_placer_request", location, orientation, 2, id)
 	pending_deferred_calls += 1
 
-func connect_station(coords: Vector2i):
+func connect_station(coords: Vector2i) -> void:
 	var closest_station := coords_of_closest_station(coords)
 	build_rail(coords, closest_station, Callable(Utils, "just_has_rails"))
 
-func connect_town(coords: Vector2i):
+func connect_town(coords: Vector2i) -> void:
 	#Function is sort of a test and shouldn't ever be used
 	assert(false)
 	var target1 := Callable(terminal_map, "is_town")
@@ -325,7 +325,7 @@ func get_town_tiles() -> Array:
 func get_reward() -> float:
 	return 0.0
 
-func build_rail(start: Vector2i, end: Vector2i, criteria_for_tile: Callable):
+func build_rail(start: Vector2i, end: Vector2i, criteria_for_tile: Callable) -> void:
 	#3 Scenerios for building rails
 	#1 Pt - to - pt -- Current
 	#2 Build 2 Way's with signals in cities, pt - to - pt elsewhere
@@ -335,7 +335,7 @@ func build_rail(start: Vector2i, end: Vector2i, criteria_for_tile: Callable):
 		for orientation: int in route[tile]:
 			place_rail(tile, orientation)
 
-func place_rail(coords: Vector2i, orientation: int):
+func place_rail(coords: Vector2i, orientation: int) -> void:
 	#Note: If needed on same process bad things will happen
 	world_map.call_deferred_thread_group("set_cell_rail_placer_request", coords, orientation, 0, id)
 	pending_deferred_calls += 1
@@ -427,17 +427,17 @@ func check_visited(visited: Dictionary, coords: Vector2i, direction: int) -> boo
 		return visited[coords][direction]
 	return false
 
-func intialize_visited(visited: Dictionary, coords: Vector2i, direction: int):
+func intialize_visited(visited: Dictionary, coords: Vector2i, direction: int) -> void:
 	if !visited.has(coords):
 		visited[coords] = [false, false, false, false, false, false]
 	visited[coords][direction] = true
 
-func intialize_tile_to_prev(tile_to_prev: Dictionary, coords: Vector2i, direction: int, prev: Vector2i):
+func intialize_tile_to_prev(tile_to_prev: Dictionary, coords: Vector2i, direction: int, prev: Vector2i) -> void:
 	if !tile_to_prev.has(coords):
 		tile_to_prev[coords] = [null, null, null, null, null, null]
 	tile_to_prev[coords][direction] = prev
 
-func intialize_order(order: Dictionary, coords: Vector2i, direction: int):
+func intialize_order(order: Dictionary, coords: Vector2i, direction: int) -> void:
 	if !order.has(coords):
 		order[coords] = []
 	order[coords].append(direction)
