@@ -20,7 +20,6 @@ func transform_construction_site_to_factory(coords: Vector2i) -> void:
 	set_tile(coords, Vector2i(4, 1))
 
 func place_random_industries() -> void:
-	#assert(false ,"Resource mag broken, fix")
 	var map_data_singleton: map_data = map_data.get_instance()
 	for province_id: int in map_data_singleton.provinces:
 		var pop: int = map_data_singleton.get_population(province_id)
@@ -45,9 +44,7 @@ func place_random_industry(tile: Vector2i) -> void:
 	var tile_ownership: Node = Utils.tile_ownership
 	var best_resource: int = cargo_values.get_best_resource(tile)
 	if best_resource == -1:
-		print("attempted")
 		return
-	print("did")
 	create_factory(tile_ownership.get_player_id_from_cell(tile), tile, get_primary_recipe_for_type(best_resource))
 
 func get_primary_recipe_for_type(type: int) -> Array:
