@@ -1,4 +1,4 @@
-class_name factory_template extends fixed_hold
+class_name factory_template extends broker
 
 const DAY_TICKS_PER_MONTH: int = 15
 const COST_FOR_UPGRADE: int = 1000
@@ -6,8 +6,6 @@ const COST_FOR_UPGRADE: int = 1000
 var level: int
 var employment: int
 var employment_total: int
-
-var trade_orders: Dictionary = {}
 
 var inputs: Dictionary
 var outputs: Dictionary
@@ -26,26 +24,6 @@ func _init(new_location: Vector2i, _player_owner: int, new_inputs: Dictionary, n
 	local_pricer = local_price_controller.new(inputs, outputs)
 	level = 1
 	employment_total = 1000
-
-func add_order(order: trade_order) -> void:
-	var type: int = order.get_type()
-	if trade_orders.has(type):
-		edit_order(order)
-	trade_orders[type] = order
-
-func edit_order(p_order: trade_order) -> void:
-	var type: int = p_order.get_type()
-	if trade_orders.has(type):
-		trade_orders[type].queue_free()
-	trade_orders[type] = p_order
-
-func get_order(type: int) -> trade_order:
-	if trade_orders.has(type):
-		return trade_orders[type]
-	return null
-
-func remove_order(p_type: int) -> void:
-	trade_orders.erase(p_type)
 
 func does_create(type: int) -> bool:
 	return outputs.has(type)
@@ -67,21 +45,18 @@ func get_local_prices() -> Dictionary:
 func get_local_price(type: int) -> float:
 	return local_pricer.get_local_price(type)
 
-func buy_cargo(type: int, amount: int) -> int:
-	add_cargo(type, amount)
+func buy_cargo(type: int, amount: int, price_per: float) -> void:
+	if amount == 0:
+		return
+	add_cargo_ignore_accepts(type, amount)
+	remove_cash(round(amount * price_per))
 	local_pricer.report_change(type, amount)
-	var price: int = calculate_reward(type, amount)
-	remove_cash(price)
-	return price
 
 func calculate_reward(type: int, amount: int) -> int:
 	return floor(get_local_price(type) * float(amount))
 
-func get_desired_cargo_to_load(type: int) -> int:
-	var price: float = get_local_price(type)
-	assert(price > 0)
-	var amount: int = get_amount_can_buy(get_local_price(type))
-	return min(amount, max_amount - get_cargo_amount(type))
+func get_desired_cargo_to_load(type: int, price_per: float) -> int:
+	return min(max_amount - get_cargo_amount(type), get_amount_can_buy(price_per))
 
 func transfer_cargo(type: int, amount: int) -> int:
 	var new_amount: int = min(storage[type], amount)
@@ -115,38 +90,26 @@ func add_outputs(batch_size: int) -> void:
 		local_pricer.report_change(index, amount)
 
 func distribute_cargo() -> void:
-	var array: Array = randomize_station_order()
-	for coords: Vector2i in array:
-		#TODO: Is get_terminal, check for better function
-		var _station: station = terminal_map.get_terminal(coords)
-		distribute_to_station(_station)
+	var term_options: Array[terminal] = get_road_supplied_terminals()
+	term_options.shuffle()
+	while !term_options.is_empty():
+		distribute_to_hold(term_options.pop_front())
 
-func randomize_station_order() -> Array:
-	var choices: Array = []
-	var toReturn: Array = []
-	for coords: Vector2i in trade_orders:
-		choices.append(coords)
-	while !choices.is_empty():
-		var rand_num: int = randi_range(0, choices.size() - 1)
-		var choice: int = choices.pop_at(rand_num)
-		toReturn.append(choice)
-	return toReturn
 
-func distribute_to_station(_station: station) -> void:
-	var coords: Vector2i = _station.get_location()
+func distribute_to_hold(_broker: broker) -> void:
 	for type: int in outputs:
-		if trade_orders[coords].has(type):
-			var order: trade_order = trade_orders[coords][type]
-			if order.is_buy_order():
-				distribute_to_order(_station, order)
+		if trade_orders.has(type):
+			var order: trade_order = trade_orders[type]
+			if order.is_sell_order():
+				distribute_to_order(_broker, order)
 
-func distribute_to_order(_station: station, order: trade_order) -> void:
+func distribute_to_order(_broker: broker, order: trade_order) -> void:
 	var type: int = order.get_type()
 	var price: float = get_local_price(type)
-	var amount: int = min(_station.get_desired_cargo_to_load(type, price), order.get_amount(), LOAD_TICK_AMOUNT)
+	var amount: int = min(_broker.get_desired_cargo_to_load(type, price), order.get_amount(), LOAD_TICK_AMOUNT)
 	local_pricer.report_attempt(type, min(amount, outputs[type]))
 	amount = transfer_cargo(type, amount)
-	_station.buy_cargo(type, amount, price)
+	_broker.buy_cargo(type, amount, price)
 	add_cash(round(amount * price))
 
 func get_level() -> int:

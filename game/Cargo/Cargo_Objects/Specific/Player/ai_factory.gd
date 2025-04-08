@@ -13,5 +13,11 @@ func change_orders() -> void:
 			order.change_amount(order.get_amount() - 1)
 		else:
 			var order: trade_order = get_order(type)
-			order.change_amount(outputs[type])
+			if order == null:
+				place_order(type, outputs[type], false)
+			else:
+				order.change_amount(outputs[type])
 	
+func month_tick() -> void:
+	change_orders()
+	super.month_tick()

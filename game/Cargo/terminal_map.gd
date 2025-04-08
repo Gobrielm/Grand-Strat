@@ -132,9 +132,14 @@ static func get_cash_of_firm(coords: Vector2i) -> int:
 static func transform_construction_site_to_factory(coords: Vector2i) -> void:
 	var old_site: construction_site = cargo_map_terminals[coords]
 	var obj_recipe: Array = old_site.get_recipe()
-	cargo_map_terminals[coords] = player_factory.new(coords, old_site.get_player_owner(), obj_recipe[0], obj_recipe[1])
+	cargo_map_terminals[coords] = create_factory(coords, old_site.get_player_owner(), obj_recipe[0], obj_recipe[1])
 	old_site.queue_free()
 	cargo_map.transform_construction_site_to_factory(coords)
+
+static func create_factory(p_location: Vector2i, p_player_owner: int, p_inputs: Dictionary, p_outputs: Dictionary) -> factory:
+	if p_player_owner > 0:
+		return player_factory.new(p_location, p_player_owner, p_inputs, p_outputs)
+	return ai_factory.new(p_location, p_player_owner, p_inputs, p_outputs)
 
 static func create_road_depot(coords: Vector2i, player_id: int) -> void:
 	if !cargo_map_terminals.has(coords):
@@ -172,6 +177,9 @@ static func get_terminal(coords: Vector2i) -> terminal:
 
 static func is_station(coords: Vector2i) -> bool:
 	return cargo_map_terminals.has(coords) and cargo_map_terminals[coords] is station
+
+static func is_broker(coords: Vector2i) -> bool:
+	return cargo_map_terminals.has(coords) and cargo_map_terminals[coords] is broker
 
 static func get_station(coords: Vector2i) -> station:
 	if is_station(coords):

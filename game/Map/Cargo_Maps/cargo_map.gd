@@ -54,10 +54,16 @@ func get_primary_recipe_for_type(type: int) -> Array:
 				return recipe_set
 	return []
 
-func create_factory(_player_id: int, coords: Vector2i, obj_recipe: Array) -> void:
-	var new_factory: player_factory = player_factory.new(coords, _player_id, obj_recipe[0], obj_recipe[1])
+func create_factory(p_player_id: int, coords: Vector2i, obj_recipe: Array) -> void:
+	var new_factory: factory
+	if p_player_id > 0:
+		new_factory =  player_factory.new(coords, p_player_id, obj_recipe[0], obj_recipe[1])
+	else:
+		new_factory =  ai_factory.new(coords, p_player_id, obj_recipe[0], obj_recipe[1])
 	set_tile(coords, get_atlas_cell(obj_recipe))
 	terminal_map.create_terminal(new_factory)
+
+
 
 func get_atlas_cell(obj_recipe: Array) -> Vector2i:
 	var output: Dictionary = obj_recipe[1]
