@@ -182,7 +182,7 @@ static func get_station_orders(coords: Vector2i) -> Dictionary:
 	var toReturn: Dictionary = {}
 	if is_station(coords):
 		var orders: Dictionary = cargo_map_terminals[coords].get_orders()
-		for type: trade_order in orders:
+		for type: int in orders:
 			toReturn[type] = orders[type].convert_to_array()
 	return toReturn
 

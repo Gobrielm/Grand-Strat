@@ -33,11 +33,16 @@ func add_order(order: trade_order) -> void:
 		edit_order(order)
 	trade_orders[type] = order
 
-func edit_order(order: trade_order) -> void:
-	var type: int = order.get_type()
+func edit_order(p_order: trade_order) -> void:
+	var type: int = p_order.get_type()
 	if trade_orders.has(type):
 		trade_orders[type].queue_free()
-	trade_orders[type] = order
+	trade_orders[type] = p_order
+
+func get_order(type: int) -> trade_order:
+	if trade_orders.has(type):
+		return trade_orders[type]
+	return null
 
 func remove_order(p_type: int) -> void:
 	trade_orders.erase(p_type)

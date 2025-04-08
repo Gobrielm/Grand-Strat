@@ -37,5 +37,5 @@ func get_amount() -> int:
 func convert_to_array() -> Array:
 	return [type, amount, buy]
 
-static func construct_from_array(array: Array) -> void:
+static func construct_from_array(array: Array) -> trade_order:
 	return trade_order.new(array[0], array[1], array[2])
