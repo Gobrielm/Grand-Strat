@@ -1,11 +1,18 @@
 class_name broker extends fixed_hold
 
-var trade_orders: Dictionary = {}
+var trade_orders: Dictionary[int, trade_order] = {}
 
 const MAX_SUPPLY_DISTANCE: int = 5
 
 func can_afford(price: int) -> bool:
 	return cash >= price
+
+func get_desired_cargo_to_load(type: int, price_per: float) -> int:
+	if trade_orders.has(type):
+		var trade_order_obj: trade_order = trade_orders[type]
+		if trade_order_obj.is_buy_order():
+			return min(max_amount - get_cargo_amount(type), get_amount_can_buy(price_per), trade_order_obj.get_amount())
+	return 0
 
 func buy_cargo(type: int, amount: int, price_per: float) -> void:
 	if amount == 0:
@@ -53,7 +60,7 @@ func get_road_supplied_terminals() -> Array[terminal]:
 					if visited[tile] < MAX_SUPPLY_DISTANCE:
 						queue.push_back(tile)
 				#TODO: Ensure this includes everything that needs trade
-				if terminal_map.is_broker(tile) or terminal_map.is_station(tile):
+				if terminal_map.is_broker(tile):
 					toReturn.push_back(terminal_map.get_terminal(tile))
 				
 	return toReturn

@@ -55,9 +55,6 @@ func buy_cargo(type: int, amount: int, price_per: float) -> void:
 func calculate_reward(type: int, amount: int) -> int:
 	return floor(get_local_price(type) * float(amount))
 
-func get_desired_cargo_to_load(type: int, price_per: float) -> int:
-	return min(max_amount - get_cargo_amount(type), get_amount_can_buy(price_per))
-
 func transfer_cargo(type: int, amount: int) -> int:
 	var new_amount: int = min(storage[type], amount)
 	remove_cargo(type, new_amount)
@@ -95,7 +92,6 @@ func distribute_cargo() -> void:
 	while !term_options.is_empty():
 		distribute_to_hold(term_options.pop_front())
 
-
 func distribute_to_hold(_broker: broker) -> void:
 	for type: int in outputs:
 		if trade_orders.has(type):
@@ -107,15 +103,19 @@ func distribute_to_order(_broker: broker, order: trade_order) -> void:
 	var type: int = order.get_type()
 	var price: float = get_local_price(type)
 	var amount: int = min(_broker.get_desired_cargo_to_load(type, price), order.get_amount(), LOAD_TICK_AMOUNT)
-	local_pricer.report_attempt(type, min(amount, outputs[type]))
-	amount = transfer_cargo(type, amount)
-	_broker.buy_cargo(type, amount, price)
-	add_cash(round(amount * price))
+	if amount != 0:
+		#TODO: Sends too many goods
+		local_pricer.report_attempt(type, min(amount, outputs[type]))
+		amount = transfer_cargo(type, amount)
+		_broker.buy_cargo(type, amount, price)
+		add_cash(round(amount * price))
 
 func get_level() -> int:
-	if employment == 0:
-		return 0
-	return round(float(level * 10) * employment_total / employment)
+	#TODO: Employment
+	#if employment == 0:
+		#return 0
+	#return round(float(level * 10) * employment_total / employment)
+	return level
 
 func get_cost_for_upgrade() -> int:
 	return COST_FOR_UPGRADE

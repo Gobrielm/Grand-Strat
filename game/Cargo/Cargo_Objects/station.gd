@@ -8,9 +8,6 @@ func _init(new_location: Vector2i, _player_owner: int) -> void:
 func get_orders() -> Dictionary:
 	return trade_orders
 
-func get_desired_cargo_to_load(type: int, price_per: float) -> int:
-	return min(max_amount - get_cargo_amount(type), get_amount_can_buy(price_per))
-
 func distribute_cargo() -> void:
 	var array: Array = randomize_trade_orders()
 	for order: trade_order in array:

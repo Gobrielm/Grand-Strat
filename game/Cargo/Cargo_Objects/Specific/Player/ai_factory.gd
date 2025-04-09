@@ -17,7 +17,7 @@ func change_orders() -> void:
 				place_order(type, outputs[type], false)
 			else:
 				order.change_amount(outputs[type])
-	
-func month_tick() -> void:
+
+func day_tick() -> void:
 	change_orders()
-	super.month_tick()
+	super.day_tick()
