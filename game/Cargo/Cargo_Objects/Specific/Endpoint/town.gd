@@ -41,12 +41,19 @@ func get_town_wants() -> Array:
 func withdraw() -> void:
 	for type: int in inputs:
 		if check_input(type):
-			print(type)
 			#TODO: Do something if type is available to be used
 			remove_input(type)
+
+func add_pop_money() -> void:
+	var pop: int = map_data.get_instance().get_province_population(location)
+	add_cash(round(pop / 1000.0))
 
 func day_tick() -> void:
 	change_orders()
 	withdraw()
 	if trade_orders.size() != 0:
 		distribute_cargo()
+
+func month_tick() -> void:
+	add_pop_money()
+	super.month_tick()

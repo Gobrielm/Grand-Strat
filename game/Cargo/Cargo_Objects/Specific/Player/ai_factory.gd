@@ -6,13 +6,14 @@ func change_orders() -> void:
 
 func change_buy_orders() -> void:
 	for type: int in inputs:
-		change_order(type, inputs[type])
+		change_order(type, true)
 
 func change_sell_orders() -> void:
 	for type: int in outputs:
-		change_order(type, outputs[type])
+		change_order(type, false)
 
-func change_order(type: int, base_amount: int) -> void:
+func change_order(type: int, buy: bool) -> void:
+	var base_amount: int = inputs[type] if buy else outputs[type]
 	var price: float = local_pricer.get_local_price(type)
 	var norm: float = local_pricer.get_base_price(type)
 	#TODO; Add logic about setting default order to the output amountr
@@ -25,7 +26,7 @@ func change_order(type: int, base_amount: int) -> void:
 	else:
 		var order: trade_order = get_order(type)
 		if order == null:
-			place_order(type, base_amount, false)
+			place_order(type, base_amount, buy)
 		else:
 			order.change_amount(base_amount)
 
