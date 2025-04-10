@@ -90,9 +90,9 @@ func distribute_cargo() -> void:
 	var term_options: Array[terminal] = get_road_supplied_terminals()
 	term_options.shuffle()
 	while !term_options.is_empty():
-		distribute_to_hold(term_options.pop_front())
+		distribute_to_broker(term_options.pop_front())
 
-func distribute_to_hold(_broker: broker) -> void:
+func distribute_to_broker(_broker: broker) -> void:
 	for type: int in outputs:
 		if trade_orders.has(type):
 			var order: trade_order = trade_orders[type]

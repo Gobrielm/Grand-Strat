@@ -14,6 +14,7 @@ func instance_preplaced_towns(coords: Vector2i) -> terminal:
 	assert(atlas == Vector2i(0, 1))
 	var loaded_script: Resource = load("res://Cargo/Cargo_Objects/Specific/Endpoint/town.gd")
 	assert(loaded_script != null)
+	Utils.world_map.make_cell_invisible(coords)
 	return loaded_script.new(coords, Utils.tile_ownership.get_player_id_from_cell(coords))
 
 func transform_construction_site_to_factory(coords: Vector2i) -> void:

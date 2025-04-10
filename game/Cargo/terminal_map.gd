@@ -238,7 +238,7 @@ static func get_available_primary_recipes(coords: Vector2i) -> Array:
 
 static func is_town(coords: Vector2i) -> bool:
 	var term: terminal = get_terminal(coords)
-	return term != null and term is apex_factory
+	return term != null and term is town
 
 static func get_town_fulfillment(coords: Vector2i, type: int) -> float:
 	var term: terminal = get_terminal(coords)

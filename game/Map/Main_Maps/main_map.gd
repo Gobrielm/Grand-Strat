@@ -49,6 +49,7 @@ func _ready() -> void:
 	unique_id = multiplayer.get_unique_id()
 	map_data.new(self)
 	if unique_id == 1:
+		Utils.assign_world_map(self)
 		create_untraversable_tiles()
 		money_interface = money_controller.new(multiplayer.get_peers(), self)
 		for peer: int in multiplayer.get_peers():

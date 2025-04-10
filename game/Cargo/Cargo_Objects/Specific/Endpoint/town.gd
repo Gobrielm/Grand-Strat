@@ -1,8 +1,8 @@
-extends apex_factory
+class_name town extends ai_factory
 
 func _init(new_location: Vector2i, _player_id: int) -> void:
 	var dict: Dictionary = create_inputs()
-	super._init(new_location, _player_id, dict)
+	super._init(new_location, _player_id, dict, {})
 
 func create_inputs() -> Dictionary:
 	var toReturn: Dictionary = {}
@@ -46,12 +46,7 @@ func withdraw() -> void:
 			remove_input(type)
 
 func day_tick() -> void:
+	change_orders()
 	withdraw()
 	if trade_orders.size() != 0:
 		distribute_cargo()
-
-func month_tick() -> void:
-	for type: int in inputs:
-		local_pricer.vary_input_price(get_monthly_demand(type), type)
-	for type: int in outputs:
-		local_pricer.vary_output_price(type)
