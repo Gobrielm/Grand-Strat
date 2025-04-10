@@ -52,15 +52,13 @@ func get_road_supplied_terminals() -> Array[terminal]:
 	var toReturn: Array[terminal] = []
 	while !queue.is_empty():
 		var curr: Vector2i = queue.pop_front()
-		
 		for tile: Vector2i in world_map.get_surrounding_cells(curr):
 			if !Utils.is_tile_water(tile):
+				#TODO: Ensure this includes everything that needs trade
+				if !visited.has(tile) and terminal_map.is_broker(tile):
+					toReturn.push_back(terminal_map.get_terminal(tile))
 				if !visited.has(tile) or visited[tile] > visited[curr] + 1:
 					visited[tile] = visited[curr] + 1
 					if visited[tile] < MAX_SUPPLY_DISTANCE:
 						queue.push_back(tile)
-				#TODO: Ensure this includes everything that needs trade
-				if terminal_map.is_broker(tile):
-					toReturn.push_back(terminal_map.get_terminal(tile))
-				
 	return toReturn

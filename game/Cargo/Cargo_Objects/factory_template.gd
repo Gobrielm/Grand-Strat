@@ -104,7 +104,6 @@ func distribute_to_order(_broker: broker, order: trade_order) -> void:
 	var price: float = get_local_price(type)
 	var amount: int = min(_broker.get_desired_cargo_to_load(type, price), order.get_amount(), LOAD_TICK_AMOUNT)
 	if amount != 0:
-		#TODO: Sends too many goods
 		local_pricer.report_attempt(type, min(amount, outputs[type]))
 		amount = transfer_cargo(type, amount)
 		_broker.buy_cargo(type, amount, price)

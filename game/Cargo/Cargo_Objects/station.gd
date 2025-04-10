@@ -9,21 +9,9 @@ func get_orders() -> Dictionary:
 	return trade_orders
 
 func distribute_cargo() -> void:
-	var array: Array = randomize_trade_orders()
-	for order: trade_order in array:
-		complete_order(order)
-
-func randomize_trade_orders() -> Array:
-	var choices: Array = []
-	var toReturn: Array = []
 	for order: trade_order in trade_orders.values():
 		if order.is_sell_order():
-			choices.append(order)
-	while !choices.is_empty():
-		var rand_num: int = randi_range(0, choices.size() - 1)
-		var choice: trade_order = choices.pop_at(rand_num)
-		toReturn.append(choice)
-	return toReturn
+			complete_order(order)
 
 func complete_order(order: trade_order) -> void:
 	var type: int = order.get_type()
