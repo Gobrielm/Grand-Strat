@@ -2,6 +2,8 @@ class_name broker extends fixed_hold
 
 var trade_orders: Dictionary[int, trade_order] = {}
 
+var connected_terminals: Dictionary[Vector2i, int] = {}
+
 const MAX_SUPPLY_DISTANCE: int = 5
 
 func can_afford(price: int) -> bool:
@@ -44,21 +46,26 @@ func remove_order(type: int) -> void:
 		trade_orders.erase(type)
 		order.queue_free()
 
-func get_road_supplied_terminals() -> Array[terminal]:
-	var visited: Dictionary = {}
-	visited[location] = 0
-	var world_map: TileMapLayer = Utils.world_map
-	var queue: Array = [location]
+func add_connected_terminal(new_terminal: terminal, distance: int) -> void:
+	connected_terminals[new_terminal.get_location()] = distance
+
+func remove_connected_terminal(new_terminal: terminal) -> void:
+	connected_terminals.erase(new_terminal.get_location())
+
+func get_ordered_connected_terms() -> Array[terminal]:
+	var toReturn: Array[terminal]
+	var stack: sorted_stack = sorted_stack.new()
+	#TODO: Add checking price to order
+	for tile: Vector2i in connected_terminals:
+		var dist: int = connected_terminals[tile]
+		stack.insert_element(tile, dist)
+	#Casts to Array[terminal]
+	toReturn = stack.get_array_of_elements()
+	return toReturn
+
+func get_randomized_connected_terms() -> Array[terminal]:
 	var toReturn: Array[terminal] = []
-	while !queue.is_empty():
-		var curr: Vector2i = queue.pop_front()
-		for tile: Vector2i in world_map.get_surrounding_cells(curr):
-			if !Utils.is_tile_water(tile):
-				#TODO: Ensure this includes everything that needs trade
-				if !visited.has(tile) and terminal_map.is_broker(tile):
-					toReturn.push_back(terminal_map.get_terminal(tile))
-				if !visited.has(tile) or visited[tile] > visited[curr] + 1:
-					visited[tile] = visited[curr] + 1
-					if visited[tile] < MAX_SUPPLY_DISTANCE:
-						queue.push_back(tile)
+	for tile: Vector2i in connected_terminals:
+		toReturn.push_back(terminal_map.get_terminal(tile))
+	toReturn.shuffle()
 	return toReturn

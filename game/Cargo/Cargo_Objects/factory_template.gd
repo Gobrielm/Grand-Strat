@@ -87,27 +87,37 @@ func add_outputs(batch_size: int) -> void:
 		local_pricer.report_change(index, amount)
 
 func distribute_cargo() -> void:
-	var term_options: Array[terminal] = get_road_supplied_terminals()
-	term_options.shuffle()
+	var term_options: Array[terminal] = get_randomized_connected_terms()
 	while !term_options.is_empty():
-		distribute_to_broker(term_options.pop_front())
+		var done: bool = distribute_to_broker(term_options.pop_front())
+		if done:
+			break
+	amount_traded = 0
 
-func distribute_to_broker(_broker: broker) -> void:
+func distribute_to_broker(_broker: broker) -> bool:
 	for type: int in outputs:
 		if trade_orders.has(type):
 			var order: trade_order = trade_orders[type]
 			if order.is_sell_order():
-				distribute_to_order(_broker, order)
+				var done: bool = distribute_to_order(_broker, order)
+				if done:
+					return true
+	return false
 
-func distribute_to_order(_broker: broker, order: trade_order) -> void:
+func distribute_to_order(_broker: broker, order: trade_order) -> bool:
 	var type: int = order.get_type()
 	var price: float = get_local_price(type)
-	var amount: int = min(_broker.get_desired_cargo_to_load(type, price), order.get_amount(), LOAD_TICK_AMOUNT)
-	if amount != 0:
+	var amount: int = min(_broker.get_desired_cargo_to_load(type, price), order.get_amount(), LOAD_TICK_AMOUNT - amount_traded)
+	if amount > 0:
 		local_pricer.report_attempt(type, min(amount, outputs[type]))
 		amount = transfer_cargo(type, amount)
+		amount_traded += amount
 		_broker.buy_cargo(type, amount, price)
 		add_cash(round(amount * price))
+	
+	if amount_traded >= LOAD_TICK_AMOUNT:
+		return true
+	return false 
 
 func get_level() -> int:
 	#TODO: Employment
