@@ -1,5 +1,7 @@
 class_name ai_factory extends player_factory
 
+const CASH_NEEDED_MULTIPLIER: int = 5
+
 func change_orders() -> void:
 	change_buy_orders()
 	change_sell_orders()
@@ -30,6 +32,32 @@ func change_order(type: int, buy: bool) -> void:
 		else:
 			order.change_amount(base_amount)
 
+func consider_upgrade() -> void:
+	#Primary Industry
+	if inputs.is_empty():
+		consider_upgrade_primary()
+	#Secondary Industry
+	else:
+		consider_upgrade_secondary()
+
+func consider_upgrade_primary() -> void:
+	var total_diff: float = 0.0
+	var amount: int = 0
+	for type: int in outputs:
+		total_diff += local_pricer.get_percent_difference(type)
+		amount += 1
+	total_diff /= amount
+	#TODO: Consider changing constant
+	if total_diff > -0.05 and get_cost_for_upgrade() < cash * CASH_NEEDED_MULTIPLIER and randi() % 5 == 0:
+		upgrade()
+
+func consider_upgrade_secondary() -> void:
+	pass
+
 func day_tick() -> void:
 	change_orders()
 	super.day_tick()
+
+func month_tick() -> void:
+	super.month_tick()
+	consider_upgrade()
