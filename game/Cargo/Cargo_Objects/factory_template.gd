@@ -133,11 +133,14 @@ func upgrade() -> bool:
 	if inputs.is_empty() and outputs.size() == 1:
 		var cargo_values: Node = Utils.cargo_values
 		var mag: int = cargo_values.get_tile_magnitude(location, outputs[0])
-		if mag <= level:
-			return false
-	level += 1
-	employment_total = level * 1000
-	return true
+		if mag > level:
+			var cost: int = get_cost_for_upgrade()
+			if cash >= cost:
+				remove_cash(cost)
+				level += 1
+				employment_total = level * 1000
+				return true
+	return false
 
 func day_tick() -> void:
 	print("Default implementation")

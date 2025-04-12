@@ -40,6 +40,9 @@ func get_attempts(type: int) -> int:
 func get_local_price(type: int) -> int:
 	return local_prices[type]
 
+func get_percent_difference(type: int) -> float:
+	return 2 * (local_prices[type] - base_prices[type]) / (local_prices[type] + base_prices[type])
+
 func get_base_price(type: int) -> int:
 	return base_prices[type]
 
