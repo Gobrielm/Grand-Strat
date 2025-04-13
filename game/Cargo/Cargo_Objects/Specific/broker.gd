@@ -6,8 +6,13 @@ var connected_terminals: Dictionary[Vector2i, int] = {}
 
 const MAX_SUPPLY_DISTANCE: int = 5
 
+var local_pricer: local_price_controller
+
 func can_afford(price: int) -> bool:
 	return cash >= price
+
+func get_price(type: int) -> float:
+	return local_pricer.get_local_price(type)
 
 func get_desired_cargo_to_load(type: int, price_per: float) -> int:
 	if trade_orders.has(type):
@@ -52,20 +57,46 @@ func add_connected_terminal(new_terminal: terminal, distance: int) -> void:
 func remove_connected_terminal(new_terminal: terminal) -> void:
 	connected_terminals.erase(new_terminal.get_location())
 
-func get_ordered_connected_terms() -> Array[terminal]:
-	var toReturn: Array[terminal]
+func get_directly_connected_terms() -> Array[terminal]:
+	var toReturn: Array[terminal] = []
+	for tile: Vector2i in connected_terminals:
+		var dist: int = connected_terminals[tile]
+		if dist == 1:
+			toReturn.push_back(terminal_map.get_terminal(tile))
+	toReturn.shuffle()
+	return toReturn
+
+func get_ordered_connected_terms() -> Array[broker]:
+	var toReturn: Array[broker]
 	var stack: sorted_stack = sorted_stack.new()
 	#TODO: Add checking price to order
 	for tile: Vector2i in connected_terminals:
 		var dist: int = connected_terminals[tile]
-		stack.insert_element(tile, dist)
-	#Casts to Array[terminal]
-	toReturn = stack.get_array_of_elements()
+		if dist != 1:
+			stack.insert_element(tile, dist)
+	
+	for tile: Vector2i in stack.get_array_of_elements():
+		toReturn.push_back(terminal_map.get_broker(tile))
 	return toReturn
 
-func get_randomized_connected_terms() -> Array[terminal]:
-	var toReturn: Array[terminal] = []
+func get_randomized_connected_terms() -> Array[broker]:
+	var toReturn: Array[broker] = []
 	for tile: Vector2i in connected_terminals:
-		toReturn.push_back(terminal_map.get_terminal(tile))
+		var dist: int = connected_terminals[tile]
+		if dist != 1:
+			toReturn.push_back(terminal_map.get_broker(tile))
 	toReturn.shuffle()
+	return toReturn
+
+func get_connected_term_sorted_by_price(type: int) -> Array[broker]:
+	var stack: sorted_stack = sorted_stack.new()
+	
+	for tile: Vector2i in connected_terminals:
+		var broker_obj: broker = terminal_map.get_broker(tile)
+		if broker_obj != null and broker_obj.get_order(type) != null:
+			stack.insert_element(terminal_map.get_broker(tile), broker_obj.get_price(type))
+	
+	var toReturn: Array[broker] = []
+	for element: broker in stack.get_array_of_elements():
+		toReturn.append(element)
 	return toReturn

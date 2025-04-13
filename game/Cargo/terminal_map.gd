@@ -196,6 +196,11 @@ static func get_terminal(coords: Vector2i) -> terminal:
 		return cargo_map_terminals[coords]
 	return null
 
+static func get_broker(coords: Vector2i) -> broker:
+	if is_broker(coords):
+		return cargo_map_terminals[coords]
+	return null
+
 static func is_station(coords: Vector2i) -> bool:
 	return cargo_map_terminals.has(coords) and cargo_map_terminals[coords] is station
 

@@ -17,7 +17,7 @@ func get_weight(index: int) -> int:
 func get_value(index: int):
 	return backing_array[index].val
 
-func insert_element(val, weight: int) -> void:
+func insert_element(val, weight: float) -> void:
 	var element: weighted_value = weighted_value.new(val, weight)
 	if get_size() == 0:
 		backing_array.insert(0, element)
@@ -36,13 +36,13 @@ func get_middle(top: int, bot: int) -> int:
 	return bot - (bot - top) / 2
 
 func bsearch_insert(element: weighted_value, top: int, bot: int) -> void:
-	var weight: int = element.weight
+	var weight: float = element.weight
 	var i: int = get_middle(top, bot)
 	if i == get_size():
 		backing_array.push_back(element)
 		return
 	
-	var other_weight: int = get_weight(i)
+	var other_weight: float = get_weight(i)
 	if i == bot or i == top:
 		if weight < other_weight:
 			backing_array.insert(i - 1, element)

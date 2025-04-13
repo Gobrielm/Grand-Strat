@@ -2,9 +2,9 @@ class_name weighted_value extends Node
 
 var val
 
-var weight: int
+var weight: float
 
-func _init(p_val, p_weight: int) -> void:
+func _init(p_val, p_weight: float) -> void:
 	val = p_val
 	weight = p_weight
 

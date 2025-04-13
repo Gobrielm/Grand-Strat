@@ -10,8 +10,6 @@ var employment_total: int
 var inputs: Dictionary
 var outputs: Dictionary
 
-var local_pricer: local_price_controller
-
 const DEFAULT_BATCH_SIZE: int = 1
 
 func _init(new_location: Vector2i, _player_owner: int, new_inputs: Dictionary, new_outputs: Dictionary) -> void:
@@ -87,22 +85,19 @@ func add_outputs(batch_size: int) -> void:
 		local_pricer.report_change(index, amount)
 
 func distribute_cargo() -> void:
-	var term_options: Array[terminal] = get_randomized_connected_terms()
-	while !term_options.is_empty():
-		var done: bool = distribute_to_broker(term_options.pop_front())
-		if done:
-			break
-	amount_traded = 0
-
-func distribute_to_broker(_broker: broker) -> bool:
 	for type: int in outputs:
 		if trade_orders.has(type):
 			var order: trade_order = trade_orders[type]
 			if order.is_sell_order():
-				var done: bool = distribute_to_order(_broker, order)
-				if done:
-					return true
-	return false
+				distribute_from_order(order)
+
+func distribute_from_order(order: trade_order) -> void:
+	var done: bool = false
+	var term_options: Array[broker] = get_connected_term_sorted_by_price(order.get_type())
+	while !done and !term_options.is_empty():
+		var broker_obj: broker = term_options.pop_front()
+		done = distribute_to_order(broker_obj, order)
+	amount_traded = 0
 
 func distribute_to_order(_broker: broker, order: trade_order) -> bool:
 	var type: int = order.get_type()
@@ -132,7 +127,7 @@ func get_cost_for_upgrade() -> int:
 func upgrade() -> bool:
 	if inputs.is_empty() and outputs.size() == 1:
 		var cargo_values: Node = Utils.cargo_values
-		var mag: int = cargo_values.get_tile_magnitude(location, outputs[0])
+		var mag: int = cargo_values.get_tile_magnitude(location, outputs.values()[0])
 		if mag > level:
 			var cost: int = get_cost_for_upgrade()
 			if cash >= cost:
