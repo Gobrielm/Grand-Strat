@@ -11,15 +11,24 @@ var local_pricer: local_price_controller
 func can_afford(price: int) -> bool:
 	return cash >= price
 
-func get_price(type: int) -> float:
+func get_local_prices() -> Dictionary:
+	return local_pricer.local_prices
+
+func get_local_price(type: int) -> float:
 	return local_pricer.get_local_price(type)
 
 func get_desired_cargo_to_load(type: int, price_per: float) -> int:
 	if trade_orders.has(type):
 		var trade_order_obj: trade_order = trade_orders[type]
-		if trade_order_obj.is_buy_order():
+		if trade_order_obj.is_buy_order() and is_price_acceptable(type, price_per):
 			return min(max_amount - get_cargo_amount(type), get_amount_can_buy(price_per), trade_order_obj.get_amount())
 	return 0
+
+#Assuming they are buying
+func is_price_acceptable(type: int, price_per: float) -> bool:
+	if get_local_price(type) < price_per * 0.8:
+		return false
+	return true
 
 func buy_cargo(type: int, amount: int, price_per: float) -> void:
 	if amount == 0:
@@ -57,44 +66,20 @@ func add_connected_terminal(new_terminal: terminal, distance: int) -> void:
 func remove_connected_terminal(new_terminal: terminal) -> void:
 	connected_terminals.erase(new_terminal.get_location())
 
-func get_directly_connected_terms() -> Array[terminal]:
-	var toReturn: Array[terminal] = []
-	for tile: Vector2i in connected_terminals:
-		var dist: int = connected_terminals[tile]
-		if dist == 1:
-			toReturn.push_back(terminal_map.get_terminal(tile))
-	toReturn.shuffle()
-	return toReturn
+func get_directly_connected_terms(type: int) -> Array[broker]:
+	return get_connected_terms_within_dist(type, 1)
 
-func get_ordered_connected_terms() -> Array[broker]:
-	var toReturn: Array[broker]
-	var stack: sorted_stack = sorted_stack.new()
-	#TODO: Add checking price to order
-	for tile: Vector2i in connected_terminals:
-		var dist: int = connected_terminals[tile]
-		if dist != 1:
-			stack.insert_element(tile, dist)
-	
-	for tile: Vector2i in stack.get_array_of_elements():
-		toReturn.push_back(terminal_map.get_broker(tile))
-	return toReturn
+func get_connected_terms(type: int) -> Array[broker]:
+	return get_connected_terms_within_dist(type)
 
-func get_randomized_connected_terms() -> Array[broker]:
-	var toReturn: Array[broker] = []
-	for tile: Vector2i in connected_terminals:
-		var dist: int = connected_terminals[tile]
-		if dist != 1:
-			toReturn.push_back(terminal_map.get_broker(tile))
-	toReturn.shuffle()
-	return toReturn
-
-func get_connected_term_sorted_by_price(type: int) -> Array[broker]:
+func get_connected_terms_within_dist(type: int, max_dist: int = 100) -> Array[broker]:
 	var stack: sorted_stack = sorted_stack.new()
 	
 	for tile: Vector2i in connected_terminals:
-		var broker_obj: broker = terminal_map.get_broker(tile)
-		if broker_obj != null and broker_obj.get_order(type) != null:
-			stack.insert_element(terminal_map.get_broker(tile), broker_obj.get_price(type))
+		if connected_terminals[tile] < max_dist:
+			var broker_obj: broker = terminal_map.get_broker(tile)
+			if broker_obj != null and broker_obj.get_order(type) != null:
+				stack.insert_element(terminal_map.get_broker(tile), broker_obj.get_local_price(type))
 	
 	var toReturn: Array[broker] = []
 	for element: broker in stack.get_array_of_elements():

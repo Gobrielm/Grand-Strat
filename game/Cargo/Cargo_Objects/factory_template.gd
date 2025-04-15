@@ -37,12 +37,6 @@ func get_buy_order_total(type: int) -> int:
 func get_monthly_demand(type: int) -> int:
 	return inputs[type] * DAY_TICKS_PER_MONTH
 
-func get_local_prices() -> Dictionary:
-	return local_pricer.local_prices
-
-func get_local_price(type: int) -> float:
-	return local_pricer.get_local_price(type)
-
 func buy_cargo(type: int, amount: int, price_per: float) -> void:
 	if amount == 0:
 		return
@@ -93,15 +87,25 @@ func distribute_cargo() -> void:
 
 func distribute_from_order(order: trade_order) -> void:
 	var done: bool = false
-	var term_options: Array[broker] = get_connected_term_sorted_by_price(order.get_type())
-	while !done and !term_options.is_empty():
-		var broker_obj: broker = term_options.pop_front()
+	var dir_term_options: Array[broker] = get_directly_connected_terms(order.get_type())
+	var term_options: Array[broker] = get_connected_terms(order.get_type())
+	
+	while !done and !term_options.is_empty() and !dir_term_options.is_empty():
+		var broker_obj: broker = get_broker_obj(term_options, dir_term_options, order.get_type())
 		done = distribute_to_order(broker_obj, order)
 	amount_traded = 0
 
+func get_broker_obj(term_options: Array[broker], dir_term_options: Array[broker], type: int) -> broker:
+	if dir_term_options.is_empty() or (!term_options.is_empty() and term_options.front().get_local_price(type) > dir_term_options.front().get_local_price(type)):
+		return term_options.pop_front()
+	else:
+		return dir_term_options.pop_front()
+
 func distribute_to_order(_broker: broker, order: trade_order) -> bool:
 	var type: int = order.get_type()
-	var price: float = get_local_price(type)
+	#TODO: price chooses highest between seller and buyer, consider changing to matching the buyer more
+	var price: float = max(get_local_price(type), _broker.get_local_price(type))
+	
 	var amount: int = min(_broker.get_desired_cargo_to_load(type, price), order.get_amount(), LOAD_TICK_AMOUNT - amount_traded)
 	if amount > 0:
 		local_pricer.report_attempt(type, min(amount, outputs[type]))

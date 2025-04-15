@@ -65,5 +65,6 @@ func get_array_of_elements() -> Array:
 	for element: weighted_value in backing_array:
 		toReturn.push_back(element.val)
 	return toReturn
+
 func _to_string() -> String:
 	return str(backing_array)
