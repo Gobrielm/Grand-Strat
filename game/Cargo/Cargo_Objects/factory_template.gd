@@ -85,40 +85,6 @@ func distribute_cargo() -> void:
 			if order.is_sell_order():
 				distribute_from_order(order)
 
-func distribute_from_order(order: trade_order) -> void:
-	var done: bool = false
-	var dir_term_options: Array[broker] = get_directly_connected_terms(order.get_type())
-	var term_options: Array[broker] = get_connected_terms(order.get_type())
-	
-	#TODO: Implement amount_traded for direct and non_direct
-	while !done and !term_options.is_empty() and !dir_term_options.is_empty():
-		var broker_obj: broker = get_broker_obj(term_options, dir_term_options, order.get_type())
-		done = distribute_to_order(broker_obj, order)
-	amount_traded = 0
-
-func get_broker_obj(term_options: Array[broker], dir_term_options: Array[broker], type: int) -> broker:
-	if dir_term_options.is_empty() or (!term_options.is_empty() and term_options.front().get_local_price(type) > dir_term_options.front().get_local_price(type)):
-		return term_options.pop_front()
-	else:
-		return dir_term_options.pop_front()
-
-func distribute_to_order(_broker: broker, order: trade_order) -> bool:
-	var type: int = order.get_type()
-	#TODO: price chooses highest between seller and buyer, consider changing to matching the buyer more
-	var price: float = max(get_local_price(type), _broker.get_local_price(type))
-	
-	var amount: int = min(_broker.get_desired_cargo_to_load(type, price), order.get_amount(), LOAD_TICK_AMOUNT - amount_traded)
-	if amount > 0:
-		local_pricer.report_attempt(type, min(amount, outputs[type]))
-		amount = transfer_cargo(type, amount)
-		amount_traded += amount
-		_broker.buy_cargo(type, amount, price)
-		add_cash(round(amount * price))
-	
-	if amount_traded >= LOAD_TICK_AMOUNT:
-		return true
-	return false 
-
 func get_level() -> int:
 	#TODO: Employment
 	#if employment == 0:
@@ -141,6 +107,14 @@ func upgrade() -> bool:
 				employment_total = level * 1000
 				return true
 	return false
+
+func admin_upgrade() -> void:
+	if inputs.is_empty() and outputs.size() == 1:
+		var cargo_values: Node = Utils.cargo_values
+		var mag: int = cargo_values.get_tile_magnitude(location, outputs.values()[0])
+		if mag > level:
+			level += 1
+			employment_total = level * 1000
 
 func day_tick() -> void:
 	print("Default implementation")

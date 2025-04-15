@@ -1,7 +1,7 @@
 class_name hold extends firm
 
-const LOAD_TICK_AMOUNT: int = 5
-var amount_traded: int = 0
+const AUTO_ROAD_LOAD_TICK_AMOUNT: int = 5
+var amount_traded_by_road: int = 0
 
 var storage: Dictionary = {} #Cargo the hold has
 var max_amount: int = 50 #Max Amount of cargo the hold can hold

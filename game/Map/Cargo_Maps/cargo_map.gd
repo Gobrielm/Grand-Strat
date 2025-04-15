@@ -25,28 +25,37 @@ func place_random_industries() -> void:
 	for province_id: int in map_data_singleton.provinces:
 		var pop: int = map_data_singleton.get_population(province_id)
 		var chances: Array = [
-			{ "threshold": 10000000, "mod": 1 },
-			{ "threshold": 1000000,  "mod": 3 },
-			{ "threshold": 100000,   "mod": 5 },
-			{ "threshold": 10000,    "mod": 10 },
-			{ "threshold": 0,        "mod": 30 }
+			{ "threshold": 10000000, "mod": 1, "mult": 5, "count": 3 },
+			{ "threshold": 1000000,  "mod": 3, "mult": 4, "count": 2 },
+			{ "threshold": 100000,   "mod": 5, "mult": 3, "count": 1 },
+			{ "threshold": 10000,    "mod": 10, "mult": 2, "count": 1 },
+			{ "threshold": 0,        "mod": 30, "mult": 1, "count": 1 }
 		]
 		for entry: Dictionary in chances:
 			if pop > entry.threshold and randi() % entry.mod == 0:
-				pick_and_place_random_industry(map_data_singleton, province_id)
+				pick_and_place_random_industry(map_data_singleton, province_id, entry.count, entry.mult)
 				break
 
-
-func pick_and_place_random_industry(map_data_singleton: map_data, province_id: int) -> void:
+func pick_and_place_random_industry(map_data_singleton: map_data, province_id: int, count: int, multiplier: int) -> void:
 	var prov: province = map_data_singleton.get_province(province_id)
-	place_random_industry(prov.get_random_tile())
+	for i: int in range(count):
+		place_random_industry(get_random_unowned_tile(prov), randi() % multiplier)
 
-func place_random_industry(tile: Vector2i) -> void:
+func get_random_unowned_tile(prov: province) -> Vector2i:
+	var choices: Array = prov.get_tiles()
+	while true:
+		var temp: Vector2i = choices.pick_random()
+		if get_cell_atlas_coords(temp) == Vector2i(-1, -1):
+			return temp
+	assert(false, "Attempted to place industry where none could go")
+	return Vector2i(0, 0)
+
+func place_random_industry(tile: Vector2i, mult: int) -> void:
 	var tile_ownership: Node = Utils.tile_ownership
 	var best_resource: int = cargo_values.get_best_resource(tile)
 	if best_resource == -1:
 		return
-	create_factory(tile_ownership.get_player_id_from_cell(tile), tile, get_primary_recipe_for_type(best_resource))
+	create_factory(tile_ownership.get_player_id_from_cell(tile), tile, get_primary_recipe_for_type(best_resource), mult)
 
 func get_primary_recipe_for_type(type: int) -> Array:
 	for recipe_set: Array in recipe.get_set_recipes():
@@ -55,16 +64,16 @@ func get_primary_recipe_for_type(type: int) -> Array:
 				return recipe_set
 	return []
 
-func create_factory(p_player_id: int, coords: Vector2i, obj_recipe: Array) -> void:
+func create_factory(p_player_id: int, coords: Vector2i, obj_recipe: Array, mult: int) -> void:
 	var new_factory: factory
 	if p_player_id > 0:
 		new_factory =  player_factory.new(coords, p_player_id, obj_recipe[0], obj_recipe[1])
 	else:
 		new_factory =  ai_factory.new(coords, p_player_id, obj_recipe[0], obj_recipe[1])
+	for i: int in range(1, mult):
+		new_factory.admin_upgrade()
 	set_tile(coords, get_atlas_cell(obj_recipe))
 	terminal_map.create_terminal(new_factory)
-
-
 
 func get_atlas_cell(obj_recipe: Array) -> Vector2i:
 	var output: Dictionary = obj_recipe[1]

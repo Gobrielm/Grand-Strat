@@ -9,20 +9,7 @@ func get_orders() -> Dictionary:
 func distribute_cargo() -> void:
 	for order: trade_order in trade_orders.values():
 		if order.is_sell_order():
-			complete_order(order)
-
-func complete_order(order: trade_order) -> void:
-	var type: int = order.get_type()
-	while (amount_traded < min(order.get_amount(), LOAD_TICK_AMOUNT)):
-		for tile: Vector2i in connected_terminals:
-			var term: terminal = terminal_map.get_terminal(tile)
-			var amount: int = min(term.get_desired_cargo_to_load(type), order.get_amount(), LOAD_TICK_AMOUNT)
-			amount = transfer_cargo(type, amount)
-			assert(amount > -100000)
-			var price: float = term.get_local_price(type)
-			term.buy_cargo(type, amount)
-			add_cash(round(amount * price))
-	amount_traded = 0
+			distribute_from_order(order)
 
 func add_connected_terminal(new_terminal: terminal, distance: int) -> void:
 	super.add_connected_terminal(new_terminal, distance)

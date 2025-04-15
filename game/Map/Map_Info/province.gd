@@ -15,5 +15,8 @@ func add_tile(coords: Vector2i) -> void:
 func set_population(new_pop: int) -> void:
 	population = new_pop
 
+func get_tiles() -> Array:
+	return tiles
+
 func get_random_tile() -> Vector2i:
 	return tiles.pick_random()
