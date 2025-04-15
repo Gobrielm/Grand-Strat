@@ -90,6 +90,7 @@ func distribute_from_order(order: trade_order) -> void:
 	var dir_term_options: Array[broker] = get_directly_connected_terms(order.get_type())
 	var term_options: Array[broker] = get_connected_terms(order.get_type())
 	
+	#TODO: Implement amount_traded for direct and non_direct
 	while !done and !term_options.is_empty() and !dir_term_options.is_empty():
 		var broker_obj: broker = get_broker_obj(term_options, dir_term_options, order.get_type())
 		done = distribute_to_order(broker_obj, order)
