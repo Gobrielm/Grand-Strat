@@ -204,11 +204,19 @@ static func get_broker(coords: Vector2i) -> broker:
 static func is_station(coords: Vector2i) -> bool:
 	return cargo_map_terminals.has(coords) and cargo_map_terminals[coords] is station
 
+static func is_ai_station(coords: Vector2i) -> bool:
+	return cargo_map_terminals.has(coords) and cargo_map_terminals[coords] is ai_station
+
 static func is_broker(coords: Vector2i) -> bool:
 	return cargo_map_terminals.has(coords) and cargo_map_terminals[coords] is broker
 
 static func get_station(coords: Vector2i) -> station:
 	if is_station(coords):
+		return cargo_map_terminals[coords]
+	return null
+
+static func get_ai_station(coords: Vector2i) -> ai_station:
+	if is_ai_station(coords):
 		return cargo_map_terminals[coords]
 	return null
 
