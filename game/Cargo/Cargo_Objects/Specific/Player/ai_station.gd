@@ -16,12 +16,15 @@ func month_tick() -> void:
 	for tile: Vector2i in connected_terminals:
 		var broker_obj: broker = terminal_map.get_broker(tile)
 		if broker_obj != null:
-			add_orders_to_local_market(broker_obj.get_orders())
+			var dist: int = connected_terminals[tile]
+			add_orders_to_local_market(broker_obj.get_orders(), dist)
 
-func add_orders_to_local_market(orders: Dictionary) -> void:
+func add_orders_to_local_market(orders: Dictionary, dist: int) -> void:
 	for order: trade_order in orders.values():
 		var type: int = order.get_type()
 		var amount: int = order.get_amount()
+		if dist != 1:
+			amount = min(amount, AUTO_ROAD_LOAD_TICK_AMOUNT)
 		local_market[type] += amount
 		market_prices[type] += order.get_max_price() * amount
 	
