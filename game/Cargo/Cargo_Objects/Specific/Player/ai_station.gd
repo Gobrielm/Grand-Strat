@@ -5,7 +5,7 @@ const TRADE_MARGINS: float = 1.1
 var local_market: Dictionary[int, int]
 var local_market_prices: Dictionary[int, float]
 
-var requests: Dictionary[int, Array] #Type to array of requests
+var requests: Dictionary[int, Dictionary] #Type to Dictionary[Vector2i, Array[request]]
 #Represents amount of local goods already commited to request
 var committed_sales: Dictionary[int, int] #Type -> Amount
 
@@ -21,7 +21,7 @@ func get_local_market() -> Dictionary[int, int]:
 func get_local_market_prices() -> Dictionary[int, float]:
 	return local_market_prices
 
-func get_requests() -> Dictionary[int, Array]:
+func get_requests() -> Dictionary[int, Dictionary]:
 	return requests
 
 func reset_local_market() -> void:
@@ -52,21 +52,22 @@ func add_orders_to_local_market(orders: Dictionary, dist: int) -> void:
 	for order: trade_order in orders.values():
 		var type: int = order.get_type()
 		var amount: int = order.get_amount()
+		#If can only trade by road, limit amount
 		if dist != 1:
 			amount = min(amount, AUTO_ROAD_LOAD_TICK_AMOUNT)
 		local_market[type] += amount
 		local_market_prices[type] += order.get_max_price() * amount
 
-#TODO: Use global market and local market to make orders
 func update_orders() -> void:
 	update_buy_orders()
+	update_sell_orders()
 
 func update_buy_orders() -> void:
 	for tile: Vector2i in ds_stations:
 		var ds_station: ai_station = terminal_map.get_ai_station(tile)
-		var ds_requests: Dictionary[int, Array] = ds_station.get_requests()
+		var ds_requests: Dictionary[int, Dictionary] = ds_station.get_requests()
 		for type: int in ds_requests:
-			for req: request in ds_requests[type]:
+			for req: request in ds_requests[type].values():
 				update_buy_orders_from_station(req)
 
 func update_buy_orders_from_station(req: request) -> void:
@@ -94,14 +95,14 @@ func update_buy_orders_from_station(req: request) -> void:
 		update_request(type, req.source, req.amount, req.max_price)
 
 func update_request(p_type: int, p_source: Vector2i, p_amount: int, p_max_price: float) -> void:
-	for req: request in requests[p_type]:
-		if req.source == p_source:
-			req.amount = p_amount
-			return
-	requests[p_type].append(request.new(p_type, p_amount, p_source, p_max_price))
+	if requests[p_type].has(p_source):
+		requests[p_type][p_source].amount = p_amount
+	else:
+		requests[p_type][p_source] = request.new(p_type, p_amount, p_source, p_max_price)
 
 func update_buy_order(type: int, amount: int, max_price: float) -> void:
 	edit_order(type, amount, true, max_price)
 
 func update_sell_orders() -> void:
-	pass
+	for type: int in local_market:
+		update_request(type, location, local_market[type], local_market_prices[type])
