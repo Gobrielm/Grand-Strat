@@ -23,6 +23,19 @@ func _init(new_location: Vector2i, _player_owner: int, new_inputs: Dictionary, n
 	level = 1
 	employment_total = 1000
 
+#For Selling only, assuming only one type to sell
+func get_min_price(type: int) -> float:
+	assert(outputs.size() == 1)
+	assert(inputs.size() == 0)
+	#TODO: ventually use expenses
+	return 0.0
+
+#For Buying only, assuming end-node
+func get_max_price(type: int) -> float:
+	assert(outputs.size() == 0)
+	#TODO: ventually use expenses
+	return 100.0
+
 func does_create(type: int) -> bool:
 	return outputs.has(type)
 

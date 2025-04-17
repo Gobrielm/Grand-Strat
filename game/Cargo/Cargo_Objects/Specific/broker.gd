@@ -36,23 +36,26 @@ func buy_cargo(type: int, amount: int, price_per: float) -> void:
 	add_cargo_ignore_accepts(type, amount)
 	remove_cash(round(amount * price_per))
 
-func place_order(type: int, amount: int, buy: bool) -> void:
-	var order: trade_order = trade_order.new(type, amount, buy)
+func place_order(type: int, amount: int, buy: bool, max_price: float) -> void:
+	var order: trade_order = trade_order.new(type, amount, buy, max_price)
 	trade_orders[type] = order
 
-func edit_order(type: int, amount: int, buy: bool) -> void:
+func edit_order(type: int, amount: int, buy: bool, max_price: float) -> void:
 	if trade_orders.has(type):
 		#Test that order changes on both sides
 		var order: trade_order = trade_orders[type]
 		order.change_buy(buy)
 		order.change_amount(amount)
 	else:
-		place_order(type, amount, buy)
+		place_order(type, amount, buy, max_price)
 
 func get_order(type: int) -> trade_order:
 	if trade_orders.has(type):
 		return trade_orders[type]
 	return null
+
+func get_orders() -> Dictionary:
+	return trade_orders
 
 func remove_order(type: int) -> void:
 	if trade_orders.has(type):
@@ -115,8 +118,10 @@ func get_broker_obj(term_options: Array[broker], dir_term_options: Array[broker]
 
 func distribute_to_order(_broker: broker, order: trade_order, by_road: bool = false) -> bool:
 	var type: int = order.get_type()
-	#TODO: price chooses highest between seller and buyer, consider changing to matching the buyer more
-	var price: float = max(get_local_price(type), _broker.get_local_price(type))
+	#Price is an average between buyer and seller
+	var price1: float = get_local_price(type)
+	var price2: float = _broker.get_local_price(type)
+	var price: float = max(price1, price2) - abs(price1 - price2) / 2
 	
 	var amount: int = min(_broker.get_desired_cargo_to_load(type, price), order.get_amount())
 	if amount > 0:

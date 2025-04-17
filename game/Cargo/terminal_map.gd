@@ -220,9 +220,9 @@ static func get_station_orders(coords: Vector2i) -> Dictionary:
 			toReturn[type] = orders[type].convert_to_array()
 	return toReturn
 
-static func edit_order_station(coords: Vector2i, type: int, amount: int, buy: bool) -> void:
+static func edit_order_station(coords: Vector2i, type: int, amount: int, buy: bool, max_price: float) -> void:
 	if is_station(coords):
-		cargo_map_terminals[coords].edit_order(type, amount, buy)
+		cargo_map_terminals[coords].edit_order(type, amount, buy, max_price)
 
 static func remove_order_station(coords: Vector2i, type: int) -> void:
 	if is_station(coords):

@@ -1,18 +1,18 @@
 class_name state_machine extends Node
 
-static var gui_inputs = false
-static var building_rails = false
-static var building_factory = false
-static var building_many_rails = false
-static var hovering_over_gui = false
-static var controlling_camera = false
-static var unit_selected = false
-static var building_units = false
-static var selecting_route = false
-static var picking_nation = false
-static var building_road_depot = false
+static var gui_inputs: bool = false
+static var building_rails: bool = false
+static var building_factory: bool = false
+static var building_many_rails: bool = false
+static var hovering_over_gui: bool = false
+static var controlling_camera: bool = false
+static var unit_selected: bool = false
+static var building_units: bool = false
+static var selecting_route: bool = false
+static var picking_nation: bool = false
+static var building_road_depot: bool = false
 
-static func print_all():
+static func print_all() -> void:
 	print(building_rails)
 	print(building_many_rails)
 	print(hovering_over_gui)
@@ -23,11 +23,11 @@ static func print_all():
 	print(picking_nation)
 	print("-----------")
 
-static func default():
+static func default() -> void:
 	all_off()
 	controlling_camera = true
 
-static func all_off():
+static func all_off() -> void:
 	building_rails = false
 	building_many_rails = false
 	hovering_over_gui = false
@@ -40,25 +40,25 @@ static func all_off():
 	gui_inputs = false
 	building_road_depot = false
 
-static func gui_button_pressed():
+static func gui_button_pressed() -> void:
 	all_off()
 	gui_inputs = true
 
-static func gui_button_unpressed():
+static func gui_button_unpressed() -> void:
 	gui_inputs = false
 	default()
 
 static func is_gui_pressed() -> bool:
 	return gui_inputs
 
-static func unpress_gui():
+static func unpress_gui() -> void:
 	gui_inputs = false
 	building_rails = false
 	building_many_rails = false
 	building_factory = false
 	default()
 
-static func many_track_button_toggled():
+static func many_track_button_toggled() -> void:
 	building_many_rails = !building_many_rails
 	if building_many_rails:
 		all_off()
@@ -66,7 +66,7 @@ static func many_track_button_toggled():
 	else:
 		default()
 
-static func track_button_toggled():
+static func track_button_toggled() -> void:
 	building_rails = !building_rails
 	if building_rails:
 		all_off()
@@ -74,7 +74,7 @@ static func track_button_toggled():
 	else:
 		default()
 
-static func depot_button_toggled():
+static func depot_button_toggled() -> void:
 	building_rails = !building_rails
 	if building_rails:
 		all_off()
@@ -82,7 +82,7 @@ static func depot_button_toggled():
 	else:
 		default()
 
-static func station_button_toggled():
+static func station_button_toggled() -> void:
 	building_rails = !building_rails
 	if building_rails:
 		all_off()
@@ -90,7 +90,7 @@ static func station_button_toggled():
 	else:
 		default()
 
-static func factory_button_toggled():
+static func factory_button_toggled() -> void:
 	building_factory = !building_factory
 	if building_factory:
 		all_off()
@@ -113,51 +113,51 @@ static func is_building_factory() -> bool:
 static func is_selecting_unit() -> bool:
 	return unit_selected and !hovering_over_gui
 
-static func click_unit():
+static func click_unit() -> void:
 	all_off()
 	unit_selected = true
 
-static func unclick_unit():
+static func unclick_unit() -> void:
 	unit_selected = false
 	controlling_camera = true
 
-static func start_building_units():
+static func start_building_units() -> void:
 	all_off()
 	building_units = true
 
-static func stop_building_units():
+static func stop_building_units() -> void:
 	all_off()
 	default()
 
 static func is_building_units() -> bool:
 	return building_units and !hovering_over_gui
 
-static func start_selecting_route():
+static func start_selecting_route() -> void:
 	all_off()
 	selecting_route = true
 
-static func stop_selecting_route():
+static func stop_selecting_route() -> void:
 	all_off()
 	default()
 
 static func is_selecting_route() -> bool:
 	return selecting_route and !hovering_over_gui
 
-static func start_picking_nation():
+static func start_picking_nation() -> void:
 	all_off()
 	picking_nation = true
 
-static func stop_picking_nation():
+static func stop_picking_nation() -> void:
 	all_off()
 	default()
 
 static func is_picking_nation() -> bool:
 	return picking_nation and !hovering_over_gui
 
-static func hovering_over_gui_active():
+static func hovering_over_gui_active() -> void:
 	hovering_over_gui = true
 
-static func hovering_over_gui_inactive():
+static func hovering_over_gui_inactive() -> void:
 	hovering_over_gui = false
 
 static func is_hovering_over_gui() -> bool:
@@ -166,7 +166,7 @@ static func is_hovering_over_gui() -> bool:
 static func is_building_road_depot() -> bool:
 	return building_road_depot
 
-static func building_road_depot_toggled():
+static func building_road_depot_toggled() -> void:
 	building_road_depot = !building_road_depot
 	if building_road_depot:
 		all_off()

@@ -1,10 +1,40 @@
 class_name station extends broker
 
+var max_prices: Dictionary[int, float] = {}
+
 func _init(new_location: Vector2i, _player_owner: int) -> void:
 	super._init(new_location, _player_owner)
 
-func get_orders() -> Dictionary:
-	return trade_orders
+func get_local_price(type: int) -> float:
+	return max_prices[type]
+
+func place_order(type: int, amount: int, buy: bool, max_price: float) -> void:
+	var order: trade_order = trade_order.new(type, amount, buy, max_price)
+	max_prices[type] = max_price
+	trade_orders[type] = order
+
+func edit_order(type: int, amount: int, buy: bool, max_price: float) -> void:
+	if trade_orders.has(type):
+		#Test that order changes on both sides
+		var order: trade_order = trade_orders[type]
+		order.change_buy(buy)
+		order.change_amount(amount)
+		order.set_max_price(max_price)
+		max_prices[type] = max_price
+	else:
+		place_order(type, amount, buy, max_price)
+
+func get_order(type: int) -> trade_order:
+	if trade_orders.has(type):
+		return trade_orders[type]
+	return null
+
+func remove_order(type: int) -> void:
+	if trade_orders.has(type):
+		var order: trade_order = trade_orders[type]
+		trade_orders.erase(type)
+		order.queue_free()
+		max_prices.erase(type)
 
 func distribute_cargo() -> void:
 	for order: trade_order in trade_orders.values():

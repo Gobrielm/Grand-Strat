@@ -1,8 +1,8 @@
 class_name road_depot extends station
 
-var supplied_tiles = {}
+var supplied_tiles: Dictionary = {}
 
-func _init(coords: Vector2i, _player_owner: int, new_supply_map: Dictionary):
+func _init(coords: Vector2i, _player_owner: int, new_supply_map: Dictionary) -> void:
 	super._init(coords, _player_owner)
 	supplied_tiles = new_supply_map
 
@@ -11,19 +11,19 @@ func get_supply(coords: Vector2i) -> int:
 		return supplied_tiles[coords]
 	return 0
 
-func distribute_cargo():
-	for type in storage:
+func distribute_cargo() -> void:
+	for type: int in storage:
 		distribute_type(type)
 
-func distribute_type(type: int):
+func distribute_type(type: int) -> void:
 	for tile: Vector2i in supplied_tiles:
-		var hold_obj = terminal_map.get_terminal(tile)
+		var hold_obj: terminal = terminal_map.get_terminal(tile)
 		if hold_obj != null and hold_obj is hold:
 			if hold_obj.does_accept(type) and hold_obj.get_player_owner() == player_owner:
 				distribute_type_to_hold(type, hold_obj)
 
-func distribute_type_to_hold(type: int, hold_obj: hold):
-	var coords = hold_obj.get_location()
-	var amount = hold_obj.get_amount_to_add(type, supplied_tiles[coords])
+func distribute_type_to_hold(type: int, hold_obj: hold) -> void:
+	var coords: Vector2i = hold_obj.get_location()
+	var amount: int = hold_obj.get_amount_to_add(type, supplied_tiles[coords])
 	amount = transfer_cargo(type, amount)
 	hold_obj.add_cargo(type, amount)

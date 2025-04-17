@@ -62,6 +62,18 @@ update_on_text_changed = true
 prefix = "Amt:"
 select_all_on_focus = true
 
+[node name="Price" type="SpinBox" parent="."]
+offset_left = 200.0
+offset_top = 49.0
+offset_right = 300.0
+offset_bottom = 99.0
+max_value = 500.0
+step = 0.1
+value = 10.0
+update_on_text_changed = true
+prefix = "Prc:"
+select_all_on_focus = true
+
 [node name="Buy_Button" type="CheckButton" parent="."]
 anchors_preset = 6
 anchor_left = 1.0
@@ -107,7 +119,6 @@ icon = ExtResource("2_anp4o")
 
 [connection signal="about_to_popup" from="." to="." method="_on_about_to_popup"]
 [connection signal="close_requested" from="." to="." method="_on_close_requested"]
-[connection signal="item_selected" from="Control/Cargo_List" to="." method="_on_cargo_list_item_selected"]
 [connection signal="pressed" from="Buy_Button" to="." method="_on_buy_button_pressed"]
 [connection signal="pressed" from="Sell_Button" to="." method="_on_sell_button_pressed"]
 [connection signal="pressed" from="Place_Order" to="." method="_on_place_order_pressed"]
