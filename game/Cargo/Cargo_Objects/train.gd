@@ -4,7 +4,6 @@ var stops: Array = []
 var stop_number: int = -1
 var route: Array = []
 
-var stop_information: Dictionary = {} #Maps location -> station, nothing, depot, ect
 var train_car: Node
 
 var near_stop: bool = false
@@ -96,17 +95,14 @@ func increment_stop() -> void:
 	stop_number = (stop_number + 1) % stops.size()
 
 func decide_stop_action() -> bool:
-	#Just a regular track
-	if !stops.has(location) or stop_information[location] == 3:
-		return false
-	var terminal_or_depot: terminal = map.get_depot_or_terminal(location)
-	#A Depot
-	if stop_information[location] == 1:
-		terminal_or_depot.add_train(self)
+	var map_data_obj: map_data = map_data.get_instance()
+	
+	if map_data_obj.is_depot(location):
+		var depot: Node = map_data_obj.get_depot(location)
+		depot.add_train(self)
 		go_into_depot.rpc()
 		return true
-	#Some sort of hold
-	elif stop_information[location] == 2:
+	elif terminal_map.is_station(location):
 		unloading = true
 		return true
 	return false
@@ -179,7 +175,6 @@ func add_stop(new_location: Vector2i) -> void:
 	if stop_number == -1:
 		stop_number = 0
 	stops.append(new_location)
-	stop_information[new_location] = get_stop_info(new_location)
 	var routes: ItemList = $Train_Window/Routes
 	routes.add_item(str(new_location))
 	
@@ -193,7 +188,6 @@ func get_stop_info(location_to_check: Vector2i) -> int:
 
 @rpc("any_peer", "unreliable", "call_local")
 func remove_stop(index: int) -> void:
-	stop_information.erase(stops[index])
 	stops.remove_at(index)
 	var routes: ItemList = $Train_Window/Routes
 	routes.remove_item(index)
@@ -208,7 +202,6 @@ func remove_stop(index: int) -> void:
 
 func clear_stops() -> void:
 	stops = []
-	stop_information.clear()
 	stop_number = -1
 	stopped = true
 
