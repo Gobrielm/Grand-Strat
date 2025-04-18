@@ -33,6 +33,13 @@ const train_car_scene: PackedScene = preload("res://Cargo/Cargo_Objects/train_ca
 func _ready() -> void:
 	window.hide()
 
+@rpc("authority", "unreliable", "call_local")
+func create(new_location: Vector2i, new_owner: int) -> void:
+	position = map.map_to_local(new_location)
+	location = new_location
+	player_owner = new_owner
+	prep_update_cargo_gui()
+
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
 	if !stopped:
@@ -53,6 +60,13 @@ func _process(delta: float) -> void:
 	interact_stations()
 	check_ticker()
 
+func _input(event: InputEvent) -> void:
+	if event.is_action_pressed("click") and is_selecting_route():
+		do_add_stop(map.get_cell_position())
+	elif event.is_action_pressed("click") and visible:
+		open_menu(map.get_mouse_local_to_map())
+	elif event.is_action_pressed("deselect"):
+		window.deselect_add_stop()
 
 @rpc("authority", "unreliable", "call_local")
 func update_train(p_position: Vector2i) -> void:
@@ -130,23 +144,8 @@ func deaccelerate_train(delta: float) -> void:
 	speed = move_toward(speed, MIN_SPEED, delta * BREAKING_SPEED)
 	velocity = acceleration_direction * speed
 
-func _input(event: InputEvent) -> void:
-	if event.is_action_pressed("click") and is_selecting_route():
-		do_add_stop(map.get_cell_position())
-	elif event.is_action_pressed("click") and visible:
-		open_menu(map.get_mouse_local_to_map())
-	elif event.is_action_pressed("deselect"):
-		window.deselect_add_stop()
-
 func is_selecting_route() -> bool:
 	return state_machine.is_selecting_route()
-
-@rpc("authority", "unreliable", "call_local")
-func create(new_location: Vector2i, new_owner: int) -> void:
-	position = map.map_to_local(new_location)
-	location = new_location
-	player_owner = new_owner
-	prep_update_cargo_gui()
 
 func check_ticker() -> void:
 	if ticker > 1:
@@ -177,14 +176,8 @@ func add_stop(new_location: Vector2i) -> void:
 	stops.append(new_location)
 	var routes: ItemList = $Train_Window/Routes
 	routes.add_item(str(new_location))
-	
 
-func get_stop_info(location_to_check: Vector2i) -> int:
-	if map.is_depot(location_to_check):
-		return 1
-	elif map.is_hold(location_to_check):
-		return 2
-	return 3
+#TODO: Stuff with stations, downstream
 
 @rpc("any_peer", "unreliable", "call_local")
 func remove_stop(index: int) -> void:
@@ -212,6 +205,7 @@ func _on_stop_pressed() -> void:
 	stop_train()
 
 func drive_train_from_depot() -> void:
+	#TODO
 	pass
 
 @rpc("any_peer", "unreliable", "call_local")
@@ -274,8 +268,8 @@ func done_loading() -> void:
 	start_train()
 
 func unload_train() -> void:
-	var obj: terminal = map.get_depot_or_terminal(location)
-	if obj is station and unloading and ticker > 1:
+	var obj: station = terminal_map.get_station(location)
+	if obj != null and unloading and ticker > 1:
 		unload_tick(obj)
 		prep_update_cargo_gui()
 		if cargo_hold.is_empty():
@@ -344,27 +338,29 @@ func create_route_between_start_and_end(start: Vector2i, end: Vector2i) -> Array
 					break
 		if found:
 			break
-	var to_return: Array = [end]
-	var direction: int = -1
 	if found:
-		direction = order[end][0]
-		curr = tile_to_prev[end][direction]
-		found = false
-		while !found:
-			to_return.push_front(curr)
-			if curr == start and can_direction_reach_dir(swap_direction(direction), get_direction()):
-				found = true
-				to_return.pop_front()
-				break
-			for dir: int in order[curr]:
-				if can_direction_reach_dir(direction, dir) and tile_to_prev[curr][dir] != null:
-					curr = tile_to_prev[curr][dir]
-					direction = dir
-					#Possibly needs break
-			
-	if found:
-		return to_return
+		return get_route_from_visited(order, tile_to_prev, start, end)
 	return []
+
+func get_route_from_visited(order: Dictionary, tile_to_prev: Dictionary, start: Vector2i, end: Vector2i) -> Array:
+	var to_return: Array = [end]
+	var direction: int = order[end][0]
+	var curr: Vector2i = tile_to_prev[end][direction]
+	var found: bool = false
+	while !found:
+		to_return.push_front(curr)
+		if curr == start and can_direction_reach_dir(swap_direction(direction), get_direction()):
+			found = true
+			to_return.pop_front()
+			break
+		for dir: int in order[curr]:
+			if can_direction_reach_dir(direction, dir) and tile_to_prev[curr][dir] != null:
+				curr = tile_to_prev[curr][dir]
+				direction = dir
+				#Possibly needs break
+	if !found:
+		return []
+	return to_return
 
 func can_direction_reach_dir(direction: int, dir: int) -> bool:
 	return dir == direction or dir == (direction + 1) % 6 or dir == (direction + 5) % 6
