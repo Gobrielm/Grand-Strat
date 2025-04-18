@@ -400,6 +400,8 @@ func intialize_order(order: Dictionary, coords: Vector2i, direction: int) -> voi
 func get_train_dir_in_array() -> Array:
 	var toReturn: Array = [false, false, false, false, false, false]
 	toReturn[get_direction()] = true
+	if terminal_map.is_station(location):
+		toReturn[swap_direction(get_direction())] = true
 	return toReturn
 
 func get_direction() -> int:
