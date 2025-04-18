@@ -61,9 +61,9 @@ func train_algorithm_test():
 	
 	map.create_train.rpc(point1)
 
-	var train = map.get_node("Train0")
-	train.add_stop(end_stop)
-	train.start_train()
+	var train_obj = map.get_node("Train0")
+	train_obj.add_stop(end_stop)
+	train_obj.start_train()
 	end = Time.get_ticks_msec()
 	print(str((end - start) / 1000) + " Seconds passed to pathfind")
 	

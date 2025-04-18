@@ -14,27 +14,27 @@ func get_trains() -> Array:
 
 func get_trains_simplified() -> Array:
 	var toReturn: Array = []
-	for train: Sprite2D in trains:
-		toReturn.append(train.name)
+	for train_obj: Sprite2D in trains:
+		toReturn.append(train_obj.name)
 	return toReturn
 
 func get_train(index: int) -> Sprite2D:
 	return trains[index]
 
-func add_train(train: Sprite2D) -> void:
-	trains.append(train)
+func add_train(train_obj: Sprite2D) -> void:
+	trains.append(train_obj)
 
 func add_new_train() -> void:
-	var train: Sprite2D = train_scene.instantiate()
-	Utils.world_map.add_child(train)
-	train.create(location)
-	trains.append(train)
-	train.visible = false
+	var train_obj: Sprite2D = train_scene.instantiate()
+	Utils.world_map.add_child(train_obj)
+	train_obj.create(location)
+	trains.append(train_obj)
+	train_obj.visible = false
 
 func leave_depot(index: int) -> void:
 	var dir: int = Utils.world_map.get_depot_direction(location)
-	var train: Sprite2D = trains.pop_at(index)
-	train.go_out_of_depot.rpc(dir)
+	var train_obj: Sprite2D = trains.pop_at(index)
+	train_obj.go_out_of_depot.rpc(dir)
 
 func remove_train(index: int) -> void:
 	trains.remove_at(index)

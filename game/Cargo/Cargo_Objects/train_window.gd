@@ -1,5 +1,5 @@
 extends Window
-@onready var train = get_parent()
+@onready var train_obj = get_parent()
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
@@ -10,7 +10,7 @@ func _input(event):
 		var routes: ItemList = $Routes
 		#Should only every be 1 item selected so this works fine but break just in case
 		for index in routes.get_selected_items():
-			train.remove_stop.rpc(index)
+			train_obj.remove_stop.rpc(index)
 			break
 	elif event.is_action_pressed("deselect"):
 		deselect_add_stop()

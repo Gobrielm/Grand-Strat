@@ -60,8 +60,8 @@ func depot_window():
 	$Name.text = "[center][font_size=30]" + depot_name + "[/font_size][/center]"
 	for i in train_list.item_count:
 		train_list.remove_item(0)
-	for train in current_trains.size():
-		var train_name: String = str(current_trains[train])
+	for train_obj in current_trains.size():
+		var train_name: String = str(current_trains[train_obj])
 		train_list.add_item(train_name)
 	if train_list.item_count > selected_index and selected_index != -1:
 		train_list.select(selected_index)

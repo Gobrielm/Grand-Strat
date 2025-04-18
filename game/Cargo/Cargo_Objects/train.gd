@@ -1,4 +1,4 @@
-extends Sprite2D
+class_name train extends Sprite2D
 var location: Vector2i
 var stops: Array = []
 var stop_number: int = -1

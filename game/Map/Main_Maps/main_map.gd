@@ -190,15 +190,15 @@ func get_depot_or_terminal(coords: Vector2i) -> terminal:
 func create_train(coords: Vector2i) -> void:
 	var caller: int = multiplayer.get_remote_sender_id()
 	if unique_id == 1:
-		var train: Sprite2D = train_scene.instantiate()
-		train.name = "Train" + str(get_number_of_trains())
-		add_child(train)
-		train.create(coords, caller)
+		var train_obj: Sprite2D = train_scene.instantiate()
+		train_obj.name = "Train" + str(get_number_of_trains())
+		add_child(train_obj)
+		train_obj.create(coords, caller)
 	else:
-		var train: Sprite2D = train_scene_client.instantiate()
-		train.name = "Train" + str(get_number_of_trains())
-		add_child(train)
-		train.create(coords)
+		var train_obj: Sprite2D = train_scene_client.instantiate()
+		train_obj.name = "Train" + str(get_number_of_trains())
+		add_child(train_obj)
+		train_obj.create(coords)
 
 func get_number_of_trains() -> int:
 	var children: Array = get_children()
