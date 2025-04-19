@@ -11,7 +11,7 @@ func get_size() -> int:
 func get_element(index: int) -> weighted_value:
 	return backing_array[index]
 
-func get_weight(index: int) -> int:
+func get_weight(index: int) -> float:
 	return backing_array[index].weight
 
 func get_value(index: int):

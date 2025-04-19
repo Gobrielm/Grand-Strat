@@ -29,6 +29,12 @@ func get_order(type: int) -> trade_order:
 		return trade_orders[type]
 	return null
 
+func get_orders_magnitude() -> int:
+	var tot: int = 0
+	for order: trade_order in trade_orders.values():
+		tot += order.amount
+	return tot
+
 func remove_order(type: int) -> void:
 	if trade_orders.has(type):
 		var order: trade_order = trade_orders[type]

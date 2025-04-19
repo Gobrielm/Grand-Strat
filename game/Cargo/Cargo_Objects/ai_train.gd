@@ -1,10 +1,11 @@
 class_name ai_train extends train
 
-var rail_network: Dictionary[Vector2i, Dictionary] = {} #Vector2i -> Dictionary[Vector2i, int] #Set of connections
+var rail_network: Dictionary[Vector2i, rail_node] = {}
 
 func create_rail_graph_network() -> void:
 	create_network(location)
 	var number_trains: int = get_trains_on_network()
+	
 
 func create_network(start: Vector2i) -> void:
 	var queue: Array = [start]
@@ -32,17 +33,26 @@ func create_network(start: Vector2i) -> void:
 
 func create_node(coords: Vector2i) -> void:
 	if !rail_network.has(coords):
-		rail_network[coords] = {}
+		rail_network[coords] = rail_node.new(coords)
 
-func connect_nodes(coords1: Vector2i, coords2: Vector2i, distance: int) -> void:
-	if rail_network[coords1].has(coords2) and rail_network[coords1][coords2] < distance:
-		return
-	rail_network[coords1][coords2] = distance
-	rail_network[coords2][coords1] = distance
+func connect_nodes(coords1: Vector2i, coords2: Vector2i, dist: int) -> void:
+	if rail_network.has(coords1) and rail_network.has(coords2):
+		var weight: float = get_weight_of_route(coords1, coords2, dist)
+		rail_network[coords1].connect_nodes(coords2, weight)
+		rail_network[coords2].connect_nodes(coords1, weight)
 
-func disconnect_nodes(coords1: Vector2i, coords2: Vector2i) -> void:
-	rail_network[coords1].erase(coords2)
-	rail_network[coords2].erase(coords1)
+func get_weight_of_route(coords1: Vector2i, coords2: Vector2i, dist: int) -> float:
+	if terminal_map.is_station(coords1) and terminal_map.is_station(coords2):
+		var stat1: station = terminal_map.get_station(coords1)
+		var stat2: station = terminal_map.get_station(coords2)
+		return stat1.get_orders_magnitude() + stat2.get_orders_magnitude() + 5.0 / dist
+	elif terminal_map.is_station(coords1) or terminal_map.is_station(coords2):
+		var stat: station = terminal_map.get_station(coords1)
+		if stat == null:
+			stat = terminal_map.get_station(coords2)
+		return stat.get_orders_magnitude() + 3.0 / dist
+	else:
+		return 5 + 2.0 / dist
 
 func get_trains_on_network() -> int:
 	var count: int = 1
