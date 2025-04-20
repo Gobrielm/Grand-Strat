@@ -48,7 +48,7 @@ func get_network(p_train: ai_train) -> int:
 	for id: int in ai_trains:
 		var train_obj: ai_train = get_ai_train(id)
 		if train_obj.compare_networks(p_train):
-			ai_trains[train_obj.id]
+			return ai_trains[train_obj.id]
 	return get_unique_id()
 
 func get_train(id: int) -> train:
@@ -63,7 +63,7 @@ func get_ai_train(id: int) -> ai_train:
 
 func get_trains_on_network(id: int) -> int:
 	var count: int = 1
-	var network_id = ai_trains[id]
+	var network_id: int = ai_trains[id]
 	for network_iod: int in ai_trains.values():
 		if network_iod == network_id:
 			count += 1

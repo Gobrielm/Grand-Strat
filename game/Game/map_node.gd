@@ -1,20 +1,20 @@
 extends Node
 
-@onready var tile_ownership = $tile_ownership
-@onready var main_map = $main_map
-@onready var camera = $main_map/player_camera
-@onready var factory_window = $main_map/factory_window
-@onready var depot_window = $main_map/depot_window
-@onready var station_window = $main_map/station_window
-@onready var unit_creator_window = $main_map/unit_creator_window
-@onready var factory_recipe_window = $main_map/factory_recipe_gui
-@onready var factory_construction_window = $main_map/factory_construction_gui
-@onready var cargo_map = $cargo_map
+@onready var tile_ownership: Node = $tile_ownership
+@onready var main_map: TileMapLayer = $main_map
+@onready var camera: Camera2D = $main_map/player_camera
+@onready var factory_window: Window = $main_map/factory_window
+@onready var depot_window: Window = $main_map/depot_window
+@onready var station_window: Window = $main_map/station_window
+@onready var unit_creator_window: Window = $main_map/unit_creator_window
+@onready var factory_recipe_window: Window = $main_map/factory_recipe_gui
+@onready var factory_construction_window: Window = $main_map/factory_construction_gui
+@onready var cargo_map: Node = $cargo_map
 
-var unique_id
-var ai := {}
+var unique_id: int
+var ai: Dictionary = {}
 
-func _ready():
+func _ready() -> void:
 	randomize()
 	unique_id = multiplayer.get_unique_id()
 	if unique_id != 1:
@@ -35,7 +35,7 @@ func _ready():
 	cargo_map.place_resources(main_map)
 	call_deferred("create_ai")
 
-func _input(event):
+func _input(event: InputEvent) -> void:
 	main_map.update_hover()
 	camera.update_coord_label(get_cell_position())
 	if event.is_action_pressed("click"):
@@ -81,37 +81,37 @@ func _input(event):
 	elif event.is_action_pressed("debug_place_train") and state_machine.is_controlling_camera():
 		main_map.create_train.rpc(get_cell_position())
 	elif event.is_action_pressed("debug_print") and state_machine.is_controlling_camera():
-		for id in ai:
+		for id: int in ai:
 			ai[id].process()
 		#unit_creator_window.popup()
 
-func _on_day_tick_timeout():
+func _on_day_tick_timeout() -> void:
 	pass
 
-func _on_month_tick_timeout():
+func _on_month_tick_timeout() -> void:
 	pass
 
 
 
 #Ai
-func create_ai():
+func create_ai() -> void:
 	ai[1] = load("res://AI/economy_ai.gd").new(1, main_map)
 
-func acknowledge_pending_deferred_call(id: int):
+func acknowledge_pending_deferred_call(id: int) -> void:
 	if ai.has(id):
 		ai[id].acknowledge_pending_deferred_call()
 
-func _on_ai_timer_timeout():
+func _on_ai_timer_timeout() -> void:
 	return
 	#if ai != null:
 		#ai.process()
 
 #Factory
-func create_factory():
+func create_factory() -> void:
 	create_factory_server.rpc_id(1, unique_id, get_cell_position())
 
 @rpc("any_peer", "call_local", "unreliable")
-func create_factory_server(building_id: int, coords: Vector2i):
+func create_factory_server(building_id: int, coords: Vector2i) -> void:
 	cargo_map.create_construction_site(building_id, coords)
 
 #Tile_Ownership
@@ -119,16 +119,16 @@ func is_owned(player_id: int, coords: Vector2i) -> bool:
 	return tile_ownership.is_owned(player_id, coords)
 
 #Nation_Picker
-func enable_nation_picker():
+func enable_nation_picker() -> void:
 	camera.get_node("CanvasLayer").visible = false
 	state_machine.start_picking_nation()
 
-func disable_nation_picker():
+func disable_nation_picker() -> void:
 	camera.get_node("CanvasLayer").visible = true
 	state_machine.stop_picking_nation()
 
-func pick_nation():
-	var coords = main_map.get_cell_position()
+func pick_nation() -> void:
+	var coords: Vector2i = main_map.get_cell_position()
 	tile_ownership.add_player_to_country.rpc_id(1, unique_id, coords)
 
 #Map Commands
@@ -136,6 +136,6 @@ func get_cell_position() -> Vector2i:
 	return main_map.get_cell_position()
 
 #BackBuff
-func idk():
+func idk() -> void:
 	pass
 	#$BackBufferCopy
