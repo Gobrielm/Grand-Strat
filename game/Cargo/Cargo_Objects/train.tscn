@@ -10,7 +10,6 @@
 
 [node name="Train" type="Sprite2D"]
 z_index = 2
-scale = Vector2(0.75, 0.75)
 texture = ExtResource("1_vh0y7")
 script = ExtResource("2_qvldk")
 

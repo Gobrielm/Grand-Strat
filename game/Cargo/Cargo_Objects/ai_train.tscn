@@ -1,0 +1,9 @@
+[gd_scene load_steps=3 format=3 uid="uid://bnffyswn3eoo0"]
+
+[ext_resource type="Texture2D" uid="uid://cqdkw6b4bmsk5" path="res://Map_Icons/icon.svg" id="1_pgcu6"]
+[ext_resource type="Script" uid="uid://c8c2kaggtms3e" path="res://Cargo/Cargo_Objects/ai_train.gd" id="2_gihkc"]
+
+[node name="AI_Train" type="Sprite2D"]
+z_index = 2
+texture = ExtResource("1_pgcu6")
+script = ExtResource("2_gihkc")

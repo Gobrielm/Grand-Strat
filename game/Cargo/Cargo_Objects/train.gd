@@ -5,6 +5,7 @@ var stop_number: int = -1
 var route: Array = []
 
 var train_car: Node
+var id: int
 
 var near_stop: bool = false
 var acceleration_direction: Vector2
@@ -26,18 +27,21 @@ const LOAD_SPEED: int = 1
 const LOAD_TICK_AMOUNT: int = 5
 
 const train_car_scene: PackedScene = preload("res://Cargo/Cargo_Objects/train_car.tscn")
+var map: TileMapLayer
 
-@onready var map: TileMapLayer = get_parent()
 @onready var window: Window = $Train_Window
+
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	window.hide()
 
 @rpc("authority", "unreliable", "call_local")
-func create(new_location: Vector2i, new_owner: int) -> void:
+func create(new_location: Vector2i, new_owner: int, p_id: int) -> void:
+	map = Utils.world_map
 	position = map.map_to_local(new_location)
 	location = new_location
 	player_owner = new_owner
+	id = p_id
 	prep_update_cargo_gui()
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.

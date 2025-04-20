@@ -5,7 +5,6 @@ var rail_network: Dictionary[Vector2i, rail_node] = {}
 func create_rail_graph_network() -> void:
 	create_network(location)
 	var number_trains: int = get_trains_on_network()
-	
 
 func create_network(start: Vector2i) -> void:
 	var queue: Array = [start]

@@ -28,6 +28,7 @@ func _ready():
 		tile_ownership.name = "tile_ownership"
 		add_child(tile_ownership)
 	else:
+		train_manager.new()
 		Utils.assign_world_map(main_map)
 		terminal_map.assign_cargo_map(cargo_map)
 	enable_nation_picker()

@@ -98,10 +98,6 @@ func is_already_built(coords: Vector2i, new_orientation: int) -> bool:
 	assert(rail_layer != null)
 	return rail_layer.get_cell_atlas_coords(coords).x == new_orientation
 
-func place_hover() -> void:
-	for layer: TileMapLayer in temp_layer_array:
-		layer.clear()
-
 func delete_hover_rail() -> void:
 	if old_coordinates != null and orientation != null:
 		var temp_layer: TileMapLayer = get_temp_layer(orientation)

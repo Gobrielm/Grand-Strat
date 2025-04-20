@@ -17,7 +17,6 @@ var money_interface: Node
 var untraversable_tiles: Dictionary = {}
 var visible_tiles: Array = []
 
-const train_scene: PackedScene = preload("res://Cargo/Cargo_Objects/train.tscn")
 const train_scene_client: PackedScene = preload('res://Client_Objects/client_train.tscn')
 const depot: Script = preload("res://Cargo/depot.gd")
 
@@ -190,10 +189,9 @@ func get_depot_or_terminal(coords: Vector2i) -> terminal:
 func create_train(coords: Vector2i) -> void:
 	var caller: int = multiplayer.get_remote_sender_id()
 	if unique_id == 1:
-		var train_obj: train = train_scene.instantiate()
+		var train_obj: train = train_manager.get_instance().create_train(coords, caller)
 		train_obj.name = "Train" + str(get_number_of_trains())
 		add_child(train_obj)
-		train_obj.create(coords, caller)
 	else:
 		var train_obj: Sprite2D = train_scene_client.instantiate()
 		train_obj.name = "Train" + str(get_number_of_trains())
@@ -254,6 +252,8 @@ func place_to_end_rail(new_start: Vector2i, new_end: Vector2i) -> void:
 	reset_start()
 
 func get_rail_to_hover() -> void:
+	if start == Vector2i(0, 0):
+		return
 	var end: Vector2i = get_cell_position()
 	var toReturn: Dictionary = get_rails_from(start, end)
 	rail_placer.hover_many_tiles(toReturn)
