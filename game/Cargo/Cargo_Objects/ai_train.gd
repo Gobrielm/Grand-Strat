@@ -2,9 +2,11 @@ class_name ai_train extends train
 
 var rail_network: Dictionary[Vector2i, rail_node] = {}
 
+var tn_manager: train_manager = train_manager.get_instance()
+
 func create_rail_graph_network() -> void:
 	create_network(location)
-	var number_trains: int = get_trains_on_network()
+	var number_trains: int = tn_manager.get_trains_on_network(id)
 
 func create_network(start: Vector2i) -> void:
 	var queue: Array = [start]
@@ -52,13 +54,6 @@ func get_weight_of_route(coords1: Vector2i, coords2: Vector2i, dist: int) -> flo
 		return stat.get_orders_magnitude() + 3.0 / dist
 	else:
 		return 5 + 2.0 / dist
-
-func get_trains_on_network() -> int:
-	var count: int = 1
-	for train_obj: train in Utils.world_map.get_trains():
-		if compare_networks(train_obj):
-			count += 1
-	return count
 
 func compare_networks(other_train: train) -> bool:
 	if other_train is ai_train:

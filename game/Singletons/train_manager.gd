@@ -3,7 +3,7 @@ class_name train_manager extends Node
 const train_scene: PackedScene = preload("res://Cargo/Cargo_Objects/train.tscn")
 const ai_train_scene: PackedScene = preload("res://Cargo/Cargo_Objects/ai_train.tscn")
 
-var ai_trains: Dictionary[int, ai_train] = {}
+var ai_trains: Dictionary[int, int] = {}
 var trains: Dictionary[int, train] = {}
 
 static var singleton_instance: train_manager
@@ -40,7 +40,16 @@ func add_train(p_train: train) -> void:
 	trains[p_train.id] = p_train
 
 func add_ai_train(p_train: ai_train) -> void:
-	ai_trains[p_train.id] = p_train
+	add_train(p_train)
+	#Assigning ai train to random 'Network' unless it matches with another train
+	ai_trains[p_train.id] = get_network(p_train)
+
+func get_network(p_train: ai_train) -> int:
+	for id: int in ai_trains:
+		var train_obj: ai_train = get_ai_train(id)
+		if train_obj.compare_networks(p_train):
+			ai_trains[train_obj.id]
+	return get_unique_id()
 
 func get_train(id: int) -> train:
 	if trains.has(id):
@@ -49,5 +58,13 @@ func get_train(id: int) -> train:
 
 func get_ai_train(id: int) -> ai_train:
 	if ai_trains.has(id):
-		return ai_trains[id]
+		return trains[id]
 	return null
+
+func get_trains_on_network(id: int) -> int:
+	var count: int = 1
+	var network_id = ai_trains[id]
+	for network_iod: int in ai_trains.values():
+		if network_iod == network_id:
+			count += 1
+	return count
