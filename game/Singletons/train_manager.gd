@@ -87,7 +87,6 @@ func create_network_for_trains(network_id: int) -> void:
 	#TODO: Make sure network doesn't reset for a new train
 	create_network(get_member_from_network(network_id).location, network_id)
 	split_up_network_among_trains(networks[network_id], network_members[network_id])
-	
 
 func create_network(start: Vector2i, network_id: int) -> void:
 	var map: TileMapLayer = Utils.world_map
@@ -137,27 +136,36 @@ func check_visited(visited: Dictionary, coords: Vector2i, direction: int) -> boo
 
 func create_node(coords: Vector2i, rail_network: Dictionary[Vector2i, rail_node]) -> void:
 	if !rail_network.has(coords):
-		rail_network[coords] = rail_node.new(coords)
+		var weight: int = 0
+		var stat: station = terminal_map.get_station(coords)
+		if stat != null:
+			weight = stat.get_orders_magnitude()
+		rail_network[coords] = rail_node.new(coords, weight)
 
 func connect_nodes(coords1: Vector2i, coords2: Vector2i, dist: int, rail_network: Dictionary[Vector2i, rail_node]) -> void:
 	if rail_network.has(coords1) and rail_network.has(coords2):
-		var weight: float = get_weight_of_route(coords1, coords2, dist)
-		rail_network[coords1].connect_nodes(coords2, weight)
-		rail_network[coords2].connect_nodes(coords1, weight)
-
-func get_weight_of_route(coords1: Vector2i, coords2: Vector2i, dist: int) -> float:
-	if terminal_map.is_station(coords1) and terminal_map.is_station(coords2):
-		var stat1: station = terminal_map.get_station(coords1)
-		var stat2: station = terminal_map.get_station(coords2)
-		return stat1.get_orders_magnitude() + stat2.get_orders_magnitude() + 5.0 / dist
-	elif terminal_map.is_station(coords1) or terminal_map.is_station(coords2):
-		var stat: station = terminal_map.get_station(coords1)
-		if stat == null:
-			stat = terminal_map.get_station(coords2)
-		return stat.get_orders_magnitude() + 3.0 / dist
-	else:
-		return 5 + 2.0 / dist
+		rail_network[coords1].connect_nodes(coords2, 10 / dist)
+		rail_network[coords2].connect_nodes(coords1, 10 / dist)
 
 func split_up_network_among_trains(rail_network: Dictionary[Vector2i, rail_node], train_members: Array[int]) -> void:
 	var number_of_trains: int = train_members.size()
-	
+	var i: int = 0
+	var curr_train: ai_train = trains[train_members[i]]
+	while true:
+		var endnode: rail_node = find_endnode(rail_network)
+		endnode.service_node(curr_train.id)
+		#endnode.get_best_connection()
+		i = (i + 1) % number_of_trains
+
+#TODO: Inefficient and doesn't real look very far
+func find_endnode(rail_network: Dictionary[Vector2i, rail_node]) -> rail_node:
+	var size_looking_for: int = 1
+	while true:
+		for node: rail_node in rail_network.values():
+			if node.connections.size() == size_looking_for and node.weight > 0:
+				return node
+		size_looking_for += 1
+		if size_looking_for > 5:
+			break
+	#Only one node, no need for train
+	return null
