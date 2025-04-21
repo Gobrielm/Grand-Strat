@@ -2,6 +2,8 @@ class_name ai_train extends train
 
 var rail_network: Dictionary[Vector2i, rail_node] = {}
 
+var network_id: int
+
 var tn_manager: train_manager = train_manager.get_instance()
 
 func create_rail_graph_network() -> void:
