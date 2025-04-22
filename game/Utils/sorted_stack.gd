@@ -14,10 +14,10 @@ func get_element(index: int) -> weighted_value:
 func get_weight(index: int) -> float:
 	return backing_array[index].weight
 
-func get_value(index: int):
+func get_value(index: int) -> Variant:
 	return backing_array[index].val
 
-func insert_element(val, weight: float) -> void:
+func insert_element(val: Variant, weight: float) -> void:
 	var element: weighted_value = weighted_value.new(val, weight)
 	if get_size() == 0:
 		backing_array.insert(0, element)

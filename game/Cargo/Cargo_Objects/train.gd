@@ -34,6 +34,8 @@ var map: TileMapLayer
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	window.hide()
+	if is_inside_tree():
+		prep_update_cargo_gui()
 
 @rpc("authority", "unreliable", "call_local")
 func create(new_location: Vector2i, new_owner: int, p_id: int) -> void:
@@ -42,7 +44,8 @@ func create(new_location: Vector2i, new_owner: int, p_id: int) -> void:
 	location = new_location
 	player_owner = new_owner
 	id = p_id
-	prep_update_cargo_gui()
+	if is_inside_tree():
+		prep_update_cargo_gui()
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:

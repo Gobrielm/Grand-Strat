@@ -17,7 +17,7 @@ func test() -> void:
 	train_algorithm_test()
 	print("-------------------- ✔️")
 	
-	print("train_algorithm_test")
+	print("ai_train_network_test")
 	ai_rail_test()
 	print("-------------------- ✔️")
 	
@@ -64,13 +64,15 @@ func train_algorithm_test() -> void:
 	for i: int in 300:
 		build_many_rails(point1, point2)
 		point2.x = i
-	point1 = Vector2i(0, 0)
 	var end: float = Time.get_ticks_msec()
 	print(str((end - start) / 1000) + " Seconds passed to build")
 	start = Time.get_ticks_msec()
 	
-	map.create_train.rpc(point1)
+	map.create_train(point1)
 	var train_obj: train = map.get_node("Train0")
+	var orientation: Array = Utils.rail_placer.get_track_connections(end_stop)
+	map.remove_rail(end_stop, orientation.find(true), 0)
+	map.place_rail_general(end_stop, orientation.find(true), 2)
 	train_obj.add_stop(end_stop)
 	train_obj.start_train()
 	end = Time.get_ticks_msec()

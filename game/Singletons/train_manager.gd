@@ -6,7 +6,6 @@ const ai_train_scene: PackedScene = preload("res://Cargo/Cargo_Objects/ai_train.
 var networks: Dictionary[int, rail_network] #Each network id points to network
 var trains: Dictionary[int, train] = {}
 
-
 static var singleton_instance: train_manager
 
 func _init() -> void:

@@ -85,6 +85,13 @@ func place_tile(coords: Vector2i, new_orientation: int, new_type: int) -> void:
 	rail_layer.set_cell(coords, 0, Vector2i(new_orientation, new_type))
 	add_track_connection(coords, new_orientation)
 
+func remove_tile(coords: Vector2i, new_orientation: int, _new_type: int) -> void:
+	#TODO: Doesn't delete station, or depot, but only used safely in testing
+	print("Testing function used, is potentially unsafe")
+	var rail_layer: TileMapLayer = get_rail_layer(new_orientation)
+	rail_layer.erase_cell(coords)
+	delete_track_connection(coords, new_orientation)
+
 func place_road_depot(coords: Vector2i, player_id: int) -> void:
 	for i: int in 6:
 		if is_already_built(coords, i):
@@ -142,6 +149,7 @@ func add_track_connection(coords: Vector2i, new_orientation: int) -> void:
 @rpc("authority", "call_local", "reliable")
 func delete_track_connection(coords: Vector2i, new_orientation: int) -> void:
 	track_connection[coords][new_orientation] = false
+	
 
 func get_track_connections(coords: Vector2i) -> Array:
 	if track_connection.has(coords):

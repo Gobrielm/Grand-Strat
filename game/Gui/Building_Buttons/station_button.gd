@@ -1,7 +1,7 @@
 extends Button
 @export var active = false
 
-func _on_pressed():
+func _on_pressed() -> void:
 	unpress_other_buttons()
 	active = !active
 	if active:
@@ -9,9 +9,9 @@ func _on_pressed():
 	else:
 		modulate = Color(1, 1, 1, 1)
 
-func unpress():
+func unpress() -> void:
 	active = false
 	modulate = Color(1, 1, 1, 1)
 
-func unpress_other_buttons():
+func unpress_other_buttons() -> void:
 	get_parent().get_parent().unpress_all_buttons()

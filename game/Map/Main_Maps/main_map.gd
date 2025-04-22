@@ -1,5 +1,6 @@
 extends TileMapLayer
 var start: Vector2i = Vector2i(0, 0)
+var is_start_valid: bool = false
 var unique_id: int
 #Buttons
 @onready var camera: Camera2D = $player_camera
@@ -153,20 +154,17 @@ func update_hover() -> void:
 	var rail_type: int = get_rail_type_selected()
 	if get_rail_type_selected() < 3:
 		rail_placer.hover(get_cell_position(), rail_type, map_to_local(get_cell_position()), get_mouse_local_to_map())
-	elif start != null and track_button.active:
+	elif is_start_valid and track_button.active:
 		get_rail_to_hover()
 
 func record_hover_click() -> void:
 	var coords: Vector2i = rail_placer.get_coordinates()
 	var orientation: int = rail_placer.get_orientation()
 	if single_track_button.active:
-		rail_placer.place_hover()
 		place_rail_general(coords, orientation, 0)
 	elif depot_button.active:
-		rail_placer.place_hover()
 		place_rail_general(coords, orientation, 1)
 	elif station_button.active:
-		rail_placer.place_hover()
 		place_rail_general(coords, orientation, 2)
 
 func get_depot_direction(coords: Vector2i) -> int:
@@ -208,6 +206,8 @@ func get_depot_or_terminal(coords: Vector2i) -> terminal:
 @rpc("any_peer", "reliable", "call_local")
 func create_train(coords: Vector2i) -> void:
 	var caller: int = multiplayer.get_remote_sender_id()
+	if !caller:
+		caller = 1
 	if unique_id == 1:
 		var train_obj: train = train_manager.get_instance().create_train(coords, caller)
 		train_obj.name = "Train" + str(get_number_of_trains())
@@ -242,17 +242,17 @@ func get_trains_in_depot(coords: Vector2i) -> Array:
 #Rail Builder
 func record_start_rail() -> void:
 	start = get_cell_position()
+	is_start_valid = true
 
 func reset_start() -> void:
 	start = Vector2i(0, 0)
+	is_start_valid = false
 
 func place_rail_to_start() -> void:
 	place_to_end_rail(start, get_cell_position())
 
 func place_to_end_rail(new_start: Vector2i, new_end: Vector2i) -> void:
 	start = new_start
-	if start == Vector2i(0, 0):
-		return
 	var end: Vector2i = new_end
 	var queue: Array = []
 	
@@ -272,7 +272,7 @@ func place_to_end_rail(new_start: Vector2i, new_end: Vector2i) -> void:
 	reset_start()
 
 func get_rail_to_hover() -> void:
-	if start == Vector2i(0, 0):
+	if !is_start_valid:
 		return
 	var end: Vector2i = get_cell_position()
 	var toReturn: Dictionary = get_rails_from(start, end)
@@ -469,6 +469,11 @@ func open_tile_window(coords: Vector2i) -> void:
 		tile_window.hide()
 
 #Rail General
+func remove_rail(coords: Vector2i, orientation: int, p_type: int):
+	#TODO: Needed for testing, but should be updated and/or removed
+	if unique_id == 1:
+		rail_placer.remove_tile(coords, orientation, p_type)
+
 @rpc("authority", "call_local", "unreliable")
 func place_tile(coords: Vector2i, orientation: int, type: int, _new_owner: int) -> void:
 	rail_placer.place_tile(coords, orientation, type)
