@@ -69,7 +69,7 @@ func get_biggest_node() -> rail_node:
 			biggest = node
 	return biggest
 
-func get_closest_node() -> rail_node:
+func get_best_edge() -> rail_edge:
 	var closest: rail_node = null
 	var route_weight: float = 0.0
 	for node: rail_node in connections:
@@ -78,4 +78,6 @@ func get_closest_node() -> rail_node:
 				closest = node
 				route_weight = val.weight
 				break
-	return closest
+	if closest == null:
+		return null
+	return rail_edge.new(self, closest, route_weight)

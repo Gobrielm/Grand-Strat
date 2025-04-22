@@ -134,6 +134,8 @@ func split_up_network_among_trains() -> void:
 	while true:
 		i = get_smallest_index()
 		curr_train_id = train_members[i]
+		var edge: rail_edge = get_best_edge_in_network()
+		claim_rail_edge(edge, curr_train_id)
 		
 
 #TODO: Inefficient and doesn't real look very far
@@ -170,10 +172,15 @@ func get_smallest_index() -> int:
 			smallest = weight_serviced[i]
 	return index
 	
-func get_closest_closest_unclaimed_node() -> rail_node:
-	var best_node: rail_node = null
-	var dist: int
+func get_best_edge_in_network() -> rail_edge:
+	var best_edge: rail_edge = null
 	for node: rail_node in network.values():
-		pass
-	#TODO:
-	return null
+		var edge: rail_edge = node.get_best_edge()
+		if best_edge == null or edge.weight > best_edge.weight:
+			best_edge = edge
+	return best_edge
+
+func claim_rail_edge(edge: rail_edge, train_id: int) -> void:
+	edge.node1.service_node(train_id)
+	edge.node2.service_node(train_id)
+	
