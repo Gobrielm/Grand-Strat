@@ -107,4 +107,5 @@ func set_tile(coords: Vector2i, atlas: Vector2i) -> void:
 	Utils.world_map.make_cell_invisible(coords)
 
 func _on_cargo_values_finished_created_map_resources() -> void:
-	place_random_industries()
+	if !Utils.world_map.is_testing():
+		place_random_industries()

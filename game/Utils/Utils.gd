@@ -56,3 +56,6 @@ static func turn_on_black_white_map() -> void:
 static func turn_off_black_white_map() -> void:
 	cargo_map.material.set_shader_parameter("onoff", 0)
 	world_map.material.set_shader_parameter("onoff", 0)
+
+static func is_ready() -> bool:
+	return cargo_map != null and cargo_values != null and world_map != null and tile_ownership != null and rail_placer != null and background_music != null

@@ -16,13 +16,13 @@ func create_countries() -> void:
 		var prov: province = map_data.get_instance().get_province(map_data.get_instance().get_province_id(cell))
 		for tile: Vector2i in prov.tiles:
 			add_tile_to_country(tile, 1)
-			set_cell(tile, 0, Vector2i(0, 0))
 
 func add_tile_to_country(tile: Vector2i, country_id: int) -> void:
 	if !country_id_to_tiles_owned.has(country_id):
 		country_id_to_tiles_owned[country_id] = []
 	country_id_to_tiles_owned[country_id].append(tile)
 	tile_to_country_id[tile] = country_id
+	set_cell(tile, 0, Vector2i(country_id / 8, country_id % 8))
 
 @rpc("authority", "call_local", "reliable")
 func refresh_tile_ownership(_resource: Dictionary) -> void:

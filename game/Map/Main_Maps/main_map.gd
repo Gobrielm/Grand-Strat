@@ -66,6 +66,7 @@ func _ready() -> void:
 		recipe.create_set_recipes()
 		$player_camera/CanvasLayer/Desync_Label.visible = true
 		testing = preload("res://Test/testing.gd").new(self)
+		start_test()
 	else:
 		unit_map = load("res://Client_Objects/client_unit_map.tscn").instantiate()
 		unit_map.name = "unit_map"
@@ -73,6 +74,25 @@ func _ready() -> void:
 		for tile: Vector2i in get_used_cells():
 			visible_tiles.append(tile)
 	
+
+#Testing
+func is_testing() -> bool:
+	return testing != null
+
+func start_test() -> void:
+	if Utils.is_ready():
+		clear()
+		create_testing_map()
+		testing.test()
+	else:
+		call_deferred("start_test")
+
+func create_testing_map() -> void:
+	var tile_ownership: TileMapLayer = Utils.tile_ownership
+	for i: int in range(-500, 500):
+		for j: int in range(-500, 500):
+			tile_ownership.add_tile_to_country(Vector2i(i, j), 1)
+			set_cell(Vector2i(i, j), 0, Vector2i(0, 0))
 
 #Constants
 func is_owned(player_id: int, coords: Vector2i) -> bool:

@@ -91,8 +91,6 @@ func _on_day_tick_timeout() -> void:
 func _on_month_tick_timeout() -> void:
 	pass
 
-
-
 #Ai
 func create_ai() -> void:
 	ai[1] = load("res://AI/economy_ai.gd").new(1, main_map)

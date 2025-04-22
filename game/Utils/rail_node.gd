@@ -2,7 +2,7 @@ class_name rail_node extends Node
 
 var coords: Vector2i
 var weight: float
-var serviced_by: Array[int] = []
+var serviced_by: Dictionary[int, bool] = {}
 var connections: Dictionary[rail_node, sorted_stack] = {}
 
 func _init(p_coords: Vector2i, p_weight: float) -> void:
@@ -12,36 +12,29 @@ func _init(p_coords: Vector2i, p_weight: float) -> void:
 func get_weight() -> float:
 	return weight / serviced_by.size()
 
-func connect_nodes(p_node: rail_node, p_weight: float) -> void:
+func connect_nodes(edge: rail_edge) -> void:
+	var p_node: rail_node = edge.node1 if edge.node1 != self else edge.node2
 	if !connections.has(p_node):
 		connections[p_node] = sorted_stack.new()
-	connections[p_node].insert_element(0, p_weight)
+	connections[p_node].insert_element(edge, edge.weight)
 
 func service_node(train_id: int) -> void:
 	if !does_service(train_id):
-		serviced_by.append(train_id)
+		serviced_by[train_id] = true
 
 func does_service(train_id: int) -> bool:
-	for id: int in serviced_by:
-		if id == train_id:
-			return true
-	return false
+	return serviced_by.has(train_id)
 
 func is_serviced() -> bool:
 	return serviced_by.size() > 0
 
-func is_connection_claimed(other_node: rail_node, p_weight: float) -> bool:
-	for element: weighted_value in connections[other_node].backing_array:
-		if element.weight == p_weight and element.val == 0:
-			return true
-	return false
-
-func get_best_connection(other_node: rail_node) -> float:
+func get_best_connection(other_node: rail_node) -> rail_edge:
 	var backing_array: Array = connections[other_node].backing_array
 	for element: weighted_value in backing_array:
-		if element.val == 0:
-			return element.weight
-	return backing_array[0].weight
+		var edge: rail_edge = element.val
+		if !edge.is_edge_claimed():
+			return edge
+	return backing_array[0].val
 
 func claim_connection(other_node: rail_node, p_weight: float) -> void:
 	var temp: weighted_value
@@ -55,9 +48,9 @@ func claim_connection(other_node: rail_node, p_weight: float) -> void:
 	if temp != null:
 		temp.val += 1
 
-func claim_best_connection(other_node: rail_node) -> void:
-	var p_weight: float = get_best_connection(other_node)
-	claim_connection(other_node, p_weight)
+func claim_best_connection(other_node: rail_node, train_id: int) -> void:
+	var edge: rail_edge = get_best_connection(other_node)
+	edge.claim_edge(train_id)
 
 func get_only_connected_node() -> Vector2i:
 	return connections.keys()[0]

@@ -89,8 +89,9 @@ func connect_nodes(coords1: Vector2i, coords2: Vector2i, dist: int) -> void:
 	if network.has(coords1) and network.has(coords2):
 		var node1: rail_node = network[coords1]
 		var node2: rail_node = network[coords2]
-		node1.connect_nodes(node2, 10.0 / dist)
-		node2.connect_nodes(node1, 10.0 / dist)
+		var edge: rail_edge = rail_edge.new(node1, node2, 10.0 / dist)
+		node1.connect_nodes(edge)
+		node2.connect_nodes(edge)
 
 func get_rail_node(coords: Vector2i) -> rail_node:
 	return network[coords]
@@ -104,7 +105,7 @@ func split_up_network_among_trains() -> void:
 	var i: int = 0
 	var curr_train_id: int = train_members[i]
 	#Creates endnode connections
-	while true:
+	while i != 0:
 		var endnode: rail_node = find_endnode()
 		if endnode == null:
 			#No unclaimed endnodes, rest will be largest unclaimed
@@ -112,20 +113,18 @@ func split_up_network_among_trains() -> void:
 		service_node(endnode, curr_train_id)
 		var other_coords: Vector2i = endnode.get_only_connected_node()
 		var other_node: rail_node = network[other_coords]
-		endnode.claim_best_connection(other_node)
+		endnode.claim_best_connection(other_node, curr_train_id)
 		service_node(other_node, curr_train_id)
 		
 		i = (i + 1) % number_of_trains
 		curr_train_id = train_members[i]
-		if i == 0:
-			#Looped around and started each train at an endnode
-			break
+	
 	#Fills in rest around the biggest stations
 	while i != 0:
 		var node: rail_node = get_biggest_node()
 		service_node(node, curr_train_id)
 		var other_node: rail_node = node.get_biggest_node()
-		node.claim_best_connection(other_node)
+		node.claim_best_connection(other_node, curr_train_id)
 		service_node(other_node, curr_train_id)
 		i = (i + 1) % number_of_trains
 		curr_train_id = train_members[i]
@@ -135,7 +134,11 @@ func split_up_network_among_trains() -> void:
 		i = get_smallest_index()
 		curr_train_id = train_members[i]
 		var edge: rail_edge = get_best_edge_in_network()
-		claim_rail_edge(edge, curr_train_id)
+		edge.claim_edge(curr_train_id)
+		service_node(edge.node1, curr_train_id)
+		service_node(edge.node2, curr_train_id)
+		if check_for_completion():
+			break
 		
 
 #TODO: Inefficient and doesn't real look very far
@@ -147,6 +150,8 @@ func find_endnode() -> rail_node:
 	return null
 
 func service_node(node: rail_node, train_id: int) -> void:
+	if node.does_service(train_id):
+		return
 	var old_weight: float = node.get_weight()
 	node.service_node(train_id)
 	var new_weight: float = node.get_weight()
@@ -179,8 +184,9 @@ func get_best_edge_in_network() -> rail_edge:
 		if best_edge == null or edge.weight > best_edge.weight:
 			best_edge = edge
 	return best_edge
-
-func claim_rail_edge(edge: rail_edge, train_id: int) -> void:
-	edge.node1.service_node(train_id)
-	edge.node2.service_node(train_id)
 	
+func check_for_completion() -> bool:
+	for node: rail_node in network.values():
+		if !node.is_serviced():
+			return false
+	return true

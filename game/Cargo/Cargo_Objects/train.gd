@@ -331,8 +331,10 @@ func create_route_between_start_and_end(start: Vector2i, end: Vector2i) -> Array
 		curr = queue.pop_front()
 		var cells_to_check: Array = get_cells_in_front(curr, visited[curr])
 		for direction: int in cells_to_check.size():
+			if cells_to_check[direction] == null:
+				continue
 			var tile: Vector2i = cells_to_check[direction]
-			if tile != null and map.do_tiles_connect(curr, tile) and !check_visited(visited, tile, direction):
+			if map.do_tiles_connect(curr, tile) and !check_visited(visited, tile, direction):
 				intialize_visited(visited, tile, direction)
 				queue.push_back(tile)
 				intialize_tile_to_prev(tile_to_prev, tile, swap_direction(direction), curr)
