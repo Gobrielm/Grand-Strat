@@ -31,23 +31,34 @@ func get_member_from_network() -> int:
 func network_has_node(node_coords: Vector2i) -> bool:
 	return network.has(node_coords)
 
+class rail_info:
+	func _init(p_source: Vector2i, p_dist: int, p_output_dir: int) -> void:
+		source = p_source
+		dist = p_dist
+		output_dir = p_output_dir
+	
+	var source: Vector2i
+	var dist: int
+	var output_dir: int
+
 func create_network(start: Vector2i) -> void:
 	#TODO: Clears when gets created
 	clear_network()
 	var map: TileMapLayer = Utils.world_map
 	var queue: Array = [start]
 	var visited: Dictionary = {} # Vector2i -> Array[Bool for each direction]
-	var dist: Dictionary[Vector2i, Array] = {} #Array[Vector2i(Source), int(dist)]
+	var dist: Dictionary[Vector2i, rail_info] = {} #Array[Vector2i(Source), int(dist)]
 	visited[start] = Utils.rail_placer.get_track_connections(start)
 	var curr: Vector2i
 	while !queue.is_empty():
 		curr = queue.pop_front()
-		var is_node: bool = terminal_map.is_station(curr) or map_data.get_instance().is_depot(curr) or Utils.rail_placer.get_track_connection_count(curr) >= 3
-		if is_node:
-			create_node(curr)
-			if dist.has(curr):
-				connect_nodes(curr, dist[curr][0], dist[curr][1])
-			dist[curr] = [curr, 0]
+		#var is_node: bool = terminal_map.is_station(curr) or map_data.get_instance().is_depot(curr) or Utils.rail_placer.get_track_connection_count(curr) >= 3
+		#if is_node:
+			#create_node(curr)
+			#if dist.has(curr):
+				##rail_info.new(dist[curr].source, dist[curr].dist, dist[curr].input_dir)
+				#connect_nodes(curr, dist[curr][0], dist[curr][1])
+			#dist[curr] = [curr, 0]
 		
 		var cells_to_check: Array = get_cells_in_front(curr, visited[curr], map)
 		for direction: int in cells_to_check.size():
@@ -56,7 +67,16 @@ func create_network(start: Vector2i) -> void:
 				intialize_visited(visited, tile, direction)
 				queue.push_back(tile)
 				dist[tile] = dist[curr]
-				dist[tile][1] += 1
+				dist[tile].dist += 1
+				if dist[tile].dist == 1:
+					dist[tile].output_dir = direction
+				
+				var is_node: bool = terminal_map.is_station(tile) or map_data.get_instance().is_depot(tile) or Utils.rail_placer.get_track_connection_count(tile) >= 3
+				if is_node:
+					create_node(tile)
+					if dist.has(tile):
+						connect_nodes(tile, dist[curr].source, dist[curr].dist, (direction + 3) % 6, dist[curr].output_dir)
+					dist[curr] = rail_info.new(curr, 0, -1)
 
 func get_cells_in_front(coords: Vector2i, directions: Array, map: TileMapLayer) -> Array:
 	var index: int = 2
@@ -85,14 +105,14 @@ func create_node(coords: Vector2i) -> void:
 			weight = stat.get_orders_magnitude()
 		network[coords] = rail_node.new(coords, weight)
 
-func connect_nodes(coords1: Vector2i, coords2: Vector2i, dist: int) -> void:
+func connect_nodes(coords1: Vector2i, coords2: Vector2i, dist: int, output_dir1: int, output_dir2: int) -> void:
 	if network.has(coords1) and network.has(coords2):
 		var node1: rail_node = network[coords1]
 		var node2: rail_node = network[coords2]
 		#TODO: Add directions for edges
-		#var edge: rail_edge = rail_edge.new(node1, node2, 10.0 / dist)
-		#node1.connect_nodes(edge)
-		#node2.connect_nodes(edge)
+		var edge: rail_edge = rail_edge.new(node1, node2, 10.0 / dist, output_dir1, output_dir2)
+		node1.connect_nodes(edge)
+		node2.connect_nodes(edge)
 
 func get_rail_node(coords: Vector2i) -> rail_node:
 	return network[coords]
