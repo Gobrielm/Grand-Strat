@@ -1,5 +1,5 @@
 extends Button
-@export var active = false
+@export var active: bool = false
 
 func _on_pressed() -> void:
 	unpress_other_buttons()

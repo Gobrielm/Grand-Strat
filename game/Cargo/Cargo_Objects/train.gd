@@ -76,7 +76,7 @@ func _input(event: InputEvent) -> void:
 		window.deselect_add_stop()
 
 @rpc("authority", "unreliable", "call_local")
-func update_train(p_position: Vector2i) -> void:
+func update_train(p_position: Vector2) -> void:
 	position = p_position
 
 @rpc("authority", "unreliable", "call_local")
@@ -322,8 +322,8 @@ func delete_train_car() -> void:
 func pathfind_to_next_stop() -> Array:
 	return create_route_between_start_and_end(map.local_to_map(position), stops[stop_number])
 
-func create_route_between_start_and_end(start: Vector2i, end: Vector2i) -> Array:
-	var queue: Array = [start]
+func create_route_between_start_and_end(start: Vector2i, end: Vector2i) -> Array[Vector2i]:
+	var queue: Array[Vector2i] = [start]
 	var tile_to_prev: Dictionary = {} # Vector2i -> Array[Tile for each direction]
 	var order: Dictionary = {} # Vector2i -> Array[indices in order for tile_to_prev, first one is the fastest]
 	var visited: Dictionary = {} # Vector2i -> Array[Bool for each direction]
@@ -351,8 +351,8 @@ func create_route_between_start_and_end(start: Vector2i, end: Vector2i) -> Array
 		return get_route_from_visited(order, tile_to_prev, start, end)
 	return []
 
-func get_route_from_visited(order: Dictionary, tile_to_prev: Dictionary, start: Vector2i, end: Vector2i) -> Array:
-	var to_return: Array = [end]
+func get_route_from_visited(order: Dictionary, tile_to_prev: Dictionary, start: Vector2i, end: Vector2i) -> Array[Vector2i]:
+	var to_return: Array[Vector2i] = [end]
 	var direction: int = order[end][0]
 	var curr: Vector2i = tile_to_prev[end][direction]
 	var found: bool = false
