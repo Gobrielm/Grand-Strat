@@ -89,9 +89,10 @@ func connect_nodes(coords1: Vector2i, coords2: Vector2i, dist: int) -> void:
 	if network.has(coords1) and network.has(coords2):
 		var node1: rail_node = network[coords1]
 		var node2: rail_node = network[coords2]
-		var edge: rail_edge = rail_edge.new(node1, node2, 10.0 / dist)
-		node1.connect_nodes(edge)
-		node2.connect_nodes(edge)
+		#TODO: Add directions for edges
+		#var edge: rail_edge = rail_edge.new(node1, node2, 10.0 / dist)
+		#node1.connect_nodes(edge)
+		#node2.connect_nodes(edge)
 
 func get_rail_node(coords: Vector2i) -> rail_node:
 	return network[coords]
@@ -128,12 +129,12 @@ func split_up_network_among_trains() -> void:
 		service_node(other_node, curr_train_id)
 		i = (i + 1) % number_of_trains
 		curr_train_id = train_members[i]
-	
+	#No ai_train will have more than 1 node by this point
 	#Will run til all nodes completed
 	while true:
 		i = get_smallest_index()
 		curr_train_id = train_members[i]
-		var edge: rail_edge = get_best_edge_in_network()
+		var edge: rail_edge = get_best_edge_in_network(curr_train_id)
 		edge.claim_edge(curr_train_id)
 		service_node(edge.node1, curr_train_id)
 		service_node(edge.node2, curr_train_id)
@@ -177,16 +178,19 @@ func get_smallest_index() -> int:
 			smallest = weight_serviced[i]
 	return index
 	
-func get_best_edge_in_network() -> rail_edge:
+func get_best_edge_in_network(train_id: int) -> rail_edge:
 	var best_edge: rail_edge = null
 	for node: rail_node in network.values():
-		var edge: rail_edge = node.get_best_edge()
-		if best_edge == null or edge.weight > best_edge.weight:
-			best_edge = edge
+		#Only include nodes that are serviced by train
+		if node.does_service(train_id):
+			var edge: rail_edge = node.get_best_edge()
+			if best_edge == null or edge.weight > best_edge.weight:
+				best_edge = edge
 	return best_edge
 	
 func check_for_completion() -> bool:
 	for node: rail_node in network.values():
-		if !node.is_serviced():
+		#Only count stations
+		if node.get_weight() > 0 and !node.is_serviced():
 			return false
 	return true

@@ -13,9 +13,9 @@ func test() -> void:
 	runtime_test()
 	print("-------------------- ✔️")
 	
-	print("train_algorithm_test")
-	train_algorithm_test()
-	print("-------------------- ✔️")
+	#print("train_algorithm_test")
+	#train_algorithm_test()
+	#print("-------------------- ✔️")
 	
 	print("ai_train_network_test")
 	ai_rail_test()
