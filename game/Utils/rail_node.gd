@@ -52,6 +52,21 @@ func claim_best_connection(other_node: rail_node, train_id: int) -> void:
 	var edge: rail_edge = get_best_connection(other_node)
 	edge.claim_edge(train_id)
 
+func can_reach_connection(train_id: int, connection: rail_edge) -> bool:
+	for stack: sorted_stack in connections.values():
+		for w_val: weighted_value in stack.backing_array:
+			var edge: rail_edge = w_val.val
+			if !edge.is_edge_claimed_by_id(train_id):
+				continue
+			#Gets input direction from claimed edge
+			var dir: int = (edge.get_direction_to_node(self) + 3) % 6
+			#Gets output direction from connection to be made
+			var other_dir: int = connection.get_direction_to_node(self)
+			#If they match then a connection is possible
+			if (dir == other_dir or (dir + 1) % 6 == other_dir or (dir + 5) % 6 == other_dir):
+				return true
+	return false
+
 func get_only_connected_node() -> Vector2i:
 	return connections.keys()[0]
 
@@ -62,11 +77,13 @@ func get_biggest_node() -> rail_node:
 			biggest = node
 	return biggest
 
-func get_best_edge() -> rail_edge:
+func get_best_edge(train_id: int) -> rail_edge:
 	var closest: rail_edge = null
 	for node: rail_node in connections:
 		for val: weighted_value in connections[node].backing_array:
 			var edge: rail_edge = val.val
+			if !can_reach_connection(train_id, edge):
+				continue
 			if !edge.is_edge_claimed() and (closest == null or val.weight > closest.weight):
 				closest = val.val
 				break
