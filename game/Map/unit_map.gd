@@ -90,7 +90,7 @@ func is_player_id_match(coords: Vector2i, player_id: int) -> bool:
 # === Creating Units ===
 @rpc("any_peer", "call_local", "unreliable")
 func check_before_create(coords: Vector2i, type: int, player_id: int) -> void:
-	var unit_class: base_unit = get_unit_class(type)
+	var unit_class: GDScript = get_unit_class(type)
 	var cost: int = unit_class.get_cost()
 
 	if !unit_data.has(coords) and map.player_has_enough_money(player_id, cost):
@@ -101,13 +101,13 @@ func check_before_create(coords: Vector2i, type: int, player_id: int) -> void:
 func create_unit(coords: Vector2i, type: int, player_id: int) -> void:
 	set_cell(coords, 0, Vector2i(0, type))
 
-	var unit_class: base_unit = get_unit_class(type)
+	var unit_class: GDScript = get_unit_class(type)
 	unit_data[coords] = unit_class.new(coords, player_id)
 
 	create_label(coords, str(unit_data[coords]))
 	prepare_refresh_unit(unit_data[coords])
 
-func get_unit_class(type: int) -> base_unit:
+func get_unit_class(type: int) -> GDScript:
 	return unit_creator.get_unit_class(type)
 
 # === Label Creation ===
@@ -459,6 +459,7 @@ func _process(delta: float) -> void:
 		var next_location: Vector2i = unit.get_next_location()
 		if next_location != location:
 			var terrain: int = map.get_cell_tile_data(next_location).terrain
+			@warning_ignore("static_called_on_instance")
 			if unit.ready_to_move(100.0 / unit.get_speed() / unit.get_speed_mult(terrain)):
 				var next_next_location: Vector2i = unit.get_next_location(1)
 				if location_is_attack(next_next_location, unit) and unit.get_unit_range() >= 2:
@@ -475,6 +476,7 @@ func _process(delta: float) -> void:
 		unit.update_progress(delta)
 		var next_location: Vector2i = unit.get_next_location()
 		var terrain: int = map.get_cell_tile_data(next_location).terrain
+		@warning_ignore("static_called_on_instance")
 		if next_location != location and unit.ready_to_move(100.0 / unit.get_speed() / unit.get_speed_mult(terrain)):
 			var next_next_location: Vector2i = unit.get_next_location(1)
 			if (location_is_attack(next_next_location, unit) and unit.get_unit_range() >= 2) or location_is_attack(next_location, unit):

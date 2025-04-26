@@ -41,8 +41,7 @@ func path_find_to_node(start: Vector2i) -> Array:
 				continue
 			intialize_visited(visited, tile, direction)
 			queue.push_back(tile)
-			var is_node: bool = terminal_map.is_station(tile) or map_data.get_instance().is_depot(tile) or Utils.rail_placer.get_track_connection_count(tile) >= 3
-			if is_node:
+			if is_node(tile):
 				return [true, tile]
 	return [false, start]
 
@@ -88,6 +87,7 @@ func create_network(start: Vector2i) -> void:
 	var visited: Dictionary = {} # Vector2i -> Array[Bool for each direction]
 	var dist: Dictionary[Vector2i, rail_info] = {} #Array[Vector2i(Source), int(dist)]
 	dist[start] = rail_info.new(start, 0, -1)
+	create_node(start)
 	visited[start] = Utils.rail_placer.get_track_connections(start)
 	var curr: Vector2i
 	while !queue.is_empty():
@@ -138,6 +138,7 @@ func create_node(coords: Vector2i) -> void:
 		var stat: station = terminal_map.get_station(coords)
 		if stat != null:
 			weight = stat.get_orders_magnitude()
+			weight += 1
 		network[coords] = rail_node.new(coords, weight)
 
 func connect_nodes(coords1: Vector2i, coords2: Vector2i, dist: int, output_dir1: int, output_dir2: int) -> void:

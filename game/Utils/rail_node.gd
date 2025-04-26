@@ -93,14 +93,11 @@ func get_best_edge(train_id: int) -> rail_edge:
 	return closest
 
 func to_string_no_edges() -> String:
-	return str(coords) + ": " + str(weight) + "\n"
+	return str(coords) + ": " + str(weight)
 
 func _to_string() -> String:
 	var toReturn: String = to_string_no_edges()
 	for node: rail_node in connections:
-		toReturn += node.to_string_no_edges() + ": "
-		for val: weighted_value in connections[node].backing_array:
-			var edge: rail_edge = val.val
-			toReturn += str(edge) + ", "
-		toReturn += "\n"
+		toReturn += " -> " + node.to_string_no_edges() + ", "
+	toReturn += "\n-----------------------\n"
 	return toReturn
