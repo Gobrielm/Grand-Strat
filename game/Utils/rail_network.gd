@@ -5,15 +5,46 @@ var network: Dictionary[Vector2i, rail_node]
 var weight_serviced: Dictionary[int, float] #Train id -> weight serviced
 var train_members: Array[int] #Train id -> bool for set
 
-func _init() -> void:
+func _init(p_network_id: int) -> void:
+	network_id = p_network_id
 	network = {}
 	weight_serviced = {}
 	train_members = []
+
+func is_built() -> bool:
+	return !network.is_empty()
 
 func clear_network() -> void:
 	network.clear()
 	for id: int in train_members:
 		weight_serviced[id] = 0.0
+
+func has_coords(coords: Vector2i) -> bool:
+	return path_find_to_node(coords)[0]
+
+func path_find_to_node(start: Vector2i) -> Array:
+	var map: TileMapLayer = Utils.world_map
+	var queue: Array = [start]
+	var visited: Dictionary = {} # Vector2i -> Array[Bool for each direction]
+	visited[start] = Utils.rail_placer.get_track_connections(start)
+	var curr: Vector2i
+	while !queue.is_empty():
+		curr = queue.pop_front()
+		var cells_to_check: Array = get_cells_in_front(curr, visited[curr], map)
+		for direction: int in cells_to_check.size():
+			var tile: Vector2i = cells_to_check[direction]
+			#Tile isn't a rail or has visitd
+			if tile == null or check_visited(visited, tile, direction):
+				continue
+			#Tiles do not connect by rail
+			if !map.do_tiles_connect(curr, tile):
+				continue
+			intialize_visited(visited, tile, direction)
+			queue.push_back(tile)
+			var is_node: bool = terminal_map.is_station(tile) or map_data.get_instance().is_depot(tile) or Utils.rail_placer.get_track_connection_count(tile) >= 3
+			if is_node:
+				return [true, tile]
+	return [false, start]
 
 func get_number_of_trains() -> int:
 	return train_members.size()
@@ -42,38 +73,47 @@ class rail_info:
 	var output_dir: int
 
 func create_network(start: Vector2i) -> void:
-	#TODO: Clears when gets created
+	#Assuming start is a node
+	if !is_node(start):
+		var results: Array = path_find_to_node(start)
+		if !results[0]:
+			#No nodes attached to start
+			return
+		start = results[1]
+		
 	clear_network()
+	#TODO: Clears when gets created
 	var map: TileMapLayer = Utils.world_map
 	var queue: Array = [start]
 	var visited: Dictionary = {} # Vector2i -> Array[Bool for each direction]
 	var dist: Dictionary[Vector2i, rail_info] = {} #Array[Vector2i(Source), int(dist)]
+	dist[start] = rail_info.new(start, 0, -1)
 	visited[start] = Utils.rail_placer.get_track_connections(start)
 	var curr: Vector2i
 	while !queue.is_empty():
 		curr = queue.pop_front()
 		var cells_to_check: Array = get_cells_in_front(curr, visited[curr], map)
 		for direction: int in cells_to_check.size():
-			var tile: Vector2i = cells_to_check[direction]
+			var tile: Variant = cells_to_check[direction]
 			#Tile isn't a rail or has visitd
 			if tile == null or check_visited(visited, tile, direction):
 				continue
 			#Tiles do not connect by rail
 			if !map.do_tiles_connect(curr, tile):
 				continue
-			
 			intialize_visited(visited, tile, direction)
 			queue.push_back(tile)
 			dist[tile] = dist[curr]
 			dist[tile].dist += 1
 			if dist[tile].dist == 1:
 				dist[tile].output_dir = direction
-			
-			var is_node: bool = terminal_map.is_station(tile) or map_data.get_instance().is_depot(tile) or Utils.rail_placer.get_track_connection_count(tile) >= 3
-			if is_node:
+			if is_node(tile):
 				create_node(tile)
 				connect_nodes(tile, dist[curr].source, dist[curr].dist, (direction + 3) % 6, dist[curr].output_dir)
 				dist[curr] = rail_info.new(curr, 0, -1)
+
+func is_node(tile: Vector2i) -> bool:
+	return terminal_map.is_station(tile) or map_data.get_instance().is_depot(tile) or Utils.rail_placer.get_track_connection_count(tile) >= 3
 
 func get_cells_in_front(coords: Vector2i, directions: Array, map: TileMapLayer) -> Array:
 	var index: int = 2
@@ -150,6 +190,8 @@ func split_up_network_among_trains() -> void:
 		i = get_smallest_index()
 		curr_train_id = train_members[i]
 		var edge: rail_edge = get_best_edge_in_network(curr_train_id)
+		if edge == null:
+			break
 		edge.claim_edge(curr_train_id)
 		service_node(edge.node1, curr_train_id)
 		service_node(edge.node2, curr_train_id)
@@ -185,12 +227,13 @@ func get_biggest_node() -> rail_node:
 	return biggest
 
 func get_smallest_index() -> int:
-	var smallest: float = weight_serviced[0]
+	var weight_serviced_array: Array = weight_serviced.values()
+	var smallest: float = weight_serviced_array[0]
 	var index: int = 0
-	for i: int in range(1, weight_serviced.size()):
-		if smallest > weight_serviced[i]:
+	for i: int in range(1, weight_serviced_array.size()):
+		if smallest > weight_serviced_array[i]:
 			index = i
-			smallest = weight_serviced[i]
+			smallest = weight_serviced_array[i]
 	return index
 	
 func get_best_edge_in_network(train_id: int) -> rail_edge:
@@ -210,3 +253,9 @@ func check_for_completion() -> bool:
 		if node.get_weight() > 0 and !node.is_serviced():
 			return false
 	return true
+
+func _to_string() -> String:
+	var toReturn: String = ""
+	for node: rail_node in network.values():
+		toReturn += str(node)
+	return toReturn

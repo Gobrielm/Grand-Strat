@@ -20,11 +20,11 @@ func _ready() -> void:
 	if unique_id != 1:
 		remove_child(cargo_map)
 		cargo_map.queue_free()
-		cargo_map = load("res://Client_Objects/client_cargo_map.tscn").instantiate()
+		cargo_map = preload("res://Client_Objects/client_cargo_map.tscn").instantiate()
 		add_child(cargo_map)
 		remove_child(tile_ownership)
 		tile_ownership.queue_free()
-		tile_ownership = load("res://Client_Objects/client_tile_ownership.tscn").instantiate()
+		tile_ownership = preload("res://Client_Objects/client_tile_ownership.tscn").instantiate()
 		tile_ownership.name = "tile_ownership"
 		add_child(tile_ownership)
 	else:
@@ -93,7 +93,7 @@ func _on_month_tick_timeout() -> void:
 
 #Ai
 func create_ai() -> void:
-	ai[1] = load("res://AI/economy_ai.gd").new(1, main_map)
+	ai[1] = preload("res://AI/economy_ai.gd").new(1, main_map)
 
 func acknowledge_pending_deferred_call(id: int) -> void:
 	if ai.has(id):

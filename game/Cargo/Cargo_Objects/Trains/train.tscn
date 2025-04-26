@@ -1,8 +1,8 @@
 [gd_scene load_steps=8 format=3 uid="uid://c5s0ny0v1voj6"]
 
 [ext_resource type="Texture2D" uid="uid://cqdkw6b4bmsk5" path="res://Map_Icons/icon.svg" id="1_vh0y7"]
-[ext_resource type="Script" uid="uid://dw7rq5hpby57h" path="res://Cargo/Cargo_Objects/train.gd" id="2_qvldk"]
-[ext_resource type="Script" uid="uid://tfjb0jq0otay" path="res://Cargo/Cargo_Objects/train_window.gd" id="3_gn3y4"]
+[ext_resource type="Script" uid="uid://dw7rq5hpby57h" path="res://Cargo/Cargo_Objects/Trains/train.gd" id="2_qvldk"]
+[ext_resource type="Script" uid="uid://tfjb0jq0otay" path="res://Cargo/Cargo_Objects/Trains/train_window.gd" id="3_gn3y4"]
 [ext_resource type="Texture2D" uid="uid://dbdjkc3txkt6y" path="res://Gui/Icons/add.png" id="4_7jhe4"]
 [ext_resource type="Texture2D" uid="uid://cnt0fnx73uuf8" path="res://Gui/Icons/go.png" id="4_orobs"]
 [ext_resource type="Texture2D" uid="uid://cauwoswolv6v5" path="res://Gui/Icons/no.png" id="5_0cs1o"]

@@ -1,7 +1,7 @@
 extends terminal
 var trains: Array = []
 
-const train_scene: PackedScene = preload("res://Cargo/Cargo_Objects/train.tscn")
+const train_scene: PackedScene = preload("res://Cargo/Cargo_Objects/Trains/train.tscn")
 
 func _init(new_location: Vector2i, _owner: int) -> void:
 	super._init(new_location, _owner)

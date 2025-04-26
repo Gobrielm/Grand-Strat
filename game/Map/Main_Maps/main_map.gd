@@ -209,9 +209,7 @@ func create_train(coords: Vector2i) -> void:
 	if !caller:
 		caller = 1
 	if unique_id == 1:
-		var train_obj: train = train_manager.get_instance().create_train(coords, caller)
-		train_obj.name = "Train" + str(get_number_of_trains())
-		add_child(train_obj)
+		train_manager.get_instance().create_train(coords, caller)
 	else:
 		var train_obj: Sprite2D = train_scene_client.instantiate()
 		train_obj.name = "Train" + str(get_number_of_trains())
@@ -469,7 +467,7 @@ func open_tile_window(coords: Vector2i) -> void:
 		tile_window.hide()
 
 #Rail General
-func remove_rail(coords: Vector2i, orientation: int, p_type: int):
+func remove_rail(coords: Vector2i, orientation: int, p_type: int) -> void:
 	#TODO: Needed for testing, but should be updated and/or removed
 	if unique_id == 1:
 		rail_placer.remove_tile(coords, orientation, p_type)
@@ -484,13 +482,14 @@ func set_cell_rail_placer_request(coords: Vector2i, orientation: int, type: int,
 @rpc("any_peer", "call_remote", "unreliable")
 func set_cell_rail_placer_server(coords: Vector2i, orientation: int, type: int, new_owner: int) -> void:
 	map_node.acknowledge_pending_deferred_call(new_owner)
-	if rail_check(coords) and is_owned(new_owner, coords):
-		place_tile.rpc(coords, orientation, type, new_owner)
+	if rail_check(coords) and is_owned(new_owner, coords) and !terminal_map.is_station(coords):
+		place_tile.rpc(coords, (orientation) % 6, type, new_owner)
 		if type == 1:
 			encode_depot(coords, new_owner)
 			var depot_name: String = map_data.get_instance().get_depot_name(coords)
 			encode_depot_client.rpc(coords, depot_name, new_owner)
 		elif type == 2:
+			place_tile.rpc(coords, (orientation + 3) % 6, type, new_owner)
 			encode_station.rpc(coords, new_owner)
 			terminal_map.create_station(coords, new_owner)
 	else:

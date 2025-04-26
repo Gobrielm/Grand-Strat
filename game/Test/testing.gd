@@ -31,6 +31,9 @@ func build_station(coords: Vector2i, orientation: int) -> void:
 func build_many_rails(start: Vector2i, end: Vector2i) -> void:
 	map.place_to_end_rail(start, end)
 
+func build_ai_train(location: Vector2i) -> ai_train:
+	return train_manager.get_instance().create_ai_train(location, 1)
+
 func clear_test_stuff() -> void:
 	map.rail_placer.clear_all_real()
 
@@ -79,15 +82,33 @@ func train_algorithm_test() -> void:
 	print(str((end - start) / 1000) + " Seconds passed to pathfind")
 	
 func ai_rail_test() -> void:
-	var point1: Vector2i = Vector2i(0, 0)
-	#build_many_rails(point1, point2)
-	#build_many_rails(point1, point2)
-	#build_many_rails(point1, point2)
-	#build_many_rails(point1, point2)
-	#build_many_rails(point1, point2)
-	var start: float = Time.get_ticks_msec()
-	var test_to_run: Node = preload("res://Test/ai_rail_test.gd").new()
-	test_to_run.run()
+	var train_manager_obj: train_manager = train_manager.get_instance()
 	
+	var point1: Vector2i = Vector2i(0, 0)
+	var point2: Vector2i = Vector2i(9, 5)
+	var point3: Vector2i = Vector2i(-9, 5)
+	var stat4: Vector2i = Vector2i(-14, -3)
+	
+	var stat1: Vector2i = Vector2i(2, -1)
+	var stat2: Vector2i = Vector2i(11, 5)
+	var stat3: Vector2i = Vector2i(-11, 5)
+	
+	
+	build_many_rails(point1, point2)
+	build_many_rails(point2, point3)
+	build_many_rails(point3, point1)
+	build_many_rails(point1, stat4)
+	build_many_rails(point1, stat1)
+	build_many_rails(point2, stat2)
+	build_many_rails(point3, stat3)
+	
+	build_station(stat1, 1)
+	build_station(stat2, 2)
+	build_station(stat3, 1)
+	build_station(stat4, 2)
+	
+	var start: float = Time.get_ticks_msec()
+	var train_obj: ai_train = build_ai_train(point1)
+	print(str(train_manager_obj.get_network(train_obj.network_id)))
 	var end: float = Time.get_ticks_msec()
 	print(str((end - start) / 1000) + " Seconds passed to create network")

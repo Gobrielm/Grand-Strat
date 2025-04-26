@@ -1,0 +1,18 @@
+[gd_scene load_steps=5 format=3 uid="uid://bnffyswn3eoo0"]
+
+[ext_resource type="Texture2D" uid="uid://cqdkw6b4bmsk5" path="res://Map_Icons/icon.svg" id="1_pgcu6"]
+[ext_resource type="Script" uid="uid://c8c2kaggtms3e" path="res://Cargo/Cargo_Objects/Trains/ai_train.gd" id="2_gihkc"]
+[ext_resource type="PackedScene" uid="uid://cytslfwsydy8" path="res://Cargo/Cargo_Objects/Trains/ai_train_window.tscn" id="3_8dahg"]
+[ext_resource type="Script" uid="uid://c20vw1uh7j3ua" path="res://Cargo/Cargo_Objects/Trains/ai_train_window.gd" id="4_mqxa5"]
+
+[node name="AI_Train" type="Sprite2D"]
+z_index = 2
+texture = ExtResource("1_pgcu6")
+script = ExtResource("2_gihkc")
+
+[node name="Train_Window" parent="." instance=ExtResource("3_8dahg")]
+initial_position = 1
+visible = false
+script = ExtResource("4_mqxa5")
+
+[connection signal="close_requested" from="Train_Window" to="Train_Window" method="_on_close_requested"]

@@ -1,7 +1,7 @@
 class_name train_manager extends Node
 
-const train_scene: PackedScene = preload("res://Cargo/Cargo_Objects/train.tscn")
-const ai_train_scene: PackedScene = preload("res://Cargo/Cargo_Objects/ai_train.tscn")
+const train_scene: PackedScene = preload("res://Cargo/Cargo_Objects/Trains/train.tscn")
+const ai_train_scene: PackedScene = preload("res://Cargo/Cargo_Objects/Trains/ai_train.tscn")
 
 var networks: Dictionary[int, rail_network] #Each network id points to network
 var trains: Dictionary[int, train] = {}
@@ -16,17 +16,25 @@ static func get_instance() -> train_manager:
 	assert(singleton_instance != null, "Train_Manager has not be created, and has been accessed")
 	return singleton_instance
 
-func create_train(p_location: Vector2i, p_owner: int) -> train:
+func get_network(network_id: int) -> rail_network:
+	return networks[network_id]
+
+func create_train(p_location: Vector2i, p_owner: int) -> void:
 	var id: int = get_unique_id()
 	var new_train: train = train_scene.instantiate()
 	new_train.create(p_location, p_owner, id)
+	#TODO: No way of keeping track of a single player or ai's trains
+	new_train.name = "Train" + str(trains.size())
+	Utils.world_map.add_child(new_train)
 	add_train(new_train)
-	return new_train
 
 func create_ai_train(p_location: Vector2i, p_owner: int) -> ai_train:
 	var id: int = get_unique_id()
 	var new_train: ai_train = ai_train_scene.instantiate()
 	new_train.create(p_location, p_owner, id)
+	#TODO: No way of keeping track of a single player or ai's trains
+	new_train.name = "AI_Train" + str(trains.size())
+	Utils.world_map.add_child(new_train)
 	add_ai_train(new_train)
 	return new_train
 
@@ -42,26 +50,22 @@ func add_train(p_train: train) -> void:
 func add_ai_train(p_train: ai_train) -> void:
 	add_train(p_train)
 	#Assigning ai train to random 'Network' unless it matches with another train
-	add_ai_train_to_network(p_train, get_network(p_train))
+	var id: int = get_network_id(p_train)
+	add_ai_train_to_network(p_train, id)
+	if !networks[p_train.network_id].is_built():
+		create_network_for_trains(id)
 
-func get_network(p_train: ai_train) -> int:
+func get_network_id(p_train: ai_train) -> int:
 	for network_id: int in networks:
-		#Getting one train in network
-		var train_obj: ai_train = get_member_from_network(network_id)
-		if network_has_train(train_obj, p_train):
-			return train_obj.network_id
+		var network: rail_network = networks[network_id]
+		if network.has_coords(p_train.location):
+			return network_id
 	return get_unique_id()
-
-#Assumes that train2 is on a valid rail vertex to work
-func network_has_train(train1: ai_train, train2: ai_train) -> bool:
-	if networks[train1.network_id].network_has_node(train2.location):
-		return true
-	return false
 
 func add_ai_train_to_network(train_obj: ai_train, network_id: int) -> void:
 	train_obj.network_id = network_id
 	if !networks.has(network_id):
-		networks[network_id] = rail_network.new()
+		networks[network_id] = rail_network.new(network_id)
 	networks[network_id].add_train_to_network(train_obj.id)
 
 func get_member_from_network(network_id: int) -> ai_train:
@@ -83,6 +87,8 @@ func get_trains_on_network(network_id: int) -> int:
 
 #Automatically recreates rail_network anytime a train is added which is uneccessary but will change later
 func create_network_for_trains(network_id: int) -> void:
+	if !networks.has(network_id):
+		networks[network_id] = rail_network.new(network_id)
 	var network: rail_network = networks[network_id]
 	#Will reset and re-create network
 	network.create_network(get_member_from_network(network_id).location)

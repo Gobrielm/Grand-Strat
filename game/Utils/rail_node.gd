@@ -80,6 +80,9 @@ func get_biggest_node() -> rail_node:
 func get_best_edge(train_id: int) -> rail_edge:
 	var closest: rail_edge = null
 	for node: rail_node in connections:
+		#If already service, don't include
+		if node.does_service(train_id):
+			continue
 		for val: weighted_value in connections[node].backing_array:
 			var edge: rail_edge = val.val
 			if !can_reach_connection(train_id, edge):
@@ -88,3 +91,16 @@ func get_best_edge(train_id: int) -> rail_edge:
 				closest = val.val
 				break
 	return closest
+
+func to_string_no_edges() -> String:
+	return str(coords) + ": " + str(weight) + "\n"
+
+func _to_string() -> String:
+	var toReturn: String = to_string_no_edges()
+	for node: rail_node in connections:
+		toReturn += node.to_string_no_edges() + ": "
+		for val: weighted_value in connections[node].backing_array:
+			var edge: rail_edge = val.val
+			toReturn += str(edge) + ", "
+		toReturn += "\n"
+	return toReturn

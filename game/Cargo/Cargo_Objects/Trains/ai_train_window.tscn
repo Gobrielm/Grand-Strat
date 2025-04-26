@@ -1,0 +1,54 @@
+[gd_scene format=3 uid="uid://cytslfwsydy8"]
+
+[node name="AI_Train_Window" type="Window"]
+size = Vector2i(600, 400)
+
+[node name="Panel" type="Panel" parent="."]
+self_modulate = Color(1, 1, 1, 0.27451)
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -200.0
+offset_right = 300.0
+offset_bottom = 200.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Name" type="RichTextLabel" parent="."]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -20.0
+offset_right = 20.0
+offset_bottom = 40.0
+grow_horizontal = 2
+bbcode_enabled = true
+text = "[center][font_size=35]Train[/font_size][/center]"
+fit_content = true
+autowrap_mode = 0
+
+[node name="Routes" type="ItemList" parent="."]
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -250.0
+offset_top = -150.0
+offset_bottom = 150.0
+grow_horizontal = 0
+grow_vertical = 2
+focus_mode = 0
+
+[node name="Goods" type="ItemList" parent="."]
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_top = -150.0
+offset_right = 250.0
+offset_bottom = 150.0
+grow_vertical = 2
+focus_mode = 0

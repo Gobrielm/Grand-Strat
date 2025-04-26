@@ -26,14 +26,13 @@ const TRAIN_CAR_SIZE: int = 16
 const LOAD_SPEED: int = 1
 const LOAD_TICK_AMOUNT: int = 5
 
-const train_car_scene: PackedScene = preload("res://Cargo/Cargo_Objects/train_car.tscn")
+const train_car_scene: PackedScene = preload("res://Cargo/Cargo_Objects/Trains/train_car.tscn")
 var map: TileMapLayer
 
 @onready var window: Window = $Train_Window
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
-	window.hide()
 	if is_inside_tree():
 		prep_update_cargo_gui()
 
