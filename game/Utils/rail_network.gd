@@ -97,7 +97,7 @@ func create_network(start: Vector2i) -> void:
 		curr = stack.pop_front()
 		#TODO: Clear later, For debugging
 		#map.highlight_cell(curr)
-		#await map.get_tree().create_timer(1.0).timeout
+		#await map.get_tree().create_timer(0.5).timeout
 		var cells_to_check: Array = get_cells_in_front(curr, visited[curr], map)
 		for direction: int in cells_to_check.size():
 			#Tile isn't a rail or has visitd
@@ -117,8 +117,12 @@ func create_network(start: Vector2i) -> void:
 					#Nodes next to each other, don't double connect
 					if is_node(curr):
 						continue
-						#TODO: Not connecting nodes when it should be
+					#TODO: Not connecting nodes when it should be
 					connect_nodes(tile, dist[curr].source, dist[curr].dist + 1, (direction + 3) % 6, dist[curr].output_dir)
+				#Creating when checking node so okay to replace and prevent nodes from doing this
+				elif dist[tile].dist == 1 and dist[curr].source != dist[tile].source and dist[curr].dist != 0:
+					dist[tile] = dist[curr].copy()
+					dist[tile].dist += 1
 				continue
 			dist[tile] = dist[curr].copy()
 			dist[tile].dist += 1
