@@ -34,7 +34,7 @@ func path_find_to_node(start: Vector2i) -> Array:
 		for direction: int in cells_to_check.size():
 			var tile: Vector2i = cells_to_check[direction]
 			#Tile isn't a rail or has visitd
-			if tile == null or check_visited(visited, tile, direction):
+			if tile == null or has_visited(visited, tile, direction):
 				continue
 			#Tiles do not connect by rail
 			if !map.do_tiles_connect(curr, tile):
@@ -70,6 +70,9 @@ class rail_info:
 	var source: Vector2i
 	var dist: int
 	var output_dir: int
+	
+	func copy() -> rail_info:
+		return rail_info.new(source, dist, output_dir)
 
 func create_network(start: Vector2i) -> void:
 	#Assuming start is a node
@@ -81,39 +84,50 @@ func create_network(start: Vector2i) -> void:
 		start = results[1]
 		
 	clear_network()
-	#TODO: Clears when gets created
+	
 	var map: TileMapLayer = Utils.world_map
-	var queue: Array = [start]
+	var stack: Array = [start]
 	var visited: Dictionary = {} # Vector2i -> Array[Bool for each direction]
 	var dist: Dictionary[Vector2i, rail_info] = {} #Array[Vector2i(Source), int(dist)]
 	dist[start] = rail_info.new(start, 0, -1)
 	create_node(start)
 	visited[start] = Utils.rail_placer.get_track_connections(start)
 	var curr: Vector2i
-	while !queue.is_empty():
-		curr = queue.pop_front()
+	while !stack.is_empty():
+		curr = stack.pop_front()
+		#TODO: Clear later, For debugging
+		#map.highlight_cell(curr)
+		#await map.get_tree().create_timer(1.0).timeout
 		var cells_to_check: Array = get_cells_in_front(curr, visited[curr], map)
 		for direction: int in cells_to_check.size():
-			var tile: Variant = cells_to_check[direction]
 			#Tile isn't a rail or has visitd
-			if tile == null or check_visited(visited, tile, direction):
+			if cells_to_check[direction] == null or has_visited(visited, cells_to_check[direction], direction):
 				continue
+			var tile: Vector2i = cells_to_check[direction]
 			#Tiles do not connect by rail
 			if !map.do_tiles_connect(curr, tile):
 				continue
 			intialize_visited(visited, tile, direction)
-			queue.push_back(tile)
+			stack.push_front(tile)
+			
 			#If already traversed this then skip
 			if dist.has(tile):
+				#If new edge, but existing vertex then add
+				if dist[curr].source != tile and is_node(tile):
+					#Nodes next to each other, don't double connect
+					if is_node(curr):
+						continue
+						#TODO: Not connecting nodes when it should be
+					connect_nodes(tile, dist[curr].source, dist[curr].dist + 1, (direction + 3) % 6, dist[curr].output_dir)
 				continue
-			dist[tile] = dist[curr]
+			dist[tile] = dist[curr].copy()
 			dist[tile].dist += 1
 			if dist[tile].dist == 1:
 				dist[tile].output_dir = direction
 			if is_node(tile):
 				create_node(tile)
-				connect_nodes(tile, dist[curr].source, dist[curr].dist, (direction + 3) % 6, dist[curr].output_dir)
-				dist[curr] = rail_info.new(curr, 0, -1)
+				connect_nodes(tile, dist[tile].source, dist[tile].dist, (direction + 3) % 6, dist[tile].output_dir)
+				dist[tile] = rail_info.new(tile, 0, -1)
 
 func is_node(tile: Vector2i) -> bool:
 	return terminal_map.is_station(tile) or map_data.get_instance().is_depot(tile) or Utils.rail_placer.get_track_connection_count(tile) >= 3
@@ -132,7 +146,7 @@ func intialize_visited(visited: Dictionary, coords: Vector2i, direction: int) ->
 		visited[coords] = [false, false, false, false, false, false]
 	visited[coords][direction] = true
 
-func check_visited(visited: Dictionary, coords: Vector2i, direction: int) -> bool:
+func has_visited(visited: Dictionary, coords: Vector2i, direction: int) -> bool:
 	return visited.has(coords) and visited[coords][direction]
 
 func create_node(coords: Vector2i) -> void:
@@ -201,7 +215,6 @@ func split_up_network_among_trains() -> void:
 		service_node(edge.node2, curr_train_id)
 		if check_for_completion():
 			break
-		
 
 #TODO: Inefficient and doesn't real look very far
 func find_endnode() -> rail_node:

@@ -82,6 +82,7 @@ func is_testing() -> bool:
 
 func start_test() -> void:
 	if Utils.is_ready():
+		await get_tree().process_frame
 		clear()
 		create_testing_map()
 		testing.test()

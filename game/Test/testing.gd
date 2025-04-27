@@ -86,7 +86,7 @@ func ai_rail_test() -> void:
 	
 	var point1: Vector2i = Vector2i(0, 0)
 	var point2: Vector2i = Vector2i(9, 5)
-	var point3: Vector2i = Vector2i(-9, 5)
+	var point3: Vector2i = Vector2i(-8, 5)
 	var stat4: Vector2i = Vector2i(-14, -3)
 	
 	var stat1: Vector2i = Vector2i(2, -1)
@@ -106,6 +106,19 @@ func ai_rail_test() -> void:
 	build_station(stat2, 2)
 	build_station(stat3, 1)
 	build_station(stat4, 2)
+	
+	#For loop
+	var pt1: Vector2i = Vector2i(-12, 6)
+	var pt2: Vector2i = Vector2i(-12, 7)
+	var pt3: Vector2i = Vector2i(-11, 7)
+	var pt4: Vector2i = Vector2i(-10, 7)
+	var pt5: Vector2i = Vector2i(-10, 6)
+	build_many_rails(stat3, pt1)
+	build_many_rails(pt1, pt2)
+	build_many_rails(pt2, pt3)
+	build_many_rails(pt3, pt4)
+	build_many_rails(pt4, pt5)
+	build_many_rails(pt5, point3)
 	
 	var start: float = Time.get_ticks_msec()
 	var train_obj: ai_train = build_ai_train(point1)

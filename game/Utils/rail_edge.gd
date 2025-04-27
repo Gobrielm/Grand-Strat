@@ -32,3 +32,6 @@ func is_traversable(input_dir: int, node: rail_node) -> bool:
 
 func get_direction_to_node(node: rail_node) -> int:
 	return out_dir1 if node == node1 else out_dir2
+
+func copy() -> rail_edge:
+	return rail_edge.new(node1, node2, weight, out_dir1, out_dir2)
