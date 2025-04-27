@@ -103,6 +103,9 @@ func create_network(start: Vector2i) -> void:
 				continue
 			intialize_visited(visited, tile, direction)
 			queue.push_back(tile)
+			#If already traversed this then skip
+			if dist.has(tile):
+				continue
 			dist[tile] = dist[curr]
 			dist[tile].dist += 1
 			if dist[tile].dist == 1:
