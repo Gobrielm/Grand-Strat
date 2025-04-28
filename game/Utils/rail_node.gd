@@ -92,6 +92,13 @@ func get_best_edge(train_id: int) -> rail_edge:
 				break
 	return closest
 
+func get_connects_to_owned_nodes(train_id: int) -> int:
+	var count: int = 0
+	for node: rail_node in connections:
+		if node.does_service(train_id):
+			count += 1
+	return count
+
 func to_string_no_edges() -> String:
 	return str(coords)
 

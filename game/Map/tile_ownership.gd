@@ -22,6 +22,7 @@ func add_tile_to_country(tile: Vector2i, country_id: int) -> void:
 		country_id_to_tiles_owned[country_id] = []
 	country_id_to_tiles_owned[country_id].append(tile)
 	tile_to_country_id[tile] = country_id
+	@warning_ignore("integer_division")
 	set_cell(tile, 0, Vector2i(country_id / 8, country_id % 8))
 
 @rpc("authority", "call_local", "reliable")
