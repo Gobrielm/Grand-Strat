@@ -385,6 +385,14 @@ func find_owned_endnode(train_id: int) -> rail_node:
 	#No endnodes, must be loop so return one of them
 	return network.values()[0]
 
+func print_edges() -> void:
+	var set_edges: Dictionary[rail_edge, bool] = {}
+	for node: rail_node in network.values():
+		for edge: rail_edge in node.get_edges():
+			if !set_edges.has(edge):
+				set_edges[edge] = true
+				print(edge)
+
 func _to_string() -> String:
 	var toReturn: String = ""
 	for node: rail_node in network.values():

@@ -71,16 +71,20 @@ func get_biggest_node() -> rail_node:
 
 func get_best_edge(train_id: int) -> rail_edge:
 	var closest: rail_edge = null
+	#Using independent weight as it will be altered
+	var best_weight: float = -1.0
 	for node: rail_node in connections:
-		#If already service, don't include
-		if node.does_service(train_id):
-			continue
 		for val: weighted_value in connections[node].backing_array:
 			var edge: rail_edge = val.val
+			var e_weight: float = edge.weight
+			#If already service, then reduce weight, but still include as it could be neccessary for pathfinding
+			if node.does_service(train_id):
+				e_weight /= 5
 			if !can_reach_connection(train_id, edge) or edge.is_edge_claimed():
 				continue
-			if closest == null or edge.weight > closest.weight:
+			if closest == null or e_weight > best_weight:
 				closest = edge
+				best_weight = e_weight
 				break
 	return closest
 
@@ -112,6 +116,14 @@ func get_owned_connected_nodes(train_id: int) -> Array[rail_node]:
 	for node: rail_node in connections:
 		if node.does_service(train_id):
 			toReturn.append(node)
+	return toReturn
+
+func get_edges() -> Array[rail_edge]:
+	var toReturn: Array[rail_edge] = []
+	for stack: sorted_stack in connections.values():
+		var backing_array: Array = stack.backing_array
+		for w_val: weighted_value in backing_array:
+			toReturn.append(w_val.val as rail_edge)
 	return toReturn
 
 func to_string_no_edges() -> String:

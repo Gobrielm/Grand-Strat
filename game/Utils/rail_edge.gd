@@ -35,3 +35,6 @@ func get_direction_to_node(node: rail_node) -> int:
 
 func copy() -> rail_edge:
 	return rail_edge.new(node1, node2, weight, out_dir1, out_dir2)
+
+func _to_string() -> String:
+	return node1.to_string_no_edges() + ": " + str(out_dir1) + "->" + str(out_dir2) + " :" + node2.to_string_no_edges()
