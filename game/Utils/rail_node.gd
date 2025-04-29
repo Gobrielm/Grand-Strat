@@ -28,13 +28,20 @@ func does_service(train_id: int) -> bool:
 func is_serviced() -> bool:
 	return serviced_by.size() > 0
 
-func get_best_connection(other_node: rail_node) -> rail_edge:
+func get_best_unowned_connection(other_node: rail_node) -> rail_edge:
 	var backing_array: Array = connections[other_node].backing_array
 	for element: weighted_value in backing_array:
 		var edge: rail_edge = element.val
 		if !edge.is_edge_claimed():
 			return edge
 	return backing_array[0].val
+
+func get_best_connections() -> Array[rail_edge]:
+	var toReturn: Array[rail_edge] = []
+	for stack: sorted_stack in connections.values():
+		var backing_array: Array = stack.backing_array
+		toReturn.append(backing_array[0].val)
+	return toReturn
 
 func claim_connection(other_node: rail_node, p_weight: float) -> void:
 	var temp: weighted_value
@@ -49,7 +56,7 @@ func claim_connection(other_node: rail_node, p_weight: float) -> void:
 		temp.val += 1
 
 func claim_best_connection(other_node: rail_node, train_id: int) -> void:
-	var edge: rail_edge = get_best_connection(other_node)
+	var edge: rail_edge = get_best_unowned_connection(other_node)
 	edge.claim_edge(train_id)
 
 func get_only_connected_node() -> Vector2i:

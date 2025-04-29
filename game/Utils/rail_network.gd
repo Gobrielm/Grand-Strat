@@ -252,7 +252,8 @@ func split_up_network_among_trains() -> void:
 		curr_train_id = train_members[i]
 		var edge: rail_edge = get_best_edge_in_network(curr_train_id)
 		if edge == null:
-			assert(false)
+			#Should never happen as it means we have stations to serve but no edge to get there
+			break
 		edge.claim_edge(curr_train_id)
 		service_node(edge.node1, curr_train_id)
 		service_node(edge.node2, curr_train_id)
@@ -305,32 +306,45 @@ func get_best_edge_in_network(train_id: int) -> rail_edge:
 		if !node.does_service(train_id):
 			continue
 		var edge: rail_edge = node.get_best_edge(train_id)
-		if best_edge == null or (edge != null and edge.weight > best_edge.weight):
+		if best_edge == null or (edge != null and edge.weight > best_edge.weight and does_section_have_weighted_node(node, edge, train_id)):
 			best_edge = edge
 	return best_edge
 
-func does_section_have_weighted_node(source_node: rail_node, edge: rail_edge) -> bool:
+func does_section_have_weighted_node(source_node: rail_node, starting_edge: rail_edge, train_id: int) -> bool:
 	var visited: Dictionary[rail_node, bool] = {}
 	visited[source_node] = true
-	var stack: Array[rail_edge] = [edge]
+	var stack: Array[rail_edge] = [starting_edge]
 	
 	while !stack.is_empty():
 		var current_edge: rail_edge = stack.pop_front()
 		var node1: rail_node = current_edge.node1
 		var node2: rail_node = current_edge.node2
-		if visited.has(node1) and visited.has(node2):
+		
+		#Don't include visited nodes or nodes already serviced by another branch
+		var is_node_available: Callable = func(node: rail_node, id: int) -> bool:
+			return visited.has(node) or node.does_service(id)
+		
+		#Determines which side of edge we are on
+		if is_node_available.call(node1, train_id) and is_node_available.call(node2, train_id):
 			continue
 		var dest: rail_node
-		var source: rail_node
-		if visited.has(node1):
-			source = node1
+		if is_node_available.call(node1, train_id):
 			dest = node2
 		else:
-			source = node2
 			dest = node1
+
+		visited[dest] = true
+		
+		#Check if it has weight
+		if dest.weight > 0:
+			return true
+		
+		var in_dir: int = (current_edge as rail_edge).get_direction_to_node(dest)
 		
 		#DO checks on all edges out of dest that work for dest in
-		
+		for edge: rail_edge in dest.get_best_connections():
+			if edge.is_traversable(in_dir, dest):
+				stack.push_front(edge)
 	
 	return false
 
