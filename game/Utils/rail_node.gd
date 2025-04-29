@@ -77,14 +77,15 @@ func get_best_edge(train_id: int) -> rail_edge:
 			continue
 		for val: weighted_value in connections[node].backing_array:
 			var edge: rail_edge = val.val
-			if !can_reach_connection(train_id, edge):
+			if !can_reach_connection(train_id, edge) or edge.is_edge_claimed():
 				continue
-			if !edge.is_edge_claimed() and (closest == null or edge.weight > closest.weight):
+			if closest == null or edge.weight > closest.weight:
 				closest = edge
 				break
 	return closest
 
 func can_reach_connection(train_id: int, connection: rail_edge) -> bool:
+	#ISSUES here or with adding outout dir1, dir2
 	for stack: sorted_stack in connections.values():
 		for w_val: weighted_value in stack.backing_array:
 			var edge: rail_edge = w_val.val
