@@ -252,7 +252,7 @@ func split_up_network_among_trains() -> void:
 		curr_train_id = train_members[i]
 		var edge: rail_edge = get_best_edge_in_network(curr_train_id)
 		if edge == null:
-			break
+			assert(false)
 		edge.claim_edge(curr_train_id)
 		service_node(edge.node1, curr_train_id)
 		service_node(edge.node2, curr_train_id)
@@ -298,6 +298,7 @@ func get_smallest_index() -> int:
 	return index
 	
 func get_best_edge_in_network(train_id: int) -> rail_edge:
+	#THis will return edges to empty nodes which serves no one
 	var best_edge: rail_edge = null
 	for node: rail_node in network.values():
 		#Only include nodes that are serviced by train
@@ -307,7 +308,32 @@ func get_best_edge_in_network(train_id: int) -> rail_edge:
 		if best_edge == null or (edge != null and edge.weight > best_edge.weight):
 			best_edge = edge
 	return best_edge
+
+func does_section_have_weighted_node(source_node: rail_node, edge: rail_edge) -> bool:
+	var visited: Dictionary[rail_node, bool] = {}
+	visited[source_node] = true
+	var stack: Array[rail_edge] = [edge]
 	
+	while !stack.is_empty():
+		var current_edge: rail_edge = stack.pop_front()
+		var node1: rail_node = current_edge.node1
+		var node2: rail_node = current_edge.node2
+		if visited.has(node1) and visited.has(node2):
+			continue
+		var dest: rail_node
+		var source: rail_node
+		if visited.has(node1):
+			source = node1
+			dest = node2
+		else:
+			source = node2
+			dest = node1
+		
+		#DO checks on all edges out of dest that work for dest in
+		
+	
+	return false
+
 func check_for_completion() -> bool:
 	for node: rail_node in network.values():
 		#Only count stations
