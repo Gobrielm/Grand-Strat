@@ -99,6 +99,13 @@ func get_connects_to_owned_nodes(train_id: int) -> int:
 			count += 1
 	return count
 
+func get_owned_connected_nodes(train_id: int) -> Array[rail_node]:
+	var toReturn: Array[rail_node] = []
+	for node: rail_node in connections:
+		if node.does_service(train_id):
+			toReturn.append(node)
+	return toReturn
+
 func to_string_no_edges() -> String:
 	return str(coords)
 

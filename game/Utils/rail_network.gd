@@ -315,18 +315,29 @@ func assign_train_routes() -> void:
 		assign_train_route(ai_train_obj)
 		
 func assign_train_route(ai_train_obj: ai_train) -> void:
-	var start: rail_node = find_owned_endnode(ai_train_obj.id)
-	#TODO: AAAAAAAAAAAAAAAAAA
+	var id: int = ai_train_obj.id
+	var start: rail_node = find_owned_endnode(id)
+	var stack: Array[rail_node] = [start]
+	var serviced: Dictionary[rail_node, bool] = {}
+	#TODO: dOESN'T STOP when going past station
+	while !stack.is_empty():
+		var current_node: rail_node = stack.pop_front()
+		serviced[current_node] = true
+		ai_train_obj.add_stop(current_node.coords)
+		for node: rail_node in current_node.get_owned_connected_nodes(id):
+			if !serviced.has(node):
+				stack.push_back(node)
 
 #TODO: Inefficient and doesn't real look very far
 func find_owned_endnode(train_id: int) -> rail_node:
 	for node: rail_node in network.values():
 		if node.does_service(train_id):
-			
 			if node.get_connects_to_owned_nodes(train_id) == 1 and node.weight > 0:
 				return node
 	#No endnodes, must be loop so return one of them
 	return network.values()[0]
+
+
 
 func _to_string() -> String:
 	var toReturn: String = ""
