@@ -68,7 +68,7 @@ func can_reach_connection(train_id: int, connection: rail_edge) -> bool:
 	return false
 
 func get_only_connected_node() -> Vector2i:
-	return connections.keys()[0]
+	return (connections.keys()[0] as rail_node).coords
 
 func get_biggest_node() -> rail_node:
 	var biggest: rail_node = null
@@ -87,8 +87,8 @@ func get_best_edge(train_id: int) -> rail_edge:
 			var edge: rail_edge = val.val
 			if !can_reach_connection(train_id, edge):
 				continue
-			if !edge.is_edge_claimed() and (closest == null or val.weight > closest.weight):
-				closest = val.val
+			if !edge.is_edge_claimed() and (closest == null or edge.weight > closest.weight):
+				closest = edge
 				break
 	return closest
 

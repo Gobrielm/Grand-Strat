@@ -214,11 +214,14 @@ func split_up_network_among_trains() -> void:
 	var number_of_trains: int = get_number_of_trains()
 	var i: int = 0
 	var curr_train_id: int = train_members[i]
+	var use_second_checker: bool = false
 	#Creates endnode connections
-	while i != 0:
+	
+	while true:
 		var endnode: rail_node = find_endnode()
 		if endnode == null:
 			#No unclaimed endnodes, rest will be largest unclaimed
+			use_second_checker = true
 			break
 		service_node(endnode, curr_train_id)
 		var other_coords: Vector2i = endnode.get_only_connected_node()
@@ -228,9 +231,11 @@ func split_up_network_among_trains() -> void:
 		
 		i = (i + 1) % number_of_trains
 		curr_train_id = train_members[i]
+		if i == 0:
+			break
 	
 	#Fills in rest around the biggest stations
-	while i != 0:
+	while use_second_checker:
 		var node: rail_node = get_biggest_node()
 		service_node(node, curr_train_id)
 		var other_node: rail_node = node.get_biggest_node()
@@ -238,6 +243,8 @@ func split_up_network_among_trains() -> void:
 		service_node(other_node, curr_train_id)
 		i = (i + 1) % number_of_trains
 		curr_train_id = train_members[i]
+		if i == 0:
+			break
 	#No ai_train will have more than 1 node by this point
 	#Will run til all nodes completed
 	while true:
@@ -297,7 +304,7 @@ func get_best_edge_in_network(train_id: int) -> rail_edge:
 		if !node.does_service(train_id):
 			continue
 		var edge: rail_edge = node.get_best_edge(train_id)
-		if best_edge == null or edge.weight > best_edge.weight:
+		if best_edge == null or (edge != null and edge.weight > best_edge.weight):
 			best_edge = edge
 	return best_edge
 	
@@ -320,15 +327,16 @@ func assign_train_route(ai_train_obj: ai_train) -> void:
 	var stack: Array[rail_node] = [start]
 	var serviced: Dictionary[rail_node, bool] = {}
 	#TODO: dOESN'T STOP when going past station
+	#DOESN"T GET ALL THE STATIONS
 	while !stack.is_empty():
 		var current_node: rail_node = stack.pop_front()
 		serviced[current_node] = true
-		ai_train_obj.add_stop(current_node.coords)
+		if current_node.weight > 0:
+			ai_train_obj.add_stop(current_node.coords)
 		for node: rail_node in current_node.get_owned_connected_nodes(id):
 			if !serviced.has(node):
-				stack.push_back(node)
+				stack.push_front(node)
 
-#TODO: Inefficient and doesn't real look very far
 func find_owned_endnode(train_id: int) -> rail_node:
 	for node: rail_node in network.values():
 		if node.does_service(train_id):
@@ -336,8 +344,6 @@ func find_owned_endnode(train_id: int) -> rail_node:
 				return node
 	#No endnodes, must be loop so return one of them
 	return network.values()[0]
-
-
 
 func _to_string() -> String:
 	var toReturn: String = ""
