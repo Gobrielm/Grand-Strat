@@ -114,8 +114,20 @@ func get_connects_to_owned_nodes(train_id: int) -> int:
 func get_owned_connected_nodes(train_id: int) -> Array[rail_node]:
 	var toReturn: Array[rail_node] = []
 	for node: rail_node in connections:
-		if node.does_service(train_id):
-			toReturn.append(node)
+		for w_val: weighted_value in connections[node].backing_array:
+			var edge: rail_edge = (w_val.val as rail_edge)
+			if edge.is_edge_claimed_by_id(train_id):
+				toReturn.append(node)
+				break
+	return toReturn
+
+func get_owned_edges(train_id: int) -> Array[rail_edge]:
+	var toReturn: Array[rail_edge] = []
+	for node: rail_node in connections:
+		for w_val: weighted_value in connections[node].backing_array:
+			var edge: rail_edge = (w_val.val as rail_edge)
+			if edge.is_edge_claimed_by_id(train_id):
+				toReturn.append(edge)
 	return toReturn
 
 func get_edges() -> Array[rail_edge]:

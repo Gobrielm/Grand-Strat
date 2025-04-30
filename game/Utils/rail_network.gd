@@ -178,8 +178,19 @@ func intialize_visited(visited: Dictionary, coords: Vector2i, direction: int) ->
 		visited[coords] = [false, false, false, false, false, false]
 	visited[coords][direction] = true
 
+func fill_visited(visited: Dictionary, coords: Vector2i) -> void:
+	visited[coords] = [true, true, true, true, true, true]
+
+func intialize_both_sides_visited(visited: Dictionary, coords: Vector2i) -> void:
+	for dir in range(6):
+		if visited[coords][dir]:
+			visited[coords][(dir + 3) % 6] = true
+
 func has_visited(visited: Dictionary, coords: Vector2i, direction: int) -> bool:
 	return visited.has(coords) and visited[coords][direction]
+
+func has_visited_with_turning(visited: Dictionary, coords: Vector2i, direction: int) -> bool:
+	return visited.has(coords) and (visited[coords][direction] or visited[coords][(direction + 1) % 6] or visited[coords][(direction + 5) % 6])
 
 func create_node(coords: Vector2i) -> void:
 	if !network.has(coords):
@@ -259,6 +270,7 @@ func split_up_network_among_trains() -> void:
 		service_node(edge.node2, curr_train_id)
 		if check_for_completion():
 			break
+	print_edges()
 	assign_train_routes()
 
 #TODO: Inefficient and doesn't real look very far
@@ -306,7 +318,7 @@ func get_best_edge_in_network(train_id: int) -> rail_edge:
 		if !node.does_service(train_id):
 			continue
 		var edge: rail_edge = node.get_best_edge(train_id)
-		if best_edge == null or (edge != null and edge.weight > best_edge.weight and does_section_have_weighted_node(node, edge, train_id)):
+		if edge != null and (best_edge == null or edge.weight > best_edge.weight) and does_section_have_weighted_node(node, edge, train_id):
 			best_edge = edge
 	return best_edge
 
@@ -365,17 +377,23 @@ func assign_train_route(ai_train_obj: ai_train) -> void:
 	var id: int = ai_train_obj.id
 	var start: rail_node = find_owned_endnode(id)
 	var stack: Array[rail_node] = [start]
-	var serviced: Dictionary[rail_node, bool] = {}
+	var visited: Dictionary[Vector2i, Array] = {} #Use Vector2i for each node, represents directions it can look
+	fill_visited(visited, start.coords)
 	#TODO: dOESN'T STOP when going past station
-	#DOESN"T GET ALL THE STATIONS
+	#This should work only to add one thing at a time with direction
 	while !stack.is_empty():
-		var current_node: rail_node = stack.pop_front()
-		serviced[current_node] = true
+		var current_node: rail_node = (stack.pop_front() as rail_node)
+		ai_train_obj.add_stop(current_node.coords)
 		if current_node.weight > 0:
-			ai_train_obj.add_stop(current_node.coords)
-		for node: rail_node in current_node.get_owned_connected_nodes(id):
-			if !serviced.has(node):
-				stack.push_front(node)
+			intialize_both_sides_visited(visited, current_node.coords)
+		for edge: rail_edge in current_node.get_owned_edges(id):
+			var out_dir: int = edge.get_direction_to_node(current_node)
+			var other_node: rail_node = edge.get_other_node(current_node)
+			var in_dir: int = (edge.get_direction_to_node(other_node) + 3) % 6
+			#Can reach
+			if has_visited_with_turning(visited, current_node.coords, out_dir) and !has_visited(visited, other_node.coords, in_dir):
+				intialize_visited(visited, other_node.coords, in_dir)
+				stack.push_front(other_node)
 
 func find_owned_endnode(train_id: int) -> rail_node:
 	for node: rail_node in network.values():

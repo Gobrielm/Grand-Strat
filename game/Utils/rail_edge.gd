@@ -33,8 +33,17 @@ func is_traversable(input_dir: int, turning_node: rail_node) -> bool:
 func get_direction_to_node(node: rail_node) -> int:
 	return out_dir1 if node == node1 else out_dir2
 
+func get_other_direction(node: rail_node) -> int:
+	return out_dir2 if node == node1 else out_dir1
+
+func get_other_node(node: rail_node) -> rail_node:
+	return node2 if node1 == node else node1
+
 func copy() -> rail_edge:
 	return rail_edge.new(node1, node2, weight, out_dir1, out_dir2)
 
 func _to_string() -> String:
-	return node1.to_string_no_edges() + ": " + str(out_dir1) + "->" + str(out_dir2) + " :" + node2.to_string_no_edges()
+	var toReturn: String = node1.to_string_no_edges() + ": " + str(out_dir1) + "->" + str(out_dir2) + " :" + node2.to_string_no_edges()
+	if is_edge_claimed():
+		toReturn += " x"
+	return toReturn
