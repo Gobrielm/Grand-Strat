@@ -182,7 +182,7 @@ func fill_visited(visited: Dictionary, coords: Vector2i) -> void:
 	visited[coords] = [true, true, true, true, true, true]
 
 func intialize_both_sides_visited(visited: Dictionary, coords: Vector2i) -> void:
-	for dir in range(6):
+	for dir: int in range(6):
 		if visited[coords][dir]:
 			visited[coords][(dir + 3) % 6] = true
 
@@ -375,25 +375,26 @@ func assign_train_routes() -> void:
 		
 func assign_train_route(ai_train_obj: ai_train) -> void:
 	var id: int = ai_train_obj.id
-	var start: rail_node = find_owned_endnode(id)
-	var stack: Array[rail_node] = [start]
-	var visited: Dictionary[Vector2i, Array] = {} #Use Vector2i for each node, represents directions it can look
-	fill_visited(visited, start.coords)
+	var next: rail_node = find_owned_endnode(id)
+	var in_dir: int = -1
 	#TODO: dOESN'T STOP when going past station
-	#This should work only to add one thing at a time with direction
-	while !stack.is_empty():
-		var current_node: rail_node = (stack.pop_front() as rail_node)
+	#Needs to use visited somehow
+	while next != null:
+		var current_node: rail_node = next
 		ai_train_obj.add_stop(current_node.coords)
 		if current_node.weight > 0:
-			intialize_both_sides_visited(visited, current_node.coords)
+			#Can leave in any direction
+			in_dir = -1
+		
 		for edge: rail_edge in current_node.get_owned_edges(id):
-			var out_dir: int = edge.get_direction_to_node(current_node)
 			var other_node: rail_node = edge.get_other_node(current_node)
-			var in_dir: int = (edge.get_direction_to_node(other_node) + 3) % 6
+			var other_dir: int = (edge.get_direction_to_node(other_node) + 3) % 6
 			#Can reach
-			if has_visited_with_turning(visited, current_node.coords, out_dir) and !has_visited(visited, other_node.coords, in_dir):
-				intialize_visited(visited, other_node.coords, in_dir)
-				stack.push_front(other_node)
+			if (other_dir == in_dir or (other_dir + 1) % 6 == in_dir or ( other_dir + 5) % 6 == in_dir or in_dir == -1):
+				next = other_node
+				in_dir = other_dir
+			
+			
 
 func find_owned_endnode(train_id: int) -> rail_node:
 	for node: rail_node in network.values():
