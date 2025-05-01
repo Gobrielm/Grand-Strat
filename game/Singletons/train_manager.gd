@@ -54,6 +54,7 @@ func add_ai_train(p_train: ai_train) -> void:
 	add_ai_train_to_network(p_train, id)
 	if !networks[p_train.network_id].is_built():
 		create_network_for_trains(id)
+	networks[p_train.network_id].split_up_network_among_trains()
 
 func get_network_id(p_train: ai_train) -> int:
 	for network_id: int in networks:
@@ -92,4 +93,3 @@ func create_network_for_trains(network_id: int) -> void:
 	var network: rail_network = networks[network_id]
 	#Will reset and re-create network
 	network.create_network(get_member_from_network(network_id).location)
-	network.split_up_network_among_trains()

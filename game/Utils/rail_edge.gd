@@ -42,6 +42,9 @@ func get_other_node(node: rail_node) -> rail_node:
 func copy() -> rail_edge:
 	return rail_edge.new(node1, node2, weight, out_dir1, out_dir2)
 
+func clear_ownership() -> void:
+	serviced_by.clear()
+
 func _to_string() -> String:
 	var toReturn: String = node1.to_string_no_edges() + ": " + str(out_dir1) + "->" + str(out_dir2) + " :" + node2.to_string_no_edges()
 	if is_edge_claimed():

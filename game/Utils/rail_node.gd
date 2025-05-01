@@ -138,6 +138,11 @@ func get_edges() -> Array[rail_edge]:
 			toReturn.append(w_val.val as rail_edge)
 	return toReturn
 
+func clear_ownership() -> void:
+	serviced_by.clear()
+	for edge: rail_edge in get_edges():
+		edge.clear_ownership()
+
 func to_string_no_edges() -> String:
 	return str(coords)
 

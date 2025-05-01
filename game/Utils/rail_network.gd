@@ -60,12 +60,12 @@ func path_find_to_node(start: Vector2i) -> Array:
 		curr = queue.pop_front()
 		var cells_to_check: Array = get_cells_in_front(curr, visited[curr], map)
 		for direction: int in cells_to_check.size():
-			var tile: Vector2i = cells_to_check[direction]
-			#Tile isn't a rail or has visitd
-			if tile == null or has_visited(visited, tile, direction):
+			#Tile isn't a rail
+			if cells_to_check[direction] == null:
 				continue
-			#Tiles do not connect by rail
-			if !map.do_tiles_connect(curr, tile):
+			var tile: Vector2i = cells_to_check[direction]
+			#Tiles do not connect by rail or has visited
+			if !map.do_tiles_connect(curr, tile) or has_visited(visited, tile, direction):
 				continue
 			intialize_visited(visited, tile, direction)
 			queue.push_back(tile)
@@ -218,6 +218,7 @@ func get_rail_node(coords: Vector2i) -> rail_node:
 	return network[coords]
 
 func split_up_network_among_trains() -> void:
+	clear_ownership()
 	#Network cannot be completed
 	if network.size() <= 1:
 		return
@@ -226,8 +227,9 @@ func split_up_network_among_trains() -> void:
 	var i: int = 0
 	var curr_train_id: int = train_members[i]
 	var use_second_checker: bool = false
-	#Creates endnode connections
+	#Multiple trains don't really work
 	
+	#Creates endnode connections
 	while true:
 		var endnode: rail_node = find_endnode()
 		if endnode == null:
@@ -270,7 +272,6 @@ func split_up_network_among_trains() -> void:
 		service_node(edge.node2, curr_train_id)
 		if check_for_completion():
 			break
-	print_edges()
 	assign_train_routes()
 	start_trains()
 
@@ -297,8 +298,10 @@ func get_biggest_node() -> rail_node:
 	var biggest: rail_node = null
 	for node: rail_node in network.values():
 		#Divides by serviced by to make big nodes get serviced by multiple if big, and not if small
-		if (biggest == null and node.weight > 0) or (node.weight / (node.serviced_by.size() + 1)) > biggest.weight:
+		if node != null and (biggest == null and node.weight > 0) or (biggest != null and node.weight / (node.serviced_by.size() + 1) > biggest.weight):
 			biggest = node
+	if biggest == null:
+		return network.values().pick_random()
 	return biggest
 
 func get_smallest_index() -> int:
@@ -368,10 +371,17 @@ func check_for_completion() -> bool:
 			return false
 	return true
 
+func clear_ownership() -> void:
+	for id: int in train_members:
+		weight_serviced[id] = 0.0
+	for node: rail_node in network.values():
+		node.clear_ownership()
+
 func assign_train_routes() -> void:
 	var train_manager_obj: train_manager = train_manager.get_instance()
 	for train_id: int in train_members:
 		var ai_train_obj: ai_train = train_manager_obj.get_ai_train(train_id)
+		ai_train_obj.remove_all_stops()
 		assign_train_route(ai_train_obj)
 		
 func assign_train_route(ai_train_obj: ai_train) -> void:
@@ -379,21 +389,19 @@ func assign_train_route(ai_train_obj: ai_train) -> void:
 	var next: rail_node = find_owned_endnode(id)
 	var in_dir: int = -1
 	var visited: Dictionary[Vector2i, Array] = {}
-	
-	#TODO: dOESN'T STOP when going past station
-	#Needs to use visited somehow
+
 	while next != null:
 		var current_node: rail_node = next
 		next = null
 		ai_train_obj.add_stop(current_node.coords)
 		if current_node.weight > 0:
-			#Can leave in any direction
+			#Can leave in any direction from stations
 			in_dir = -1
 		
 		for edge: rail_edge in current_node.get_owned_edges(id):
 			var other_node: rail_node = edge.get_other_node(current_node)
 			var other_dir: int = (edge.get_direction_to_node(other_node) + 3) % 6
-			if has_visited_with_turning(visited, other_node.coords, other_dir):
+			if has_visited(visited, other_node.coords, other_dir):
 				continue
 			#Can reach
 			if (other_dir == in_dir or (other_dir + 1) % 6 == in_dir or ( other_dir + 5) % 6 == in_dir or in_dir == -1):

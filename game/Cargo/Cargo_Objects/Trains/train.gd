@@ -204,6 +204,16 @@ func remove_stop(index: int) -> void:
 	elif stop_number > index and stop_number != 0:
 		stop_number -= 1
 
+@rpc("any_peer", "unreliable", "call_local")
+func remove_all_stops() -> void:
+	stops.clear()
+	var routes: ItemList = $Train_Window/Routes
+	routes.clear()
+	stop_number = -1
+	stop_train()
+	
+
+
 func clear_stops() -> void:
 	stops = []
 	stop_number = -1
