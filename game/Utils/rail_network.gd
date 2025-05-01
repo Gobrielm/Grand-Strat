@@ -3,7 +3,7 @@ class_name rail_network extends Node
 var network_id: int
 var network: Dictionary[Vector2i, rail_node]
 var weight_serviced: Dictionary[int, float] #Train id -> weight serviced
-var train_members: Array[int] #Train id -> bool for set
+var train_members: Array[int] #Train id
 var all_network_coords: Dictionary[Vector2i, bool] #Set used for checking if network changed
 
 func _init(p_network_id: int) -> void:
@@ -272,6 +272,7 @@ func split_up_network_among_trains() -> void:
 			break
 	print_edges()
 	assign_train_routes()
+	start_trains()
 
 #TODO: Inefficient and doesn't real look very far
 func find_endnode() -> rail_node:
@@ -377,10 +378,13 @@ func assign_train_route(ai_train_obj: ai_train) -> void:
 	var id: int = ai_train_obj.id
 	var next: rail_node = find_owned_endnode(id)
 	var in_dir: int = -1
+	var visited: Dictionary[Vector2i, Array] = {}
+	
 	#TODO: dOESN'T STOP when going past station
 	#Needs to use visited somehow
 	while next != null:
 		var current_node: rail_node = next
+		next = null
 		ai_train_obj.add_stop(current_node.coords)
 		if current_node.weight > 0:
 			#Can leave in any direction
@@ -389,12 +393,14 @@ func assign_train_route(ai_train_obj: ai_train) -> void:
 		for edge: rail_edge in current_node.get_owned_edges(id):
 			var other_node: rail_node = edge.get_other_node(current_node)
 			var other_dir: int = (edge.get_direction_to_node(other_node) + 3) % 6
+			if has_visited_with_turning(visited, other_node.coords, other_dir):
+				continue
 			#Can reach
 			if (other_dir == in_dir or (other_dir + 1) % 6 == in_dir or ( other_dir + 5) % 6 == in_dir or in_dir == -1):
+				if in_dir != -1:
+					intialize_visited(visited, other_node.coords, in_dir)
 				next = other_node
 				in_dir = other_dir
-			
-			
 
 func find_owned_endnode(train_id: int) -> rail_node:
 	for node: rail_node in network.values():
@@ -403,6 +409,11 @@ func find_owned_endnode(train_id: int) -> rail_node:
 				return node
 	#No endnodes, must be loop so return one of them
 	return network.values()[0]
+
+func start_trains() -> void:
+	var train_manager_obj: train_manager = train_manager.get_instance()
+	for train_id: int in train_members:
+		train_manager_obj.get_ai_train(train_id).start_train()
 
 func print_edges() -> void:
 	var set_edges: Dictionary[rail_edge, bool] = {}

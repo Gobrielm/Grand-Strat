@@ -107,8 +107,13 @@ func drive_train_to_route() -> void:
 	acceleration_direction = direction
 
 func check_near_next_stop() -> void:
-	var next_stop_local_pos: Vector2i = map.map_to_local(stops[stop_number])
-	if position.distance_to(next_stop_local_pos) < (velocity.length() / BREAKING_SPEED * 60):
+	var final_dest: Vector2i = stops[stop_number]
+	var local_final_dest: Vector2 = map.map_to_local(final_dest)
+	#Only slows down for stations, and for depots
+	if !(terminal_map.is_station(final_dest) or map_data.get_instance().is_depot(final_dest)):
+		return
+	
+	if position.distance_to(local_final_dest) < (velocity.length() / BREAKING_SPEED * 60):
 		near_stop = true
 
 func increment_stop() -> void:
@@ -219,10 +224,9 @@ func start_train() -> void:
 	if stops.size() == 0:
 		return
 	near_stop = false
-	velocity = Vector2(0, 0)
 	route = pathfind_to_next_stop()
 	stopped = false
-	if route.is_empty() and stops.size() > 1:
+	if route.is_empty() and stops.size() > 1 and stops[stop_number] == location:
 		increment_stop()
 		route = pathfind_to_next_stop()
 	if route.is_empty():
@@ -322,11 +326,13 @@ func pathfind_to_next_stop() -> Array:
 	return create_route_between_start_and_end(map.local_to_map(position), stops[stop_number])
 
 func create_route_between_start_and_end(start: Vector2i, end: Vector2i) -> Array[Vector2i]:
+	#Assuming a stopped train can turn in any direction
 	var queue: Array[Vector2i] = [start]
 	var tile_to_prev: Dictionary = {} # Vector2i -> Array[Tile for each direction]
 	var order: Dictionary = {} # Vector2i -> Array[indices in order for tile_to_prev, first one is the fastest]
 	var visited: Dictionary = {} # Vector2i -> Array[Bool for each direction]
-	visited[start] = get_train_dir_in_array()
+	visited[start] = get_possible_directions_for_train()
+	#If we want to keep direction of train then use: get_train_dir_in_array()
 	var found: bool = false
 	var curr: Vector2i
 	while !queue.is_empty():
@@ -357,7 +363,9 @@ func get_route_from_visited(order: Dictionary, tile_to_prev: Dictionary, start: 
 	var found: bool = false
 	while !found:
 		to_return.push_front(curr)
-		if curr == start and can_direction_reach_dir(swap_direction(direction), get_direction()):
+		#Use if relying on the current direction
+		#and can_direction_reach_dir(swap_direction(direction), get_direction()):
+		if curr == start:
 			found = true
 			to_return.pop_front()
 			break
@@ -411,6 +419,9 @@ func get_train_dir_in_array() -> Array:
 	if terminal_map.is_station(location):
 		toReturn[swap_direction(get_direction())] = true
 	return toReturn
+
+func get_possible_directions_for_train() -> Array:
+	return Utils.rail_placer.get_track_connections(location)
 
 func get_direction() -> int:
 	var dir: int = round(rad_to_deg(rotation))
