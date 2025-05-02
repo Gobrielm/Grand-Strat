@@ -226,38 +226,10 @@ func split_up_network_among_trains() -> void:
 	var number_of_trains: int = get_number_of_trains()
 	var i: int = 0
 	var curr_train_id: int = train_members[i]
-	var use_second_checker: bool = false
 	#Multiple trains don't really work
 	
-	#Creates endnode connections
-	while true:
-		var endnode: rail_node = find_endnode()
-		if endnode == null:
-			#No unclaimed endnodes, rest will be largest unclaimed
-			use_second_checker = true
-			break
-		service_node(endnode, curr_train_id)
-		var other_coords: Vector2i = endnode.get_only_connected_node()
-		var other_node: rail_node = network[other_coords]
-		endnode.claim_best_connection(other_node, curr_train_id)
-		service_node(other_node, curr_train_id)
-		
-		i = (i + 1) % number_of_trains
-		curr_train_id = train_members[i]
-		if i == 0:
-			break
+	establish_first_sets_of_routes(number_of_trains)
 	
-	#Fills in rest around the biggest stations
-	while use_second_checker:
-		var node: rail_node = get_biggest_node()
-		service_node(node, curr_train_id)
-		var other_node: rail_node = node.get_biggest_node()
-		node.claim_best_connection(other_node, curr_train_id)
-		service_node(other_node, curr_train_id)
-		i = (i + 1) % number_of_trains
-		curr_train_id = train_members[i]
-		if i == 0:
-			break
 	#No ai_train will have more than 1 node by this point
 	#Will run til all nodes completed
 	while true:
@@ -275,14 +247,81 @@ func split_up_network_among_trains() -> void:
 	assign_train_routes()
 	start_trains()
 
+func establish_first_sets_of_routes(number_of_trains: int) -> void:
+	var use_second_checker: bool = false
+	var i: int = 0
+	var curr_train_id: int = train_members[i]
+	while true:
+		var endnode: rail_node = find_station_endnode()
+		if endnode == null:
+			#No unclaimed endnodes, rest will be largest unclaimed
+			use_second_checker = true
+			break
+		service_node(endnode, curr_train_id)
+		if !connect_to_simplest_station(endnode, curr_train_id):
+			#Failed, isolated somehow?
+			break
+		
+		i = (i + 1) % number_of_trains
+		curr_train_id = train_members[i]
+		if i == 0:
+			break
+	
+	#Fills in rest around the biggest stations
+	while use_second_checker:
+		var node: rail_node = get_biggest_node()
+		service_node(node, curr_train_id)
+		var other_node: rail_node = node.get_biggest_node()
+		node.claim_best_connection(other_node, curr_train_id)
+		service_node(other_node, curr_train_id)
+		i = (i + 1) % number_of_trains
+		curr_train_id = train_members[i]
+		if i == 0:
+			break
+
 #TODO: Inefficient and doesn't real look very far
-func find_endnode() -> rail_node:
+func find_station_endnode() -> rail_node:
 	for node: rail_node in network.values():
 		if node.connections.size() == 1 and node.weight > 0 and !node.is_serviced():
 			return node
 	#No endnodes
 	return null
 
+func connect_to_simplest_station(start: rail_node, train_id: int) -> bool:
+	var queue: Array[rail_node] = [start]
+	var back_to_start: Dictionary[rail_node, Array] = {}
+	back_to_start[start] = []
+	#might be issues with overriding visited but we'll see
+	var visited: Dictionary[rail_node, int] = {}
+	visited[start] = -1
+	
+	var dest: rail_node = null
+	
+	while !queue.is_empty():
+		var current: rail_node = (queue.pop_back() as rail_node)
+		if current.weight > 0:
+			dest = current
+			break
+		var input_dir: int = visited[current]
+		for edge: rail_edge in current.get_best_connections(input_dir):
+			var node: rail_node = edge.get_other_node(current)
+			var in_dir: int = edge.get_in_dir_to_node(node)
+			queue.push_back(node)
+			back_to_start[node] = back_to_start[current].duplicate()
+			back_to_start[node].append(edge)
+			visited[node] = in_dir
+	
+	if dest == null:
+		return false
+	
+	for edge: rail_edge in back_to_start[dest]:
+		edge.claim_edge(train_id)
+		service_node(edge.node1, train_id)
+		service_node(edge.node2, train_id)
+	
+	return true
+
+#Safe to call on already serviced nodes
 func service_node(node: rail_node, train_id: int) -> void:
 	if node.does_service(train_id):
 		return
@@ -355,7 +394,7 @@ func does_section_have_weighted_node(source_node: rail_node, starting_edge: rail
 		if dest.weight > 0:
 			return true
 		
-		var in_dir: int = (current_edge as rail_edge).get_direction_to_node(dest)
+		var in_dir: int = ((current_edge as rail_edge).get_out_dir_from_node(dest) + 3) % 6
 		
 		#DO checks on all edges out of dest that work for dest in
 		for edge: rail_edge in dest.get_best_connections():
@@ -400,7 +439,7 @@ func assign_train_route(ai_train_obj: ai_train) -> void:
 		
 		for edge: rail_edge in current_node.get_owned_edges(id):
 			var other_node: rail_node = edge.get_other_node(current_node)
-			var other_dir: int = (edge.get_direction_to_node(other_node) + 3) % 6
+			var other_dir: int = (edge.get_out_dir_from_node(other_node) + 3) % 6
 			if has_visited(visited, other_node.coords, other_dir):
 				continue
 			#Can reach

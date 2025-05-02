@@ -36,13 +36,6 @@ func get_best_unowned_connection(other_node: rail_node) -> rail_edge:
 			return edge
 	return backing_array[0].val
 
-func get_best_connections() -> Array[rail_edge]:
-	var toReturn: Array[rail_edge] = []
-	for stack: sorted_stack in connections.values():
-		var backing_array: Array = stack.backing_array
-		toReturn.append(backing_array[0].val)
-	return toReturn
-
 func claim_connection(other_node: rail_node, p_weight: float) -> void:
 	var temp: weighted_value
 	for element: weighted_value in connections[other_node].backing_array:
@@ -59,8 +52,16 @@ func claim_best_connection(other_node: rail_node, train_id: int) -> void:
 	var edge: rail_edge = get_best_unowned_connection(other_node)
 	edge.claim_edge(train_id)
 
-func get_only_connected_node() -> Vector2i:
-	return (connections.keys()[0] as rail_node).coords
+func get_only_connected_node() -> rail_node:
+	return (connections.keys()[0] as rail_node)
+
+func get_best_connections(input_dir: int = -1) -> Array[rail_edge]:
+	var toReturn: Array[rail_edge] = []
+	for node: rail_node in connections:
+		var edge: rail_edge = get_best_unowned_connection(node)
+		if input_dir == -1 or edge.is_traversable(input_dir, self):
+			toReturn.push_back(edge)
+	return toReturn
 
 func get_biggest_node() -> rail_node:
 	var biggest: rail_node = null
@@ -96,9 +97,9 @@ func can_reach_connection(train_id: int, connection: rail_edge) -> bool:
 			if !edge.is_edge_claimed_by_id(train_id):
 				continue
 			#Gets input direction from claimed edge
-			var dir: int = (edge.get_direction_to_node(self) + 3) % 6
+			var dir: int = (edge.get_out_dir_from_node(self) + 3) % 6
 			#Gets output direction from connection to be made
-			var other_dir: int = connection.get_direction_to_node(self)
+			var other_dir: int = connection.get_out_dir_from_node(self)
 			#If they match then a connection is possible
 			if (dir == other_dir or (dir + 1) % 6 == other_dir or (dir + 5) % 6 == other_dir):
 				return true
