@@ -228,26 +228,30 @@ func split_up_network_among_trains() -> void:
 	var curr_train_id: int = train_members[i]
 	#Multiple trains don't really work
 	
-	establish_first_sets_of_routes(number_of_trains)
+	var train_starting_location: Dictionary[int, rail_node] = establish_first_sets_of_routes(number_of_trains)
 	
-	#No ai_train will have more than 1 node by this point
-	#Will run til all nodes completed
 	while true:
 		i = get_smallest_index()
 		curr_train_id = train_members[i]
-		var edge: rail_edge = get_best_edge_in_network(curr_train_id)
-		if edge == null:
-			#Should never happen as it means we have stations to serve but no edge to get there
-			break
-		edge.claim_edge(curr_train_id)
-		service_node(edge.node1, curr_train_id)
-		service_node(edge.node2, curr_train_id)
+		#Using starting location to ensure subnetwork is tightnit
+		if !connect_to_simplest_station(train_starting_location[curr_train_id], curr_train_id):
+			#Failed, isolated somehow?
+			assert(false)
 		if check_for_completion():
 			break
+	
+	var trains_that_need_to_overlap: Array[int] = check_for_overlap()
+	if trains_that_need_to_overlap.size() != 0:
+		for id: int in trains_that_need_to_overlap:
+			#Do some connecting
+			add_overlap(train_starting_location[curr_train_id], id)
+	
 	assign_train_routes()
 	start_trains()
 
-func establish_first_sets_of_routes(number_of_trains: int) -> void:
+#Will give every train at least a connection between two stations, returns each trains start
+func establish_first_sets_of_routes(number_of_trains: int) -> Dictionary[int, rail_node]:
+	var toReturn: Dictionary[int, rail_node] = {}
 	var use_second_checker: bool = false
 	var i: int = 0
 	var curr_train_id: int = train_members[i]
@@ -257,10 +261,11 @@ func establish_first_sets_of_routes(number_of_trains: int) -> void:
 			#No unclaimed endnodes, rest will be largest unclaimed
 			use_second_checker = true
 			break
+		toReturn[curr_train_id] = endnode
 		service_node(endnode, curr_train_id)
 		if !connect_to_simplest_station(endnode, curr_train_id):
 			#Failed, isolated somehow?
-			break
+			assert(false)
 		
 		i = (i + 1) % number_of_trains
 		curr_train_id = train_members[i]
@@ -269,15 +274,21 @@ func establish_first_sets_of_routes(number_of_trains: int) -> void:
 	
 	#Fills in rest around the biggest stations
 	while use_second_checker:
+		
 		var node: rail_node = get_biggest_node()
 		service_node(node, curr_train_id)
-		var other_node: rail_node = node.get_biggest_node()
-		node.claim_best_connection(other_node, curr_train_id)
-		service_node(other_node, curr_train_id)
+		
+		toReturn[curr_train_id] = node
+		
+		if !connect_to_simplest_station(node, curr_train_id):
+			#Failed, isolated somehow?
+			assert(false)
+		
 		i = (i + 1) % number_of_trains
 		curr_train_id = train_members[i]
 		if i == 0:
 			break
+	return toReturn
 
 #TODO: Inefficient and doesn't real look very far
 func find_station_endnode() -> rail_node:
@@ -287,25 +298,40 @@ func find_station_endnode() -> rail_node:
 	#No endnodes
 	return null
 
-func connect_to_simplest_station(start: rail_node, train_id: int) -> bool:
+func connect_to_simplest_station(start: rail_node, train_id: int, callable: Callable = Callable()) -> bool:
 	var queue: Array[rail_node] = [start]
 	var back_to_start: Dictionary[rail_node, Array] = {}
+	var dist: Dictionary[rail_node, int] = {} #Int is distance in edges, not actual distance
+	dist[start] = 0
 	back_to_start[start] = []
 	#might be issues with overriding visited but we'll see
-	var visited: Dictionary[rail_node, int] = {}
+	var visited: Dictionary[rail_node, int] = {} #Int is direction
 	visited[start] = -1
 	
 	var dest: rail_node = null
 	
 	while !queue.is_empty():
 		var current: rail_node = (queue.pop_back() as rail_node)
-		if current.weight > 0:
-			dest = current
-			break
+		#Checks to make sure that unclaimed stations are priorized, but still goes for close stations
+		if callable.is_null() and current.weight > 0 and !current.does_service(train_id):
+			if dest != null and !current.is_serviced():
+				if dist[current] * 0.5 < dist[dest]:
+					dest = current
+				break
+			elif dest == null:
+				dest = current
+				if !current.is_serviced():
+					break
+		elif !callable.is_null():
+			if callable.call(current, train_id):
+				dest = current
+				break
+			
 		var input_dir: int = visited[current]
 		for edge: rail_edge in current.get_best_connections(input_dir):
 			var node: rail_node = edge.get_other_node(current)
 			var in_dir: int = edge.get_in_dir_to_node(node)
+			dist[node] = dist[current] + 1
 			queue.push_back(node)
 			back_to_start[node] = back_to_start[current].duplicate()
 			back_to_start[node].append(edge)
@@ -320,6 +346,21 @@ func connect_to_simplest_station(start: rail_node, train_id: int) -> bool:
 		service_node(edge.node2, train_id)
 	
 	return true
+
+func add_overlap(start: rail_node, train_id: int) -> void:
+	#Surveys for closest station owned by other node
+	if !connect_to_simplest_station(start, train_id, foo):
+		#AAAAA
+		assert(false)
+	pass
+
+func foo(current_node: rail_node, train_id: int) -> bool:
+	var size: int = current_node.serviced_by.size()
+	if size >= 2:
+		return true
+	elif size >= 1 and !current_node.does_service(train_id):
+		return true
+	return false
 
 #Safe to call on already serviced nodes
 func service_node(node: rail_node, train_id: int) -> void:
@@ -345,8 +386,8 @@ func get_biggest_node() -> rail_node:
 
 func get_smallest_index() -> int:
 	var weight_serviced_array: Array = weight_serviced.values()
-	var smallest: float = weight_serviced_array[0]
-	var index: int = 0
+	var index: int = randi_range(0, weight_serviced_array.size()) #Pick random for testing mostly
+	var smallest: float = weight_serviced_array[index]
 	for i: int in range(1, weight_serviced_array.size()):
 		if smallest > weight_serviced_array[i]:
 			index = i
@@ -406,9 +447,32 @@ func does_section_have_weighted_node(source_node: rail_node, starting_edge: rail
 func check_for_completion() -> bool:
 	for node: rail_node in network.values():
 		#Only count stations
-		if node.get_weight() > 0 and !node.is_serviced():
+		if node.get_weight() == 0:
+			continue
+		
+		if !node.is_serviced():
 			return false
 	return true
+
+#Returns train_ids that need to overlap
+func check_for_overlap() -> Array[int]:
+	var trains_overlap: Dictionary[int, bool] = {}
+	for node: rail_node in network.values():
+		#Only count stations
+		if node.get_weight() == 0:
+			continue
+		#If multiple trains service this station then they have overlap
+		if node.serviced_by.size() > 1:
+			for id: int in node.serviced_by:
+				trains_overlap[id] = true
+	
+	var toReturn: Array[int] = []
+	for id: int in train_members:
+		if !trains_overlap.has(id):
+			toReturn.append(id)
+	return toReturn
+	
+	
 
 func clear_ownership() -> void:
 	for id: int in train_members:
