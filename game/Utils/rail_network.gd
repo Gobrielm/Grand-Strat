@@ -222,7 +222,6 @@ func split_up_network_among_trains() -> void:
 	
 	#Use the lastly added rail_node to ensure all nodes added are possible to reach
 	var train_starting_location: Dictionary[int, rail_node] = establish_first_sets_of_routes(number_of_trains)
-	
 	while true:
 		i = get_smallest_index()
 		curr_train_id = train_members[i]
@@ -299,8 +298,6 @@ func find_station_endnode() -> rail_node:
 #Returns station just connected to
 func connect_to_simplest_station(start: rail_node, train_id: int, callable: Callable = Callable()) -> rail_node:
 	
-	#Infinite looping with visited
-	
 	var queue: Array[rail_node] = [start]
 	
 	var node_to_prev: Dictionary[rail_node, Array] = {} # rail_node -> Array[Tile for each direction]
@@ -313,7 +310,6 @@ func connect_to_simplest_station(start: rail_node, train_id: int, callable: Call
 	#might be issues with overriding visited but we'll see
 	var visited: Dictionary[Vector2i, Array] = {}
 	fill_visited(visited, start.coords)
-	
 	var dest: rail_node = null
 	while !queue.is_empty():
 		var current: rail_node = (queue.pop_front() as rail_node)
@@ -332,29 +328,28 @@ func connect_to_simplest_station(start: rail_node, train_id: int, callable: Call
 				dest = current
 				break
 			
-		for dir_leaving_curr: int in range(0, 6):
-			#Which directions it can go
-			if !visited[current.coords][dir_leaving_curr]:
+		#Doesn't care if an edge is taken
+		var directions_available_to_go: Array = visited[current.coords]
+		for edge: rail_edge in current.get_best_connections(directions_available_to_go):
+			var node: rail_node = edge.get_other_node(current)
+			var in_dir: int = edge.get_in_dir_to_node(node)
+			if has_visited(visited, node.coords, in_dir):
 				continue
-			#Doesn't care if an edge is taken
-			for edge: rail_edge in current.get_best_connections(dir_leaving_curr):
-				var node: rail_node = edge.get_other_node(current)
-				var in_dir: int = edge.get_in_dir_to_node(node)
-				if has_visited(visited, node.coords, in_dir):
-					continue
-				
-				dist[node] = dist[current] + 1
-				queue.push_back(node)
-				intialize_node_to_prev(node_to_prev, node, swap_direction(in_dir), current)
-				intialize_order(order, node, swap_direction(in_dir))
-				#If station, then it can leave in both directions
-				if node.weight > 0:
-					fill_visited(visited, node.coords)
-				else:
-					intialize_visited(visited, node.coords, in_dir)
+			
+			dist[node] = dist[current] + 1
+			queue.push_back(node)
+			intialize_node_to_prev(node_to_prev, node, swap_direction(in_dir), current)
+			intialize_order(order, node, swap_direction(in_dir))
+			#If station, then it can leave in both directions
+			if node.weight > 0:
+				fill_visited(visited, node.coords)
+			else:
+				intialize_visited(visited, node.coords, in_dir)
 	
 	if dest == null:
 		return null
+	
+	#Infinite looping with the route creation
 	
 	#Will most likely go through a bunch of already claimed stuff
 	var last_node: rail_node = dest
