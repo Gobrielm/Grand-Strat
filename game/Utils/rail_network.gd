@@ -474,30 +474,62 @@ func assign_train_routes() -> void:
 		assign_train_route(ai_train_obj)
 		
 func assign_train_route(ai_train_obj: ai_train) -> void:
-	var id: int = ai_train_obj.id
-	var next: rail_node = find_owned_endnode(id)
-	var in_dir: int = -1
-	var visited: Dictionary[Vector2i, Array] = {}
+	var not_allowed: Dictionary[rail_node, bool] = {}
+	var start: rail_node = find_owned_endnode(ai_train_obj.id)
+	var next_station: rail_node = find_closest_station_to_add_to_route(start, ai_train_obj, not_allowed)
+	while next_station != null:
+		next_station = find_closest_station_to_add_to_route(next_station, ai_train_obj, not_allowed)
+	
+	#var id: int = ai_train_obj.id
+	#var next: rail_node = find_owned_endnode(id)
+	#var in_dir: int = -1
+	#var visited: Dictionary[Vector2i, Array] = {}
+	#
+	#while next != null:
+		#var current_node: rail_node = next
+		#next = null
+		#ai_train_obj.add_stop(current_node.coords)
+		#if current_node.weight > 0:
+			##Can leave in any direction from stations
+			#in_dir = -1
+		#
+		#for edge: rail_edge in current_node.get_owned_edges(id):
+			#var other_node: rail_node = edge.get_other_node(current_node)
+			#var other_dir: int = edge.get_in_dir_to_node(other_node)
+			#if has_visited(visited, other_node.coords, other_dir):
+				#continue
+			##Can reach
+			#if (other_dir == in_dir or (other_dir + 1) % 6 == in_dir or ( other_dir + 5) % 6 == in_dir or in_dir == -1):
+				#if in_dir != -1:
+					#intialize_visited(visited, other_node.coords, in_dir)
+				#else:
+					#intialize_visited(visited, other_node.coords, other_dir)
+				#next = other_node
+				#in_dir = other_dir
+				#break
 
-	while next != null:
-		var current_node: rail_node = next
-		next = null
-		ai_train_obj.add_stop(current_node.coords)
-		if current_node.weight > 0:
-			#Can leave in any direction from stations
-			in_dir = -1
-		
+func find_closest_station_to_add_to_route(start: rail_node, ai_train_obj: ai_train, disallowed: Dictionary[rail_node, bool]) -> rail_node:
+	var id: int = ai_train_obj.id
+	var queue: Array[rail_node] = [start]
+	var visited: Dictionary[Vector2i, Array] = {}
+	fill_visited(visited, start.coords)
+	while !queue.is_empty():
+		var current_node: rail_node = queue.pop_front()
+		if current_node.weight > 0 and !disallowed.has(current_node):
+			disallowed[current_node] = true
+			ai_train_obj.add_stop(current_node.coords)
+			return current_node
 		for edge: rail_edge in current_node.get_owned_edges(id):
 			var other_node: rail_node = edge.get_other_node(current_node)
-			var other_dir: int = (edge.get_out_dir_from_node(other_node) + 3) % 6
-			if has_visited(visited, other_node.coords, other_dir):
+			var in_dir_to_dest: int = edge.get_out_dir_from_node(current_node)
+			if has_visited(visited, other_node.coords, in_dir_to_dest):
 				continue
 			#Can reach
-			if (other_dir == in_dir or (other_dir + 1) % 6 == in_dir or ( other_dir + 5) % 6 == in_dir or in_dir == -1):
-				if in_dir != -1:
-					intialize_visited(visited, other_node.coords, in_dir)
-				next = other_node
-				in_dir = other_dir
+			var direction_check: Array = visited[current_node.coords]
+			if (direction_check[in_dir_to_dest] or direction_check[(in_dir_to_dest + 1) % 6] or direction_check[(in_dir_to_dest + 5) % 6]):
+				intialize_visited(visited, other_node.coords, in_dir_to_dest)
+				queue.push_back(other_node)
+	return null
 
 func find_owned_endnode(train_id: int) -> rail_node:
 	for node: rail_node in network.values():
