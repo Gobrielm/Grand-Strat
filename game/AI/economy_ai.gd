@@ -186,7 +186,7 @@ func info_of_closest_target(coords: Vector2i, target: Callable, secondary_target
 		cycles += 1
 		if cycles > 1000 and closest_secondary_target != null:
 			break
-		for tile in world_map.get_surrounding_cells(curr):
+		for tile: Vector2i in world_map.get_surrounding_cells(curr):
 			#TODO: Add logic to account for docks and disconnected territory
 			#TODO: Add logic that the closest station isnt the best to connect to
 			#TODO: Add logic about not checking tiles that have buildings but allow towns and rails
@@ -206,10 +206,10 @@ func is_cargo_primary(type: int) -> bool:
 	return terminal_map.amount_of_primary_goods > type
 
 func get_most_needed_cargo() -> int:
-	var cargo_fulfillment := get_town_fulfillment()
-	var min_fulfilled := 100.0
-	var type_to_return := -1
-	for type in cargo_fulfillment:
+	var cargo_fulfillment: Dictionary = get_town_fulfillment()
+	var min_fulfilled: float = 100.0
+	var type_to_return: int = -1
+	for type: int in cargo_fulfillment:
 		if cargo_fulfillment[type] < min_fulfilled:
 			min_fulfilled = cargo_fulfillment[type]
 			type_to_return = type
@@ -220,11 +220,11 @@ func get_most_needed_cargo() -> int:
 	return type_to_return
 
 func get_town_fulfillment() -> Dictionary:
-	var town_tiles := get_town_tiles()
-	var total := {}
+	var town_tiles: Array = get_town_tiles()
+	var total: Dictionary = {}
 	var towns: float = town_tiles.size()
 	for town_tile: Vector2i in town_tiles:
-		for type in terminal_map.get_town_wants(town_tile):
+		for type: int in terminal_map.get_town_wants(town_tile):
 			if !total.has(type):
 				total[type] = 0.0
 			total[type] += terminal_map.get_town_fulfillment(town_tile, type)
@@ -237,9 +237,9 @@ func connect_factory(coords: Vector2i) -> void:
 	place_station(coords, closest_station)
 
 func place_station(center: Vector2i, dest: Vector2i) -> void:
-	var info := get_closest_info(center, dest)
-	var orientation = info[1]
-	var best = info[0]
+	var info: Array = get_closest_info(center, dest)
+	var orientation: int = info[1]
+	var best: Vector2i = info[0]
 	if best == Vector2i(0, 0):
 		print("problems")
 		return
@@ -250,8 +250,8 @@ func get_closest_info(center: Vector2i, dest: Vector2i) -> Array:
 	var best: Vector2i
 	var closest_dist: float = 100000.0
 	var orientation: int
-	var orientation_tracker := 2
-	for tile in world_map.get_surrounding_cells(center):
+	var orientation_tracker: int = 2
+	for tile: Vector2i in world_map.get_surrounding_cells(center):
 		if Utils.is_tile_open(tile, id):
 			var dist: float = tile.distance_to(dest)
 			if closest_dist > dist:
@@ -267,32 +267,32 @@ func create_station(location: Vector2i, orientation: int) -> void:
 	pending_deferred_calls += 1
 
 func connect_station(coords: Vector2i) -> void:
-	var closest_station := coords_of_closest_station(coords)
+	var closest_station: Vector2i = coords_of_closest_station(coords)
 	build_rail(coords, closest_station, Callable(Utils, "just_has_rails"))
 
 func connect_town(coords: Vector2i) -> void:
 	#Function is sort of a test and shouldn't ever be used
 	assert(false)
-	var target1 := Callable(terminal_map, "is_town")
+	var target1: Callable = Callable(terminal_map, "is_town")
 	#TODO: Should be dock but station as placeholder
-	var target2 := Callable(terminal_map, "is_station")
+	var target2: Callable = Callable(terminal_map, "is_station")
 	assert(target1.is_valid())
 	assert(target2.is_valid())
 	var coords_of_closest_town: Vector2i = info_of_closest_target(coords, target1, target2)[1]
 	#Choose closest orientation then add one / minus one to that for second station
 	var info: Array = get_closest_info(coords, coords_of_closest_town)
-	var orientation = info[1]
-	var station1_coords = info[0]
-	var station2_coords = get_closest_info(coords_of_closest_town, coords)[0]
+	var orientation: int = info[1]
+	var station1_coords: Vector2i = info[0]
+	var station2_coords: Vector2i = get_closest_info(coords_of_closest_town, coords)[0]
 	create_station(station1_coords, orientation)
 	create_station(station2_coords, orientation)
 	await world_map.get_tree().process_frame
 	#Every await should be split into a different ai cycle to prevent having to use await or signals which dont work all the time
-	var callable := Callable(Utils, "is_tile_open")
+	var callable: Callable = Callable(Utils, "is_tile_open")
 	build_rail(station1_coords, station2_coords, callable)
 	await world_map.get_tree().process_frame
-	var station3_coords = get_shared_tile_between(station1_coords, coords)[0]
-	var station4_coords = get_shared_tile_between(station2_coords, coords_of_closest_town)[0]
+	var station3_coords: Vector2i = get_shared_tile_between(station1_coords, coords)[0]
+	var station4_coords: Vector2i = get_shared_tile_between(station2_coords, coords_of_closest_town)[0]
 	create_station(station3_coords, orientation)
 	await world_map.get_tree().process_frame
 	create_station(station4_coords, orientation)
@@ -300,11 +300,11 @@ func connect_town(coords: Vector2i) -> void:
 	build_rail(station3_coords, station4_coords, callable)
 
 func get_shared_tile_between(coords1: Vector2i, coords2: Vector2i) -> Array:
-	var coords1_set := {}
-	var shared := []
-	for tile in world_map.get_surrounding_cells(coords1):
+	var coords1_set: Dictionary = {}
+	var shared: Array = []
+	for tile: Vector2i in world_map.get_surrounding_cells(coords1):
 		coords1_set[tile] = 1
-	for tile in world_map.get_surrounding_cells(coords2):
+	for tile: Vector2i in world_map.get_surrounding_cells(coords2):
 		if coords1_set.has(tile):
 			shared.append(tile)
 	return shared
@@ -316,8 +316,8 @@ func is_cell_available(coords: Vector2i) -> bool:
 	return !terminal_map.is_tile_taken(coords) and tile_ownership.is_owned(id, coords) 
 
 func get_town_tiles() -> Array:
-	var toReturn := []
-	for tile in get_owned_tiles():
+	var toReturn: Array = []
+	for tile: Vector2i in get_owned_tiles():
 		if terminal_map.is_town(tile):
 			toReturn.append(tile)
 	return toReturn
@@ -344,29 +344,29 @@ func get_rails_to_build(from: Vector2i, to: Vector2i, criteria_for_tile: Callabl
 	var starting_orientation: int = rail_placer.get_station_orientation(from)
 	var ending_orientation: int = rail_placer.get_station_orientation(to)
 	#TODO: Rail Algorithm navigates around pre-built rails, most solve
-	var queue := [from]
-	var tile_to_prev := {} # Vector2i -> Array[Tile for each direction]
-	var order := {} # Vector2i -> Array[indices in order for tile_to_prev, first one is the fastest]
-	var visited := {} # Vector2i -> Array[Bool for each direction]
+	var queue: Array = [from]
+	var tile_to_prev: Dictionary = {} # Vector2i -> Array[Tile for each direction]
+	var order: Dictionary = {} # Vector2i -> Array[indices in order for tile_to_prev, first one is the fastest]
+	var visited: Dictionary = {} # Vector2i -> Array[Bool for each direction]
 	visited[from] = [false, false, false, false, false, false]
 	visited[from][swap_direction(starting_orientation)] = true
 	visited[from][(starting_orientation)] = true
 	
 	#Used to only allow the top and bottom of the station to connect
-	var check = [null, null, null, null, null, null]
-	var surrounding = world_map.get_surrounding_cells(from)
+	var check: Array = [null, null, null, null, null, null]
+	var surrounding: Array[Vector2i] = world_map.get_surrounding_cells(from)
 	check[(starting_orientation + 3) % 6] = (surrounding[(starting_orientation + 1) % 6])
 	check[starting_orientation] = (surrounding[(starting_orientation + 4) % 6])
 	
-	var found = false
+	var found: bool = false
 	var curr: Vector2i
 	while !queue.is_empty() and !found:
 		curr = queue.pop_front()
-		var cells_to_check = get_cells_in_front(curr, visited[curr])
+		var cells_to_check: Array = get_cells_in_front(curr, visited[curr])
 		if curr == from:
 			cells_to_check = check
-		for direction in cells_to_check.size():
-			var cell = cells_to_check[direction]
+		for direction: int in cells_to_check.size():
+			var cell: Vector2i = cells_to_check[direction]
 			if cell == to and (direction == ending_orientation or direction == swap_direction(ending_orientation)):
 				intialize_visited(visited, cell, direction)
 				intialize_order(order, cell, direction)
@@ -379,11 +379,11 @@ func get_rails_to_build(from: Vector2i, to: Vector2i, criteria_for_tile: Callabl
 				intialize_tile_to_prev(tile_to_prev, cell, direction, curr)
 				queue.append(cell)
 	
-	var toReturn := {}
-	var direction = null
-	var prev = null
+	var toReturn: Dictionary = {}
+	var direction: int = -1
+	var prev: Variant = null
 	if found:
-		var index = 0
+		var index: int = 0
 		#To ensure it leads directly out of the station
 		while direction != ending_orientation and direction != ((ending_orientation + 3) % 6):
 			direction = order[to][index]
@@ -396,7 +396,7 @@ func get_rails_to_build(from: Vector2i, to: Vector2i, criteria_for_tile: Callabl
 			if curr == from and (can_direction_reach_dir(direction, swap_direction(starting_orientation)) or can_direction_reach_dir(direction, starting_orientation)):
 				break
 			toReturn[curr] = [direction]
-			for dir in order[curr]:
+			for dir: int in order[curr]:
 				if can_direction_reach_dir(direction, dir) and tile_to_prev[curr][dir] != null:
 					prev = curr
 					curr = tile_to_prev[curr][dir]
@@ -414,9 +414,9 @@ func swap_direction(num: int) -> int:
 	return (num + 3) % 6
 
 func get_cells_in_front(coords: Vector2i, directions: Array) -> Array:
-	var index = 2
-	var toReturn = [null, null, null, null, null, null]
-	for cell in world_map.get_surrounding_cells(coords):
+	var index: int = 2
+	var toReturn: Array = [null, null, null, null, null, null]
+	for cell: Vector2i in world_map.get_surrounding_cells(coords):
 		if directions[index] or directions[(index + 1) % 6] or directions[(index + 5) % 6] and !terminal_map.is_tile_taken(cell):
 			toReturn[index] = cell
 		index = (index + 1) % 6

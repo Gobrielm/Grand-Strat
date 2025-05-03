@@ -55,11 +55,11 @@ func claim_best_connection(other_node: rail_node, train_id: int) -> void:
 func get_only_connected_node() -> rail_node:
 	return (connections.keys()[0] as rail_node)
 
-func get_best_connections(input_dir: int = -1) -> Array[rail_edge]:
+func get_best_connections(output_dir: int = -1) -> Array[rail_edge]:
 	var toReturn: Array[rail_edge] = []
 	for node: rail_node in connections:
 		var edge: rail_edge = get_best_unowned_connection(node)
-		if input_dir == -1 or edge.is_traversable(input_dir, self):
+		if output_dir == -1 or edge.is_traversable(output_dir, self):
 			toReturn.push_back(edge)
 	return toReturn
 

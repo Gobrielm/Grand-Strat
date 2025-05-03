@@ -122,7 +122,7 @@ func ai_rail_test() -> void:
 	
 	var start: float = Time.get_ticks_msec()
 	var train_obj1: ai_train = build_ai_train(point1)
-	#var train_obj2: ai_train = build_ai_train(point2)
+	var train_obj2: ai_train = build_ai_train(point2)
 	#print(str(train_manager_obj.get_network(train_obj.network_id)))
 	var end: float = Time.get_ticks_msec()
 	print(str((end - start) / 1000) + " Seconds passed to create network")

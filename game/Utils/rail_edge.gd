@@ -25,10 +25,10 @@ func is_edge_claimed() -> bool:
 func claim_edge(train_id: int) -> void:
 	serviced_by[train_id] = true
 
-func is_traversable(input_dir: int, turning_node: rail_node) -> bool:
+func is_traversable(output_dir: int, turning_node: rail_node) -> bool:
 	var dirs1: Array[int] = [(out_dir1) % 6, (out_dir1 + 1) % 6, (out_dir1 + 5) % 6]
 	var dirs2: Array[int] = [(out_dir2) % 6, (out_dir2 + 1) % 6, (out_dir2 + 5) % 6]
-	return (turning_node == node1 and input_dir in dirs1) or (turning_node == node2 and input_dir in dirs2)
+	return (turning_node == node1 and output_dir in dirs1) or (turning_node == node2 and output_dir in dirs2)
 
 func get_out_dir_from_node(node: rail_node) -> int:
 	return out_dir1 if node == node1 else out_dir2

@@ -220,25 +220,27 @@ func split_up_network_among_trains() -> void:
 	var curr_train_id: int = train_members[i]
 	#Multiple trains don't really work
 	
+	#Use the lastly added rail_node to ensure all nodes added are possible to reach
 	var train_starting_location: Dictionary[int, rail_node] = establish_first_sets_of_routes(number_of_trains)
 	
 	while true:
 		i = get_smallest_index()
 		curr_train_id = train_members[i]
 		#Using starting location to ensure subnetwork is tightnit
-		if !connect_to_simplest_station(train_starting_location[curr_train_id], curr_train_id):
+		var node: rail_node = connect_to_simplest_station(train_starting_location[curr_train_id], curr_train_id)
+		if !node:
 			#Failed, isolated somehow?
 			assert(false)
+		#Reajust starting location to newly added node
+		train_starting_location[curr_train_id] = node
 		if check_for_completion():
 			break
-	
-	
 	
 	var trains_that_need_to_overlap: Array[int] = check_for_overlap()
 	if trains_that_need_to_overlap.size() != 0 and train_members.size() > 1:
 		for id: int in trains_that_need_to_overlap:
 			#Do some connecting
-			add_overlap(train_starting_location[curr_train_id], id)
+			add_overlap(train_manager.get_instance().get_ai_train(id), id)
 	
 	assign_train_routes()
 	start_trains()
@@ -255,11 +257,13 @@ func establish_first_sets_of_routes(number_of_trains: int) -> Dictionary[int, ra
 			#No unclaimed endnodes, rest will be largest unclaimed
 			use_second_checker = true
 			break
-		toReturn[curr_train_id] = endnode
+		
 		service_node(endnode, curr_train_id)
-		if !connect_to_simplest_station(endnode, curr_train_id):
+		var new_node: rail_node = connect_to_simplest_station(endnode, curr_train_id)
+		if !new_node:
 			#Failed, isolated somehow?
 			assert(false)
+		toReturn[curr_train_id] = new_node
 		
 		i = (i + 1) % number_of_trains
 		curr_train_id = train_members[i]
@@ -292,7 +296,11 @@ func find_station_endnode() -> rail_node:
 	#No endnodes
 	return null
 
-func connect_to_simplest_station(start: rail_node, train_id: int, callable: Callable = Callable()) -> bool:
+#Returns station just connected to
+func connect_to_simplest_station(start: rail_node, train_id: int, callable: Callable = Callable()) -> rail_node:
+	
+	#Infinite looping with visited
+	
 	var queue: Array[rail_node] = [start]
 	
 	var node_to_prev: Dictionary[rail_node, Array] = {} # rail_node -> Array[Tile for each direction]
@@ -324,16 +332,17 @@ func connect_to_simplest_station(start: rail_node, train_id: int, callable: Call
 				dest = current
 				break
 			
-		for input_dir: int in range(0, 6):
-			
-			if !visited[current.coords][input_dir]:
+		for dir_leaving_curr: int in range(0, 6):
+			#Which directions it can go
+			if !visited[current.coords][dir_leaving_curr]:
 				continue
 			#Doesn't care if an edge is taken
-			for edge: rail_edge in current.get_best_connections(input_dir):
+			for edge: rail_edge in current.get_best_connections(dir_leaving_curr):
 				var node: rail_node = edge.get_other_node(current)
 				var in_dir: int = edge.get_in_dir_to_node(node)
 				if has_visited(visited, node.coords, in_dir):
 					continue
+				
 				dist[node] = dist[current] + 1
 				queue.push_back(node)
 				intialize_node_to_prev(node_to_prev, node, swap_direction(in_dir), current)
@@ -342,10 +351,10 @@ func connect_to_simplest_station(start: rail_node, train_id: int, callable: Call
 				if node.weight > 0:
 					fill_visited(visited, node.coords)
 				else:
-					intialize_visited(visited, node.coords, input_dir)
+					intialize_visited(visited, node.coords, in_dir)
 	
 	if dest == null:
-		return false
+		return null
 	
 	#Will most likely go through a bunch of already claimed stuff
 	var last_node: rail_node = dest
@@ -372,7 +381,7 @@ func connect_to_simplest_station(start: rail_node, train_id: int, callable: Call
 		service_node(edge.node1, train_id)
 		service_node(edge.node2, train_id)
 			
-	return true
+	return dest
 
 func can_direction_reach_dir(direction: int, dir: int) -> bool:
 	return dir == direction or dir == (direction + 1) % 6 or dir == (direction + 5) % 6 or direction == -1
@@ -390,15 +399,6 @@ func intialize_order(order: Dictionary[rail_node, Array], node: rail_node, direc
 func swap_direction(num: int) -> int: 
 	return (num + 3) % 6
 
-func add_overlap(start: rail_node, train_id: int) -> void:
-	#Surveys for closest station owned by other node
-	if !connect_to_simplest_station(start, train_id, foo):
-		#AAAAA
-		assert(false)
-
-func foo(current_node: rail_node, train_id: int) -> bool:
-	var size: int = current_node.serviced_by.size()
-	return size >= 1 and !current_node.does_service(train_id)
 
 #Safe to call on already serviced nodes
 func service_node(node: rail_node, train_id: int) -> void:
@@ -459,6 +459,18 @@ func check_for_overlap() -> Array[int]:
 		if !trains_overlap.has(id):
 			toReturn.append(id)
 	return toReturn
+
+func add_overlap(ai_train_obj: ai_train, train_id: int) -> void:
+	#Surveys for closest station owned by other node
+	var end_stop_location: Vector2i = ai_train_obj.stops.back()
+	var end_stop: rail_node = get_rail_node(end_stop_location)
+	if !connect_to_simplest_station(end_stop, train_id, foo):
+		#AAAAA
+		assert(false)
+
+func foo(current_node: rail_node, train_id: int) -> bool:
+	var size: int = current_node.serviced_by.size()
+	return size >= 1 and !current_node.does_service(train_id)
 
 func clear_ownership() -> void:
 	for id: int in train_members:
