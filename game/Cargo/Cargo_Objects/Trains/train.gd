@@ -381,9 +381,10 @@ func get_route_from_visited(order: Dictionary, tile_to_prev: Dictionary, start: 
 			break
 		for dir: int in order[curr]:
 			if can_direction_reach_dir(direction, dir) and tile_to_prev[curr][dir] != null:
+				#Possibly needs break
 				curr = tile_to_prev[curr][dir]
 				direction = dir
-				#Possibly needs break
+				break
 	if !found:
 		return []
 	return to_return

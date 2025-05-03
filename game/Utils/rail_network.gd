@@ -181,16 +181,8 @@ func intialize_visited(visited: Dictionary, coords: Vector2i, direction: int) ->
 func fill_visited(visited: Dictionary, coords: Vector2i) -> void:
 	visited[coords] = [true, true, true, true, true, true]
 
-func intialize_both_sides_visited(visited: Dictionary, coords: Vector2i) -> void:
-	for dir: int in range(6):
-		if visited[coords][dir]:
-			visited[coords][(dir + 3) % 6] = true
-
 func has_visited(visited: Dictionary, coords: Vector2i, direction: int) -> bool:
 	return visited.has(coords) and visited[coords][direction]
-
-func has_visited_with_turning(visited: Dictionary, coords: Vector2i, direction: int) -> bool:
-	return visited.has(coords) and (visited[coords][direction] or visited[coords][(direction + 1) % 6] or visited[coords][(direction + 5) % 6])
 
 func create_node(coords: Vector2i) -> void:
 	if !network.has(coords):
@@ -240,8 +232,10 @@ func split_up_network_among_trains() -> void:
 		if check_for_completion():
 			break
 	
+	
+	
 	var trains_that_need_to_overlap: Array[int] = check_for_overlap()
-	if trains_that_need_to_overlap.size() != 0:
+	if trains_that_need_to_overlap.size() != 0 and train_members.size() > 1:
 		for id: int in trains_that_need_to_overlap:
 			#Do some connecting
 			add_overlap(train_starting_location[curr_train_id], id)
@@ -300,18 +294,19 @@ func find_station_endnode() -> rail_node:
 
 func connect_to_simplest_station(start: rail_node, train_id: int, callable: Callable = Callable()) -> bool:
 	var queue: Array[rail_node] = [start]
-	#Not a great solution
-	var back_to_start: Dictionary[rail_node, Array] = {}
+	
+	var node_to_prev: Dictionary[rail_node, Array] = {} # rail_node -> Array[Tile for each direction]
+	var order: Dictionary[rail_node, Array] = {} # rail_node -> Array[indices in order for tile_to_prev, first one is the fastest]
+	
 	#No a great solution
 	var dist: Dictionary[rail_node, int] = {} #Int is distance in edges, not actual distance
 	dist[start] = 0
-	back_to_start[start] = []
+	
 	#might be issues with overriding visited but we'll see
 	var visited: Dictionary[Vector2i, Array] = {}
 	fill_visited(visited, start.coords)
 	
 	var dest: rail_node = null
-	
 	while !queue.is_empty():
 		var current: rail_node = (queue.pop_front() as rail_node)
 		#Checks to make sure that unclaimed stations are priorized, but still goes for close stations
@@ -340,10 +335,9 @@ func connect_to_simplest_station(start: rail_node, train_id: int, callable: Call
 				if has_visited(visited, node.coords, in_dir):
 					continue
 				dist[node] = dist[current] + 1
-				if !queue.has(node):
-					queue.push_back(node)
-				back_to_start[node] = back_to_start[current].duplicate()
-				back_to_start[node].append(edge)
+				queue.push_back(node)
+				intialize_node_to_prev(node_to_prev, node, swap_direction(in_dir), current)
+				intialize_order(order, node, swap_direction(in_dir))
 				#If station, then it can leave in both directions
 				if node.weight > 0:
 					fill_visited(visited, node.coords)
@@ -354,23 +348,57 @@ func connect_to_simplest_station(start: rail_node, train_id: int, callable: Call
 		return false
 	
 	#Will most likely go through a bunch of already claimed stuff
-	for edge: rail_edge in back_to_start[dest]:
+	var last_node: rail_node = dest
+	var curr: rail_node = dest
+	var direction: int = -1
+	while true:
+		#Use if relying on the current direction
+		if curr == start:
+			break
+		
+		for dir: int in order[curr]:
+			if can_direction_reach_dir(direction, dir) and node_to_prev[curr][dir] != null:
+				#Possibly needs break
+				last_node = curr
+				curr = node_to_prev[curr][dir]
+				direction = dir
+				if curr.weight > 0:
+					direction = -1
+				break
+		
+		#Service stuff here
+		var edge: rail_edge = last_node.get_best_unowned_connection(curr)
 		edge.claim_edge(train_id)
 		service_node(edge.node1, train_id)
 		service_node(edge.node2, train_id)
-	
+			
 	return true
+
+func can_direction_reach_dir(direction: int, dir: int) -> bool:
+	return dir == direction or dir == (direction + 1) % 6 or dir == (direction + 5) % 6 or direction == -1
+
+func intialize_node_to_prev(node_to_prev: Dictionary[rail_node, Array], node: rail_node, direction: int, prev: rail_node) -> void:
+	if !node_to_prev.has(node):
+		node_to_prev[node] = [null, null, null, null, null, null]
+	node_to_prev[node][direction] = prev
+
+func intialize_order(order: Dictionary[rail_node, Array], node: rail_node, direction: int) -> void:
+	if !order.has(node):
+		order[node] = []
+	order[node].append(direction)
+
+func swap_direction(num: int) -> int: 
+	return (num + 3) % 6
 
 func add_overlap(start: rail_node, train_id: int) -> void:
 	#Surveys for closest station owned by other node
 	if !connect_to_simplest_station(start, train_id, foo):
 		#AAAAA
 		assert(false)
-	pass
 
 func foo(current_node: rail_node, train_id: int) -> bool:
 	var size: int = current_node.serviced_by.size()
-	return size >= 2 or (size == 1 and !current_node.does_service(train_id))
+	return size >= 1 and !current_node.does_service(train_id)
 
 #Safe to call on already serviced nodes
 func service_node(node: rail_node, train_id: int) -> void:
