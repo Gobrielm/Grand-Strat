@@ -393,56 +393,6 @@ func get_smallest_index() -> int:
 			index = i
 			smallest = weight_serviced_array[i]
 	return index
-	
-func get_best_edge_in_network(train_id: int) -> rail_edge:
-	#THis will return edges to empty nodes which serves no one
-	var best_edge: rail_edge = null
-	for node: rail_node in network.values():
-		#Only include nodes that are serviced by train
-		if !node.does_service(train_id):
-			continue
-		var edge: rail_edge = node.get_best_edge(train_id)
-		if edge != null and (best_edge == null or edge.weight > best_edge.weight) and does_section_have_weighted_node(node, edge, train_id):
-			best_edge = edge
-	return best_edge
-
-func does_section_have_weighted_node(source_node: rail_node, starting_edge: rail_edge, train_id: int) -> bool:
-	var visited: Dictionary[rail_node, bool] = {}
-	visited[source_node] = true
-	var stack: Array[rail_edge] = [starting_edge]
-	
-	while !stack.is_empty():
-		var current_edge: rail_edge = stack.pop_front()
-		var node1: rail_node = current_edge.node1
-		var node2: rail_node = current_edge.node2
-		
-		#Don't include visited nodes or nodes already serviced by another branch
-		var is_node_available: Callable = func(node: rail_node, id: int) -> bool:
-			return visited.has(node) or node.does_service(id)
-		
-		#Determines which side of edge we are on
-		if is_node_available.call(node1, train_id) and is_node_available.call(node2, train_id):
-			continue
-		var dest: rail_node
-		if is_node_available.call(node1, train_id):
-			dest = node2
-		else:
-			dest = node1
-
-		visited[dest] = true
-		
-		#Check if it has weight
-		if dest.weight > 0:
-			return true
-		
-		var in_dir: int = ((current_edge as rail_edge).get_out_dir_from_node(dest) + 3) % 6
-		
-		#DO checks on all edges out of dest that work for dest in
-		for edge: rail_edge in dest.get_best_connections():
-			if edge.is_traversable(in_dir, dest):
-				stack.push_front(edge)
-	
-	return false
 
 func check_for_completion() -> bool:
 	for node: rail_node in network.values():
@@ -471,8 +421,6 @@ func check_for_overlap() -> Array[int]:
 		if !trains_overlap.has(id):
 			toReturn.append(id)
 	return toReturn
-	
-	
 
 func clear_ownership() -> void:
 	for id: int in train_members:
