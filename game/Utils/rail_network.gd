@@ -300,18 +300,20 @@ func find_station_endnode() -> rail_node:
 
 func connect_to_simplest_station(start: rail_node, train_id: int, callable: Callable = Callable()) -> bool:
 	var queue: Array[rail_node] = [start]
+	#Not a great solution
 	var back_to_start: Dictionary[rail_node, Array] = {}
+	#No a great solution
 	var dist: Dictionary[rail_node, int] = {} #Int is distance in edges, not actual distance
 	dist[start] = 0
 	back_to_start[start] = []
 	#might be issues with overriding visited but we'll see
-	var visited: Dictionary[rail_node, int] = {} #Int is direction
-	visited[start] = -1
+	var visited: Dictionary[Vector2i, Array] = {}
+	fill_visited(visited, start.coords)
 	
 	var dest: rail_node = null
 	
 	while !queue.is_empty():
-		var current: rail_node = (queue.pop_back() as rail_node)
+		var current: rail_node = (queue.pop_front() as rail_node)
 		#Checks to make sure that unclaimed stations are priorized, but still goes for close stations
 		if callable.is_null() and current.weight > 0 and !current.does_service(train_id):
 			if dest != null and !current.is_serviced():
@@ -327,19 +329,31 @@ func connect_to_simplest_station(start: rail_node, train_id: int, callable: Call
 				dest = current
 				break
 			
-		var input_dir: int = visited[current]
-		for edge: rail_edge in current.get_best_connections(input_dir):
-			var node: rail_node = edge.get_other_node(current)
-			var in_dir: int = edge.get_in_dir_to_node(node)
-			dist[node] = dist[current] + 1
-			queue.push_back(node)
-			back_to_start[node] = back_to_start[current].duplicate()
-			back_to_start[node].append(edge)
-			visited[node] = in_dir
+		for input_dir: int in range(0, 6):
+			
+			if !visited[current.coords][input_dir]:
+				continue
+			#Doesn't care if an edge is taken
+			for edge: rail_edge in current.get_best_connections(input_dir):
+				var node: rail_node = edge.get_other_node(current)
+				var in_dir: int = edge.get_in_dir_to_node(node)
+				if has_visited(visited, node.coords, in_dir):
+					continue
+				dist[node] = dist[current] + 1
+				if !queue.has(node):
+					queue.push_back(node)
+				back_to_start[node] = back_to_start[current].duplicate()
+				back_to_start[node].append(edge)
+				#If station, then it can leave in both directions
+				if node.weight > 0:
+					fill_visited(visited, node.coords)
+				else:
+					intialize_visited(visited, node.coords, input_dir)
 	
 	if dest == null:
 		return false
 	
+	#Will most likely go through a bunch of already claimed stuff
 	for edge: rail_edge in back_to_start[dest]:
 		edge.claim_edge(train_id)
 		service_node(edge.node1, train_id)
@@ -356,11 +370,7 @@ func add_overlap(start: rail_node, train_id: int) -> void:
 
 func foo(current_node: rail_node, train_id: int) -> bool:
 	var size: int = current_node.serviced_by.size()
-	if size >= 2:
-		return true
-	elif size >= 1 and !current_node.does_service(train_id):
-		return true
-	return false
+	return size >= 2 or (size == 1 and !current_node.does_service(train_id))
 
 #Safe to call on already serviced nodes
 func service_node(node: rail_node, train_id: int) -> void:
@@ -386,7 +396,7 @@ func get_biggest_node() -> rail_node:
 
 func get_smallest_index() -> int:
 	var weight_serviced_array: Array = weight_serviced.values()
-	var index: int = randi_range(0, weight_serviced_array.size()) #Pick random for testing mostly
+	var index: int = randi_range(0, weight_serviced_array.size() - 1) #Pick random for testing mostly
 	var smallest: float = weight_serviced_array[index]
 	for i: int in range(1, weight_serviced_array.size()):
 		if smallest > weight_serviced_array[i]:
