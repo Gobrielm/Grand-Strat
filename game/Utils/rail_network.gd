@@ -215,9 +215,12 @@ func split_up_network_among_trains() -> void:
 	#Network cannot be completed
 	if network.size() <= 1:
 		return
+	var number_of_trains: int = get_number_of_trains()
+	if number_of_trains >= 2:
+		print("A")
 	
 	create_routes()
-	#var number_of_trains: int = get_number_of_trains()
+	
 	#var i: int = 0
 	#var curr_train_id: int = train_members[i]
 	##Multiple trains don't really work
@@ -256,8 +259,9 @@ func create_routes() -> void:
 	
 	#Removes old routes and starts each train up
 	for id: int in train_members:
-		var ai_train_obj: ai_train = train_manager_obj.get_ai_train(curr_train_id)
+		var ai_train_obj: ai_train = train_manager_obj.get_ai_train(id)
 		ai_train_obj.remove_all_stops()
+		weight_serviced[id] = 0.0
 		var node: rail_node = find_station_endnode()
 		if node == null:
 			node = get_biggest_node()
@@ -266,7 +270,7 @@ func create_routes() -> void:
 		start_locations[id] = node
 		disallowed[id] = {}
 		disallowed[id][node] = true
-	
+		
 	while true:
 		#Kinda does weird stuff and doesn't pathfind quite right, check later
 		
@@ -282,20 +286,25 @@ func create_routes() -> void:
 			start_locations[curr_train_id] = node
 			disallowed[curr_train_id][node] = true
 		
-		var is_completed: bool = true
-		for station_node: rail_node in network.values():
-			if station_node.weight == 0:
-				continue
-			var found_one: bool = false
-			for id: int in train_members:
-				if disallowed[id].has(station_node):
-					found_one = true
-					break
-			if !found_one:
-				is_completed = false
-				break
-		if is_completed:
+		if check_for_completion():
 			break
+		
+		#var is_completed: bool = true
+		#for station_node: rail_node in network.values():
+			#if station_node.weight == 0:
+				#continue
+			#var found_one: bool = false
+			#for id: int in train_members:
+				#if disallowed[id].has(station_node):
+					#found_one = true
+					#break
+			#if !found_one:
+				#is_completed = false
+				#break
+		#if is_completed:
+			#break
+	
+	#Do add overlap thing
 
 func find_closest_station_to_add_to_route1(start: rail_node, ai_train_obj: ai_train, disallowed: Dictionary) -> rail_node:
 	var pq: priority_queue = priority_queue.new()
@@ -457,12 +466,8 @@ func connect_to_simplest_station(start: rail_node, train_id: int, callable: Call
 	var last_node: rail_node = dest
 	var curr: rail_node = dest
 	var direction: int = -1
-	var count: int = 0
 	while true:
 		#Use if relying on the current direction
-		count += 1
-		if count > 1000:
-			print("A")
 		if curr == start:
 			break
 		for dir: int in order[curr]:
@@ -519,7 +524,6 @@ func service_node(node: rail_node, train_id: int) -> void:
 	for other_id: int in node.serviced_by:
 		weight_serviced[other_id] -= old_weight
 		weight_serviced[other_id] += new_weight
-	weight_serviced[train_id] += new_weight
 	
 func get_biggest_node() -> rail_node:
 	var biggest: rail_node = null
@@ -535,7 +539,7 @@ func get_smallest_index() -> int:
 	var weight_serviced_array: Array = weight_serviced.values()
 	var index: int = randi_range(0, weight_serviced_array.size() - 1) #Pick random for testing mostly
 	var smallest: float = weight_serviced_array[index]
-	for i: int in range(1, weight_serviced_array.size()):
+	for i: int in range(0, weight_serviced_array.size()):
 		if smallest > weight_serviced_array[i]:
 			index = i
 			smallest = weight_serviced_array[i]

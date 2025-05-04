@@ -10,6 +10,8 @@ func _init(p_coords: Vector2i, p_weight: float) -> void:
 	weight = p_weight
 
 func get_weight() -> float:
+	if serviced_by.size() == 0:
+		return 0
 	return weight / serviced_by.size()
 
 func connect_nodes(edge: rail_edge) -> void:

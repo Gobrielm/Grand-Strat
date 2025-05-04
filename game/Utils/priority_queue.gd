@@ -8,7 +8,7 @@ func _init() -> void:
 func pop_top() -> Variant:
 	if get_size() == 0:
 		return null
-	return backing_array.pop_front()[1]
+	return (backing_array.pop_front() as weighted_value).val
 
 func get_size() -> int:
 	return backing_array.size()
