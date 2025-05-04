@@ -67,9 +67,11 @@ func create(new_location: Vector2i) -> void:
 	position = map.map_to_local(new_location)
 
 @rpc("authority", "unreliable", "call_local")
-func add_stop(new_location: Vector2i) -> void:
+func add_stop(new_location: Vector2i, add_to_start: bool = false) -> void:
 	var routes: ItemList = $Window/Routes
-	routes.add_item(str(new_location))
+	var index: int = routes.add_item(str(new_location))
+	if add_to_start:
+		routes.move_item(index, 0)
 
 @rpc("any_peer", "unreliable", "call_local")
 func remove_stop(index: int) -> void:

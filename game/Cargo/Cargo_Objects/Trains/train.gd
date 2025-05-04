@@ -181,12 +181,18 @@ func do_add_stop(new_location: Vector2i) -> void:
 		add_stop.rpc(new_location)
 
 @rpc("authority", "unreliable", "call_local")
-func add_stop(new_location: Vector2i) -> void:
+func add_stop(new_location: Vector2i, add_to_start: bool = false) -> void:
 	if stop_number == -1:
 		stop_number = 0
-	stops.append(new_location)
 	var routes: ItemList = $Train_Window/Routes
-	routes.add_item(str(new_location))
+	var index: int = routes.add_item(str(new_location))
+	if add_to_start:
+		#TODO: Could mess with routes
+		routes.move_item(index, 0)
+		stops.push_front(new_location)
+		stop_number += 1
+	else:
+		stops.append(new_location)
 
 #TODO: Stuff with stations, downstream
 
