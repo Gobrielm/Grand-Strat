@@ -332,7 +332,7 @@ func dfs_to_destination(coords: Vector2i, destination: Vector2i) -> Array:
 	var tile_to_prev: Dictionary = {}
 	var visited: Dictionary = {}
 	var found: bool = false
-	queue.add_item(0, coords)
+	queue.insert_element(coords, 0)
 	visited[coords] = 0
 	while !queue.is_empty():
 		current = queue.pop_top()
@@ -345,7 +345,7 @@ func dfs_to_destination(coords: Vector2i, destination: Vector2i) -> Array:
 			var terrain: int = map.get_cell_tile_data(tile).terrain
 			var current_dist: int = visited[current] + (1 / base_unit.get_speed_mult(terrain))
 			if found_closer_route(visited, tile, current_dist) and map.is_tile_traversable(tile) and next_location_is_available_general(tile):
-				queue.add_item(current_dist, tile)
+				queue.insert_element(tile, current_dist)
 				visited[tile] = current_dist
 				tile_to_prev[tile] = current
 			elif tile == destination:

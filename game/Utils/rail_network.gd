@@ -261,7 +261,7 @@ func create_routes() -> void:
 		var node: rail_node = find_station_endnode()
 		if node == null:
 			node = get_biggest_node()
-		node.service_node(id)
+		service_node(node, id)
 		ai_train_obj.add_stop(node.coords)
 		start_locations[id] = node
 		disallowed[id] = {}
@@ -296,17 +296,10 @@ func create_routes() -> void:
 				break
 		if is_completed:
 			break
-		
-func assign_train_route_to_train(ai_train_obj: ai_train) -> void:
-	var not_allowed: Dictionary[rail_node, bool] = {}
-	var start: rail_node = find_owned_endnode(ai_train_obj.id)
-	var next_station: rail_node = find_closest_station_to_add_to_route1(start, ai_train_obj, not_allowed)
-	while next_station != null:
-		next_station = find_closest_station_to_add_to_route1(next_station, ai_train_obj, not_allowed)
 
 func find_closest_station_to_add_to_route1(start: rail_node, ai_train_obj: ai_train, disallowed: Dictionary) -> rail_node:
-	
-	var queue: Array[rail_node] = [start]
+	var pq: priority_queue = priority_queue.new()
+	pq.insert_element(start, 0)
 	
 	#No a great solution
 	var dist: Dictionary[rail_node, int] = {} #Int is distance in edges, not actual distance
@@ -315,13 +308,14 @@ func find_closest_station_to_add_to_route1(start: rail_node, ai_train_obj: ai_tr
 	#might be issues with overriding visited but we'll see
 	var visited: Dictionary[Vector2i, Array] = {}
 	fill_visited(visited, start.coords)
+
 	var dest: rail_node = null
-	while !queue.is_empty():
-		var current: rail_node = (queue.pop_front() as rail_node)
+	while !pq.is_empty():
+		var current: rail_node = (pq.pop_top() as rail_node)
 		#Checks to make sure that unclaimed stations are priorized, but still goes for close stations
 		if current.weight > 0 and !disallowed.has(current):
 			if dest != null and !current.is_serviced():
-				if dist[current] * 0.5 < dist[dest]:
+				if floor(dist[current] * 0.8) < dist[dest]:
 					dest = current
 				break
 			elif dest == null:
@@ -338,14 +332,14 @@ func find_closest_station_to_add_to_route1(start: rail_node, ai_train_obj: ai_tr
 				continue
 			
 			dist[node] = dist[current] + 1
-			queue.push_back(node)
+			pq.insert_element(node, dist[node])
 			#If station, then it can leave in both directions
 			if node.weight > 0:
 				fill_visited(visited, node.coords)
 			else:
 				intialize_visited(visited, node.coords, in_dir)
 	if dest != null:
-		dest.service_node(ai_train_obj.id)
+		service_node(dest, ai_train_obj.id)
 		ai_train_obj.add_stop(dest.coords)
 		disallowed[dest] = true
 	return dest
@@ -474,9 +468,9 @@ func connect_to_simplest_station(start: rail_node, train_id: int, callable: Call
 		for dir: int in order[curr]:
 			if direction == -1 and node_to_prev[curr][dir] != null:
 				var other_node: rail_node = node_to_prev[curr][dir]
-				var edge: rail_edge = curr.get_best_unowned_connection(other_node)
+				var other_edge: rail_edge = curr.get_best_unowned_connection(other_node)
 				#Gets direction into the target node
-				var new_dir: int = edge.get_in_dir_to_node(other_node)
+				var new_dir: int = other_edge.get_in_dir_to_node(other_node)
 				#If can't reach then move on else go further
 				if !can_direction_reach_dir(new_dir, dir):
 					continue
@@ -514,7 +508,6 @@ func intialize_order(order: Dictionary[rail_node, Array], node: rail_node, direc
 
 func swap_direction(num: int) -> int: 
 	return (num + 3) % 6
-
 
 #Safe to call on already serviced nodes
 func service_node(node: rail_node, train_id: int) -> void:
