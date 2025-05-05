@@ -62,7 +62,7 @@ var morale: int
 func get_morale() -> int:
 	return morale
 
-func add_morale(amount: int):
+func add_morale(amount: int) -> void:
 	morale += amount
 	if morale > 100:
 		morale = 100
@@ -89,7 +89,7 @@ var route: Array
 func set_route(new_route: Array) -> void:
 	route = new_route
 
-func get_next_location(index = 0) -> Vector2i:
+func get_next_location(index: int = 0) -> Vector2i:
 	if route.is_empty() or index >= route.size():
 		return location
 	return route[index]
@@ -139,6 +139,9 @@ func get_fire_damage() -> int:
 #The amount of supplies the unit has
 var org: organization
 
+func get_organization_object() -> organization:
+	return org
+
 #The morale damage a unit does
 var shock: float
 
@@ -150,10 +153,10 @@ var cohesion: int
 #The disipline and skill of the unit
 var experience: int
 
-func add_experience(multiple = 1.0):
+func add_experience(multiple: float = 1.0) -> void:
 	experience += round(float(experience_gain) * multiple)
 
-func add_battle_experience(multiple = 1.0):
+func add_battle_experience(multiple: float = 1.0) -> void:
 	experience += round(float(experience_gain) * float(battle_multiple) * multiple)
 
 func get_level() -> int:
@@ -187,7 +190,7 @@ var combat_arm: int
 #The actual type line infantry, mechanized infantry, ect. the x atlas
 var specific_type: int
 
-func set_atlas_coord(atlas_coords: Vector2i):
+func set_atlas_coord(atlas_coords: Vector2i) -> void:
 	specific_type = atlas_coords.x
 	combat_arm = atlas_coords.y
 

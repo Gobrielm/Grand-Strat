@@ -5,6 +5,7 @@ static var cargo_values: Node
 static var world_map: TileMapLayer
 static var rail_placer: Node
 static var background_music: AudioStreamPlayer
+static var unit_map: TileMapLayer
 
 static var mutex: Mutex = Mutex.new()
 
@@ -23,6 +24,9 @@ static func assign_world_map(_world_map: TileMapLayer) -> void:
 
 static func assign_background_music(_background_music: AudioStreamPlayer) -> void:
 	background_music = _background_music
+
+static func assign_unit_map(_unit_map: TileMapLayer) -> void:
+	unit_map = _unit_map
 
 static func is_tile_water(coords: Vector2i) -> bool:
 	mutex.lock()

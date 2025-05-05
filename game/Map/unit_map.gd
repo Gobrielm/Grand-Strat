@@ -18,6 +18,7 @@ func _ready() -> void:
 	battle_script = load("res://Units/unit_managers/battle_script.gd").new(self)
 	unit_creator = load("res://Units/unit_managers/unit_creator.gd").new()
 	map = get_parent()
+	Utils.assign_unit_map(self)
 
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("deselect") and state_machine.is_selecting_unit():
@@ -328,7 +329,7 @@ func next_location_available_for_extra(coords: Vector2i) -> bool:
 	return !extra_unit_data.has(coords)
 
 func dfs_to_destination(coords: Vector2i, destination: Vector2i) -> Array:
-	#TODO: Super broken, not how priority_queue works
+	#TODO: Change to bfs
 	var current: Vector2i
 	var queue: priority_queue = priority_queue.new()
 	var tile_to_prev: Dictionary = {}
@@ -385,6 +386,11 @@ func unit_battle(attacker: base_unit, defender: base_unit) -> void:
 
 func get_selected_unit() -> base_unit:
 	return selected_unit
+
+func get_unit(coords: Vector2i) -> base_unit:
+	if unit_data.has(coords):
+		return unit_data[coords]
+	return null
 
 func unit_is_owned(coords: Vector2i) -> bool:
 	return unit_data.has(coords) and unit_data[coords].get_player_id() == multiplayer.get_unique_id()

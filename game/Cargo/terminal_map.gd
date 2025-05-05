@@ -1,6 +1,6 @@
 class_name terminal_map extends Node
 #Represents Singleton
-
+#TODO: Fully convert into singleton
 static var amount_of_primary_goods: int
 
 static var serviced: Dictionary = {}
