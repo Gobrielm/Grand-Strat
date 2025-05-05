@@ -19,7 +19,7 @@ var untraversable_tiles: Dictionary = {}
 var visible_tiles: Array = []
 
 const train_scene_client: PackedScene = preload('res://Client_Objects/client_train.tscn')
-const depot: Script = preload("res://Cargo/depot.gd")
+const depot: Script = preload("res://Cargo/vehicle_depot.gd")
 
 var testing: Node
 
@@ -482,7 +482,7 @@ func set_cell_rail_placer_request(coords: Vector2i, orientation: int, type: int,
 
 @rpc("any_peer", "call_remote", "unreliable")
 func set_cell_rail_placer_server(coords: Vector2i, orientation: int, type: int, new_owner: int) -> void:
-	map_node.acknowledge_pending_deferred_call(new_owner)
+	ai_manager.get_instance().acknowledge_pending_deferred_call(new_owner)
 	if rail_check(coords) and is_owned(new_owner, coords) and !terminal_map.is_station(coords):
 		place_tile.rpc(coords, (orientation) % 6, type, new_owner)
 		if type == 1:

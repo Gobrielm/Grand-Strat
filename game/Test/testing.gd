@@ -17,9 +17,9 @@ func test() -> void:
 	#train_algorithm_test()
 	#print("-------------------- ✔️")
 	
-	print("ai_train_network_test")
-	ai_rail_test()
-	print("-------------------- ✔️")
+	#print("ai_train_network_test")
+	#ai_rail_test()
+	#print("-------------------- ✔️")
 	
 
 func build_rail(coords: Vector2i, orientation: int) -> void:
@@ -82,7 +82,6 @@ func train_algorithm_test() -> void:
 	print(str((end - start) / 1000) + " Seconds passed to pathfind")
 	
 func ai_rail_test() -> void:
-	var train_manager_obj: train_manager = train_manager.get_instance()
 	
 	var point1: Vector2i = Vector2i(0, 0)
 	var point2: Vector2i = Vector2i(9, 5)
@@ -121,8 +120,8 @@ func ai_rail_test() -> void:
 	build_many_rails(pt5, point3)
 	
 	var start: float = Time.get_ticks_msec()
-	var train_obj1: ai_train = build_ai_train(point1)
-	var train_obj2: ai_train = build_ai_train(point2)
+	build_ai_train(point1)
+	build_ai_train(point2)
 	#print(str(train_manager_obj.get_network(train_obj.network_id)))
 	var end: float = Time.get_ticks_msec()
 	print(str((end - start) / 1000) + " Seconds passed to create network")

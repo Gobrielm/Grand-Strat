@@ -12,7 +12,6 @@ extends Node
 @onready var cargo_map: Node = $cargo_map
 
 var unique_id: int
-var ai: Dictionary = {}
 
 func _ready() -> void:
 	randomize()
@@ -33,7 +32,6 @@ func _ready() -> void:
 		terminal_map.assign_cargo_map(cargo_map)
 	enable_nation_picker()
 	cargo_map.place_resources(main_map)
-	call_deferred("create_ai")
 
 func _input(event: InputEvent) -> void:
 	main_map.update_hover()
@@ -81,8 +79,6 @@ func _input(event: InputEvent) -> void:
 	elif event.is_action_pressed("debug_place_train") and state_machine.is_controlling_camera():
 		main_map.create_train.rpc(get_cell_position())
 	elif event.is_action_pressed("debug_print") and state_machine.is_controlling_camera():
-		#for id: int in ai:
-			#ai[id].process()
 		unit_creator_window.popup()
 
 func _on_day_tick_timeout() -> void:
@@ -90,19 +86,6 @@ func _on_day_tick_timeout() -> void:
 
 func _on_month_tick_timeout() -> void:
 	pass
-
-#Ai
-func create_ai() -> void:
-	ai[1] = preload("res://AI/economy_ai.gd").new(1, main_map)
-
-func acknowledge_pending_deferred_call(id: int) -> void:
-	if ai.has(id):
-		ai[id].acknowledge_pending_deferred_call()
-
-func _on_ai_timer_timeout() -> void:
-	return
-	#if ai != null:
-		#ai.process()
 
 #Factory
 func create_factory() -> void:

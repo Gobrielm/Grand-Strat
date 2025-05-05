@@ -164,25 +164,7 @@ static func create_factory(p_location: Vector2i, p_player_owner: int, p_inputs: 
 
 static func create_road_depot(coords: Vector2i, player_id: int) -> void:
 	if !cargo_map_terminals.has(coords):
-		var supply_map: Dictionary = create_supplied_tiles(coords)
-		cargo_map_terminals[coords] = road_depot.new(coords, player_id, supply_map)
-
-static func create_supplied_tiles(center: Vector2i) -> Dictionary:
-	var toReturn: Dictionary = {}
-	toReturn[center] = 5
-	var visited: Dictionary = {}
-	visited[center] = 0
-	var queue: Array = []
-	queue.push_back(center)
-	while !queue.is_empty():
-		var curr: Vector2i = queue.pop_front()
-		var tiles: Array = map.get_surrounding_cells(curr)
-		for tile: Vector2i in tiles:
-			if !visited.has(tile) and toReturn[curr] > 0:
-				visited[tile] = 0
-				queue.push_back(tile)
-				toReturn[tile] = toReturn[curr] - 1
-	return toReturn
+		cargo_map_terminals[coords] = road_depot.new(coords, player_id)
 
 static func get_local_prices(coords: Vector2i) -> Dictionary:
 	if cargo_map_terminals.has(coords):

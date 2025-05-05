@@ -1,10 +1,4 @@
-extends Node
-
-#AI States
-var id: int
-var thread: Thread
-var stored_tile: Vector2i
-var pending_deferred_calls: int = 0
+class_name economy_ai extends ai_base
 
 #Set of States
 var world_map: TileMapLayer
@@ -21,10 +15,10 @@ enum ai_actions {
 	CONNECT_TOWN
 }
 
-func _init(_id: int, _world_map: TileMapLayer) -> void: 
+func _init(_id: int, p_country_id: int) -> void: 
+	super._init(_id, p_country_id)
 	thread = Thread.new()
-	world_map = _world_map
-	id = _id
+	world_map = Utils.world_map
 	rail_placer = world_map.rail_placer
 	tile_ownership = Utils.tile_ownership
 	tile_ownership.add_player_to_country(id, Vector2i(96, -111))

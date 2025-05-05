@@ -1,10 +1,31 @@
 class_name road_depot extends station
 
-var supplied_tiles: Dictionary = {}
+var supplied_tiles: Dictionary[Vector2i, int] = {}
 
-func _init(coords: Vector2i, _player_owner: int, new_supply_map: Dictionary) -> void:
+const MAX_DISTANCE: int = 5
+#If distance is 5 then 5 * 1 = 5 cargo delievered
+const CARGO_DELIEVERED_PER_UNIT_DISTANCE: int = 1
+
+func _init(coords: Vector2i, _player_owner: int) -> void:
 	super._init(coords, _player_owner)
-	supplied_tiles = new_supply_map
+	supplied_tiles = create_supplied_tiles(coords)
+
+func create_supplied_tiles(center: Vector2i) -> Dictionary[Vector2i, int]:
+	var map: TileMapLayer = Utils.world_map
+	var toReturn: Dictionary[Vector2i, int] = {}
+	toReturn[center] = MAX_DISTANCE
+	var visited: Dictionary[Vector2i, bool] = {}
+	visited[center] = true
+	var queue: Array = [center]
+	while !queue.is_empty():
+		var curr: Vector2i = queue.pop_front()
+		var tiles: Array = map.get_surrounding_cells(curr)
+		for tile: Vector2i in tiles:
+			if !visited.has(tile) and toReturn[curr] > 0:
+				visited[tile] = true
+				queue.push_back(tile)
+				toReturn[tile] = toReturn[curr] - 1
+	return toReturn
 
 func get_supply(coords: Vector2i) -> int:
 	if supplied_tiles.has(coords):
@@ -17,13 +38,13 @@ func distribute_cargo() -> void:
 
 func distribute_type(type: int) -> void:
 	for tile: Vector2i in supplied_tiles:
-		var hold_obj: terminal = terminal_map.get_terminal(tile)
-		if hold_obj != null and hold_obj is hold:
-			if hold_obj.does_accept(type) and hold_obj.get_player_owner() == player_owner:
-				distribute_type_to_hold(type, hold_obj)
+		var broker_obj: broker = terminal_map.get_broker(tile)
+		if broker_obj != null:
+			if broker_obj.does_accept(type) and broker_obj.get_player_owner() == player_owner:
+				distribute_type_to_hold(type, broker_obj)
 
-func distribute_type_to_hold(type: int, hold_obj: hold) -> void:
-	var coords: Vector2i = hold_obj.get_location()
-	var amount: int = hold_obj.get_amount_to_add(type, supplied_tiles[coords])
+func distribute_type_to_hold(type: int, broker_obj: broker) -> void:
+	var coords: Vector2i = broker_obj.get_location()
+	var amount: int = broker_obj.get_amount_to_add(type, supplied_tiles[coords])
 	amount = transfer_cargo(type, amount)
-	hold_obj.add_cargo(type, amount)
+	broker_obj.add_cargo(type, amount)

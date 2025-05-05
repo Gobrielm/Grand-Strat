@@ -16,10 +16,4 @@ script = ExtResource("1_4blso")
 [node name="cargo_map" parent="." instance=ExtResource("4_jxo5k")]
 tile_map_data = PackedByteArray("AABxAI7/AAAAAAEAAAB4AJv/AAAAAAEAAACAAI//AAAAAAEAAABdAJD/AAAAAAEAAABwAIb/AAAAAAEAAABpAKD/AAAAAAEAAAA=")
 
-[node name="ai_timer" type="Timer" parent="."]
-wait_time = 0.05
-autostart = true
-
 [node name="background_music" parent="." instance=ExtResource("5_k18o7")]
-
-[connection signal="timeout" from="ai_timer" to="." method="_on_ai_timer_timeout"]
