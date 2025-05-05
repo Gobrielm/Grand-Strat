@@ -15,7 +15,7 @@ func instance_preplaced_towns(coords: Vector2i) -> terminal:
 	var loaded_script: Resource = load("res://Cargo/Cargo_Objects/Specific/Endpoint/town.gd")
 	assert(loaded_script != null)
 	Utils.world_map.make_cell_invisible(coords)
-	return loaded_script.new(coords, Utils.tile_ownership.get_player_id_from_cell(coords))
+	return loaded_script.new(coords, tile_ownership.get_instance().get_player_id_from_cell(coords))
 
 func transform_construction_site_to_factory(coords: Vector2i) -> void:
 	set_tile(coords, Vector2i(4, 1))
@@ -51,11 +51,10 @@ func get_random_unowned_tile(prov: province) -> Vector2i:
 	return Vector2i(0, 0)
 
 func place_random_industry(tile: Vector2i, mult: int) -> void:
-	var tile_ownership: Node = Utils.tile_ownership
 	var best_resource: int = cargo_values.get_best_resource(tile)
 	if best_resource == -1:
 		return
-	create_factory(tile_ownership.get_player_id_from_cell(tile), tile, get_primary_recipe_for_type(best_resource), mult)
+	create_factory(tile_ownership.get_instance().get_player_id_from_cell(tile), tile, get_primary_recipe_for_type(best_resource), mult)
 
 func get_primary_recipe_for_type(type: int) -> Array:
 	for recipe_set: Array in recipe.get_set_recipes():
@@ -91,8 +90,7 @@ func create_construction_site(_player_id: int, coords: Vector2i) -> void:
 	terminal_map.create_terminal(new_factory)
 
 func create_town(coords: Vector2i) -> void:
-	var tile_ownership: Node = Utils.tile_ownership
-	var new_town: terminal = load("res://Cargo/Cargo_Objects/Specific/Endpoint/town.gd").new(coords, tile_ownership.get_player_id_from_cell(coords))
+	var new_town: terminal = load("res://Cargo/Cargo_Objects/Specific/Endpoint/town.gd").new(coords, tile_ownership.get_instance().get_player_id_from_cell(coords))
 	set_tile(coords, Vector2i(0, 1))
 	terminal_map.create_terminal(new_town)
 

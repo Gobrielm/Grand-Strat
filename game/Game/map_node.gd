@@ -1,6 +1,6 @@
 extends Node
 
-@onready var tile_ownership: Node = $tile_ownership
+@onready var tile_ownership_obj: tile_ownership = $tile_ownership
 @onready var main_map: TileMapLayer = $main_map
 @onready var camera: Camera2D = $main_map/player_camera
 @onready var factory_window: Window = $main_map/factory_window
@@ -21,13 +21,15 @@ func _ready() -> void:
 		cargo_map.queue_free()
 		cargo_map = preload("res://Client_Objects/client_cargo_map.tscn").instantiate()
 		add_child(cargo_map)
-		remove_child(tile_ownership)
-		tile_ownership.queue_free()
-		tile_ownership = preload("res://Client_Objects/client_tile_ownership.tscn").instantiate()
-		tile_ownership.name = "tile_ownership"
-		add_child(tile_ownership)
+		remove_child(tile_ownership_obj)
+		tile_ownership_obj.queue_free()
+		tile_ownership_obj = preload("res://Client_Objects/client_tile_ownership.tscn").instantiate()
+		tile_ownership_obj.name = "tile_ownership"
+		add_child(tile_ownership_obj)
 	else:
+		#Singleton Creation
 		train_manager.new()
+		ai_manager.new()
 		Utils.assign_world_map(main_map)
 		terminal_map.assign_cargo_map(cargo_map)
 	enable_nation_picker()
@@ -97,7 +99,7 @@ func create_factory_server(building_id: int, coords: Vector2i) -> void:
 
 #Tile_Ownership
 func is_owned(player_id: int, coords: Vector2i) -> bool:
-	return tile_ownership.is_owned(player_id, coords)
+	return tile_ownership_obj.is_owned(player_id, coords)
 
 #Nation_Picker
 func enable_nation_picker() -> void:
@@ -110,7 +112,7 @@ func disable_nation_picker() -> void:
 
 func pick_nation() -> void:
 	var coords: Vector2i = main_map.get_cell_position()
-	tile_ownership.add_player_to_country.rpc_id(1, unique_id, coords)
+	tile_ownership_obj.add_player_to_country.rpc_id(1, unique_id, coords)
 
 #Map Commands
 func get_cell_position() -> Vector2i:

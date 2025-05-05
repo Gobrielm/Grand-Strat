@@ -90,10 +90,10 @@ func start_test() -> void:
 		call_deferred("start_test")
 
 func create_testing_map() -> void:
-	var tile_ownership: TileMapLayer = Utils.tile_ownership
+	var tile_ownership_obj: tile_ownership = tile_ownership.get_instance()
 	for i: int in range(-500, 500):
 		for j: int in range(-500, 500):
-			tile_ownership.add_tile_to_country(Vector2i(i, j), 1)
+			tile_ownership_obj.add_tile_to_country(Vector2i(i, j), 1)
 			set_cell(Vector2i(i, j), 0, Vector2i(0, 0))
 
 #Constants

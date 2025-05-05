@@ -2,7 +2,6 @@ class_name Utils extends Node
 
 static var cargo_map: TileMapLayer
 static var cargo_values: Node
-static var tile_ownership: TileMapLayer
 static var world_map: TileMapLayer
 static var rail_placer: Node
 static var background_music: AudioStreamPlayer
@@ -15,9 +14,6 @@ static func round(num: float, places: int) -> float:
 static func assign_cargo_map(_cargo_map: Node) -> void:
 	cargo_map = _cargo_map
 	cargo_values = cargo_map.cargo_values
-
-static func assign_tile_ownership(_tile_ownership: TileMapLayer) -> void:
-	tile_ownership = _tile_ownership
 
 static func assign_rail_placer(_rail_placer: Node) -> void:
 	rail_placer = _rail_placer
@@ -36,12 +32,12 @@ static func is_tile_water(coords: Vector2i) -> bool:
 
 static func is_tile_open(coords: Vector2i, id: int) -> bool:
 	mutex.lock()
-	var val: bool = !terminal_map.is_tile_taken(coords) and rail_placer.get_track_connection_count(coords) == 0 and tile_ownership.is_owned(id, coords)
+	var val: bool = !terminal_map.is_tile_taken(coords) and rail_placer.get_track_connection_count(coords) == 0 and tile_ownership.get_instance().is_owned(id, coords)
 	mutex.unlock()
 	return val
 
 static func just_has_rails(coords: Vector2i, id: int) -> bool:
-		return !terminal_map.is_tile_taken(coords) and tile_ownership.is_owned(id, coords)
+		return !terminal_map.is_tile_taken(coords) and tile_ownership.get_instance().is_owned(id, coords)
 
 static func click_music() -> void:
 	background_music.click()
@@ -58,4 +54,4 @@ static func turn_off_black_white_map() -> void:
 	world_map.material.set_shader_parameter("onoff", 0)
 
 static func is_ready() -> bool:
-	return cargo_map != null and cargo_values != null and world_map != null and tile_ownership != null and rail_placer != null and background_music != null
+	return cargo_map != null and cargo_values != null and world_map != null and rail_placer != null and background_music != null

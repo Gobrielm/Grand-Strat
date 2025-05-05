@@ -1,5 +1,7 @@
 class_name road_depot extends station
 
+#TODO: Make road depot have orders have be way more similar to station
+
 var supplied_tiles: Dictionary[Vector2i, int] = {}
 
 const MAX_DISTANCE: int = 5
@@ -39,11 +41,12 @@ func distribute_cargo() -> void:
 func distribute_type(type: int) -> void:
 	for tile: Vector2i in supplied_tiles:
 		var broker_obj: broker = terminal_map.get_broker(tile)
-		if broker_obj != null:
-			if broker_obj.does_accept(type) and broker_obj.get_player_owner() == player_owner:
-				distribute_type_to_hold(type, broker_obj)
+		if broker_obj != null and broker_obj.does_accept(type):
+			#Only sends stuff inside country
+			if tile_ownership.get_instance().is_owned(player_owner, broker_obj.get_location()):
+				distribute_type_to_broker(type, broker_obj)
 
-func distribute_type_to_hold(type: int, broker_obj: broker) -> void:
+func distribute_type_to_broker(type: int, broker_obj: broker) -> void:
 	var coords: Vector2i = broker_obj.get_location()
 	var amount: int = broker_obj.get_amount_to_add(type, supplied_tiles[coords])
 	amount = transfer_cargo(type, amount)

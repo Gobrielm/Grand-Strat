@@ -2,7 +2,7 @@ class_name economy_ai extends ai_base
 
 #Set of States
 var world_map: TileMapLayer
-var tile_ownership: TileMapLayer
+var tile_ownership_obj: tile_ownership
 var cargo_map: TileMapLayer = terminal_map.cargo_map
 var cargo_values: Node = cargo_map.cargo_values
 var rail_placer: Node
@@ -20,8 +20,8 @@ func _init(_id: int, p_country_id: int) -> void:
 	thread = Thread.new()
 	world_map = Utils.world_map
 	rail_placer = world_map.rail_placer
-	tile_ownership = Utils.tile_ownership
-	tile_ownership.add_player_to_country(id, Vector2i(96, -111))
+	tile_ownership_obj = tile_ownership.get_instance()
+	tile_ownership_obj.add_player_to_country(id, Vector2i(96, -111))
 
 func process() -> void:
 	if thread.is_alive():
@@ -78,7 +78,7 @@ func search_for(target: Callable) -> bool:
 		if target.call(tile):
 			var found: bool = false
 			for cell: Vector2i in world_map.get_surrounding_cells(tile):
-				if tile_ownership.is_owned(id, cell) and terminal_map.is_station(cell):
+				if tile_ownership_obj.is_owned(id, cell) and terminal_map.is_station(cell):
 					found = true
 			if !found:
 				stored_tile = tile
@@ -184,10 +184,10 @@ func info_of_closest_target(coords: Vector2i, target: Callable, secondary_target
 			#TODO: Add logic to account for docks and disconnected territory
 			#TODO: Add logic that the closest station isnt the best to connect to
 			#TODO: Add logic about not checking tiles that have buildings but allow towns and rails
-			if !visited.has(tile) and tile_ownership.is_owned(id, tile):
+			if !visited.has(tile) and tile_ownership_obj.is_owned(id, tile):
 				if target.call(tile):
 					return [(visited[curr] + 1), tile]
-				elif tile_ownership.is_owned(id, tile):
+				elif tile_ownership_obj.is_owned(id, tile):
 					visited[tile] = visited[curr] + 1
 					queue.append(tile)
 				if closest_secondary_target == null and secondary_target.call(tile):
@@ -304,10 +304,10 @@ func get_shared_tile_between(coords1: Vector2i, coords2: Vector2i) -> Array:
 	return shared
 
 func get_owned_tiles() -> Array:
-	return tile_ownership.get_owned_tiles(id)
+	return tile_ownership_obj.get_owned_tiles(id)
 
 func is_cell_available(coords: Vector2i) -> bool:
-	return !terminal_map.is_tile_taken(coords) and tile_ownership.is_owned(id, coords) 
+	return !terminal_map.is_tile_taken(coords) and tile_ownership_obj.is_owned(id, coords) 
 
 func get_town_tiles() -> Array:
 	var toReturn: Array = []

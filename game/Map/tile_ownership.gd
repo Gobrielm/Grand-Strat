@@ -1,4 +1,4 @@
-extends TileMapLayer
+class_name tile_ownership extends TileMapLayer
 
 var tile_to_country_id: Dictionary = {}
 var country_id_to_tiles_owned: Dictionary = {}
@@ -6,9 +6,16 @@ var country_id_to_tiles_owned: Dictionary = {}
 var country_id_to_player_id: Dictionary = {}
 var player_id_to_country_id: Dictionary = {}
 
+static var singleton_instance: tile_ownership = null
+
 func _ready() -> void:
-	Utils.assign_tile_ownership(self)
+	assert(singleton_instance == null, "Cannot create multiple instances of singleton!")
 	call_deferred("create_countries")
+	singleton_instance = self
+
+static func get_instance() -> tile_ownership:
+	assert(singleton_instance != null, "Train_Manager has not be created, and has been accessed")
+	return singleton_instance
 
 func create_countries() -> void:
 	var provinces_to_add: Array = [Vector2i(89, -112), Vector2i(105, -116), Vector2i(103, -105), Vector2i(103, -97), Vector2i(114, -114)]

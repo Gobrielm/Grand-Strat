@@ -14,11 +14,11 @@ func _init(p_network_id: int) -> void:
 
 func has_changed() -> bool:
 	var world_map: TileMapLayer = Utils.world_map
-	var tile_ownership: TileMapLayer = Utils.tile_ownership
+	var tile_ownership_obj: tile_ownership = tile_ownership.get_instance()
 	for coords: Vector2i in all_network_coords:
 		for tile: Vector2i in world_map.get_surrounding_cells(coords):
-			var id1: int = tile_ownership.get_player_id_from_cell(coords)
-			var id2: int = tile_ownership.get_player_id_from_cell(tile)
+			var id1: int = tile_ownership_obj.get_player_id_from_cell(coords)
+			var id2: int = tile_ownership_obj.get_player_id_from_cell(tile)
 			#If a tile in the network connects to a tile out of network then it has changed and both are in same country
 			if world_map.do_tiles_connect(coords, tile) and !all_network_coords.has(tile) and id1 == id2:
 				return true
@@ -30,10 +30,10 @@ func has_altered(coords: Vector2i) -> bool:
 	if all_network_coords.has(coords):
 		return true
 	var world_map: TileMapLayer = Utils.world_map
-	var tile_ownership: TileMapLayer = Utils.tile_ownership
+	var tile_ownership_obj: tile_ownership = tile_ownership.get_instance()
 	for tile: Vector2i in all_network_coords:
-		var id1: int = tile_ownership.get_player_id_from_cell(coords)
-		var id2: int = tile_ownership.get_player_id_from_cell(tile)
+		var id1: int = tile_ownership_obj.get_player_id_from_cell(coords)
+		var id2: int = tile_ownership_obj.get_player_id_from_cell(tile)
 		#New bordering rail
 		if all_network_coords.has(tile) and world_map.do_tiles_connect(coords, tile) and id1 == id2:
 			return true
