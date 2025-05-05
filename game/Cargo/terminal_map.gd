@@ -66,7 +66,12 @@ static func assign_cargo_map(_cargo_map: TileMapLayer) -> void:
 static func create_station(coords: Vector2i, new_owner: int) -> void:
 	var new_station: station = station.new(coords, new_owner)
 	create_terminal(new_station)
-	
+
+static func create_road_depot(coords: Vector2i, player_id: int) -> void:
+	if !cargo_map_terminals.has(coords):
+		cargo_map_terminals[coords] = road_depot.new(coords, player_id)
+		create_terminal(cargo_map_terminals[coords])
+
 static func create_terminal(p_terminal: terminal) -> void:
 	var coords: Vector2i = p_terminal.get_location()
 	cargo_map_terminals[coords] = p_terminal
@@ -139,8 +144,7 @@ static func get_construction_materials(coords: Vector2i) -> Dictionary:
 
 static func is_factory(coords: Vector2i) -> bool:
 	if cargo_map_terminals.has(coords):
-		var term: terminal = cargo_map_terminals[coords]
-		return term is factory_template
+		return cargo_map_terminals[coords] is factory_template
 	return false
 
 static func get_cash_of_firm(coords: Vector2i) -> int:
@@ -161,10 +165,6 @@ static func create_factory(p_location: Vector2i, p_player_owner: int, p_inputs: 
 	if p_player_owner > 0:
 		return player_factory.new(p_location, p_player_owner, p_inputs, p_outputs)
 	return ai_factory.new(p_location, p_player_owner, p_inputs, p_outputs)
-
-static func create_road_depot(coords: Vector2i, player_id: int) -> void:
-	if !cargo_map_terminals.has(coords):
-		cargo_map_terminals[coords] = road_depot.new(coords, player_id)
 
 static func get_local_prices(coords: Vector2i) -> Dictionary:
 	if cargo_map_terminals.has(coords):

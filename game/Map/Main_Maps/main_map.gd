@@ -14,7 +14,6 @@ var unique_id: int
 @onready var rail_placer: Node = $Rail_Placer
 @onready var map_node: Node = get_parent()
 var unit_map: TileMapLayer
-var money_interface: Node
 var untraversable_tiles: Dictionary = {}
 var visible_tiles: Array = []
 
@@ -51,7 +50,6 @@ func _ready() -> void:
 	if unique_id == 1:
 		Utils.assign_world_map(self)
 		create_untraversable_tiles()
-		money_interface = money_controller.new(multiplayer.get_peers(), self)
 		for peer: int in multiplayer.get_peers():
 			heart_beat[peer] = 0
 			update_money_label.rpc_id(peer, get_money(peer))
@@ -66,8 +64,8 @@ func _ready() -> void:
 		terminal_map.create(self)
 		recipe.create_set_recipes()
 		$player_camera/CanvasLayer/Desync_Label.visible = true
-		testing = preload("res://Test/testing.gd").new(self)
-		start_test()
+		#testing = preload("res://Test/testing.gd").new(self)
+		#start_test()
 	else:
 		unit_map = load("res://Client_Objects/client_unit_map.tscn").instantiate()
 		unit_map.name = "unit_map"
@@ -432,20 +430,8 @@ func make_cell_visible(coords: Vector2i) -> void:
 func get_cash_of_firm(coords: Vector2i) -> int:
 	return terminal_map.get_cash_of_firm(coords)
 
-func add_money_to_player(id: int, amount: int) -> void:
-	money_interface.add_money_to_player(id, amount)
-
-func remove_money(id: int, amount: int) -> void:
-	money_interface.add_money_to_player(id, -amount)
-
-func player_has_enough_money(id: int, amount: int) -> bool:
-	return get_money(id) >= amount
-
 func get_money(id: int) -> int:
-	return money_interface.get_money(id)
-
-func get_money_of_all_players() -> Dictionary:
-	return money_interface.get_money_dictionary()
+	return money_controller.get_instance().get_money(id)
 
 @rpc("authority", "unreliable", "call_local")
 func update_money_label(amount: int) -> void:

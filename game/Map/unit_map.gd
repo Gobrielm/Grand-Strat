@@ -92,8 +92,10 @@ func is_player_id_match(coords: Vector2i, player_id: int) -> bool:
 func check_before_create(coords: Vector2i, type: int, player_id: int) -> void:
 	var unit_class: GDScript = get_unit_class(type)
 	var cost: int = unit_class.get_cost()
-
-	if !unit_data.has(coords) and map.player_has_enough_money(player_id, cost):
+	var money_cntrl: money_controller = money_controller.get_instance()
+	
+	if !unit_data.has(coords) and money_cntrl.player_has_enough_money(player_id, cost):
+		money_cntrl.remove_money_from_player(player_id, cost)
 		map.remove_money(player_id, cost)
 		create_unit.rpc(coords, type, player_id)
 
@@ -577,11 +579,12 @@ func manpower_and_morale_tick(unit: base_unit) -> void:
 	var player_id: int = unit.get_player_id()
 	var amount: int = round(float(unit.get_max_manpower()) / 80.0 + 12)
 	var max_cost: int = round(amount * 0.3)
-	if map.player_has_enough_money(player_id, max_cost):
+	var money_cntrl: money_controller = money_controller.get_instance()
+	if money_cntrl.player_has_enough_money(player_id, max_cost):
 		@warning_ignore("narrowing_conversion")
 		var manpower_used: int = ceil(unit.add_manpower(amount / 2.0))
 		var cost: int = round(manpower_used * 0.3)
-		map.remove_money(player_id, cost)
+		money_cntrl.remove_money_from_player(player_id, cost)
 		unit.add_morale(5)
 	else:
 		unit.remove_morale(10)

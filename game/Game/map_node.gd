@@ -32,6 +32,7 @@ func _ready() -> void:
 		ai_manager.new()
 		Utils.assign_world_map(main_map)
 		terminal_map.assign_cargo_map(cargo_map)
+		money_controller.new(multiplayer.get_peers())
 	enable_nation_picker()
 	cargo_map.place_resources(main_map)
 

@@ -73,12 +73,12 @@ func get_good_name_uppercase(type: int) -> String:
 	cargo_name[0] = cargo_name[0].to_upper()
 	return cargo_name
 
-func get_available_primary_recipes(coords: Vector2i) -> Array:
-	var toReturn: Array = []
+func get_available_primary_recipes(coords: Vector2i) -> Array[Array]:
+	var toReturn: Array[Array] = []
 	for type: int in get_child_count():
 		if can_build_type(type, coords):
 			var dict: Dictionary = {}
-			dict[terminal_map.get_cargo_name(type)] = 1
+			dict[type] = 1
 			toReturn.append([{}, dict])
 	return toReturn
 
