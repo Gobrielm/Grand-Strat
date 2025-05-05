@@ -3,14 +3,13 @@ class_name artillery extends base_unit
 static func get_cost() -> int:
 	return 1000
 
-func _init(new_location: Vector2i, new_player_id: int):
+func _init(new_location: Vector2i, new_player_id: int) -> void:
 	super._init(new_location, new_player_id)
 	
 	max_manpower = 200
 	manpower = max_manpower
 	morale = 100
 	
-	organization = null
 	speed = 10
 	unit_range = 2
 	shock = 40
@@ -22,7 +21,7 @@ func _init(new_location: Vector2i, new_player_id: int):
 	experience = 0
 	combat_arm = 2
 
-func _to_string():
+func _to_string() -> String:
 	return "Artillery"
 
 static func toString() -> String:

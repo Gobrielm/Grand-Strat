@@ -1,13 +1,11 @@
 class_name hold extends firm
 
-const AUTO_ROAD_LOAD_TICK_AMOUNT: int = 5
-var amount_traded_by_road: int = 0
-
 var storage: Dictionary = {} #Cargo the hold has
 var max_amount: int = 50 #Max Amount of cargo the hold can hold
 
-func _init(new_location: Vector2i, _player_owner: int) -> void:
+func _init(new_location: Vector2i, _player_owner: int, p_max_amount: int = max_amount) -> void:
 	super._init(new_location, _player_owner)
+	max_amount = p_max_amount
 	for i: int in terminal_map.get_number_of_goods():
 		storage[i] = 0
 

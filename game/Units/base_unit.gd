@@ -1,20 +1,20 @@
 class_name base_unit extends Node
 
-const speed_mult_hilly = 0.65
-const speed_mult_other_unit = 0.45
+const speed_mult_hilly: float = 0.65
+const speed_mult_other_unit: float = 0.45
 
-func _init(new_location: Vector2i, new_player_id: int):
+func _init(new_location: Vector2i, new_player_id: int) -> void:
 	location = new_location
 	player_id = new_player_id
 
 func convert_to_client_array() -> Array:
 	return [player_id, location, get_destination(), manpower, morale, experience]
 
-static func get_speed_mult(terrain_num: int):
+static func get_speed_mult(terrain_num: int) -> float:
 	if terrain_num == 0:
 		return speed_mult_hilly
 	else:
-		return 1
+		return 1.0
 
 static func get_cost() -> int:
 	return 0
@@ -25,7 +25,7 @@ var location: Vector2i
 func get_location() -> Vector2i:
 	return location
 
-func set_location(new_location: Vector2i):
+func set_location(new_location: Vector2i) -> void:
 	location = new_location
 
 var player_id: int
@@ -46,16 +46,16 @@ func get_manpower() -> int:
 	return manpower
 
 func add_manpower(amount: int) -> int:
-	var amount_added = min(amount, max_manpower - manpower)
+	var amount_added: int = min(amount, max_manpower - manpower)
 	manpower += amount_added
 	return amount_added
 
-func remove_manpower(amount: int):
+func remove_manpower(amount: int) -> void:
 	manpower -= amount
 	if manpower < 0:
 		manpower = 0
 
-const max_morale = 100
+const max_morale: int = 100
 #The desire for the unit to fight
 var morale: int
 
@@ -67,7 +67,7 @@ func add_morale(amount: int):
 	if morale > 100:
 		morale = 100
 
-func remove_morale(amount: int):
+func remove_morale(amount: int) -> void:
 	morale -= round(amount / float(cohesion) * 20)
 	if morale < 0:
 		morale = 0
@@ -86,7 +86,7 @@ func get_unit_range() -> int:
 #The route the unit takes if travelling
 var route: Array
 
-func set_route(new_route: Array):
+func set_route(new_route: Array) -> void:
 	route = new_route
 
 func get_next_location(index = 0) -> Vector2i:
@@ -100,21 +100,25 @@ func pop_next_location() -> Vector2i:
 func is_route_empty() -> bool:
 	return route.is_empty()
 
-func get_destination():
+func has_destination() -> bool:
+	return !route.is_empty()
+
+func get_destination() -> Vector2i:
 	if route.is_empty():
-		return null
+		assert(false, "Attempted to access null destination")
+		return Vector2i(0, 0)
 	return route.back()
 
-func stop():
+func stop() -> void:
 	route = []
 
 #The progress unit has to travel
 var progress: float
 
-func update_progress(num: float):
+func update_progress(num: float) -> void:
 	progress += num
 
-func reset_progress():
+func reset_progress() -> void:
 	progress = 0
 
 func ready_to_move(progress_needed: float) -> bool:
@@ -125,15 +129,15 @@ func ready_to_move(progress_needed: float) -> bool:
 
 #TODO: Add more variables
 func get_shock_damage() -> int:
-	var expierence_mult = (float(experience) / 1000) + 1
+	var expierence_mult: float = (float(experience) / 1000) + 1
 	return round((shock / 200 * expierence_mult) * (manpower + 100))
 #TODO: Add more variables
 func get_fire_damage() -> int:
-	var expierence_mult = (float(experience) / 1000) + 1
+	var expierence_mult: float = (float(experience) / 1000) + 1
 	return round((firepower / 200 * expierence_mult) * (manpower + 100))
 
 #The amount of supplies the unit has
-var organization
+var org: organization
 
 #The morale damage a unit does
 var shock: float

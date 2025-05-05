@@ -5,6 +5,8 @@ var trade_orders: Dictionary[int, trade_order] = {}
 var connected_terminals: Dictionary[Vector2i, int] = {}
 
 const MAX_SUPPLY_DISTANCE: int = 5
+const AUTO_ROAD_LOAD_TICK_AMOUNT: int = 5
+var amount_traded_by_road: int = 0
 
 var local_pricer: local_price_controller
 
