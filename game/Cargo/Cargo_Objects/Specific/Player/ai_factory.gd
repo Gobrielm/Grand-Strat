@@ -3,10 +3,10 @@ class_name ai_factory extends player_factory
 const CASH_NEEDED_MULTIPLIER: int = 5
 
 func change_orders() -> void:
-	pass
 	#TODO: This is assigning orders of random goods
-	#change_buy_orders()
-	#change_sell_orders()
+	change_buy_orders()
+	change_sell_orders()
+	pass
 
 func change_buy_orders() -> void:
 	for type: int in inputs:

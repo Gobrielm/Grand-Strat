@@ -73,7 +73,8 @@ func distribute_cargo() -> void:
 func distribute_from_order(order: trade_order) -> void:
 	for coords: Vector2i in connected_terminals:
 		var broker_obj: broker = terminal_map.get_broker(coords)
-		distribute_to_order(broker_obj, order)
+		if broker_obj.does_accept(order.get_type()):
+			distribute_to_order(broker_obj, order)
 
 func distribute_to_order(_broker: broker, order: trade_order) -> void:
 	var type: int = order.get_type()
