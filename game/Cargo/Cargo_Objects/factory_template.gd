@@ -39,14 +39,6 @@ func get_max_price(_type: int) -> float:
 func does_create(type: int) -> bool:
 	return outputs.has(type)
 
-func get_buy_order_total(type: int) -> int:
-	var total: int = 0
-	for order_dict: Dictionary in trade_orders.values():
-		for order: trade_order in order_dict.values():
-			if order.get_type() == type and order.is_buy_order():
-				total += min(order.get_amount(), outputs[type])
-	return total * DAY_TICKS_PER_MONTH
-
 func get_monthly_demand(type: int) -> int:
 	return inputs[type] * DAY_TICKS_PER_MONTH
 

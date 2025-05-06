@@ -3,8 +3,10 @@ class_name ai_factory extends player_factory
 const CASH_NEEDED_MULTIPLIER: int = 5
 
 func change_orders() -> void:
-	change_buy_orders()
-	change_sell_orders()
+	pass
+	#TODO: This is assigning orders of random goods
+	#change_buy_orders()
+	#change_sell_orders()
 
 func change_buy_orders() -> void:
 	for type: int in inputs:
@@ -19,11 +21,12 @@ func change_order(type: int, buy: bool) -> void:
 	var price: float = local_pricer.get_local_price(type)
 	var norm: float = local_pricer.get_base_price(type)
 	#TODO; Add logic about setting default order to the output amountr
-	var order: trade_order = get_order(type)
 	var max_price: float = price * 1.2 if buy else price * 0.8
-	if order == null:
+	if get_order(type) == null:
 		#TODO: Test, 20% leeway
 		place_order(type, amount, buy, max_price)
+	
+	var order: trade_order = get_order(type)
 	
 	if norm * 1.5 < price and randi() % 10 == 0:
 		amount = min(order.get_amount() - 1, 1)
