@@ -1,6 +1,6 @@
 class_name road_depot extends station
 
-#TODO: Make road depot have orders have be way more similar to station
+#TODO: Make road depot have orders have be way more similar to station, and add roads to act as rails
 
 var supplied_tiles: Dictionary[Vector2i, int] = {}
 

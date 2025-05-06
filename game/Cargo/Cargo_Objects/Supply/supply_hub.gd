@@ -2,6 +2,7 @@ class_name supply_hub extends station
 
 #TODO: Make road depot have orders have be way more similar to station
 #Can buy, but only send cargo to units
+#Owned things give supply, but need supply hubs for privatly owned goods
 
 var supplied_tiles: Dictionary[Vector2i, int] = {} #Vector2i -> Supply
 var unit_map: TileMapLayer

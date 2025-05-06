@@ -1,7 +1,9 @@
 class_name hold extends firm
 
+const DEFAULT_MAX_STORAGE: int = 50
+
 var storage: Dictionary = {} #Cargo the hold has
-var max_amount: int = 50 #Max Amount of cargo the hold can hold
+var max_amount: int = DEFAULT_MAX_STORAGE #Max Amount of cargo the hold can hold
 
 func _init(new_location: Vector2i, _player_owner: int, p_max_amount: int = max_amount) -> void:
 	super._init(new_location, _player_owner)
@@ -44,8 +46,8 @@ func is_full() -> bool:
 func is_empty() -> bool:
 	return get_current_hold_total() == 0
 
-func change_max_storage(_type: int, amount: int) -> void:
-	max_amount += amount
+func change_max_storage(p_amount: int) -> void:
+	max_amount += p_amount
 
 func does_accept(_type: int) -> bool:
 	return get_current_hold_total() < max_amount
