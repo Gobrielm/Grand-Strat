@@ -85,12 +85,14 @@ func tile_has_no_unit(tile_to_check: Vector2i) -> bool:
 func tile_has_no_extra_unit(tile_to_check: Vector2i) -> bool:
 	return !extra_unit_data.has(tile_to_check)
 
-func is_player_id_match(coords: Vector2i, player_id: int) -> bool:
+func tile_has_friendly_unit(coords: Vector2i, player_id: int) -> bool:
 	return unit_data.has(coords) and unit_data[coords].get_player_id() == player_id
 
 # === Creating Units ===
 @rpc("any_peer", "call_local", "unreliable")
 func check_before_create(coords: Vector2i, type: int, player_id: int) -> void:
+	if type == -1:
+		return
 	var unit_class: GDScript = get_unit_class(type)
 	var cost: int = unit_class.get_cost()
 	var money_cntrl: money_controller = money_controller.get_instance()
@@ -387,8 +389,8 @@ func unit_battle(attacker: base_unit, defender: base_unit) -> void:
 func get_selected_unit() -> base_unit:
 	return selected_unit
 
-func get_unit(coords: Vector2i) -> base_unit:
-	if unit_data.has(coords):
+func get_unit(coords: Vector2i, player_id: int) -> base_unit:
+	if unit_data.has(coords) and (unit_data[coords] as base_unit).player_id == player_id:
 		return unit_data[coords]
 	return null
 
@@ -401,7 +403,7 @@ func select_unit(coords: Vector2i, player_id: int) -> void:
 		cycle_unit_selection(coords)
 		$select_unit_sound.play(0.5)
 		state_machine.click_unit()
-	elif is_player_id_match(coords, player_id):
+	elif tile_has_friendly_unit(coords, player_id):
 		selected_unit = unit_data[coords]
 		var soldier_atlas: Vector2i = get_cell_atlas_coords(coords)
 		if soldier_atlas != Vector2i(-1, -1):
@@ -456,7 +458,7 @@ func highlight_dest() -> void:
 func is_unit_double_clicked(coords: Vector2i, player_id: int) -> bool:
 	if extra_unit_data.has(coords):
 		return false
-	return is_player_id_match(coords, player_id) and selected_unit.get_location() == coords
+	return tile_has_friendly_unit(coords, player_id) and selected_unit.get_location() == coords
 
 func _process(delta: float) -> void:
 	for location: Vector2i in unit_data:

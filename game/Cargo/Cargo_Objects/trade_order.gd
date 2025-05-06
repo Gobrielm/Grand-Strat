@@ -36,7 +36,7 @@ func change_amount(p_amount: int) -> void:
 func get_amount() -> int:
 	return amount
 
-func get_max_price() -> float:
+func get_limit_price() -> float:
 	return max_price
 
 func set_max_price(p_max_price: float) -> void:
@@ -44,6 +44,9 @@ func set_max_price(p_max_price: float) -> void:
 
 func convert_to_array() -> Array:
 	return [type, amount, buy, max_price]
+
+func price_is_acceptable(price: float) -> bool:
+	return price < get_limit_price() if buy else price > get_limit_price()
 
 static func construct_from_array(array: Array) -> trade_order:
 	return trade_order.new(array[0], array[1], array[2], array[3])

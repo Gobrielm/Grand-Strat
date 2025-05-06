@@ -2,6 +2,10 @@ class_name station extends broker
 
 var max_prices: Dictionary[int, float] = {}
 
+var MAX_SUPPLY_DISTANCE: int = 5
+var MAX_SUPPLY_GIVEN: int = 5
+const SUPPLY_DROPOFF: int = 1
+
 func _init(new_location: Vector2i, _player_owner: int) -> void:
 	super._init(new_location, _player_owner)
 
@@ -43,12 +47,53 @@ func remove_order(type: int) -> void:
 		max_prices.erase(type)
 
 func distribute_cargo() -> void:
+	#Prioritize re-supplying friendly units
+	supply_units()
 	for order: trade_order in trade_orders.values():
 		if order.is_sell_order():
 			distribute_from_order(order)
 
-func add_connected_terminal(new_terminal: terminal, distance: int) -> void:
-	super.add_connected_terminal(new_terminal, distance)
+func supply_units() -> void:
+	var units_to_supply: Dictionary[Vector2i, int] = get_units_to_supply()
+	for tile: Vector2i in units_to_supply:
+		for type: int in storage:
+			if storage[type] == 0:
+				continue
+			supply_unit(tile, type, units_to_supply[tile])
+
+func get_units_to_supply() -> Dictionary[Vector2i, int]:
+	var map: TileMapLayer = Utils.world_map
+	var unit_map: TileMapLayer = Utils.unit_map
+	var visited: Dictionary = {}
+	visited[location] = MAX_SUPPLY_DISTANCE
+	var queue: Array = [location]
+	var units_to_supply: Dictionary[Vector2i, int] = {}
+	while !queue.is_empty():
+		var curr: Vector2i = queue.pop_front()
+		for tile: Vector2i in map.get_surrounding_cells(curr):
+			if !visited.has(tile) or (visited.has(tile) and visited[tile] < visited[curr] - SUPPLY_DROPOFF):
+				#Can't supply through enemy units
+				if unit_map.tile_has_enemy_unit(tile, player_owner):
+					continue
+				visited[tile] = visited[curr] - SUPPLY_DROPOFF
+				if visited[tile] > 0:
+					queue.push_back(tile)
+					if unit_map.tile_has_friendly_unit(tile, player_owner):
+						units_to_supply[tile] = visited[tile]
+	return units_to_supply
+
+func supply_unit(tile: Vector2i, type: int, max_supply: int) -> void:
+	var unit: base_unit = Utils.unit_map.get_unit(tile, player_owner)
+	if unit == null:
+		return
+	var org: organization = unit.org
+	var desired: int = min(org.get_desired_cargo(type), max_supply)
+	var amount: int = transfer_cargo(type, desired)
+	org.add_cargo(type, amount)
+	#TODO: Do some storing of, amount spent/goods used, on war
+
+func add_connected_terminal(new_terminal: terminal) -> void:
+	super.add_connected_terminal(new_terminal)
 	update_accepts_from_trains()
 
 func remove_connected_terminal(new_terminal: terminal) -> void:

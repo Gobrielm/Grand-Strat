@@ -54,9 +54,9 @@ func add_orders_to_local_market(orders: Dictionary, dist: int) -> void:
 		var amount: int = order.get_amount()
 		#If can only trade by road, limit amount
 		if dist != 1:
-			amount = min(amount, AUTO_ROAD_LOAD_TICK_AMOUNT)
+			amount = min(amount, MAX_SUPPLY_GIVEN)
 		local_market[type] += amount
-		local_market_prices[type] += order.get_max_price() * amount
+		local_market_prices[type] += order.get_limit_price() * amount
 
 func update_orders() -> void:
 	update_buy_orders()

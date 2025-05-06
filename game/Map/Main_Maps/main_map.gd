@@ -50,19 +50,15 @@ func _ready() -> void:
 	if unique_id == 1:
 		Utils.assign_world_map(self)
 		create_untraversable_tiles()
-		for peer: int in multiplayer.get_peers():
-			heart_beat[peer] = 0
-			update_money_label.rpc_id(peer, get_money(peer))
-		update_money_label.rpc_id(1, get_money(1))
 		unit_map = load("res://Map/unit_map.tscn").instantiate()
 		add_child(unit_map)
-		for cell: Vector2i in get_used_cells():
-			rail_placer.init_track_connection.rpc(cell)
 		var cargo_controller: Node = load("res://Cargo/cargo_controller.tscn").instantiate()
 		cargo_controller.assign_map_node(map_node)
 		add_child(cargo_controller)
 		terminal_map.create(self)
 		recipe.create_set_recipes()
+		for cell: Vector2i in get_used_cells():
+			rail_placer.init_track_connection.rpc(cell)
 		$player_camera/CanvasLayer/Desync_Label.visible = true
 		#testing = preload("res://Test/testing.gd").new(self)
 		#start_test()
@@ -72,7 +68,12 @@ func _ready() -> void:
 		add_child(unit_map)
 		for tile: Vector2i in get_used_cells():
 			visible_tiles.append(tile)
-	
+
+func on_singleton_creation() -> void:
+	for peer: int in multiplayer.get_peers():
+		heart_beat[peer] = 0
+		update_money_label.rpc_id(peer, get_money(peer))
+	update_money_label.rpc_id(1, get_money(1))
 
 #Testing
 func is_testing() -> bool:

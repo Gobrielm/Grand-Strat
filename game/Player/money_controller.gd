@@ -14,7 +14,7 @@ func _init(peers: Array) -> void:
 		money[peer] = INTIAL_AMOUNT_OF_MONEY
 
 static func get_instance() -> money_controller:
-	assert(singleton_instance != null, "Train_Manager has not be created, and has been accessed")
+	assert(singleton_instance != null, "Money_Manager has not be created, and has been accessed")
 	return singleton_instance
 
 func add_money_to_player(id: int, amount: int) -> void:

@@ -20,19 +20,17 @@ func change_order(type: int, buy: bool) -> void:
 	var norm: float = local_pricer.get_base_price(type)
 	#TODO; Add logic about setting default order to the output amountr
 	var order: trade_order = get_order(type)
+	var max_price: float = price * 1.2 if buy else price * 0.8
+	if order == null:
+		#TODO: Test, 20% leeway
+		place_order(type, amount, buy, max_price)
+	
 	if norm * 1.5 < price and randi() % 10 == 0:
 		amount = min(order.get_amount() - 1, 1)
 	elif norm * 0.75 > price and randi() % 10 == 0:
 		amount = order.get_amount() + 1
 	
-	
-	var max_price: float = price * 1.2 if buy else price * 0.8
-	if order == null:
-		#TODO: Test, 20% leeway
-		place_order(type, amount, buy, max_price)
-	else:
-		order.change_amount(amount)
-		order.set_max_price(max_price)
+	order.change_amount(amount)
 
 func consider_upgrade() -> void:
 	#Primary Industry

@@ -78,34 +78,15 @@ static func create_terminal(p_terminal: terminal) -> void:
 	add_connected_terminals(p_terminal)
 
 static func add_connected_terminals(p_terminal: terminal) -> void:
-	var connected_terms: Dictionary = get_road_supplied_terminals(p_terminal)
+	var connected_terms: Array[Vector2i] = map.get_surrounding_cells(p_terminal.location)
 	for tile: Vector2i in connected_terms:
 		var o_terminal: terminal = get_terminal(tile)
-		var distance_between: int = connected_terms[tile]
+		if o_terminal == null:
+			continue
 		if p_terminal.has_method("add_connected_terminal"):
-			p_terminal.add_connected_terminal(o_terminal, distance_between)
+			p_terminal.add_connected_terminal(o_terminal)
 		if o_terminal.has_method("add_connected_terminal"):
-			o_terminal.add_connected_terminal(p_terminal, distance_between)
-
-static func get_road_supplied_terminals(term: broker) -> Dictionary[Vector2i, int]:
-	var center: Vector2i = term.get_location()
-	var MAX_SUPPLY_DISTANCE: int = term.MAX_SUPPLY_DISTANCE
-	var visited: Dictionary = {}
-	visited[center] = 0
-	var queue: Array = [center]
-	var toReturn: Dictionary[Vector2i, int] = {}
-	while !queue.is_empty():
-		var curr: Vector2i = queue.pop_front()
-		for tile: Vector2i in map.get_surrounding_cells(curr):
-			if !Utils.is_tile_water(tile):
-				#TODO: Ensure this includes everything that needs trade
-				if !visited.has(tile) or (visited.has(tile) and visited[tile] > visited[curr] + 1):
-					visited[tile] = visited[curr] + 1
-					if visited[tile] < MAX_SUPPLY_DISTANCE:
-						queue.push_back(tile)
-					if is_broker(tile):
-						toReturn[tile] = visited[tile]
-	return toReturn
+			o_terminal.add_connected_terminal(p_terminal)
 
 static func is_hold(coords: Vector2i) -> bool:
 	return cargo_map_terminals.has(coords) and cargo_map_terminals[coords] is hold
