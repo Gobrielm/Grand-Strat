@@ -91,8 +91,8 @@ func display_current_prices() -> void:
 	var price_list: ItemList = $Price_Node/Price_List
 	price_list.clear()
 	var names: Array = terminal_map.get_cargo_array()
-	for i: float in current_prices:
-		price_list.add_item(names[i] + ": " + str(current_prices[i]))
+	for type: int in current_prices:
+		price_list.add_item(names[type] + ": " + str(current_prices[type]))
 
 func get_selected_name() -> String:
 	var cargo_list: ItemList = $Cargo_Node/Cargo_List

@@ -572,6 +572,7 @@ func regen_tick(unit: base_unit, boosts: Dictionary) -> void:
 		multiple = boosts[unit.get_location()]
 	unit.add_experience(multiple)
 	manpower_and_morale_tick(unit)
+	unit.use_supplies()
 	refresh_normal_unit.rpc(unit.convert_to_client_array())
 
 func extra_regen_tick(unit: base_unit) -> void:

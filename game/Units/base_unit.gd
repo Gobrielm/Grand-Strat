@@ -8,7 +8,7 @@ func _init(new_location: Vector2i, new_player_id: int) -> void:
 	player_id = new_player_id
 
 func convert_to_client_array() -> Array:
-	return [player_id, location, get_destination(), manpower, morale, experience]
+	return [player_id, location, get_destination(), manpower, morale, experience, org.get_organization()]
 
 static func get_speed_mult(terrain_num: int) -> float:
 	if terrain_num == 0:
@@ -74,8 +74,6 @@ var battle_multiple: int
 var combat_arm: int
 #The actual type line infantry, mechanized infantry, ect. the x atlas
 var specific_type: int
-
-
 
 func get_location() -> Vector2i:
 	return location
@@ -171,6 +169,9 @@ func get_fire_damage() -> int:
 
 func get_organization_object() -> organization:
 	return org
+
+func use_supplies() -> void:
+	org.use_supplies()
 
 func add_experience(multiple: float = 1.0) -> void:
 	experience += round(float(experience_gain) * multiple)
