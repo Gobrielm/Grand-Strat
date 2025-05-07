@@ -163,8 +163,6 @@ tab_count = 2
 tab_0/title = "Province Info"
 tab_1/title = "State Info"
 
-[connection signal="about_to_popup" from="." to="." method="_on_about_to_popup"]
 [connection signal="close_requested" from="." to="." method="_on_close_requested"]
-[connection signal="focus_exited" from="." to="." method="_on_focus_exited"]
 [connection signal="pressed" from="Background/Close" to="." method="_on_close_pressed"]
 [connection signal="tab_changed" from="TabBar" to="." method="_on_tab_bar_tab_changed"]

@@ -99,7 +99,6 @@ func check_before_create(coords: Vector2i, type: int, player_id: int) -> void:
 	
 	if !unit_data.has(coords) and money_cntrl.player_has_enough_money(player_id, cost):
 		money_cntrl.remove_money_from_player(player_id, cost)
-		map.remove_money(player_id, cost)
 		create_unit.rpc(coords, type, player_id)
 
 @rpc("authority", "call_local", "unreliable")
@@ -203,7 +202,7 @@ func set_extra_unit_route(coords: Vector2i, move_to: Vector2i) -> void:
 		refresh_extra_unit.rpc(unit.convert_to_client_array())
 
 func set_unit_route(unit: base_unit, move_to: Vector2i) -> void:
-	unit.set_route(dfs_to_destination(unit.get_location(), move_to))
+	unit.set_route(bfs_to_destination(unit.get_location(), move_to))
 	if unit == selected_unit and unit.get_player_id() == multiplayer.get_unique_id():
 		$dest_sound.play(0.3)
 		highlight_dest()
@@ -330,39 +329,35 @@ func next_location_is_available(coords: Vector2i) -> bool:
 func next_location_available_for_extra(coords: Vector2i) -> bool:
 	return !extra_unit_data.has(coords)
 
-func dfs_to_destination(coords: Vector2i, destination: Vector2i) -> Array:
-	#TODO: Change to bfs
+func bfs_to_destination(start: Vector2i, destination: Vector2i) -> Array:
 	var current: Vector2i
 	var queue: priority_queue = priority_queue.new()
 	var tile_to_prev: Dictionary = {}
 	var visited: Dictionary = {}
 	var found: bool = false
-	queue.insert_element(coords, 0)
-	visited[coords] = 0
+	queue.insert_element(start, 0)
+	visited[start] = 0
 	while !queue.is_empty():
 		current = queue.pop_top()
-		if current == destination or found:
+		if current == destination:
 			found = true
 			break
 		for tile: Vector2i in map.get_surrounding_cells(current):
 			if map.get_cell_tile_data(tile) == null:
 				continue
 			var terrain: int = map.get_cell_tile_data(tile).terrain
-			var current_dist: int = visited[current] + (1 / base_unit.get_speed_mult(terrain))
-			if found_closer_route(visited, tile, current_dist) and map.is_tile_traversable(tile) and next_location_is_available_general(tile):
-				queue.insert_element(tile, current_dist)
+			var temp_dist: float =  map.map_to_local(current).distance_to(map.map_to_local(tile))
+			var current_dist: float = visited[current] + (temp_dist / base_unit.get_speed_mult(terrain))
+			if map.is_tile_traversable(tile) and next_location_is_available_general(tile) and !visited.has(tile):
+				queue.insert_element(tile, 100.0 / current_dist)
 				visited[tile] = current_dist
 				tile_to_prev[tile] = current
-			elif tile == destination:
-				tile_to_prev[tile] = current
-				found = true
-				break
 	if found:
-		return create_route_from_tile_to_prev(coords, destination, tile_to_prev)
+		return create_route_from_tile_to_prev(start, destination, tile_to_prev)
 	else:
 		return []
 
-func found_closer_route(visited: Dictionary, coords: Vector2i, current_dist: int) -> bool:
+func found_closer_route(visited: Dictionary, coords: Vector2i, current_dist: float) -> bool:
 	if !visited.has(coords):
 		return true
 	return visited[coords] > current_dist

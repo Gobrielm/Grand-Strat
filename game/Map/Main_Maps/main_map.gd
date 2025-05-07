@@ -57,8 +57,7 @@ func _ready() -> void:
 		add_child(cargo_controller)
 		terminal_map.create(self)
 		recipe.create_set_recipes()
-		for cell: Vector2i in get_used_cells():
-			rail_placer.init_track_connection.rpc(cell)
+		rail_placer.init_all_rails()
 		$player_camera/CanvasLayer/Desync_Label.visible = true
 		#testing = preload("res://Test/testing.gd").new(self)
 		#start_test()

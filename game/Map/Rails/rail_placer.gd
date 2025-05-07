@@ -29,6 +29,10 @@ func _ready() -> void:
 		if item.name.begins_with("Rail_Temp_Layer"):
 			temp_layer_array.append(item as TileMapLayer)
 
+func init_all_rails() -> void:
+	for cell: Vector2i in Utils.world_map.get_used_cells():
+		init_track_connection.rpc(cell)
+
 func get_rail_layers() -> Array[TileMapLayer]:
 	var toReturn: Array[TileMapLayer] = []
 	for num: int in range(6):

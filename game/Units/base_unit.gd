@@ -137,10 +137,9 @@ func is_route_empty() -> bool:
 func has_destination() -> bool:
 	return !route.is_empty()
 
-func get_destination() -> Vector2i:
+func get_destination() -> Variant:
 	if route.is_empty():
-		assert(false, "Attempted to access null destination")
-		return Vector2i(0, 0)
+		return null
 	return route.back()
 
 func stop() -> void:
