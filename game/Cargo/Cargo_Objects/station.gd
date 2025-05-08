@@ -55,6 +55,8 @@ func distribute_cargo() -> void:
 
 func supply_units() -> void:
 	var units_to_supply: Dictionary[Vector2i, int] = get_units_to_supply()
+	if units_to_supply.size() > 0:
+		print("A")
 	for tile: Vector2i in units_to_supply:
 		for type: int in storage:
 			if storage[type] == 0:

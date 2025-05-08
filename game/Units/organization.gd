@@ -6,6 +6,7 @@ var current_supply: fixed_hold
 func _init(p_supply_needed: Dictionary[int, int], p_owner: int) -> void:
 	supply_needed = p_supply_needed
 	current_supply = fixed_hold.new(Vector2i(0, 0), p_owner)
+	current_supply.set_max_storage(10)
 	for type: int in supply_needed:
 		current_supply.add_accept(type)
 		current_supply.add_cargo(type, current_supply.max_amount)
@@ -21,7 +22,7 @@ func get_organization() -> float:
 	
 	for type: int in supply_needed:
 		#TODO: Add amount it should have more than it needs every tick, ie supply_needed[type] * 25
-		var fulfillment_of_type: float = min(current_supply.get_cargo_amount(type) / float(supply_needed[type]), 1.0)
+		var fulfillment_of_type: float = min(current_supply.get_cargo_amount(type) / float(supply_needed[type] * 5), 1.0)
 		fulfillment += max_penalty_per_type * fulfillment_of_type
 	
 	return fulfillment
@@ -35,6 +36,7 @@ func use_supplies() -> void:
 
 #Return amount added
 func add_cargo(type: int, amount: int) -> int:
+	print("Resupplied")
 	return current_supply.add_cargo(type, amount)
 
 func get_desired_cargo(type: int) -> int:

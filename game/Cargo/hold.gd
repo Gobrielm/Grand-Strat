@@ -49,5 +49,8 @@ func is_empty() -> bool:
 func change_max_storage(p_amount: int) -> void:
 	max_amount += p_amount
 
+func set_max_storage(p_amount: int) -> void:
+	max_amount = p_amount
+
 func does_accept(_type: int) -> bool:
 	return get_current_hold_total() < max_amount

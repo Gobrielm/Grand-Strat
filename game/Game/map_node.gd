@@ -79,7 +79,7 @@ func _input(event: InputEvent) -> void:
 		main_map.clear_all_temps()
 		if !state_machine.is_picking_nation() and !state_machine.is_selecting_unit():
 			camera.unpress_all_buttons()
-		state_machine.default()
+			state_machine.default()
 	elif event.is_action_pressed("debug_place_train") and state_machine.is_controlling_camera():
 		main_map.create_train.rpc(get_cell_position())
 	elif event.is_action_pressed("debug_print") and state_machine.is_controlling_camera():
