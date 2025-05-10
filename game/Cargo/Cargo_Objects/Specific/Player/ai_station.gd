@@ -1,6 +1,7 @@
 class_name ai_station extends station
 
 const TRADE_MARGINS: float = 1.1
+const TIME_UNTIL_RESET_DS_STATION: int = 100
 
 var local_market: Dictionary[int, int]
 var local_market_prices: Dictionary[int, float]
@@ -9,8 +10,9 @@ var requests: Dictionary[int, Dictionary] #Type to Dictionary[Vector2i, Array[re
 #Represents amount of local goods already commited to request
 var committed_sales: Dictionary[int, int] #Type -> Amount
 
-#Represents downstream stations from this station
-var ds_stations: Dictionary[Vector2i, int] #Set of coords, int represents dist
+#Represents downstream stations from this station, one for each train that visits here
+var ds_stations: Dictionary[int, Vector2i] #AI train id -> downstream station
+var timer: Dictionary[int, int] = {} #Set Train_id -> Time until it erases ds_station
 
 #TODO: Basically sell whatever you have in hold, if price good
 #TODO: Buy if it knows it can sell it for higher, or if connected station logic
@@ -28,6 +30,13 @@ func reset_local_market() -> void:
 	for type: int in terminal_map.get_number_of_goods():
 		local_market[type] = 0
 		local_market_prices[type] = 0.0
+
+func day_tick() -> void:
+	super.day_tick()
+	for id: int in ds_stations:
+		timer[id] += 1
+		if timer[id] > TIME_UNTIL_RESET_DS_STATION:
+			remove_ds_station(id)
 
 func month_tick() -> void:
 	update_all_markets()
@@ -58,12 +67,22 @@ func add_orders_to_local_market(orders: Dictionary, dist: int) -> void:
 		local_market[type] += amount
 		local_market_prices[type] += order.get_limit_price() * amount
 
+#Will be run every go around to reset timer
+func add_ds_station(train_id: int, future_station: Vector2i) -> void:
+	if !ds_stations.has(train_id):
+		ds_stations[train_id] = future_station
+	timer[train_id] = 0
+
+func remove_ds_station(train_id: int) -> void:
+	ds_stations.erase(train_id)
+	timer.erase(train_id)
+
 func update_orders() -> void:
 	update_buy_orders()
 	update_sell_orders()
 
 func update_buy_orders() -> void:
-	for tile: Vector2i in ds_stations:
+	for tile: Vector2i in ds_stations.values():
 		var ds_station: ai_station = terminal_map.get_ai_station(tile)
 		var ds_requests: Dictionary[int, Dictionary] = ds_station.get_requests()
 		for type: int in ds_requests:
