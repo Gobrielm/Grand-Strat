@@ -3,7 +3,6 @@ class_name terminal_map extends Node
 #TODO: Fully convert into singleton
 static var amount_of_primary_goods: int
 
-static var serviced: Dictionary = {}
 static var cargo_map_terminals: Dictionary = {} #Maps coords -> hold
 static var cargo_types: Array = [
 	"clay", "sand", "sulfur", "lead", "iron", "coal", "copper", "zinc", "wood", "salt", 
@@ -50,6 +49,9 @@ static func _on_month_tick_timeout() -> void:
 
 static func create(_map: TileMapLayer) -> void:
 	map = _map
+
+static func clear() -> void:
+	cargo_map_terminals.clear()
 
 static func create_amount_of_primary_goods() -> void:
 	for i: int in cargo_types.size():

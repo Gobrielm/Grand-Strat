@@ -74,6 +74,11 @@ func create_factory(p_player_id: int, coords: Vector2i, obj_recipe: Array, mult:
 	set_tile(coords, get_atlas_cell(obj_recipe))
 	terminal_map.create_terminal(new_factory)
 
+func place_test_industry() -> void:
+	var output: Dictionary = {}
+	output[1] = 1
+	create_factory(-1, Vector2i(0, 0), [{}, output], 1)
+
 func get_atlas_cell(obj_recipe: Array) -> Vector2i:
 	var output: Dictionary = obj_recipe[1]
 	if obj_recipe[0].is_empty() and output.size() == 1:

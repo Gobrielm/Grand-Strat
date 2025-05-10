@@ -14,6 +14,7 @@ func get_local_price(type: int) -> float:
 
 func place_order(type: int, amount: int, buy: bool, max_price: float) -> void:
 	var order: trade_order = trade_order.new(type, amount, buy, max_price)
+	add_accept(type)
 	max_prices[type] = max_price
 	trade_orders[type] = order
 
@@ -41,6 +42,7 @@ func get_orders_magnitude() -> int:
 
 func remove_order(type: int) -> void:
 	if trade_orders.has(type):
+		remove_accept(type)
 		var order: trade_order = trade_orders[type]
 		trade_orders.erase(type)
 		order.queue_free()
@@ -56,7 +58,7 @@ func distribute_cargo() -> void:
 func supply_units() -> void:
 	var units_to_supply: Dictionary[Vector2i, int] = get_units_to_supply()
 	if units_to_supply.size() > 0:
-		print("A")
+		print("supplying unit")
 	for tile: Vector2i in units_to_supply:
 		for type: int in storage:
 			if storage[type] == 0:

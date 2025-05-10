@@ -59,8 +59,8 @@ func _ready() -> void:
 		recipe.create_set_recipes()
 		rail_placer.init_all_rails()
 		$player_camera/CanvasLayer/Desync_Label.visible = true
-		#testing = preload("res://Test/testing.gd").new(self)
-		#start_test()
+		testing = preload("res://Test/testing.gd").new(self)
+		start_test()
 	else:
 		unit_map = load("res://Client_Objects/client_unit_map.tscn").instantiate()
 		unit_map.name = "unit_map"
@@ -82,8 +82,10 @@ func start_test() -> void:
 	if Utils.is_ready():
 		await get_tree().process_frame
 		clear()
+		terminal_map.clear()
 		create_testing_map()
-		testing.test()
+		map_node.cargo_map.place_test_industry()
+		#testing.test()
 	else:
 		call_deferred("start_test")
 
