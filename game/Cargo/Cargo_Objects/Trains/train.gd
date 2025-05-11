@@ -289,6 +289,9 @@ func hold_is_empty(toCheck: Dictionary) -> bool:
 			return false
 	return true
 
+func start_loading() -> void:
+	loading = true
+
 func done_loading() -> void:
 	loading = false
 	start_train()
@@ -303,7 +306,7 @@ func unload_train() -> void:
 
 func done_unloading() -> void:
 	unloading = false
-	loading = true
+	start_loading()
 
 func unload_tick(obj: station) -> void:
 	var amount_unloaded: int = 0

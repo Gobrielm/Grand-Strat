@@ -1,9 +1,15 @@
 class_name sorted_stack extends Node
 
-var backing_array: Array
+var backing_array: Array[weighted_value]
 
 func _init() -> void:
 	backing_array = []
+
+func pop_top() -> Variant:
+	return (backing_array.pop_front() as weighted_value).val
+
+func is_empty() -> bool:
+	return backing_array.is_empty()
 
 func get_size() -> int:
 	return backing_array.size()

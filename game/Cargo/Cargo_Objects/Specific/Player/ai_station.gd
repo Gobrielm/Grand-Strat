@@ -35,20 +35,17 @@ func update_orders() -> void:
 	
 #Stuff this could sell
 func update_buy_orders() -> void:
-	# Represents either the max for buying or min for selling
-	var market_price: Dictionary[int, float] = create_market_price_for_available_goods() 
-	
 	for tile: Vector2i in connected_terminals:
 		var ai_station_obj: ai_station = terminal_map.get_ai_station(tile)
 		if ai_station_obj != null:
-			update_buy_orders_for_station(ai_station_obj, market_price)
+			update_buy_orders_for_station(ai_station_obj)
 
-func update_buy_orders_for_station(ai_station_obj: ai_station, market_price: Dictionary[int, float]) -> void:
+func update_buy_orders_for_station(ai_station_obj: ai_station) -> void:
 	var orders: Dictionary[int, trade_order] = ai_station_obj.get_orders()
 	for order: trade_order in orders.values():
 		#If other station wants it to sell and will pay higher than min price here
-		if order.is_sell_order() and ai_station_obj.get_local_price(order.type) > market_price[order.type]:
-			add_amount_to_buy_order(order.type, order.amount, market_price[order.type])
+		if order.is_sell_order() and ai_station_obj.get_local_price(order.type) > get_local_price(order.type) * TRADE_MARGINS:
+			add_amount_to_buy_order(order.type, order.amount, get_local_price(order.type) * TRADE_MARGINS)
 
 func add_amount_to_buy_order(type: int, amount: int, p_market_price: float) -> void:
 	var this_order: trade_order = get_order(type)
