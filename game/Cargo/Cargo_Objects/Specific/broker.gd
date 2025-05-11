@@ -22,6 +22,11 @@ func get_desired_cargo_to_load(type: int, price_per: float) -> int:
 			return min(max_amount - get_cargo_amount(type), get_amount_can_buy(price_per), trade_order_obj.get_amount())
 	return 0
 
+func get_desired_cargo_from_train(type: int) -> int:
+	if does_accept(type):
+		return min(max_amount - get_cargo_amount(type), get_amount_can_buy(get_local_price(type)))
+	return 0
+
 #Assuming they are buying
 func is_price_acceptable(type: int, price_per: float) -> bool:
 	if get_local_price(type) < price_per * 0.8:
@@ -58,7 +63,6 @@ func get_orders() -> Dictionary:
 
 func remove_order(type: int) -> void:
 	if trade_orders.has(type):
-		var order: trade_order = trade_orders[type]
 		trade_orders.erase(type)
 
 func add_connected_terminal(new_terminal: terminal) -> void:
