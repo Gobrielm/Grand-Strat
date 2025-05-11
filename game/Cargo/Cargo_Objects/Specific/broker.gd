@@ -43,6 +43,7 @@ func edit_order(type: int, amount: int, buy: bool, max_price: float) -> void:
 		#Test that order changes on both sides
 		var order: trade_order = trade_orders[type]
 		order.change_buy(buy)
+		order.set_max_price(max_price)
 		order.change_amount(amount)
 	else:
 		place_order(type, amount, buy, max_price)
@@ -59,7 +60,6 @@ func remove_order(type: int) -> void:
 	if trade_orders.has(type):
 		var order: trade_order = trade_orders[type]
 		trade_orders.erase(type)
-		order.queue_free()
 
 func add_connected_terminal(new_terminal: terminal) -> void:
 	connected_terminals[new_terminal.get_location()] = true
