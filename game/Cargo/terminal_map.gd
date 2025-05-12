@@ -28,7 +28,6 @@ static var base_prices: Dictionary = {
 	"ammo" = 10, "guns" = 10, "artillery" = 10, "preserved_meat" = 10, "canned_food" = 10, "rations" = 10, "luxury_rations" = 10,
 }
 
-
 static var map: TileMapLayer
 static var cargo_map: TileMapLayer
 
@@ -179,6 +178,12 @@ static func get_station(coords: Vector2i) -> station:
 	if is_station(coords):
 		return cargo_map_terminals[coords]
 	return null
+
+static func create_ai_station(coords: Vector2i, orientation: int, p_owner: int) -> void:
+	if !cargo_map_terminals.has(coords):
+		cargo_map_terminals[coords] = ai_station.new(coords, p_owner)
+		Utils.rail_placer.place_station.rpc(coords, orientation)
+		Utils.rail_placer.place_station.rpc(coords, (orientation + 3) % 6)
 
 static func get_ai_station(coords: Vector2i) -> ai_station:
 	if is_ai_station(coords):

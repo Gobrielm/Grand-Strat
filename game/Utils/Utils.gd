@@ -1,11 +1,11 @@
 class_name Utils extends Node
 
-static var cargo_map: TileMapLayer
-static var cargo_values: Node
-static var world_map: TileMapLayer
-static var rail_placer: Node
-static var background_music: AudioStreamPlayer
-static var unit_map: TileMapLayer
+static var cargo_map: TileMapLayer = null
+static var cargo_values: Node = null
+static var world_map: TileMapLayer = null
+static var rail_placer: Node = null
+static var background_music: AudioStreamPlayer = null
+static var unit_map: TileMapLayer = null
 
 static var mutex: Mutex = Mutex.new()
 

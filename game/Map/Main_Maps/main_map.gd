@@ -84,8 +84,7 @@ func start_test() -> void:
 		clear()
 		terminal_map.clear()
 		create_testing_map()
-		map_node.cargo_map.place_test_industry()
-		#testing.test()
+		testing.test()
 	else:
 		call_deferred("start_test")
 
@@ -191,8 +190,8 @@ func is_owned_hold(coords: Vector2i) -> bool:
 func is_factory(coords: Vector2i) -> bool:
 	return terminal_map.is_factory(coords)
 
-func is_owned_station(coords: Vector2i) -> bool:
-	return terminal_map.is_station(coords)
+func is_owned_station(coords: Vector2i, id: int) -> bool:
+	return terminal_map.is_station(coords) and terminal_map.get_station(coords).player_owner == id
 
 func is_location_valid_stop(coords: Vector2i) -> bool:
 	return map_data.get_instance().is_hold(coords) or map_data.get_instance().is_depot(coords)

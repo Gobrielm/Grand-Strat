@@ -89,6 +89,14 @@ func place_tile(coords: Vector2i, new_orientation: int, new_type: int) -> void:
 	rail_layer.set_cell(coords, 0, Vector2i(new_orientation, new_type))
 	add_track_connection(coords, new_orientation)
 
+@rpc("authority", "call_local", "unreliable")
+func place_station(coords: Vector2i, p_orientation: int) -> void:
+	if is_already_built(coords, p_orientation):
+		return
+	var rail_layer: TileMapLayer = get_rail_layer(p_orientation)
+	rail_layer.set_cell(coords, 0, Vector2i(p_orientation, 2))
+	add_track_connection(coords, p_orientation)
+
 func remove_tile(coords: Vector2i, new_orientation: int, _new_type: int) -> void:
 	#TODO: Doesn't delete station, or depot, but only used safely in testing
 	print("Testing function used, is potentially unsafe")

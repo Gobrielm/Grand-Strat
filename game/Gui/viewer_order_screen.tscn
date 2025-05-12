@@ -1,0 +1,32 @@
+[gd_scene load_steps=2 format=3 uid="uid://bpj0vi1yy70v7"]
+
+[ext_resource type="Script" uid="uid://tohb8epsknp" path="res://Gui/viewer_order_screen.gd" id="1_mh4k4"]
+
+[node name="Viewer_order_screen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_mh4k4")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+offset_left = 107.52
+offset_top = 128.48
+offset_right = 327.52
+offset_bottom = 468.48
+color = Color(0.18359, 0.18359, 0.18359, 1)
+
+[node name="Label" type="Label" parent="ColorRect"]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 23.0
+text = "Trade Orders:"
+
+[node name="Cargo_List" type="ItemList" parent="."]
+offset_left = 107.52
+offset_top = 168.48
+offset_right = 327.52
+offset_bottom = 468.48
+focus_mode = 0

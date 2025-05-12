@@ -31,7 +31,6 @@ func get_orders_magnitude() -> int:
 func remove_order(type: int) -> void:
 	if trade_orders.has(type):
 		remove_accept(type)
-		var order: trade_order = trade_orders[type]
 		trade_orders.erase(type)
 		max_prices.erase(type)
 

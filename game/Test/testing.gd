@@ -1,17 +1,18 @@
 extends Node
 
 var map: TileMapLayer
+var cargo_map: TileMapLayer
 
 func _init(new_map: TileMapLayer) -> void:
 	map = new_map
-	#test()
 
 func test() -> void:
 	var ownership: tile_ownership = tile_ownership.get_instance()
 	ownership.add_player_to_country(1, Vector2i(0, 0))
-	print("runtime_test")
-	runtime_test()
-	print("-------------------- ✔️")
+	cargo_map = Utils.cargo_map
+	#print("runtime_test")
+	#runtime_test()
+	#print("-------------------- ✔️")
 	
 	#print("train_algorithm_test")
 	#train_algorithm_test()
@@ -21,6 +22,11 @@ func test() -> void:
 	#ai_rail_test()
 	#print("-------------------- ✔️")
 	
+	print("ai_station_and_ai_train_test")
+	ai_station_and_ai_train_test()
+	print("-------------------- ✔️")
+	
+	
 
 func build_rail(coords: Vector2i, orientation: int) -> void:
 	map.set_cell_rail_placer_server(coords, orientation, 0, 1)
@@ -28,11 +34,17 @@ func build_rail(coords: Vector2i, orientation: int) -> void:
 func build_station(coords: Vector2i, orientation: int) -> void:
 	map.set_cell_rail_placer_server(coords, orientation, 2, 1)
 
+func build_ai_station(coords: Vector2i, orientation: int) -> void:
+	terminal_map.create_ai_station(coords, orientation, -1)
+
 func build_many_rails(start: Vector2i, end: Vector2i) -> void:
 	map.place_to_end_rail(start, end)
 
 func build_ai_train(location: Vector2i) -> ai_train:
 	return train_manager.get_instance().create_ai_train(location, 1)
+
+func build_base_factory(coords: Vector2i, cargo_type: int) -> void:
+	cargo_map.create_factory(-1, coords, cargo_map.get_primary_recipe_for_type(cargo_type), 1)
 
 func clear_test_stuff() -> void:
 	map.rail_placer.clear_all_real()
@@ -125,3 +137,34 @@ func ai_rail_test() -> void:
 	#print(str(train_manager_obj.get_network(train_obj.network_id)))
 	var end: float = Time.get_ticks_msec()
 	print(str((end - start) / 1000) + " Seconds passed to create network")
+
+func ai_station_and_ai_train_test() -> void:
+	var point1: Vector2i = Vector2i(0, 0)
+	var point2: Vector2i = Vector2i(9, 5)
+	var point3: Vector2i = Vector2i(-8, 5)
+	var stat4: Vector2i = Vector2i(-14, -3)
+	
+	var stat1: Vector2i = Vector2i(2, -1)
+	var stat2: Vector2i = Vector2i(11, 5)
+	var stat3: Vector2i = Vector2i(-11, 5)
+	
+	var fact1: Vector2i = Vector2i(3, -1)
+	var fact2: Vector2i = Vector2i(12, 5)
+	var fact3: Vector2i = Vector2i(-12, 5)
+	
+	build_many_rails(point1, point2)
+	build_many_rails(point2, point3)
+	build_many_rails(point3, point1)
+	build_many_rails(point1, stat4)
+	build_many_rails(point1, stat1)
+	build_many_rails(point2, stat2)
+	build_many_rails(point3, stat3)
+	
+	build_ai_station(stat1, 1)
+	build_ai_station(stat2, 2)
+	build_ai_station(stat3, 1)
+	build_ai_station(stat4, 2)
+	
+	build_base_factory(fact1, 1)
+	build_base_factory(fact2, 5)
+	build_base_factory(fact3, 8)
