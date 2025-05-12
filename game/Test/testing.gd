@@ -46,6 +46,9 @@ func build_ai_train(location: Vector2i) -> ai_train:
 func build_base_factory(coords: Vector2i, cargo_type: int) -> void:
 	cargo_map.create_factory(-1, coords, cargo_map.get_primary_recipe_for_type(cargo_type), 1)
 
+func build_town(coords: Vector2i) -> void:
+	cargo_map.create_town(coords)
+
 func clear_test_stuff() -> void:
 	map.rail_placer.clear_all_real()
 
@@ -151,6 +154,7 @@ func ai_station_and_ai_train_test() -> void:
 	var fact1: Vector2i = Vector2i(3, -1)
 	var fact2: Vector2i = Vector2i(12, 5)
 	var fact3: Vector2i = Vector2i(-12, 5)
+	var town1: Vector2i = Vector2i(-14, -4)
 	
 	build_many_rails(point1, point2)
 	build_many_rails(point2, point3)
@@ -168,3 +172,5 @@ func ai_station_and_ai_train_test() -> void:
 	build_base_factory(fact1, 1)
 	build_base_factory(fact2, 5)
 	build_base_factory(fact3, 8)
+	
+	build_town(town1)

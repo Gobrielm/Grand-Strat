@@ -1,4 +1,4 @@
-[gd_scene load_steps=6 format=4 uid="uid://dlmwgwie45non"]
+[gd_scene load_steps=6 format=3 uid="uid://dlmwgwie45non"]
 
 [ext_resource type="Script" uid="uid://bb01noce8wuix" path="res://Game/map_node.gd" id="1_4blso"]
 [ext_resource type="PackedScene" uid="uid://bpj5gy156fc3x" path="res://Map/Main_Maps/world_map.tscn" id="2_6stc2"]
@@ -14,6 +14,5 @@ script = ExtResource("1_4blso")
 [node name="tile_ownership" parent="." instance=ExtResource("3_3b3ai")]
 
 [node name="cargo_map" parent="." instance=ExtResource("4_jxo5k")]
-tile_map_data = PackedByteArray("AABxAI7/AAAAAAEAAAB4AJv/AAAAAAEAAACAAI//AAAAAAEAAABdAJD/AAAAAAEAAABwAIb/AAAAAAEAAABpAKD/AAAAAAEAAAA=")
 
 [node name="background_music" parent="." instance=ExtResource("5_k18o7")]

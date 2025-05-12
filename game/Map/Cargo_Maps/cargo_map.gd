@@ -4,18 +4,12 @@ extends TileMapLayer
 
 func _ready() -> void:
 	Utils.assign_cargo_map(self)
-	for cell: Vector2i in get_used_cells():
-		var building: terminal = instance_preplaced_towns(cell)
-		terminal_map.create_terminal(building)
 
-func instance_preplaced_towns(coords: Vector2i) -> terminal:
-	var atlas: Vector2i = get_cell_atlas_coords(coords)
-	#No other types accounted for, just towns should be preplaced. TODO: Towns automated too.
-	assert(atlas == Vector2i(0, 1))
-	var loaded_script: Resource = load("res://Cargo/Cargo_Objects/Specific/Endpoint/town.gd")
-	assert(loaded_script != null)
+func create_town(coords: Vector2i) -> void:
+	var new_town: terminal = town.new(coords, tile_ownership.get_instance().get_player_id_from_cell(coords))
 	Utils.world_map.make_cell_invisible(coords)
-	return loaded_script.new(coords, tile_ownership.get_instance().get_player_id_from_cell(coords))
+	set_tile(coords, Vector2i(0, 1))
+	terminal_map.create_terminal(new_town)
 
 func transform_construction_site_to_factory(coords: Vector2i) -> void:
 	set_tile(coords, Vector2i(4, 1))
@@ -31,13 +25,18 @@ func place_random_industries() -> void:
 			{ "threshold": 10000,    "mod": 10, "mult": 2, "count": 1 },
 			{ "threshold": 0,        "mod": 30, "mult": 1, "count": 1 }
 		]
+		var prov: province = map_data_singleton.get_province(province_id)
 		for entry: Dictionary in chances:
 			if pop > entry.threshold and randi() % entry.mod == 0:
-				pick_and_place_random_industry(map_data_singleton, province_id, entry.count, entry.mult)
+				pick_and_place_random_industry(prov, entry.count, entry.mult)
 				break
+		create_town_in_province(prov, pop)
 
-func pick_and_place_random_industry(map_data_singleton: map_data, province_id: int, count: int, multiplier: int) -> void:
-	var prov: province = map_data_singleton.get_province(province_id)
+func create_town_in_province(prov: province, pop: int) -> void:
+	#TODO
+	pass
+
+func pick_and_place_random_industry(prov: province, count: int, multiplier: int) -> void:
 	for i: int in range(count):
 		place_random_industry(get_random_unowned_tile(prov), randi() % multiplier)
 
@@ -93,11 +92,6 @@ func create_construction_site(_player_id: int, coords: Vector2i) -> void:
 	var new_factory: construction_site = load("res://Cargo/Cargo_Objects/Specific/Player/construction_site.gd").new(coords, _player_id)
 	set_tile(coords, Vector2i(3, 1))
 	terminal_map.create_terminal(new_factory)
-
-func create_town(coords: Vector2i) -> void:
-	var new_town: terminal = load("res://Cargo/Cargo_Objects/Specific/Endpoint/town.gd").new(coords, tile_ownership.get_instance().get_player_id_from_cell(coords))
-	set_tile(coords, Vector2i(0, 1))
-	terminal_map.create_terminal(new_town)
 
 func get_available_primary_recipes(coords: Vector2i) -> Array:
 	return cargo_values.get_available_primary_recipes(coords)

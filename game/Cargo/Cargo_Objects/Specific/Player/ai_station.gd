@@ -57,6 +57,9 @@ func update_sell_orders() -> void:
 	var amount_total: Dictionary[int, int] = {}
 	var market_price: Dictionary[int, float] = {} # Represents either the max for buying or min for selling
 	for order: trade_order in fetch_local_goods_needed():
+		if !amount_total.has(order.type):
+			amount_total[order.type] = 0
+			market_price[order.type] = 0.0
 		amount_total[order.type] += order.amount
 		market_price[order.type] += order.amount * order.max_price
 	
@@ -72,6 +75,9 @@ func create_market_price_for_available_goods() -> Dictionary[int, float]:
 		if broker_obj != null:
 			for order: trade_order in broker_obj.get_orders().values():
 				if order.is_sell_order():
+					if !amount_total.has(order.type):
+						amount_total[order.type] = 0
+						market_price[order.type] = 0.0
 					amount_total[order.type] += order.amount
 					market_price[order.type] += order.amount * order.max_price
 	
