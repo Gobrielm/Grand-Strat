@@ -45,8 +45,7 @@ func withdraw() -> void:
 			remove_input(type)
 
 func add_pop_money() -> void:
-	var pop: int = map_data.get_instance().get_province_population(location)
-	add_cash(round(pop / 1000.0))
+	add_cash(round(level * 100.0))
 
 func day_tick() -> void:
 	change_orders()

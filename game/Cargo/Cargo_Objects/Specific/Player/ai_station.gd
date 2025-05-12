@@ -9,6 +9,10 @@ var stations_in_network: Dictionary[Vector2i, bool] #Set of stations
 func _init(p_location: Vector2i, p_owner: int) -> void:
 	super._init(p_location, p_owner)
 
+func add_station(p_stop: Vector2i) -> void:
+	assert(terminal_map.get_ai_station(p_stop) != null)
+	stations_in_network[p_stop] = true
+
 func month_tick() -> void:
 	#Only reset buy orders since system doesn't know if order is cancelled
 	reset_buy_orders()
@@ -35,7 +39,7 @@ func update_orders() -> void:
 	
 #Stuff this could sell
 func update_buy_orders() -> void:
-	for tile: Vector2i in connected_terminals:
+	for tile: Vector2i in stations_in_network:
 		var ai_station_obj: ai_station = terminal_map.get_ai_station(tile)
 		if ai_station_obj != null:
 			update_buy_orders_for_station(ai_station_obj)

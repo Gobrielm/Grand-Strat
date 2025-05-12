@@ -28,9 +28,9 @@ func change_order(type: int, buy: bool) -> void:
 	
 	var order: trade_order = get_order(type)
 	
-	#Sell more if a lot in storage
-	if storage[type] > max_amount * MAX_AMOUNT_WANTED:
-		amount = inputs[type] * 2
+	#Sell more if a lot in storage only if it creates the cargo type
+	if storage[type] > max_amount * MAX_AMOUNT_WANTED and outputs.has(type):
+		amount = outputs[type] * 2
 	
 	order.change_amount(amount)
 

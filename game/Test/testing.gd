@@ -145,11 +145,12 @@ func ai_station_and_ai_train_test() -> void:
 	var point1: Vector2i = Vector2i(0, 0)
 	var point2: Vector2i = Vector2i(9, 5)
 	var point3: Vector2i = Vector2i(-8, 5)
-	var stat4: Vector2i = Vector2i(-14, -3)
+	
 	
 	var stat1: Vector2i = Vector2i(2, -1)
 	var stat2: Vector2i = Vector2i(11, 5)
 	var stat3: Vector2i = Vector2i(-11, 5)
+	var stat4: Vector2i = Vector2i(-14, -3)
 	
 	var fact1: Vector2i = Vector2i(3, -1)
 	var fact2: Vector2i = Vector2i(12, 5)
@@ -174,3 +175,16 @@ func ai_station_and_ai_train_test() -> void:
 	build_base_factory(fact3, 8)
 	
 	build_town(town1)
+	
+	var station1: ai_station = terminal_map.get_ai_station(stat1)
+	var station2: ai_station = terminal_map.get_ai_station(stat2)
+	var station3: ai_station = terminal_map.get_ai_station(stat3)
+	var station4: ai_station = terminal_map.get_ai_station(stat4)
+	
+	var stations: Array[ai_station] = [station1, station2, station3, station4]
+	for i: int in stations.size():
+		for j: int in range(i, stations.size()):
+			stations[i].add_station(stations[j].location)
+			stations[j].add_station(stations[i].location)
+	
+	

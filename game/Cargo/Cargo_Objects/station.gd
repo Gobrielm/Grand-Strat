@@ -9,9 +9,6 @@ const SUPPLY_DROPOFF: int = 1
 func _init(new_location: Vector2i, _player_owner: int) -> void:
 	super._init(new_location, _player_owner)
 
-func get_local_price(type: int) -> float:
-	return max_prices[type]
-
 func place_order(type: int, amount: int, buy: bool, max_price: float) -> void:
 	super.place_order(type, amount, buy, max_price)
 	add_accept(type)
