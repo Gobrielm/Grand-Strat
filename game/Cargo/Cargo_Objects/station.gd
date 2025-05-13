@@ -11,13 +11,16 @@ func _init(new_location: Vector2i, _player_owner: int) -> void:
 
 func place_order(type: int, amount: int, buy: bool, max_price: float) -> void:
 	super.place_order(type, amount, buy, max_price)
+	local_pricer = station_local_price_controller.new()
 	add_accept(type)
 	max_prices[type] = max_price
 
 func edit_order(type: int, amount: int, buy: bool, max_price: float) -> void:
-	if trade_orders.has(type):
-		max_prices[type] = max_price
+	max_prices[type] = max_price
 	super.edit_order(type, amount, buy, max_price)
+
+func get_local_price(type: int) -> float:
+	return max_prices[type]
 
 func get_orders_magnitude() -> int:
 	var tot: int = 0

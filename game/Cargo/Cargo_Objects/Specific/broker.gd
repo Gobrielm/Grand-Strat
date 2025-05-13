@@ -33,11 +33,14 @@ func is_price_acceptable(type: int, price_per: float) -> bool:
 		return false
 	return true
 
-func buy_cargo(type: int, amount: int, price_per: float) -> void:
+func buy_cargo(type: int, amount: int, price_per: float) -> int:
 	if amount == 0:
-		return
+		return 0
 	add_cargo_ignore_accepts(type, amount)
-	remove_cash(round(amount * price_per))
+	var price: int = round(amount * price_per)
+	remove_cash(price)
+	local_pricer.report_change(type, amount)
+	return price
 
 func place_order(type: int, amount: int, buy: bool, max_price: float) -> void:
 	var order: trade_order = trade_order.new(type, amount, buy, max_price)
@@ -93,5 +96,5 @@ func distribute_to_order(_broker: broker, order: trade_order) -> void:
 	local_pricer.report_attempt(type, desired)
 	if amount > 0:
 		amount = transfer_cargo(type, amount)
-		_broker.buy_cargo(type, amount, price)
-		add_cash(round(amount * price))
+		var new_cash: int = _broker.buy_cargo(type, amount, price)
+		add_cash(new_cash)

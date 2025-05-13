@@ -42,13 +42,6 @@ func does_create(type: int) -> bool:
 func get_monthly_demand(type: int) -> int:
 	return inputs[type] * DAY_TICKS_PER_MONTH
 
-func buy_cargo(type: int, amount: int, price_per: float) -> void:
-	if amount == 0:
-		return
-	add_cargo_ignore_accepts(type, amount)
-	remove_cash(round(amount * price_per))
-	local_pricer.report_change(type, amount)
-
 func calculate_reward(type: int, amount: int) -> int:
 	return floor(get_local_price(type) * float(amount))
 
