@@ -82,6 +82,16 @@ func update_train(p_position: Vector2) -> void:
 func update_train_rotation(new_rotation: int) -> void:
 	rotation_degrees = new_rotation
 
+func get_desired_cargo_to_load(type: int, price_per: float) -> int:
+	return min(cargo_hold.max_amount - cargo_hold.get_cargo_amount(type), get_amount_can_buy(price_per))
+
+func get_amount_can_buy(price_per: float) -> int:
+	return floor(money_controller.get_instance().get_money(id) / price_per)
+
+func sell_cargo(type: int, amount: int, price_per: float) -> void:
+	cargo_hold.remove_cargo(type, amount)
+	money_controller.get_instance().add_money_to_player(id, round(amount * price_per))
+
 func checkpoint_reached() -> void:
 	var route_local_pos: Vector2 = map.map_to_local(route[0])
 	check_near_next_stop()
@@ -194,8 +204,6 @@ func add_stop(new_location: Vector2i, add_to_start: bool = false) -> void:
 	else:
 		stops.append(new_location)
 
-#TODO: Stuff with stations, downstream
-
 @rpc("any_peer", "unreliable", "call_local")
 func remove_stop(index: int) -> void:
 	stops.remove_at(index)
@@ -217,8 +225,6 @@ func remove_all_stops() -> void:
 	routes.clear()
 	stop_number = -1
 	stop_train()
-	
-
 
 func clear_stops() -> void:
 	stops = []
@@ -277,16 +283,17 @@ func load_tick() -> void:
 	for type: int in current_hold:
 		if !obj.does_accept(type):
 			var price: float = obj.get_local_price(type)
-			var amount: int = LOAD_TICK_AMOUNT - amount_loaded #PBUG: Needs to know how much it can load here
-			obj.local_pricer.report_attempt(type, amount)
-			var amount_actually_loaded: int = cargo_hold.add_cargo(type, min(amount, current_hold[type]))
-			money_controller.get_instance().remove_money_from_player(id, round(amount_actually_loaded * price))
+			var amount: int = min(get_desired_cargo_to_load(type, price), LOAD_TICK_AMOUNT - amount_loaded)
+			obj.local_pricer.report_attempt(type, -amount)
+			amount = min(amount, current_hold[type])
+			cargo_hold.add_cargo(type, amount)
+			money_controller.get_instance().remove_money_from_player(id, round(amount * price))
 			
-			amount_loaded += amount_actually_loaded
-			obj.sell_cargo(type, amount_actually_loaded, price)
+			amount_loaded += amount
+			obj.sell_cargo(type, amount, price)
 			
 			if amount_loaded == LOAD_TICK_AMOUNT:
-				break
+				return
 
 func hold_is_empty(toCheck: Dictionary) -> bool:
 	for value: int in toCheck.values():
@@ -318,12 +325,12 @@ func unload_tick(obj: station) -> void:
 	var accepts: Dictionary = obj.get_accepts()
 	for type: int in accepts:
 		var price: float = obj.get_local_price(type)
-		var amount_desired: int = obj.get_desired_cargo_from_train(type)
-		obj.local_pricer.report_attempt(type, amount_desired)
-		var amount_to_transfer: int = min(amount_desired, LOAD_TICK_AMOUNT - amount_unloaded)
-		var amount: int = cargo_hold.transfer_cargo(type, amount_to_transfer)
+		var amount: int = min(cargo_hold.get_cargo_amount(type), LOAD_TICK_AMOUNT - amount_unloaded)
+		obj.local_pricer.report_attempt(type, amount)
+		
+		amount = min(amount, obj.get_desired_cargo_from_train(type))
 		obj.buy_cargo(type, amount, price)
-		money_controller.get_instance().remove_money_from_player(id, round(amount * price))
+		sell_cargo(type, amount, price)
 		amount_unloaded += amount
 		
 		if amount_unloaded == LOAD_TICK_AMOUNT:

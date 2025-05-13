@@ -17,6 +17,14 @@ static func get_instance() -> money_controller:
 	assert(singleton_instance != null, "Money_Manager has not be created, and has been accessed")
 	return singleton_instance
 
+func add_peer(new_id: int) -> void:
+	assert(!money.has(new_id))
+	money[new_id] = INTIAL_AMOUNT_OF_MONEY
+
+func delete_peer(id: int) -> void:
+	assert(money.has(id))
+	money.erase(id)
+
 func add_money_to_player(id: int, amount: int) -> void:
 	money[id] += amount
 	var world_map: TileMapLayer = Utils.world_map

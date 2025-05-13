@@ -24,9 +24,18 @@ static func get_instance() -> ai_manager:
 
 func create_new_economy_ai(country_id: int) -> void:
 	var ai_id: int = get_unique_id()
+	money_controller.get_instance().add_peer(ai_id)
 	var new_ai: economy_ai = economy_ai.new(ai_id, country_id)
+	if !country_ais.has(country_id):
+		country_ais[country_id] = {}
 	country_ais[country_id][ai_id] = true
 	ai_instances[ai_id] = new_ai
+
+func destory_economy_ai(ai_id: int) -> void:
+	money_controller.get_instance().delete_peer(ai_id)
+	var country_id: int = ai_instances[ai_id].country_id
+	country_ais[country_id].erase(ai_id)
+	ai_instances.erase(ai_id)
 
 func get_unique_id() -> int:
 	var toReturn: int = (randi() % 100000000) * -1
@@ -35,6 +44,7 @@ func get_unique_id() -> int:
 	return toReturn
 
 func acknowledge_pending_deferred_call(ai_id: int) -> void:
+	#If ai_instance is destoryed, still fine to call
 	if ai_instances.has(ai_id):
 		ai_instances[ai_id].acknowledge_pending_deferred_call()
 

@@ -22,6 +22,7 @@ func get_cargo_amount(type: int) -> int:
 
 func remove_cargo(type: int, amount: int) -> void:
 	storage[type] -= amount
+	assert(storage[type] >= 0)
 
 func transfer_cargo(type: int, amount: int) -> int:
 	var val: int = min(amount, storage[type])
