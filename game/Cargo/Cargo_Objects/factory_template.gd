@@ -33,7 +33,7 @@ func get_min_price(_type: int) -> float:
 #For Buying only, assuming end-node
 func get_max_price(_type: int) -> float:
 	assert(outputs.size() == 0)
-	#TODO: ventually use expenses
+	#TODO: eventually use expenses
 	return 100.0
 
 func does_create(type: int) -> bool:
@@ -41,14 +41,6 @@ func does_create(type: int) -> bool:
 
 func get_monthly_demand(type: int) -> int:
 	return inputs[type] * DAY_TICKS_PER_MONTH
-
-func calculate_reward(type: int, amount: int) -> int:
-	return floor(get_local_price(type) * float(amount))
-
-func transfer_cargo(type: int, amount: int) -> int:
-	var new_amount: int = min(storage[type], amount)
-	remove_cargo(type, new_amount)
-	return new_amount
 
 func create_recipe() -> void:
 	var batch_size: int = get_batch_size()

@@ -63,12 +63,32 @@ func load_tick() -> void:
 		done_loading()
 	for type: int in cargo_to_load:
 		if cargo_to_load.has(type):
-			var amount: int = min(LOAD_TICK_AMOUNT - amount_loaded, current_hold[type], cargo_to_load[type])
+			var price: float = station_obj.get_local_price(type) #PBUG: Needs to use price and money
+			var amount: int = min(LOAD_TICK_AMOUNT - amount_loaded,current_hold[type], cargo_to_load[type])  #PBUG: Needs to know how much it can load here
+			station_obj.local_pricer.report_attempt(type, amount)
 			var amount_actually_loaded: int = cargo_hold.add_cargo(type, amount)
 			cargo_to_load[type] -= amount_actually_loaded
 			if cargo_to_load[type] <= 0:
 				cargo_to_load.erase(type)
 			amount_loaded += amount_actually_loaded
-			station_obj.remove_cargo(type, amount_actually_loaded)
+			station_obj.sell_cargo(type, amount_actually_loaded, price) #AAAAAAAAAAA
 			if amount_loaded == LOAD_TICK_AMOUNT:
 				break
+
+func unload_tick(obj: station) -> void:
+	var amount_unloaded: int = 0
+	var accepts: Dictionary = obj.get_accepts()
+	for type: int in accepts:
+		var price: float = obj.get_local_price(type)
+		var amount_desired: int = obj.get_desired_cargo_from_train(type)
+		obj.local_pricer.report_attempt(type, amount_desired)
+		var amount_to_transfer: int = min(amount_desired, LOAD_TICK_AMOUNT - amount_unloaded)
+		var amount: int = cargo_hold.transfer_cargo(type, amount_to_transfer)
+		obj.buy_cargo(type, amount, price)
+		money_controller.get_instance().remove_money_from_player(id, round(amount * price))
+		amount_unloaded += amount
+		
+		if amount_unloaded == LOAD_TICK_AMOUNT:
+			return
+	if amount_unloaded < LOAD_TICK_AMOUNT:
+		done_unloading()

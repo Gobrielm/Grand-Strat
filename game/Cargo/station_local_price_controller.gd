@@ -5,11 +5,11 @@ func _init() -> void:
 
 func add_cargo_type(type: int, starting_price: float = base_prices[type]) -> void:
 	local_prices[type] = starting_price
-	reset_change(type)
+	reset_attempts(type)
 
 func remove_cargo_type(type: int) -> void:
 	local_prices.erase(type)
-	change.erase(type)
+	attempts_to_trade.erase(type)
 
 func add_cargo_from_factory(fact: factory_template) -> void:
 	for type: int in fact.outputs:

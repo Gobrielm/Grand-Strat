@@ -1,26 +1,23 @@
 class_name station extends broker
 
-var max_prices: Dictionary[int, float] = {}
-
 var MAX_SUPPLY_DISTANCE: int = 5
 var MAX_SUPPLY_GIVEN: int = 5
 const SUPPLY_DROPOFF: int = 1
 
 func _init(new_location: Vector2i, _player_owner: int) -> void:
 	super._init(new_location, _player_owner)
+	local_pricer = local_price_controller.new({}, {})
 
 func place_order(type: int, amount: int, buy: bool, max_price: float) -> void:
-	super.place_order(type, amount, buy, max_price)
-	local_pricer = station_local_price_controller.new()
 	add_accept(type)
-	max_prices[type] = max_price
+	local_pricer.add_cargo_type(type)
+	super.place_order(type, amount, buy, max_price)
 
 func edit_order(type: int, amount: int, buy: bool, max_price: float) -> void:
-	max_prices[type] = max_price
-	super.edit_order(type, amount, buy, max_price)
-
-func get_local_price(type: int) -> float:
-	return max_prices[type]
+	if trade_orders.has(type):
+		super.edit_order(type, amount, buy, max_price)
+	else:
+		place_order(type, amount, buy, max_price)
 
 func get_orders_magnitude() -> int:
 	var tot: int = 0
@@ -30,9 +27,9 @@ func get_orders_magnitude() -> int:
 
 func remove_order(type: int) -> void:
 	if trade_orders.has(type):
+		local_pricer.remove_cargo_type(type)
 		remove_accept(type)
 		trade_orders.erase(type)
-		max_prices.erase(type)
 
 func distribute_cargo() -> void:
 	#Prioritize re-supplying friendly units
