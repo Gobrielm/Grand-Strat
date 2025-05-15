@@ -12,6 +12,7 @@ grow_vertical = 2
 script = ExtResource("1_mh4k4")
 
 [node name="ColorRect" type="ColorRect" parent="."]
+layout_mode = 0
 offset_left = 107.52
 offset_top = 128.48
 offset_right = 327.52
@@ -25,6 +26,7 @@ offset_bottom = 23.0
 text = "Trade Orders:"
 
 [node name="Cargo_List" type="ItemList" parent="."]
+layout_mode = 0
 offset_left = 107.52
 offset_top = 168.48
 offset_right = 327.52

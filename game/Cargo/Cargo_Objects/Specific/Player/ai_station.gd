@@ -6,6 +6,8 @@ var stations_in_network: Dictionary[Vector2i, bool] #Set of stations
 
 #TODO: Eventually have ai_trains only take as much as other station needs
 
+#TODO: Get rid of local pricer, it doesn't work and won;t ever really work
+
 func _init(p_location: Vector2i, p_owner: int) -> void:
 	super._init(p_location, p_owner)
 
@@ -43,9 +45,10 @@ func update_orders() -> void:
 #Stuff this could sell to trains
 func update_buy_orders() -> void:
 	var available_goods: Dictionary[int, bool] = get_local_goods_available()
-	#Sets all orders to amount of 0, but doesn't delete, waits for re-new
+	#Sets all buy orders to amount of 0, but doesn't delete, waits for re-new
 	for order: trade_order in trade_orders.values():
-		order.amount = 0
+		if order.is_buy_order():
+			order.amount = 0
 	
 	
 	for tile: Vector2i in stations_in_network:
