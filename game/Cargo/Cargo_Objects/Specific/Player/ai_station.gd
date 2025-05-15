@@ -85,12 +85,12 @@ func clean_up_buy_orders() -> void:
 
 #Stuff this wants from trains
 func update_sell_orders() -> void:
-	var market: Dictionary[int, trade_order] = create_consolidated_market_for_available_goods()
+	var market: Dictionary[int, trade_order] = create_consolidated_market_for_desired_goods()
 	for type: int in market:
 		#PBUG:Makes the limit price slightly less than mp, limit_price should be irreleveant
 		edit_order(type, market[type].amount, false, market[type].max_price * 0.99)
 
-func create_consolidated_market_for_available_goods() -> Dictionary[int, trade_order]:
+func create_consolidated_market_for_desired_goods() -> Dictionary[int, trade_order]:
 	var amount_total: Dictionary[int, int] = {}
 	var market_price: Dictionary[int, float] = {} # Represents either the max for buying or min for selling
 	var toReturn : Dictionary[int, trade_order] = {}
@@ -98,7 +98,7 @@ func create_consolidated_market_for_available_goods() -> Dictionary[int, trade_o
 		var broker_obj: broker = terminal_map.get_broker(tile)
 		if broker_obj != null:
 			for order: trade_order in broker_obj.get_orders().values():
-				if order.is_sell_order():
+				if order.is_buy_order():
 					if !amount_total.has(order.type):
 						amount_total[order.type] = 0
 						market_price[order.type] = 0.0

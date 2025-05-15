@@ -284,7 +284,6 @@ func load_tick() -> void:
 		if !obj.does_accept(type):
 			var price: float = obj.get_local_price(type)
 			var amount: int = min(get_desired_cargo_to_load(type, price), LOAD_TICK_AMOUNT - amount_loaded)
-			obj.local_pricer.report_attempt(type, -amount)
 			amount = min(amount, current_hold[type])
 			cargo_hold.add_cargo(type, amount)
 			money_controller.get_instance().remove_money_from_player(id, round(amount * price))
@@ -326,7 +325,6 @@ func unload_tick(obj: station) -> void:
 	for type: int in accepts:
 		var price: float = obj.get_local_price(type)
 		var amount: int = min(cargo_hold.get_cargo_amount(type), LOAD_TICK_AMOUNT - amount_unloaded)
-		obj.local_pricer.report_attempt(type, amount)
 		
 		amount = min(amount, obj.get_desired_cargo_from_train(type))
 		obj.buy_cargo(type, amount, price)

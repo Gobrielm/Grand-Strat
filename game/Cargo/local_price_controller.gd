@@ -2,6 +2,8 @@ class_name local_price_controller extends Node
 
 const MAX_DIFF: float = 1.5
 
+#TODO: Redo to have buy/sell attempts
+
 var change: Dictionary[int, int] = {}
 var attempts_to_trade: Dictionary = {}
 var local_prices: Dictionary = {}
@@ -58,11 +60,20 @@ func get_base_price(type: int) -> int:
 	return base_prices[type]
 
 func vary_input_price(demand: int, type: int) -> void:
-	vary_buy_order(demand, get_attempts(type), type)
+	if get_change(type) == 0:
+		vary_buy_order(demand, 0, type)
+	else:
+		vary_buy_order(demand, get_attempts(type), type)
+	reset_attempts(type)
+	reset_change(type)
 
 func vary_output_price(type: int) -> void:
-	vary_sell_order(get_attempts(type), get_attempts(type), type)
+	if get_change(type) == 0:
+		vary_buy_order(get_attempts(type), 0, type)
+	else:
+		vary_buy_order(get_attempts(type), get_attempts(type), type)
 	reset_attempts(type)
+	reset_change(type)
 
 func vary_buy_order(demand: int, supply: int, type: int) -> void:
 	assert(demand != 0)
