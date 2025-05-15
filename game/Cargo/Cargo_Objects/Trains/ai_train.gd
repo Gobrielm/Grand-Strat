@@ -20,9 +20,9 @@ func start_loading() -> void:
 
 func done_loading() -> void:
 	super.done_loading()
-	cargo_to_load.clear()
 
 func create_cargo_to_load() -> void:
+	cargo_to_load.clear()
 	#Decide what cargo we should load here then follow in each load tick
 	var storage_to_fill: int = cargo_hold.max_amount - cargo_hold.get_current_hold_total()
 	var amount_filled: int = 0
@@ -73,6 +73,7 @@ func load_tick() -> void:
 			if cargo_to_load[type] <= 0:
 				cargo_to_load.erase(type)
 			amount_loaded += amount
+			money_controller.get_instance().remove_money_from_player(id, round(amount * price))
 			station_obj.sell_cargo(type, amount, price)
 			if amount_loaded == LOAD_TICK_AMOUNT:
 				break

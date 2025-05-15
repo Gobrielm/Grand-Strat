@@ -9,12 +9,9 @@ static var base_prices: Dictionary
 
 func _init(inputs: Dictionary, outputs: Dictionary) -> void:
 	for type: int in inputs:
-		local_prices[type] = base_prices[type]
-		reset_change(type)
+		add_cargo_type(type)
 	for type: int in outputs:
-		local_prices[type] = base_prices[type]
-		reset_attempts(type)
-		reset_change(type)
+		add_cargo_type(type)
 
 static func set_base_prices(p_base_prices: Dictionary) -> void:
 	base_prices = p_base_prices
@@ -93,24 +90,37 @@ func get_multiple(type: int) -> float:
 	return local_prices[type] /  base_prices[type]
 
 func bump_up_good_price(type: int, percentage_met: float, amount: int) -> void:
-	var max_multiple: float = 1 / percentage_met
+	#Set to 0 by default
+	var max_multiple: float = 0.0
+	var price_disparity: float = 0.0
+	
 	var multiple: float = get_multiple(type)
-	if multiple >= max_multiple:
+	
+	if percentage_met != 0:
+		max_multiple = 1 / percentage_met
+		price_disparity = abs(multiple - max_multiple)
+	
+	if percentage_met == 0 and multiple >= max_multiple:
 		multiple = max_multiple
 	elif multiple >= MAX_DIFF:
 		multiple = MAX_DIFF
 	else:
-		multiple += (0.01 * amount)
+		#If far away from realized price, then change by more
+		multiple += (min(price_disparity / 10, 0.01) * amount)
+	
 	local_prices[type] = base_prices[type] * multiple
 
 func bump_down_good_price(type: int, percentage_met: float, amount: int) -> void:
+	#Can't have 0 percentage met
 	var multiple: float = get_multiple(type)
+	var price_disparity: float = 0.0
+	
 	if multiple <= percentage_met:
 		multiple = percentage_met
 	elif multiple <= 1 / MAX_DIFF:
 		multiple = 1 / MAX_DIFF
 	else:
-		multiple -= (0.01 * amount)
+		multiple -= (min(price_disparity / 10, 0.01) * amount)
 	local_prices[type] = base_prices[type] * multiple
 
 func equalize_good_price(type: int) -> void:

@@ -14,14 +14,7 @@ func add_station(p_stop: Vector2i) -> void:
 	stations_in_network[p_stop] = true
 
 func month_tick() -> void:
-	#Only reset buy orders since system doesn't know if order is cancelled
-	reset_buy_orders()
 	update_orders()
-
-func reset_buy_orders() -> void:
-	for type: int in trade_orders:
-		if trade_orders[type].is_buy_order():
-			trade_orders.erase(type)
 
 func fetch_local_goods_needed() -> Array[trade_order]:
 	var toReturn: Array[trade_order] = []
@@ -33,30 +26,66 @@ func fetch_local_goods_needed() -> Array[trade_order]:
 					toReturn.append(order)
 	return toReturn
 
+#Returns which types are available
+func get_local_goods_available() -> Dictionary[int, bool]:
+	var toReturn: Dictionary[int, bool] = {}
+	for tile: Vector2i in connected_terminals:
+		var broker_obj: broker = terminal_map.get_broker(tile)
+		for order: trade_order in broker_obj.get_orders().values():
+			if order.is_sell_order():
+				toReturn[order.type] = true
+	return toReturn
+
 func update_orders() -> void:
 	update_sell_orders()
 	update_buy_orders()
 	
-#Stuff this could sell
+#Stuff this could sell to trains
 func update_buy_orders() -> void:
+	var available_goods: Dictionary[int, bool] = get_local_goods_available()
+	#Sets all orders to amount of 0, but doesn't delete, waits for re-new
+	for order: trade_order in trade_orders.values():
+		order.amount = 0
+	
+	
 	for tile: Vector2i in stations_in_network:
 		var ai_station_obj: ai_station = terminal_map.get_ai_station(tile)
-		if ai_station_obj != null:
-			update_buy_orders_for_station(ai_station_obj)
+		update_buy_orders_for_station(ai_station_obj, available_goods)
+	
+	#Cleans up any order still with 0 that weren't re-newed
+	clean_up_buy_orders()
+	
 
-func update_buy_orders_for_station(ai_station_obj: ai_station) -> void:
+func update_buy_orders_for_station(ai_station_obj: ai_station, available_goods: Dictionary[int, bool]) -> void:
 	var orders: Dictionary[int, trade_order] = ai_station_obj.get_orders()
 	for order: trade_order in orders.values():
 		#If other station wants it to sell and will pay higher than min price here
-		if order.is_sell_order() and ai_station_obj.get_local_price(order.type) > get_local_price(order.type) * TRADE_MARGINS:
-			add_amount_to_buy_order(order.type, order.amount, get_local_price(order.type) * TRADE_MARGINS)
+		if order.is_sell_order() and available_goods.has(order.type):
+			#Order exists and price is not adequete
+			if get_order(order.type) != null and ai_station_obj.get_local_price(order.type) > get_local_price(order.type) * TRADE_MARGINS:
+				add_amount_to_buy_order(order.type, order.amount, get_local_price(order.type) * TRADE_MARGINS)
+			#TODO: Add price estimate before starting trade blindly
+			elif get_order(order.type) == null:
+				add_amount_to_buy_order(order.type, order.amount, ai_station_obj.get_local_price(order.type) / TRADE_MARGINS)
+		
 
 func add_amount_to_buy_order(type: int, amount: int, p_market_price: float) -> void:
 	var this_order: trade_order = get_order(type)
 	var new_amount: int = amount if !this_order else this_order.amount + amount
 	edit_order(type, new_amount, true, p_market_price)
 
-#Stuff this wants
+func clean_up_buy_orders() -> void:
+	var to_remove: Array = []
+	
+	for type: int in trade_orders:
+		if trade_orders[type].is_buy_order() and trade_orders[type].amount == 0:
+			to_remove.append(type)
+
+	for type: int in to_remove:
+		trade_orders.erase(type)
+
+
+#Stuff this wants from trains
 func update_sell_orders() -> void:
 	var amount_total: Dictionary[int, int] = {}
 	var market_price: Dictionary[int, float] = {} # Represents either the max for buying or min for selling
