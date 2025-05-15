@@ -35,4 +35,4 @@ func month_tick() -> void:
 	for type: int in inputs:
 		local_pricer.vary_input_price(get_monthly_demand(type), type)
 	for type: int in outputs:
-		local_pricer.vary_output_price(type)
+		local_pricer.vary_output_price(get_monthly_supply(type), type)

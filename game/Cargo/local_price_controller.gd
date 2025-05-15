@@ -67,11 +67,11 @@ func vary_input_price(demand: int, type: int) -> void:
 	reset_attempts(type)
 	reset_change(type)
 
-func vary_output_price(type: int) -> void:
+func vary_output_price(supply: int, type: int) -> void:
 	if get_change(type) == 0:
-		vary_buy_order(get_attempts(type), 0, type)
+		vary_sell_order(0, supply, type)
 	else:
-		vary_buy_order(get_attempts(type), get_attempts(type), type)
+		vary_sell_order(get_attempts(type), supply, type)
 	reset_attempts(type)
 	reset_change(type)
 
@@ -86,9 +86,7 @@ func vary_buy_order(demand: int, supply: int, type: int) -> void:
 		equalize_good_price(type)
 
 func vary_sell_order(demand: int, supply: int, type: int) -> void:
-	if supply == 0:
-		#TODO: THIS MAY CAUSE FUTURE PROBLEMS BY IGNORING
-		return
+	assert(supply != 0)
 	var percentage_being_met: float = 1 - float(supply - demand) / supply
 	if demand / 1.1 > supply:
 		bump_up_good_price(type, percentage_being_met, 2)

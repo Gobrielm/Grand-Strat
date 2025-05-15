@@ -1,0 +1,48 @@
+[gd_scene load_steps=3 format=3 uid="uid://bfl6pobogj82x"]
+
+[ext_resource type="Script" uid="uid://cd6ko3ulcjh4q" path="res://Gui/clock.gd" id="1_c2xsj"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_cwi0k"]
+font_size = 30
+font_color = Color(1, 0.482353, 0, 1)
+
+[node name="clock" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = -921.0
+offset_bottom = -584.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_c2xsj")
+
+[node name="background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.154876, 0.154876, 0.154876, 0.2)
+
+[node name="Label" type="Label" parent="."]
+layout_mode = 0
+offset_right = 231.0
+offset_bottom = 45.0
+text = "03/05/1830"
+label_settings = SubResource("LabelSettings_cwi0k")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="game_speed" type="HSlider" parent="."]
+layout_mode = 0
+offset_top = 48.0
+offset_right = 231.0
+offset_bottom = 64.0
+min_value = 1.0
+max_value = 6.0
+value = 1.0
+tick_count = 6
+
+[connection signal="drag_ended" from="game_speed" to="." method="_on_game_speed_drag_ended"]

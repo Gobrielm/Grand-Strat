@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3 uid="uid://c6spn0m6m85vs"]
+[gd_scene load_steps=11 format=3 uid="uid://c6spn0m6m85vs"]
 
 [ext_resource type="Script" uid="uid://xbopekwwthhq" path="res://Player/player_camera.gd" id="1_7vtmc"]
 [ext_resource type="PackedScene" uid="uid://pbahdxufv0k5" path="res://Gui/Building_Buttons/track_button.tscn" id="2_f342f"]
@@ -7,6 +7,7 @@
 [ext_resource type="Script" uid="uid://b0d6nkxwvec3r" path="res://Gui/Building_Buttons/station_button.gd" id="5_x18jc"]
 [ext_resource type="PackedScene" uid="uid://ctitj2crm0uil" path="res://Gui/Mapmodes/map_modes.tscn" id="6_6d4dc"]
 [ext_resource type="Texture2D" uid="uid://cnt0fnx73uuf8" path="res://Gui/Icons/go.png" id="7_cyv1u"]
+[ext_resource type="PackedScene" uid="uid://bfl6pobogj82x" path="res://Gui/clock.tscn" id="8_ja5pc"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_lfvmj"]
 
@@ -56,6 +57,7 @@ offset_right = 137.0
 offset_bottom = -29.0
 
 [node name="factory_button" parent="CanvasLayer" instance=ExtResource("3_qhawj")]
+anchors_preset = 0
 anchor_left = 0.0
 anchor_top = 0.0
 anchor_right = 0.0
@@ -66,7 +68,6 @@ offset_right = 57.998
 offset_bottom = -27.0001
 
 [node name="road_depot_button" type="Button" parent="CanvasLayer"]
-anchors_preset = -1
 offset_left = -89.002
 offset_top = -81.0001
 offset_right = -31.002
@@ -107,7 +108,6 @@ offset_bottom = 32.824
 text = "0"
 
 [node name="map_modes" parent="CanvasLayer" instance=ExtResource("6_6d4dc")]
-anchors_preset = -1
 anchor_left = -0.868
 anchor_top = 0.12
 anchor_right = -0.868
@@ -147,6 +147,8 @@ offset_bottom = 58.24
 scale = Vector2(0.5, 0.5)
 text = "Music"
 icon = ExtResource("7_cyv1u")
+
+[node name="clock" parent="CanvasLayer2" instance=ExtResource("8_ja5pc")]
 
 [connection signal="pressed" from="CanvasLayer/station_button" to="." method="_on_station_button_pressed"]
 [connection signal="pressed" from="CanvasLayer/track_button" to="." method="_on_track_button_pressed"]

@@ -1,6 +1,5 @@
 class_name factory_template extends broker
 
-const DAY_TICKS_PER_MONTH: int = 15
 const COST_FOR_UPGRADE: int = 1000
 
 var level: int
@@ -40,7 +39,10 @@ func does_create(type: int) -> bool:
 	return outputs.has(type)
 
 func get_monthly_demand(type: int) -> int:
-	return inputs[type] * DAY_TICKS_PER_MONTH
+	return inputs[type] * clock_singleton.get_instance().get_days_in_current_month() * level
+
+func get_monthly_supply(type: int) -> int:
+	return outputs[type] * clock_singleton.get_instance().get_days_in_current_month() * level
 
 func create_recipe() -> void:
 	var batch_size: int = get_batch_size()
@@ -66,7 +68,6 @@ func add_outputs(batch_size: int) -> void:
 	for index: int in outputs:
 		var amount: int = outputs[index] * batch_size
 		amount = add_cargo_ignore_accepts(index, amount)
-		local_pricer.report_change(index, amount)
 
 func distribute_cargo() -> void:
 	for type: int in outputs:

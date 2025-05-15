@@ -19,8 +19,8 @@ func get_desired_cargo_to_load(type: int, price_per: float) -> int:
 	if trade_orders.has(type):
 		var trade_order_obj: trade_order = trade_orders[type]
 		if trade_order_obj.is_buy_order() and is_price_acceptable(type, price_per):
-			#PBUG: Uses change to keep track of how many have been bought
-			return min(max_amount - get_cargo_amount(type), get_amount_can_buy(price_per), trade_order_obj.get_amount() - local_pricer.get_change(type))
+			var amount_could_get: int = min(max_amount - get_cargo_amount(type), get_amount_can_buy(price_per))
+			return min(trade_order_obj.get_amount(), amount_could_get)
 	return 0
 
 func get_desired_cargo_from_train(type: int) -> int:
@@ -91,11 +91,14 @@ func distribute_to_order(_broker: broker, order: trade_order) -> void:
 	var price1: float = get_local_price(type)
 	var price2: float = _broker.get_local_price(type)
 	var price: float = max(price1, price2) - (abs(price1 - price2) / 2)
-	if !order.price_is_acceptable(price) and _broker.is_price_acceptable(type, price):
+	if order.price_is_acceptable(price) and _broker.is_price_acceptable(type, price):
 		return
 	var desired: int = _broker.get_desired_cargo_to_load(type, price)
-	_broker.local_pricer.report_attempt(type, desired)
-	local_pricer.report_attempt(type, -order.get_amount())
+	#Don't report attemps if stations are involved.
+	if !_broker is station:
+		_broker.local_pricer.report_attempt(type, desired)
+	if !self is station:
+		local_pricer.report_attempt(type, -order.get_amount())
 	var amount: int = min(desired, order.get_amount())
 	if amount > 0:
 		amount = sell_cargo(type, amount, price)
