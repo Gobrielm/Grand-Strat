@@ -63,14 +63,9 @@ func update_buy_orders_for_station(ai_station_obj: ai_station, available_goods: 
 	var orders: Dictionary[int, trade_order] = ai_station_obj.get_orders()
 	for order: trade_order in orders.values():
 		#If other station wants it to sell and will pay higher than min price here
-		if order.is_sell_order() and available_goods.has(order.type):
+		if order.is_sell_order() and available_goods.has(order.type) and ai_station_obj.get_local_price(order.type) > get_local_price(order.type) * TRADE_MARGINS:
 			#Order exists and price is not adequete
-			if get_order(order.type) != null and ai_station_obj.get_local_price(order.type) > get_local_price(order.type) * TRADE_MARGINS:
-				add_amount_to_buy_order(order.type, order.amount, get_local_price(order.type) * TRADE_MARGINS)
-			#TODO: Add price estimate before starting trade blindly
-			elif get_order(order.type) == null:
-				add_amount_to_buy_order(order.type, order.amount, ai_station_obj.get_local_price(order.type) / TRADE_MARGINS)
-		
+			add_amount_to_buy_order(order.type, order.amount, get_local_price(order.type) * TRADE_MARGINS)
 
 func add_amount_to_buy_order(type: int, amount: int, p_market_price: float) -> void:
 	var this_order: trade_order = get_order(type)
@@ -90,22 +85,15 @@ func clean_up_buy_orders() -> void:
 
 #Stuff this wants from trains
 func update_sell_orders() -> void:
-	var amount_total: Dictionary[int, int] = {}
-	var market_price: Dictionary[int, float] = {} # Represents either the max for buying or min for selling
-	for order: trade_order in fetch_local_goods_needed():
-		if !amount_total.has(order.type):
-			amount_total[order.type] = 0
-			market_price[order.type] = 0.0
-		amount_total[order.type] += order.amount
-		market_price[order.type] += order.amount * order.max_price
-	
-	for type: int in amount_total:
-		market_price[type] /= amount_total[type]
-		edit_order(type, amount_total[type], false, market_price[type])
+	var market: Dictionary[int, trade_order] = create_consolidated_market_for_available_goods()
+	for type: int in market:
+		#PBUG:Makes the limit price slightly less than mp, limit_price should be irreleveant
+		edit_order(type, market[type].amount, false, market[type].max_price * 0.99)
 
-func create_market_price_for_available_goods() -> Dictionary[int, float]:
+func create_consolidated_market_for_available_goods() -> Dictionary[int, trade_order]:
 	var amount_total: Dictionary[int, int] = {}
 	var market_price: Dictionary[int, float] = {} # Represents either the max for buying or min for selling
+	var toReturn : Dictionary[int, trade_order] = {}
 	for tile: Vector2i in connected_terminals:
 		var broker_obj: broker = terminal_map.get_broker(tile)
 		if broker_obj != null:
@@ -115,9 +103,10 @@ func create_market_price_for_available_goods() -> Dictionary[int, float]:
 						amount_total[order.type] = 0
 						market_price[order.type] = 0.0
 					amount_total[order.type] += order.amount
-					market_price[order.type] += order.amount * order.max_price
+					market_price[order.type] += order.amount * broker_obj.get_local_price(order.type)
 	
 	for type: int in amount_total:
 		market_price[type] /= amount_total[type]
+		toReturn[type] = trade_order.new(type, amount_total[type], false, market_price[type])
 	
-	return market_price
+	return toReturn
