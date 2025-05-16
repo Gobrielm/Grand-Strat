@@ -5,6 +5,7 @@ const ai_train_scene: PackedScene = preload("res://Cargo/Cargo_Objects/Trains/ai
 
 var networks: Dictionary[int, rail_network] #Each network id points to network
 var trains: Dictionary[int, train] = {}
+var owned_trains: Dictionary[int, Dictionary] #Links player/ai ids to a set of train_ids they own
 
 static var singleton_instance: train_manager
 
@@ -23,7 +24,6 @@ func create_train(p_location: Vector2i, p_owner: int) -> void:
 	var id: int = get_unique_id()
 	var new_train: train = train_scene.instantiate()
 	new_train.create(p_location, p_owner, id)
-	#TODO: No way of keeping track of a single player or ai's trains
 	new_train.name = "Train" + str(trains.size())
 	Utils.world_map.add_child(new_train)
 	add_train(new_train)
@@ -32,7 +32,6 @@ func create_ai_train(p_location: Vector2i, p_owner: int) -> ai_train:
 	var id: int = get_unique_id()
 	var new_train: ai_train = ai_train_scene.instantiate()
 	new_train.create(p_location, p_owner, id)
-	#TODO: No way of keeping track of a single player or ai's trains
 	new_train.name = "AI_Train" + str(trains.size())
 	Utils.world_map.add_child(new_train)
 	add_ai_train(new_train)
@@ -46,6 +45,10 @@ func get_unique_id() -> int:
 
 func add_train(p_train: train) -> void:
 	trains[p_train.id] = p_train
+	var p_owner: int = p_train.player_owner
+	if !owned_trains.has(p_owner):
+		owned_trains[p_owner] = {}
+	owned_trains[p_owner][p_train.id] = true
 
 func add_ai_train(p_train: ai_train) -> void:
 	add_train(p_train)

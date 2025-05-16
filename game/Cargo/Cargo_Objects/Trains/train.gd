@@ -197,7 +197,6 @@ func add_stop(new_location: Vector2i, add_to_start: bool = false) -> void:
 	var routes: ItemList = $Train_Window/Routes
 	var index: int = routes.add_item(str(new_location))
 	if add_to_start:
-		#TODO: Could mess with routes
 		routes.move_item(index, 0)
 		stops.push_front(new_location)
 		stop_number += 1

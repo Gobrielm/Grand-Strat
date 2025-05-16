@@ -130,9 +130,6 @@ func create_network(start: Vector2i) -> void:
 			if cells_to_check[direction] == null or has_visited(visited, cells_to_check[direction], direction):
 				continue
 			var tile: Vector2i = cells_to_check[direction]
-			#Tiles do not connect by rail
-			if !map.do_tiles_connect(curr, tile):
-				continue
 			intialize_visited(visited, tile, direction)
 			stack.push_front(tile)
 			all_network_coords[tile] = true
@@ -149,24 +146,32 @@ func create_network(start: Vector2i) -> void:
 					dist[tile] = dist[curr].copy()
 					dist[tile].dist += 1
 				continue
+			
 			dist[tile] = dist[curr].copy()
 			dist[tile].dist += 1
 			if dist[tile].dist == 1:
 				dist[tile].output_dir = direction
 			if is_node(tile):
+				#If station, then it can leave it both directions
+				if is_station_node(tile):
+					intialize_visited(visited, tile, (direction + 3) % 6)
 				create_node(tile)
 				connect_nodes(tile, dist[tile].source, dist[tile].dist, (direction + 3) % 6, dist[tile].output_dir)
 				dist[tile] = rail_info.new(tile, 0, -1)
 
 func is_node(tile: Vector2i) -> bool:
-	return terminal_map.is_station(tile) or map_data.get_instance().is_depot(tile) or Utils.rail_placer.get_track_connection_count(tile) >= 3
+	return is_station_node(tile) or Utils.rail_placer.get_track_connection_count(tile) >= 3 or map_data.get_instance().is_depot(tile)
+
+func is_station_node(tile: Vector2i) -> bool:
+	return terminal_map.is_station(tile) 
 
 func get_cells_in_front(coords: Vector2i, directions: Array, map: TileMapLayer) -> Array:
 	var index: int = 2
 	var toReturn: Array = [null, null, null, null, null, null]
 	for cell: Vector2i in map.get_surrounding_cells(coords):
 		if directions[index] or directions[(index + 1) % 6] or directions[(index + 5) % 6]:
-			toReturn[index] = cell
+			if map.do_tiles_connect(coords, cell):
+				toReturn[index] = cell
 		index = (index + 1) % 6
 	return toReturn
 
@@ -237,27 +242,24 @@ func create_routes() -> void:
 		start_locations[id] = node
 		
 	while true:
-		#Kinda does weird stuff and doesn't pathfind quite right, check later
 		
 		i = get_smallest_index()
 		curr_train_id = train_members[i]
 		var ai_train_obj: ai_train = train_manager_obj.get_ai_train(curr_train_id)
-		var node: rail_node = find_closest_station_to_add_to_route1(start_locations[curr_train_id], ai_train_obj)
+		var node: rail_node = find_closest_station_to_add_to_route(start_locations[curr_train_id], ai_train_obj)
 		
 		if node == null:
-			#potentially send start location to another stop
-			pass
+			break
 		else:
 			start_locations[curr_train_id] = node
 		
 		if check_for_completion():
 			break
 	
-	
 	ensure_train_routes_have_overlap()
 	
 
-func find_closest_station_to_add_to_route1(start: rail_node, ai_train_obj: ai_train) -> rail_node:
+func find_closest_station_to_add_to_route(start: rail_node, ai_train_obj: ai_train) -> rail_node:
 	var pq: priority_queue = priority_queue.new()
 	pq.insert_element(start, 0)
 	
@@ -283,7 +285,8 @@ func find_closest_station_to_add_to_route1(start: rail_node, ai_train_obj: ai_tr
 				dest = current
 				if !current.is_serviced():
 					break
-		elif current.weight > 0:
+		elif current.weight > 0 and current != start:
+			#TODO: Decide more about revisiting, needs to be allowed but maybe ban at first
 			#Revisiting old station, could add station or even return
 			pass
 			
@@ -303,14 +306,17 @@ func find_closest_station_to_add_to_route1(start: rail_node, ai_train_obj: ai_tr
 			else:
 				intialize_visited(visited, node.coords, in_dir)
 	if dest == null:
-		pass
+		var new_start: rail_node = get_rail_node(ai_train_obj.get_first_stop())
+		#Making sure no infinite looping is allowed
+		if start != new_start:
+			return find_closest_station_to_add_to_route(new_start, ai_train_obj)
 		#Potentially, add system that will try to look for a route from the trains[stop1] as start
 		#Then add the new dest to the front of ai_train_obj, not at the back
 	
 	if dest != null:
 		service_node(dest, ai_train_obj.id)
-		#If multiple stops added and the start is from the start then the stop should be added to the start of stops
-		if ai_train_obj.stops.size() > 2 and ai_train_obj.get_first_stop() == start.coords:
+		#If pathfinding from first stop then add in front else append the stop
+		if ai_train_obj.stops.size() >= 2 and ai_train_obj.get_first_stop() == start.coords:
 			ai_train_obj.add_stop.rpc(dest.coords, true)
 		else:
 			ai_train_obj.add_stop.rpc(dest.coords)
@@ -358,10 +364,10 @@ func add_overlap(train_id: int) -> rail_node:
 	#Surveys for closest station owned by other node
 	var start: rail_node = get_rail_node(ai_train_obj.get_last_stop())
 	
-	var node_added: rail_node = find_closest_station_to_add_to_route1(start, ai_train_obj)
+	var node_added: rail_node = find_closest_station_to_add_to_route(start, ai_train_obj)
 	if node_added == null:
 		start = get_rail_node(ai_train_obj.get_first_stop())
-		node_added = find_closest_station_to_add_to_route1(start, ai_train_obj)
+		node_added = find_closest_station_to_add_to_route(start, ai_train_obj)
 	return node_added
 
 func find_station_endnode() -> rail_node:

@@ -3,7 +3,8 @@ class_name rail_node extends Node
 var coords: Vector2i
 var weight: float
 var serviced_by: Dictionary[int, bool] = {}
-var connections: Dictionary[rail_node, sorted_stack] = {}
+var nodes: Dictionary[Vector2i, rail_node] = {}
+var connections: Dictionary[Vector2i, sorted_stack] = {}
 
 func _init(p_coords: Vector2i, p_weight: float) -> void:
 	coords = p_coords
@@ -19,9 +20,10 @@ func get_weight() -> float:
 
 func connect_nodes(edge: rail_edge) -> void:
 	var p_node: rail_node = edge.node1 if edge.node1 != self else edge.node2
-	if !connections.has(p_node):
-		connections[p_node] = sorted_stack.new()
-	connections[p_node].insert_element(edge, edge.weight)
+	if !connections.has(p_node.coords):
+		connections[p_node.coords] = sorted_stack.new()
+	nodes[p_node.coords] = p_node
+	connections[p_node.coords].insert_element(edge, edge.weight)
 
 func service_node(train_id: int) -> void:
 	if !does_service(train_id):
@@ -34,7 +36,7 @@ func is_serviced() -> bool:
 	return serviced_by.size() > 0
 
 func get_best_unowned_connection(other_node: rail_node) -> rail_edge:
-	var backing_array: Array = connections[other_node].backing_array
+	var backing_array: Array = connections[other_node.coords].backing_array
 	for element: weighted_value in backing_array:
 		var edge: rail_edge = element.val
 		if !edge.is_edge_claimed():
@@ -43,7 +45,7 @@ func get_best_unowned_connection(other_node: rail_node) -> rail_edge:
 
 func claim_connection(other_node: rail_node, p_weight: float) -> void:
 	var temp: weighted_value
-	for element: weighted_value in connections[other_node].backing_array:
+	for element: weighted_value in connections[other_node.coords].backing_array:
 		if element.weight == p_weight:
 			if element.val > 0:
 				temp = element
@@ -60,12 +62,13 @@ func claim_best_connection(other_node: rail_node, train_id: int) -> void:
 func get_only_connected_node() -> rail_node:
 	return (connections.keys()[0] as rail_node)
 
-func get_best_connections(output_directions: Array) -> Array[rail_edge]:
+func get_best_connections(input_directions: Array) -> Array[rail_edge]:
 	var toReturn: Array[rail_edge] = []
-	for node: rail_node in connections:
+	for tile: Vector2i in connections:
+		var node: rail_node = nodes[tile]
 		var edge: rail_edge = get_best_unowned_connection(node)
 		for dir: int in range(0, 6):
-			if output_directions[dir] and edge.is_traversable(dir, self):
+			if input_directions[dir] and edge.is_traversable(dir, self):
 				toReturn.push_back(edge)
 				break
 	return toReturn
@@ -81,8 +84,9 @@ func get_best_edge(train_id: int) -> rail_edge:
 	var closest: rail_edge = null
 	#Using independent weight as it will be altered
 	var best_weight: float = -1.0
-	for node: rail_node in connections:
-		for val: weighted_value in connections[node].backing_array:
+	for tile: Vector2i in connections:
+		for val: weighted_value in connections[tile].backing_array:
+			var node: rail_node = nodes[tile]
 			var edge: rail_edge = val.val
 			var e_weight: float = edge.weight
 			#If already service, then reduce weight, but still include as it could be neccessary for pathfinding
@@ -114,25 +118,27 @@ func can_reach_connection(train_id: int, connection: rail_edge) -> bool:
 
 func get_connects_to_owned_nodes(train_id: int) -> int:
 	var count: int = 0
-	for node: rail_node in connections:
+	for tile: Vector2i in connections:
+		var node: rail_node = nodes[tile]
 		if node.does_service(train_id):
 			count += 1
 	return count
 
 func get_owned_connected_nodes(train_id: int) -> Array[rail_node]:
 	var toReturn: Array[rail_node] = []
-	for node: rail_node in connections:
-		for w_val: weighted_value in connections[node].backing_array:
+	for tile: Vector2i in connections:
+		for w_val: weighted_value in connections[tile].backing_array:
 			var edge: rail_edge = (w_val.val as rail_edge)
 			if edge.is_edge_claimed_by_id(train_id):
+				var node: rail_node = nodes[tile]
 				toReturn.append(node)
 				break
 	return toReturn
 
 func get_owned_edges(train_id: int) -> Array[rail_edge]:
 	var toReturn: Array[rail_edge] = []
-	for node: rail_node in connections:
-		for w_val: weighted_value in connections[node].backing_array:
+	for tile: Vector2i in connections:
+		for w_val: weighted_value in connections[tile].backing_array:
 			var edge: rail_edge = (w_val.val as rail_edge)
 			if edge.is_edge_claimed_by_id(train_id):
 				toReturn.append(edge)
@@ -156,9 +162,10 @@ func to_string_no_edges() -> String:
 
 func _to_string() -> String:
 	var toReturn: String = to_string_no_edges()
-	for node: rail_node in connections:
+	for tile: Vector2i in connections:
+		var node: rail_node = nodes[tile]
 		toReturn += " -"
-		for val: weighted_value in connections[node].backing_array:
+		for val: weighted_value in connections[tile].backing_array:
 			#Transforms into distance
 			toReturn += str((10 / (val.val as rail_edge).weight) as int)  + ", "
 		toReturn = toReturn.trim_suffix(", ") #Cuts extra comma
