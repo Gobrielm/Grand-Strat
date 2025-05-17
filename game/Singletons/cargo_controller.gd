@@ -30,6 +30,12 @@ func assign_map_node(_map_node: Node) -> void:
 func change_speed(p_speed: float) -> void:
 	$day_tick.wait_time = p_speed
 
+func get_game_speed() -> int:
+	return clock_singleton.get_instance().get_game_speed()
+
+func _process(delta: float) -> void:
+	train_manager.get_instance().process(delta * get_game_speed())
+
 func _on_day_tick_timeout() -> void:
 	terminal_map._on_day_tick_timeout()
 	map_node._on_day_tick_timeout()

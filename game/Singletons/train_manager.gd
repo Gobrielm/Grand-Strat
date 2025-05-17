@@ -96,3 +96,7 @@ func create_network_for_trains(network_id: int) -> void:
 	var network: rail_network = networks[network_id]
 	#Will reset and re-create network
 	network.create_network(get_member_from_network(network_id).location)
+
+func process(delta: float) -> void:
+	for train_obj: train in trains.values():
+		train_obj.process(delta)

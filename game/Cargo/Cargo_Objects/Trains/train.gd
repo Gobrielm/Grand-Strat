@@ -46,8 +46,7 @@ func create(new_location: Vector2i, new_owner: int, p_id: int) -> void:
 	if is_inside_tree():
 		prep_update_cargo_gui()
 
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta: float) -> void:
+func process(delta: float) -> void:
 	if !stopped:
 		position.x += velocity.x * delta
 		position.y += velocity.y * delta
@@ -86,7 +85,7 @@ func get_desired_cargo_to_load(type: int, price_per: float) -> int:
 	return min(cargo_hold.max_amount - cargo_hold.get_cargo_amount(type), get_amount_can_buy(price_per))
 
 func get_amount_can_buy(price_per: float) -> int:
-	return floor(money_controller.get_instance().get_money(id) / price_per)
+	return floor(money_controller.get_instance().get_money(player_owner) / price_per)
 
 func sell_cargo(type: int, amount: int, price_per: float) -> void:
 	cargo_hold.remove_cargo(type, amount)
@@ -263,11 +262,42 @@ func stop_train() -> void:
 	stopped = true
 
 func interact_stations() -> void:
-	unload_train()
-	load_train()
+	if unloading:
+		unload_train()
+	elif loading:
+		load_train()
+
+func unload_train() -> void:
+	var obj: station = terminal_map.get_station(location)
+	if obj != null and ticker > 1:
+		unload_tick(obj)
+		prep_update_cargo_gui()
+		if cargo_hold.is_empty():
+			done_unloading()
+
+func unload_tick(obj: station) -> void:
+	var amount_unloaded: int = 0
+	var accepts: Dictionary = obj.get_accepts()
+	for type: int in accepts:
+		var price: float = obj.get_local_price(type)
+		var amount: int = min(cargo_hold.get_cargo_amount(type), LOAD_TICK_AMOUNT - amount_unloaded)
+		
+		amount = min(amount, obj.get_desired_cargo_from_train(type))
+		obj.buy_cargo(type, amount, price)
+		sell_cargo(type, amount, price)
+		amount_unloaded += amount
+		
+		if amount_unloaded == LOAD_TICK_AMOUNT:
+			return
+	if amount_unloaded < LOAD_TICK_AMOUNT:
+		done_unloading()
+
+func done_unloading() -> void:
+	unloading = false
+	start_loading()
 
 func load_train() -> void:
-	if loading and terminal_map.is_hold(location) and ticker > 1:
+	if terminal_map.is_hold(location) and ticker > 1:
 		load_tick()
 		prep_update_cargo_gui()
 		if cargo_hold.is_full():
@@ -305,35 +335,6 @@ func start_loading() -> void:
 func done_loading() -> void:
 	loading = false
 	start_train()
-
-func unload_train() -> void:
-	var obj: station = terminal_map.get_station(location)
-	if obj != null and unloading and ticker > 1:
-		unload_tick(obj)
-		prep_update_cargo_gui()
-		if cargo_hold.is_empty():
-			done_unloading()
-
-func done_unloading() -> void:
-	unloading = false
-	start_loading()
-
-func unload_tick(obj: station) -> void:
-	var amount_unloaded: int = 0
-	var accepts: Dictionary = obj.get_accepts()
-	for type: int in accepts:
-		var price: float = obj.get_local_price(type)
-		var amount: int = min(cargo_hold.get_cargo_amount(type), LOAD_TICK_AMOUNT - amount_unloaded)
-		
-		amount = min(amount, obj.get_desired_cargo_from_train(type))
-		obj.buy_cargo(type, amount, price)
-		sell_cargo(type, amount, price)
-		amount_unloaded += amount
-		
-		if amount_unloaded == LOAD_TICK_AMOUNT:
-			return
-	if amount_unloaded < LOAD_TICK_AMOUNT:
-		done_unloading()
 
 func prep_update_cargo_gui() -> void:
 	var cargo_names: Array = terminal_map.get_cargo_array()
