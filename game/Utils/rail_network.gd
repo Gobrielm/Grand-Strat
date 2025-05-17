@@ -199,7 +199,7 @@ func connect_nodes(coords1: Vector2i, coords2: Vector2i, dist: int, output_dir1:
 	if network.has(coords1) and network.has(coords2):
 		var node1: rail_node = network[coords1]
 		var node2: rail_node = network[coords2]
-		var edge: rail_edge = rail_edge.new(node1, node2, 10.0 / dist, output_dir1, output_dir2)
+		var edge: rail_edge = rail_edge.new(node1, node2, dist, output_dir1, output_dir2)
 		node1.connect_nodes(edge)
 		node2.connect_nodes(edge)
 
@@ -246,7 +246,7 @@ func create_routes() -> void:
 		i = get_smallest_index()
 		curr_train_id = train_members[i]
 		var ai_train_obj: ai_train = train_manager_obj.get_ai_train(curr_train_id)
-		var node: rail_node = find_closest_station_to_add_to_route(start_locations[curr_train_id], ai_train_obj)
+		var node: rail_node = find_simplest_station_to_add_to_route(start_locations[curr_train_id], ai_train_obj)
 		
 		if node == null:
 			break
@@ -256,24 +256,28 @@ func create_routes() -> void:
 		if check_for_completion():
 			break
 	
+	for id: int in train_members:
+		var ai_train_obj: ai_train = train_manager_obj.get_ai_train(id)
+		check_end_can_reach_start(ai_train_obj)
+	
 	ensure_train_routes_have_overlap()
 	
 
-func find_closest_station_to_add_to_route(start: rail_node, ai_train_obj: ai_train) -> rail_node:
+func find_simplest_station_to_add_to_route(start: rail_node, ai_train_obj: ai_train) -> rail_node:
+	
 	var pq: priority_queue = priority_queue.new()
 	pq.insert_element(start, 0)
 	
-	#No a great solution
+	#PBUG: dist uses old system, use directional
 	var dist: Dictionary[rail_node, int] = {} #Int is distance in edges, not actual distance
 	dist[start] = 0
 	
-	#might be issues with overriding visited but we'll see
 	var visited: Dictionary[Vector2i, Array] = {}
 	fill_visited(visited, start.coords)
 
 	var dest: rail_node = null
 	while !pq.is_empty():
-		var current: rail_node = (pq.pop_top() as rail_node)
+		var current: rail_node = (pq.pop_back() as rail_node)
 		#Make sure it needs to visit and doesn't already visit
 		if current.weight > 0 and !current.does_service(ai_train_obj.id):
 			#Checks to make sure that unclaimed stations are priorized, but still goes for close stations
@@ -286,8 +290,6 @@ func find_closest_station_to_add_to_route(start: rail_node, ai_train_obj: ai_tra
 				if !current.is_serviced():
 					break
 		elif current.weight > 0 and current != start:
-			#TODO: Decide more about revisiting, needs to be allowed but maybe ban at first
-			#Revisiting old station, could add station or even return
 			pass
 			
 		#Doesn't care if an edge is taken
@@ -309,9 +311,7 @@ func find_closest_station_to_add_to_route(start: rail_node, ai_train_obj: ai_tra
 		var new_start: rail_node = get_rail_node(ai_train_obj.get_first_stop())
 		#Making sure no infinite looping is allowed
 		if start != new_start:
-			return find_closest_station_to_add_to_route(new_start, ai_train_obj)
-		#Potentially, add system that will try to look for a route from the trains[stop1] as start
-		#Then add the new dest to the front of ai_train_obj, not at the back
+			return find_simplest_station_to_add_to_route(new_start, ai_train_obj)
 	
 	if dest != null:
 		service_node(dest, ai_train_obj.id)
@@ -321,6 +321,83 @@ func find_closest_station_to_add_to_route(start: rail_node, ai_train_obj: ai_tra
 		else:
 			ai_train_obj.add_stop.rpc(dest.coords)
 	return dest
+
+func check_end_can_reach_start(ai_train_obj: ai_train) -> void:
+	#Pathfinds from end to start and adds any stations to get back
+	var start: rail_node = get_rail_node(ai_train_obj.get_last_stop())
+	var target: rail_node = get_rail_node(ai_train_obj.get_first_stop())
+	var found: bool = false #Only add stops if found
+	#Represents each stops previous stops to add by direction to stop overriding
+	var stops_to_add: Dictionary[rail_node, Array] = {} #Array[6 Array[rail_node]]
+	stops_to_add[start] = []
+	stops_to_add[start].resize(6)
+	stops_to_add[start].fill([])
+	
+	var pq: priority_queue = priority_queue.new()
+	pq.insert_element(start, 0)
+	
+	#Dist is distance from start, will override with multiple directions
+	var dist: Dictionary[rail_node, Array] = {} #Array[6 floats]
+	dist[start] = []
+	dist[start].resize(6)
+	dist[start].fill(0)
+
+	while !pq.is_empty():
+		var current: rail_node = (pq.pop_back() as rail_node)
+		#Make sure it needs to visit and doesn't already visit
+		if current == target:
+			found = true
+			break
+			
+		#Doesn't care if an edge is taken
+		for out_direction: int in range(0, 6):
+			var distance: float = dist[current][out_direction]
+			#Hasn't been activated yet
+			if distance == -1:
+				continue
+			for edge: rail_edge in current.get_best_connection(out_direction):
+				var node: rail_node = edge.get_other_node(current)
+				var in_dir: int = edge.get_in_dir_to_node(node)
+				
+				var new_length: float = dist[current][out_direction] + edge.get_length()
+				if dist.has(node) and dist[node][in_dir] != -1 and dist[node][in_dir] < new_length + 0.01:
+					continue
+				
+				if !stops_to_add.has(node):
+					stops_to_add[node] = []
+					stops_to_add[node].resize(6)
+					stops_to_add[node].fill(null)
+				stops_to_add[node][in_dir] = (stops_to_add[current][out_direction] as Array).duplicate()
+				
+				if !dist.has(node):
+					dist[node] = []
+					dist[node].resize(6)
+					dist[node].fill(-1)
+				
+				dist[node][in_dir] = dist[current][out_direction] + edge.get_length()
+				pq.insert_element(node, dist[node][in_dir])
+				#If station, then it can leave in both directions
+				if node.weight > 0:
+					#Add station to set of stops to add
+					stops_to_add[node][in_dir].append(node)
+					stops_to_add[node][(in_dir + 3) % 6] = (stops_to_add[node][in_dir] as Array).duplicate()
+					dist[node][(in_dir + 3) % 6] = dist[current][out_direction] + edge.get_length()
+					
+	if found:
+		for dir: int in range(0, 6):
+			if stops_to_add[target][dir] == null:
+				continue
+			for stop: rail_node in (stops_to_add[target][dir] as Array):
+				ai_train_obj.add_stop(stop.coords)
+			break
+	else:
+		assert(false)
+					
+
+
+
+
+
 
 func ensure_train_routes_have_overlap() -> void:
 	if train_members.size() <= 1:
@@ -364,10 +441,10 @@ func add_overlap(train_id: int) -> rail_node:
 	#Surveys for closest station owned by other node
 	var start: rail_node = get_rail_node(ai_train_obj.get_last_stop())
 	
-	var node_added: rail_node = find_closest_station_to_add_to_route(start, ai_train_obj)
+	var node_added: rail_node = find_simplest_station_to_add_to_route(start, ai_train_obj)
 	if node_added == null:
 		start = get_rail_node(ai_train_obj.get_first_stop())
-		node_added = find_closest_station_to_add_to_route(start, ai_train_obj)
+		node_added = find_simplest_station_to_add_to_route(start, ai_train_obj)
 	return node_added
 
 func find_station_endnode() -> rail_node:

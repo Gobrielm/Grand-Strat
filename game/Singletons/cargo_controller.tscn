@@ -5,6 +5,7 @@
 [node name="cargo_controller" type="Node"]
 script = ExtResource("1_pjd6e")
 
-[node name="day_tick" type="Timer" parent="."]
+[node name="basic_tick" type="Timer" parent="."]
+wait_time = 0.05
 
-[connection signal="timeout" from="day_tick" to="." method="_on_day_tick_timeout"]
+[connection signal="timeout" from="basic_tick" to="." method="_on_basic_tick_timeout"]

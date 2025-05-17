@@ -1,5 +1,7 @@
 class_name priority_queue extends Node
 
+#Prioritizes higher weight first
+
 var backing_array: Array[weighted_value]
 
 func _init() -> void:
@@ -9,6 +11,11 @@ func pop_top() -> Variant:
 	if get_size() == 0:
 		return null
 	return (backing_array.pop_front() as weighted_value).val
+
+func pop_back() -> Variant:
+	if get_size() == 0:
+		return null
+	return (backing_array.pop_back() as weighted_value).val
 
 func get_size() -> int:
 	return backing_array.size()

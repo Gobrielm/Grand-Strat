@@ -4,10 +4,11 @@ static var singleton_instance: cargo_controller
 
 var map_node: Node
 var clock: clock_singleton = clock_singleton.get_instance()
+var ticks: int = 0
 
 #Add second tick instead for use
 
-@export var DAY_LENGTH_TIME: int = 1
+@export var TICKS_IN_DAY: int = 40
 
 func _init() -> void:
 	assert(singleton_instance == null, "Cannot create multiple instances of singleton!")
@@ -18,17 +19,14 @@ static func get_instance() -> cargo_controller:
 	return singleton_instance
 
 func _ready() -> void:
-	$day_tick.wait_time = DAY_LENGTH_TIME
-
-func get_day_length() -> int:
-	return DAY_LENGTH_TIME
+	$basic_tick.wait_time = 1.0 / TICKS_IN_DAY
 
 func assign_map_node(_map_node: Node) -> void:
 	map_node = _map_node
-	$day_tick.autostart = true
+	$basic_tick.autostart = true
 
 func change_speed(p_speed: float) -> void:
-	$day_tick.wait_time = p_speed
+	$basic_tick.wait_time = 1.0 / TICKS_IN_DAY / p_speed
 
 func get_game_speed() -> int:
 	return clock_singleton.get_instance().get_game_speed()
@@ -36,7 +34,7 @@ func get_game_speed() -> int:
 func _process(delta: float) -> void:
 	train_manager.get_instance().process(delta * get_game_speed())
 
-func _on_day_tick_timeout() -> void:
+func day_tick() -> void:
 	terminal_map._on_day_tick_timeout()
 	map_node._on_day_tick_timeout()
 	#Calls server first as it needs correct day
@@ -48,3 +46,14 @@ func _on_day_tick_timeout() -> void:
 func _on_month_tick_timeout() -> void:
 	terminal_map._on_month_tick_timeout()
 	map_node._on_month_tick_timeout()
+
+func _on_basic_tick_timeout() -> void:
+	ticks += 1
+	train_manager.get_instance().process(get_tick_length())
+	
+	if ticks == TICKS_IN_DAY:
+		day_tick()
+		ticks = 0
+
+func get_tick_length() -> float:
+	return $basic_tick.wait_time

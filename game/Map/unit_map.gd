@@ -331,7 +331,7 @@ func next_location_available_for_extra(coords: Vector2i) -> bool:
 
 func bfs_to_destination(start: Vector2i, destination: Vector2i) -> Array:
 	var current: Vector2i
-	var queue: priority_queue = priority_queue.new()
+	var queue: priority_queue = priority_queue.new()  #PBUG: pq.pop_back() to make bfs
 	var tile_to_prev: Dictionary = {}
 	var visited: Dictionary = {}
 	var found: bool = false

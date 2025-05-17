@@ -73,6 +73,15 @@ func get_best_connections(input_directions: Array) -> Array[rail_edge]:
 				break
 	return toReturn
 
+func get_best_connection(output_dir: int) -> Array[rail_edge]:
+	var toReturn: Array[rail_edge] = []
+	for tile: Vector2i in connections:
+		var node: rail_node = nodes[tile]
+		var edge: rail_edge = get_best_unowned_connection(node)
+		if edge.is_traversable(output_dir, self):
+			toReturn.push_back(edge)
+	return toReturn
+
 func get_biggest_node() -> rail_node:
 	var biggest: rail_node = null
 	for node: rail_node in connections.keys():

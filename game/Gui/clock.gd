@@ -56,7 +56,7 @@ func is_next_month() -> bool:
 
 func _on_game_speed_drag_ended(value_changed: bool) -> void:
 	if value_changed:
-		cargo_controller.get_instance().change_speed(1 / $game_speed.value)
+		cargo_controller.get_instance().change_speed($game_speed.value)
 
 func get_game_speed() -> int:
 	return $game_speed.value

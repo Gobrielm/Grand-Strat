@@ -8,10 +8,10 @@ var out_dir2: int
 var weight: float
 var serviced_by: Dictionary[int, bool]
 
-func _init(p_node1: rail_node, p_node2: rail_node, p_weight: float, p_out_dir1: int, p_out_dir2: int) -> void:
+func _init(p_node1: rail_node, p_node2: rail_node, distance: float, p_out_dir1: int, p_out_dir2: int) -> void:
 	node1 = p_node1
 	node2 = p_node2
-	weight = p_weight
+	weight = 10.0 / distance
 	out_dir1 = p_out_dir1
 	out_dir2 = p_out_dir2
 	serviced_by = {}
@@ -47,6 +47,9 @@ func copy() -> rail_edge:
 
 func clear_ownership() -> void:
 	serviced_by.clear()
+
+func get_length() -> float:
+	return 10.0 / weight
 
 func _to_string() -> String:
 	var toReturn: String = node1.to_string_no_edges() + ": " + str(out_dir1) + "->" + str(out_dir2) + " :" + node2.to_string_no_edges()
