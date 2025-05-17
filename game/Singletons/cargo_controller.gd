@@ -5,6 +5,7 @@ static var singleton_instance: cargo_controller
 var map_node: Node
 var clock: clock_singleton = clock_singleton.get_instance()
 
+#Add second tick instead for use
 
 @export var DAY_LENGTH_TIME: int = 1
 

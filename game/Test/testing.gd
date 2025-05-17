@@ -186,6 +186,7 @@ func ai_station_and_ai_train_test() -> void:
 		for j: int in range(i, stations.size()):
 			stations[i].add_station(stations[j].location)
 			stations[j].add_station(stations[i].location)
-	build_ai_train(point2)
+	var train_obj: ai_train = build_ai_train(point1)
+	train_obj.start_train()
 	
 	

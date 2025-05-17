@@ -85,6 +85,8 @@ func unload_tick(obj: station) -> void:
 		var amount: int = min(cargo_hold.get_cargo_amount(type), LOAD_TICK_AMOUNT - amount_unloaded)
 		
 		amount = min(amount, obj.get_desired_cargo_from_train(type))
+		if amount == 0:
+			continue
 		obj.buy_cargo(type, amount, price)
 		sell_cargo(type, amount, price)
 		amount_unloaded += amount

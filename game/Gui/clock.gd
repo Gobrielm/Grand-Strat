@@ -2,6 +2,8 @@ class_name clock_singleton extends Control
 
 static var singleton_instance: clock_singleton
 
+#TODO: Add second clock instead
+
 var day: int = 1 #1 indexed
 var month: int = 1 #1 indexed
 var year: int = 1845

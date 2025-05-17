@@ -353,6 +353,7 @@ func add_train_car() -> void:
 func delete_train_car() -> void:
 	cargo_hold.change_max_storage(-TRAIN_CAR_SIZE)
 
+#Could be bugging out over direction
 func pathfind_to_next_stop() -> Array:
 	return create_route_between_start_and_end(map.local_to_map(position), stops[stop_number])
 
