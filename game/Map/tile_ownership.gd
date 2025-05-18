@@ -6,6 +6,8 @@ var country_id_to_tiles_owned: Dictionary = {}
 var country_id_to_player_id: Dictionary = {}
 var player_id_to_country_id: Dictionary = {}
 
+var mutex: Mutex = Mutex.new()
+
 static var singleton_instance: tile_ownership = null
 
 func _ready() -> void:
@@ -78,20 +80,27 @@ func unselect_nation(cells_to_change: Array) -> void:
 		set_cell(cell, 0, atlas)
 
 func is_owned(player_id: int, coords: Vector2i) -> bool:
-	if !tile_to_country_id.has(coords):
-		#TODO: FIX BUT ALL TILES SHOULD HAVE COUTNRY ID EVENTUALLY
-		return false
-	var country_id: int = tile_to_country_id[coords]
-	return country_id_to_player_id.has(country_id) and country_id_to_player_id[country_id] == player_id
+	var toReturn: bool = false
+	mutex.lock()
+	if tile_to_country_id.has(coords):
+		var country_id: int = tile_to_country_id[coords]
+		toReturn = country_id_to_player_id.has(country_id) and country_id_to_player_id[country_id] == player_id
+	mutex.unlock()
+	return toReturn
 
 func get_owned_tiles(player_id: int) -> Array:
-	if !player_id_to_country_id.has(player_id):
-		return []
-	return country_id_to_tiles_owned[player_id_to_country_id[player_id]]
+	var toReturn: Array = []
+	mutex.lock()
+	if player_id_to_country_id.has(player_id):
+		toReturn = country_id_to_tiles_owned[player_id_to_country_id[player_id]]
+	mutex.unlock()
+	return toReturn
 
 func get_player_id_from_cell(cell: Vector2i) -> int:
+	var toReturn: int = -1 #TODO: -1 not accounted for so eventually need to be assert(false)
+	mutex.lock()
 	if tile_to_country_id.has(cell) and country_id_to_player_id.has(tile_to_country_id[cell]):
-		return country_id_to_player_id[tile_to_country_id[cell]]
-	#TODO: -1 not accounted for so eventually need to be assert(false)
-	return -1
+		toReturn = country_id_to_player_id[tile_to_country_id[cell]]
+	mutex.unlock()
+	return toReturn
 	

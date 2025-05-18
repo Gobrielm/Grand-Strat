@@ -5,6 +5,7 @@ var map: TileMapLayer
 const TILES_PER_ROW: int = 8
 const MAX_RESOURCES: Array = [5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, -1, 5000, -1, -1, -1, -1, 5000, 5000, 5000, 5000, 5000, 50000, 1000]
 var magnitude_layers: Array = []
+var mutex: Mutex = Mutex.new()
 
 signal finished_created_map_resources
 
@@ -20,7 +21,9 @@ func create_magnitude_layers() -> void:
 			magnitude_layers.append(child)
 
 func get_layer(type: int) -> TileMapLayer:
+	mutex.lock()
 	var layer: TileMapLayer = magnitude_layers[type]
+	mutex.unlock()
 	assert(layer != null and layer.name == ("Layer" + str(type) + get_good_name_uppercase(type)))
 	return layer
 
@@ -59,10 +62,13 @@ func close_all_layers() -> void:
 func get_tile_magnitude(coords: Vector2i, type: int) -> int:
 	var layer: TileMapLayer = get_layer(type)
 	assert(layer != null)
+	var toReturn: int = 0
+	mutex.lock()
 	var atlas: Vector2i = layer.get_cell_atlas_coords(coords)
-	if atlas == Vector2i(-1, -1):
-		return 0
-	return atlas.y * TILES_PER_ROW + atlas.x
+	if atlas != Vector2i(-1, -1):
+		toReturn = atlas.y * TILES_PER_ROW + atlas.x
+	mutex.unlock()
+	return toReturn
 
 func get_atlas_for_magnitude(num: int) -> Vector2i:
 	@warning_ignore("integer_division")

@@ -236,7 +236,7 @@ static func is_ai_station(coords: Vector2i) -> bool:
 	return get_terminal(coords) is ai_station
 
 static func is_broker(coords: Vector2i) -> bool:
-	return get_broker(coords) != null
+	return get_terminal(coords) is broker
 
 static func get_station(coords: Vector2i) -> station:
 	var toReturn: terminal = null

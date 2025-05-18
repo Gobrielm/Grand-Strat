@@ -109,7 +109,7 @@ func place_station(center: Vector2i) -> void:
 		#TODO: No other stations
 		pass
 	var best_option: Vector2i
-	var dist: int = -1
+	var dist: float = -1
 	for tile: Vector2i in world_map.thread_get_surrounding_cells(center):
 		if station_would_be_unblocked(tile) and (dist == -1 or tile.distance_to(dest) < dist):
 			dist = tile.distance_to(dest)

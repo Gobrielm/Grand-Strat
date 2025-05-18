@@ -2,6 +2,8 @@ extends TileMapLayer
 
 @onready var cargo_values: Node = $cargo_values
 
+var mutex: Mutex = Mutex.new()
+
 func _ready() -> void:
 	Utils.assign_cargo_map(self)
 
@@ -89,8 +91,10 @@ func get_atlas_cell(obj_recipe: Array) -> Vector2i:
 	return Vector2i(4, 1)
 
 func create_construction_site(_player_id: int, coords: Vector2i) -> void:
-	var new_factory: construction_site = load("res://Cargo/Cargo_Objects/Specific/Player/construction_site.gd").new(coords, _player_id)
+	var new_factory: construction_site = construction_site.new(coords, _player_id)
+	mutex.lock()
 	set_tile(coords, Vector2i(3, 1))
+	mutex.unlock()
 	terminal_map.create_terminal(new_factory)
 
 func get_available_primary_recipes(coords: Vector2i) -> Array:

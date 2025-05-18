@@ -9,7 +9,7 @@ extends Node2D
 
 var mutex: Mutex = Mutex.new()
 var temp_layer_array: Array[TileMapLayer] = []
-var track_connection: Dictionary = {}
+var track_connection: Dictionary[Vector2i, Array] = {}
 const orientation_vectors: Array[Vector2] = [
 	Vector2(0, 1),
 	Vector2(sqrt(3)/2, 0.5),
@@ -35,8 +35,10 @@ func init_all_rails() -> void:
 
 func get_rail_layers() -> Array[TileMapLayer]:
 	var toReturn: Array[TileMapLayer] = []
+	mutex.lock()
 	for num: int in range(6):
 		toReturn.append(get_rail_layer(num))
+	mutex.unlock()
 	return toReturn
 
 func hover_tile(coordinates: Vector2i, coords_middle: Vector2, coords_mouse: Vector2) -> void:
@@ -161,13 +163,14 @@ func add_track_connection(coords: Vector2i, new_orientation: int) -> void:
 @rpc("authority", "call_local", "reliable")
 func delete_track_connection(coords: Vector2i, new_orientation: int) -> void:
 	track_connection[coords][new_orientation] = false
-	
 
-func get_track_connections(coords: Vector2i) -> Array:
+func get_track_connections(coords: Vector2i) -> Array[bool]:
+	var toReturn: Array[bool] = [false, false, false, false, false, false]
+	mutex.lock()
 	if track_connection.has(coords):
-		return track_connection[coords]
-	else:
-		return [false, false, false, false, false, false]
+		toReturn.assign((track_connection[coords] as Array).duplicate())
+	mutex.unlock()
+	return toReturn
 
 func get_depot_direction(coords: Vector2i) -> int:
 	for rail_layer: TileMapLayer in get_rail_layers():
@@ -178,11 +181,9 @@ func get_depot_direction(coords: Vector2i) -> int:
 
 func get_track_connection_count(coords: Vector2i) -> int:
 	var count: int = 0
-	mutex.lock()
 	for dir: bool in get_track_connections(coords):
 		if dir:
 			count += 1
-	mutex.unlock()
 	return count
 
 func are_tiles_connected_by_rail(coord1: Vector2i, coord2: Vector2i, bordering_to_coord1: Array[Vector2i]) -> bool:
@@ -196,7 +197,13 @@ func are_tiles_connected_by_rail(coord1: Vector2i, coord2: Vector2i, bordering_t
 
 func get_station_orientation(coords: Vector2i) -> int:
 	for rail_layer: TileMapLayer in get_rail_layers():
-		var atlas: Vector2i = rail_layer.get_cell_atlas_coords(coords)
+		var atlas: Vector2i = thread_get_cell_atlas_coords(rail_layer, coords)
 		if atlas.y == 2:
 			return atlas.x % 3
 	return -1
+
+func thread_get_cell_atlas_coords(rail_layer: TileMapLayer, coords: Vector2i) -> Vector2i:
+	mutex.lock()
+	var toReturn: Vector2i = rail_layer.get_cell_atlas_coords(coords)
+	mutex.unlock()
+	return toReturn
