@@ -7,10 +7,12 @@ var cargo_map: TileMapLayer = terminal_map.cargo_map
 var cargo_values: Node = cargo_map.cargo_values
 var rail_placer: Node
 
+var mutex: Mutex
+
 #Set of Actions
 enum ai_actions {
 	PLACE_FACTORY,
-	CONNECT_FACTORY,
+	PLACE_STATION,
 	CONNECT_STATION,
 	CONNECT_TOWN
 }
@@ -18,6 +20,7 @@ enum ai_actions {
 func _init(_id: int, p_country_id: int) -> void: 
 	super._init(_id, p_country_id)
 	thread = Thread.new()
+	mutex = Mutex.new()
 	world_map = Utils.world_map
 	rail_placer = world_map.rail_placer
 	tile_ownership_obj = tile_ownership.get_instance()
@@ -42,10 +45,11 @@ func run_ai_cycle() -> void:
 	var start: float = Time.get_ticks_msec()
 	var action_type: ai_actions = choose_type_of_action()
 	#Add more actions later
+	if action_type == ai_actions.PLACE_STATION:
+		place_station(stored_tile)
+	
 	if action_type == ai_actions.PLACE_FACTORY:
 		place_factory(get_most_needed_cargo())
-	elif action_type == ai_actions.CONNECT_FACTORY:
-		connect_factory(stored_tile)
 	elif action_type == ai_actions.CONNECT_STATION:
 		connect_station(stored_tile)
 	elif action_type == ai_actions.CONNECT_TOWN:
@@ -55,12 +59,12 @@ func run_ai_cycle() -> void:
 
 func choose_type_of_action() -> ai_actions:
 	#Criteria to choose later
-	#if are_there_unconnected_towns():
-		#return ai_actions.CONNECT_TOWN
-	#if are_there_unconnected_buildings():
-		#return ai_actions.CONNECT_FACTORY
-	#elif are_there_unconnected_stations():
-		#return ai_actions.CONNECT_STATION
+	if are_there_unconnected_buildings():
+		return ai_actions.PLACE_STATION
+	elif are_there_unconnected_stations():
+		return ai_actions.CONNECT_STATION
+	
+	#Other options later
 	return ai_actions.PLACE_FACTORY
 
 func are_there_unconnected_towns() -> bool:
@@ -69,7 +73,8 @@ func are_there_unconnected_towns() -> bool:
 	return search_for(callable)
 
 func are_there_unconnected_buildings() -> bool:
-	var callable: Callable = Callable(terminal_map, "is_owned_construction_site")
+	#Includes towns, construction sites, and factories
+	var callable: Callable = Callable(terminal_map, "is_building")
 	assert(callable.is_valid())
 	return search_for(callable)
 
@@ -97,6 +102,56 @@ func are_there_unconnected_stations() -> bool:
 				stored_tile = tile
 				return true
 	return false
+
+func place_station(center: Vector2i) -> void:
+	var dest: Vector2i = find_closest_station(center)
+	if dest == center:
+		#TODO: No other stations
+		pass
+	var best_option: Vector2i
+	var dist: int = -1
+	for tile: Vector2i in world_map.thread_get_surrounding_cells(center):
+		if station_would_be_unblocked(tile) and (dist == -1 or tile.distance_to(dest) < dist):
+			dist = tile.distance_to(dest)
+			best_option = tile
+	if dist != -1:
+		var orientation: int = get_orientation_for_station(best_option)
+		create_station(best_option, orientation)
+
+func find_closest_station(start: Vector2i) -> Vector2i:
+	var queue: Array = [start]
+	var visited: Dictionary[Vector2i, bool] = {}
+	while !queue.is_empty():
+		var curr: Vector2i = queue.pop_front()
+		if terminal_map.is_station(curr):
+			return curr
+		for tile: Vector2i in world_map.thread_get_surrounding_cells(curr):
+			if !visited.has(tile) and is_tile_valid(tile):
+				queue.append(tile)
+	return start
+
+#Checks for ownership, terrain, and buildings
+func is_tile_valid(coords: Vector2i) -> bool:
+	return !world_map.is_water() and tile_ownership_obj.is_owned(id, coords) and !terminal_map.is_building(coords)
+
+func station_would_be_unblocked(station_tile: Vector2i) -> bool:
+	for tile: Vector2i in world_map.thread_get_surrounding_cells(station_tile):
+		if is_tile_valid(tile):
+			return true
+	return false
+
+func get_orientation_for_station(station_tile: Vector2i) -> int:
+	var orien: int = 2
+	for tile: Vector2i in world_map.thread_get_surrounding_cells(station_tile):
+		if is_tile_valid(tile):
+			return orien
+		orien += 1
+	return -1
+
+func create_station(location: Vector2i, orientation: int) -> void:
+	#Note: If needed on same process bad things will happen
+	world_map.call_deferred_thread_group("set_cell_rail_placer_request", location, orientation, 2, id)
+	pending_deferred_calls += 1
 
 func place_factory(type: int) -> void:
 	var best_tile: Vector2i
@@ -226,19 +281,6 @@ func get_town_fulfillment() -> Dictionary:
 		total[type] = total[type] / towns
 	return total
 
-func connect_factory(coords: Vector2i) -> void:
-	var closest_station: Vector2i = coords_of_closest_station(coords)
-	place_station(coords, closest_station)
-
-func place_station(center: Vector2i, dest: Vector2i) -> void:
-	var info: Array = get_closest_info(center, dest)
-	var orientation: int = info[1]
-	var best: Vector2i = info[0]
-	if best == Vector2i(0, 0):
-		print("problems")
-		return
-	create_station(best, orientation)
-
 func get_closest_info(center: Vector2i, dest: Vector2i) -> Array:
 	#TODO: Add checking to see if orientation will be blocked
 	var best: Vector2i
@@ -254,11 +296,6 @@ func get_closest_info(center: Vector2i, dest: Vector2i) -> Array:
 				orientation = orientation_tracker
 		orientation_tracker = (orientation_tracker + 1) % 6
 	return [best, orientation]
-
-func create_station(location: Vector2i, orientation: int) -> void:
-	#Note: If needed on same process bad things will happen
-	world_map.call_deferred_thread_group("set_cell_rail_placer_request", location, orientation, 2, id)
-	pending_deferred_calls += 1
 
 func connect_station(coords: Vector2i) -> void:
 	var closest_station: Vector2i = coords_of_closest_station(coords)

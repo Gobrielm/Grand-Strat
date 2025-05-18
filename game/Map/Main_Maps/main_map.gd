@@ -323,6 +323,7 @@ func get_orientation(current: Vector2i, prev: Vector2i) -> int:
 		return 1
 	assert(false)
 	return -1
+
 #Thread safe map functions
 func thread_get_surrounding_cells(center: Vector2i) -> Array[Vector2i]:
 	var toReturn: Array[Vector2i]
