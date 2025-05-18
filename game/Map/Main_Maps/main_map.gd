@@ -2,6 +2,7 @@ extends TileMapLayer
 var start: Vector2i = Vector2i(0, 0)
 var is_start_valid: bool = false
 var unique_id: int
+var mutex: Mutex = Mutex.new()
 #Buttons
 @onready var camera: Camera2D = $player_camera
 @onready var track_button: Button = $player_camera/CanvasLayer/track_button
@@ -104,7 +105,6 @@ func start_building_units() -> void:
 
 func is_controlling_camera() -> bool:
 	return state_machine.is_controlling_camera()
-
 
 #Units
 func create_untraversable_tiles() -> void:
@@ -323,10 +323,20 @@ func get_orientation(current: Vector2i, prev: Vector2i) -> int:
 		return 1
 	assert(false)
 	return -1
+#Thread safe map functions
+func thread_get_surrounding_cells(center: Vector2i) -> Array[Vector2i]:
+	var toReturn: Array[Vector2i]
+	mutex.lock()
+	toReturn = get_surrounding_cells(center)
+	mutex.unlock()
+	return toReturn
+
 
 #Map Functions
 func get_cell_position() -> Vector2i:
+	mutex.lock()
 	var cell_position: Vector2i = local_to_map(get_mouse_local_to_map())
+	mutex.unlock()
 	return cell_position
 
 func get_mouse_local_to_map() -> Vector2:
@@ -365,67 +375,89 @@ func get_biome_name(coords: Vector2i) -> String:
 	return biome_name
 
 func is_forested(coords: Vector2i) -> bool:
+	mutex.lock()
 	var atlas: Vector2i = get_cell_atlas_coords(coords)
+	mutex.unlock()
 	if (atlas.y >= 0 and atlas.y <= 2) and (atlas.x == 1 or atlas.x == 2 or atlas.x == 4):
 		return true
 	return false
 
 func is_hilly(coords: Vector2i) -> bool:
+	mutex.lock()
 	var atlas: Vector2i = get_cell_atlas_coords(coords)
+	mutex.unlock()
 	if (atlas == Vector2i(3, 0) or atlas == Vector2i(4, 0) or atlas == Vector2i(5, 1) or atlas == Vector2i(3, 2) or atlas == Vector2i(4, 2) or atlas == Vector2i(1, 3)):
 		return true
 	return false
 
 func is_mountainous(coords: Vector2i) -> bool:
+	mutex.lock()
 	var atlas: Vector2i = get_cell_atlas_coords(coords)
+	mutex.unlock()
 	if (atlas == Vector2i(5, 0) or atlas == Vector2i(3, 3)):
 		return true
 	return false
 
 func is_desert(coords: Vector2i) -> bool:
+	mutex.lock()
 	var atlas: Vector2i = get_cell_atlas_coords(coords)
+	mutex.unlock()
 	if (atlas.y == 3):
 		return true
 	return false
 
 func is_tundra(coords: Vector2i) -> bool:
+	mutex.lock()
 	var atlas: Vector2i = get_cell_atlas_coords(coords)
+	mutex.unlock()
 	if (atlas.y == 2):
 		return true
 	return false
 
 func is_water(coords: Vector2i) -> bool:
+	mutex.lock()
 	var atlas: Vector2i = get_cell_atlas_coords(coords)
+	mutex.unlock()
 	if (atlas.y == 0 and atlas.x >= 6):
 		return true
 	return false
 
 func is_dry(coords: Vector2i) -> bool:
+	mutex.lock()
 	var atlas: Vector2i = get_cell_atlas_coords(coords)
+	mutex.unlock()
 	if (atlas.y == 1):
 		return true
 	return false
 
 #Tile Effects
 func highlight_cell(coords: Vector2i) -> void:
+	mutex.lock()
 	clear_highlights()
 	var highlight: Sprite2D = Sprite2D.new()
 	highlight.texture = load("res://Map_Icons/selected.png")
 	add_child(highlight)
 	highlight.name = "highlight"
 	highlight.position = map_to_local(coords)
+	mutex.unlock()
 
 func clear_highlights() -> void:
+	mutex.lock()
 	if has_node("highlight"):
 		var node: Sprite2D = get_node("highlight")
 		remove_child(node)
 		node.queue_free()
+	mutex.unlock()
 
 func make_cell_invisible(coords: Vector2i) -> void:
+	mutex.lock()
 	set_cell(coords, 1, get_cell_atlas_coords(coords))
+	mutex.unlock()
 
 func make_cell_visible(coords: Vector2i) -> void:
+	mutex.lock()
 	set_cell(coords, 0, get_cell_atlas_coords(coords))
+	mutex.unlock()
 
 #Money Stuff
 func get_cash_of_firm(coords: Vector2i) -> int:
