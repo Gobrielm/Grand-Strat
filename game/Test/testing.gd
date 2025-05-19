@@ -22,8 +22,12 @@ func test() -> void:
 	#ai_rail_test()
 	#print("-------------------- ✔️")
 	
-	print("ai_station_and_ai_train_test")
-	ai_station_and_ai_train_test()
+	#print("ai_station_and_ai_train_test")
+	#ai_station_and_ai_train_test()
+	#print("-------------------- ✔️")
+	
+	print("econ_ai_test")
+	econ_ai_test()
 	print("-------------------- ✔️")
 	
 	
@@ -188,5 +192,17 @@ func ai_station_and_ai_train_test() -> void:
 			stations[j].add_station(stations[i].location)
 	var train_obj: ai_train = build_ai_train(point1)
 	train_obj.start_train()
+
+func econ_ai_test() -> void:
+	ai_manager.get_instance().create_new_economy_ai(1)
 	
+	var fact1: Vector2i = Vector2i(3, -1)
+	var fact2: Vector2i = Vector2i(12, 5)
+	var fact3: Vector2i = Vector2i(-12, 5)
+	var town1: Vector2i = Vector2i(-14, -4)
 	
+	build_base_factory(fact1, 1)
+	build_base_factory(fact2, 5)
+	build_base_factory(fact3, 8)
+	
+	build_town(town1)

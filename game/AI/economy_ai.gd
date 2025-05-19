@@ -22,9 +22,8 @@ func _init(_id: int, p_country_id: int) -> void:
 	thread = Thread.new()
 	mutex = Mutex.new()
 	world_map = Utils.world_map
-	rail_placer = world_map.rail_placer
 	tile_ownership_obj = tile_ownership.get_instance()
-	tile_ownership_obj.add_player_to_country(id, Vector2i(96, -111))
+	rail_placer = world_map.rail_placer
 
 func process() -> void:
 	if thread.is_alive():
@@ -70,20 +69,20 @@ func choose_type_of_action() -> ai_actions:
 func are_there_unconnected_towns() -> bool:
 	var callable: Callable = Callable(terminal_map, "is_town")
 	assert(callable.is_valid())
-	return search_for(callable)
+	return check_if_target_has_no_station(callable)
 
 func are_there_unconnected_buildings() -> bool:
 	#Includes towns, construction sites, and factories
 	var callable: Callable = Callable(terminal_map, "is_building")
 	assert(callable.is_valid())
-	return search_for(callable)
+	return check_if_target_has_no_station(callable)
 
-func search_for(target: Callable) -> bool:
+func check_if_target_has_no_station(target: Callable) -> bool:
 	for tile: Vector2i in get_owned_tiles():
 		if target.call(tile):
 			var found: bool = false
-			for cell: Vector2i in world_map.get_surrounding_cells(tile):
-				if tile_ownership_obj.is_owned(id, cell) and terminal_map.is_station(cell):
+			for cell: Vector2i in world_map.thread_get_surrounding_cells(tile):
+				if tile_ownership_obj.is_owned_by_country(country_id, cell) and terminal_map.is_station(cell):
 					found = true
 			if !found:
 				stored_tile = tile
@@ -94,7 +93,7 @@ func are_there_unconnected_stations() -> bool:
 	for tile: Vector2i in get_owned_tiles():
 		if terminal_map.is_station(tile):
 			var found: bool = false
-			for cell: Vector2i in world_map.get_surrounding_cells(tile):
+			for cell: Vector2i in world_map.thread_get_surrounding_cells(tile):
 				#Check if there is rail
 				if world_map.do_tiles_connect(tile, cell):
 					found = true
@@ -106,8 +105,10 @@ func are_there_unconnected_stations() -> bool:
 func place_station(center: Vector2i) -> void:
 	var dest: Vector2i = find_closest_station(center)
 	if dest == center:
-		#TODO: No other stations
-		pass
+		dest = find_closest_building(center)
+		if dest == center:
+			#TODO: No other buildings either
+			return
 	var best_option: Vector2i
 	var dist: float = -1
 	for tile: Vector2i in world_map.thread_get_surrounding_cells(center):
@@ -119,38 +120,50 @@ func place_station(center: Vector2i) -> void:
 		create_station(best_option, orientation)
 
 func find_closest_station(start: Vector2i) -> Vector2i:
+	return find_closest_target(start, Callable(terminal_map, "is_station"))
+
+func find_closest_building(start: Vector2i) -> Vector2i:
+	return find_closest_target(start, Callable(terminal_map, "is_building"))
+
+func find_closest_target(start: Vector2i, target: Callable) -> Vector2i:
+	assert(target.is_valid())
 	var queue: Array = [start]
 	var visited: Dictionary[Vector2i, bool] = {}
+	visited[start] = true
 	while !queue.is_empty():
 		var curr: Vector2i = queue.pop_front()
-		if terminal_map.is_station(curr):
+		if target.call(curr) and curr != start:
 			return curr
 		for tile: Vector2i in world_map.thread_get_surrounding_cells(curr):
 			if !visited.has(tile) and is_tile_valid(tile):
 				queue.append(tile)
+				visited[tile] = true
 	return start
 
 #Checks for ownership, terrain, and buildings
+func is_tile_open(coords: Vector2i) -> bool:
+	return !terminal_map.is_building(coords)
+
 func is_tile_valid(coords: Vector2i) -> bool:
-	return !world_map.is_water() and tile_ownership_obj.is_owned(id, coords) and !terminal_map.is_building(coords)
+	return !world_map.is_water(coords) and tile_ownership_obj.is_owned_by_country(country_id, coords)
 
 func station_would_be_unblocked(station_tile: Vector2i) -> bool:
 	for tile: Vector2i in world_map.thread_get_surrounding_cells(station_tile):
-		if is_tile_valid(tile):
+		if is_tile_valid(tile) and is_tile_open(tile):
 			return true
 	return false
 
 func get_orientation_for_station(station_tile: Vector2i) -> int:
 	var orien: int = 2
 	for tile: Vector2i in world_map.thread_get_surrounding_cells(station_tile):
-		if is_tile_valid(tile):
+		if is_tile_valid(tile) and is_tile_open(tile):
 			return orien
 		orien += 1
 	return -1
 
 func create_station(location: Vector2i, orientation: int) -> void:
 	#Note: If needed on same process bad things will happen
-	world_map.call_deferred_thread_group("set_cell_rail_placer_request", location, orientation, 2, id)
+	world_map.call_deferred_thread_group("set_cell_rail_placer_request", location, orientation, 2, country_id)
 	pending_deferred_calls += 1
 
 func place_factory(type: int) -> void:
@@ -172,7 +185,7 @@ func get_optimal_primary_industry(type: int) -> Vector2i:
 	var best_location: Vector2i
 	var score: int = -10000
 	for tile: Vector2i in get_owned_tiles():
-		if !Utils.is_tile_open(tile, id):
+		if !Utils.is_tile_open(tile, country_id):
 			continue
 		#TODO: Will kill runtime if station isn't close or doesn't exist
 		var distance: int = distance_to_closest_station(tile)
@@ -180,7 +193,7 @@ func get_optimal_primary_industry(type: int) -> Vector2i:
 		if distance == 1:
 			current_score += 5
 		var free_tile: bool = false
-		for cell: Vector2i in world_map.get_surrounding_cells(tile):
+		for cell: Vector2i in world_map.thread_get_surrounding_cells(tile):
 			if is_tile_connected_to_world(cell):
 				free_tile = true
 				break
@@ -198,11 +211,11 @@ func is_tile_connected_to_world(coords: Vector2i) -> bool:
 	
 	while !queue.is_empty():
 		var curr: Vector2i = queue.pop_front()
-		for tile: Vector2i in world_map.get_surrounding_cells(curr):
+		for tile: Vector2i in world_map.thread_get_surrounding_cells(curr):
 			if !visited.has(tile):
 				if terminal_map.is_town(tile) or terminal_map.is_station(tile):
 					return true
-				elif Utils.just_has_rails(tile, id):
+				elif Utils.just_has_rails(tile, country_id):
 					visited[tile] = 0
 					queue.append(tile)
 	return false
@@ -235,14 +248,14 @@ func info_of_closest_target(coords: Vector2i, target: Callable, secondary_target
 		cycles += 1
 		if cycles > 1000 and closest_secondary_target != null:
 			break
-		for tile: Vector2i in world_map.get_surrounding_cells(curr):
+		for tile: Vector2i in world_map.thread_get_surrounding_cells(curr):
 			#TODO: Add logic to account for docks and disconnected territory
 			#TODO: Add logic that the closest station isnt the best to connect to
 			#TODO: Add logic about not checking tiles that have buildings but allow towns and rails
-			if !visited.has(tile) and tile_ownership_obj.is_owned(id, tile):
+			if !visited.has(tile) and tile_ownership_obj.is_owned_by_country(country_id, tile):
 				if target.call(tile):
 					return [(visited[curr] + 1), tile]
-				elif tile_ownership_obj.is_owned(id, tile):
+				elif tile_ownership_obj.is_owned_by_country(country_id, tile):
 					visited[tile] = visited[curr] + 1
 					queue.append(tile)
 				if closest_secondary_target == null and secondary_target.call(tile):
@@ -287,8 +300,8 @@ func get_closest_info(center: Vector2i, dest: Vector2i) -> Array:
 	var closest_dist: float = 100000.0
 	var orientation: int
 	var orientation_tracker: int = 2
-	for tile: Vector2i in world_map.get_surrounding_cells(center):
-		if Utils.is_tile_open(tile, id):
+	for tile: Vector2i in world_map.thread_get_surrounding_cells(center):
+		if Utils.is_tile_open(tile, country_id):
 			var dist: float = tile.distance_to(dest)
 			if closest_dist > dist:
 				closest_dist = dist
@@ -333,18 +346,18 @@ func connect_town(coords: Vector2i) -> void:
 func get_shared_tile_between(coords1: Vector2i, coords2: Vector2i) -> Array:
 	var coords1_set: Dictionary = {}
 	var shared: Array = []
-	for tile: Vector2i in world_map.get_surrounding_cells(coords1):
+	for tile: Vector2i in world_map.thread_get_surrounding_cells(coords1):
 		coords1_set[tile] = 1
-	for tile: Vector2i in world_map.get_surrounding_cells(coords2):
+	for tile: Vector2i in world_map.thread_get_surrounding_cells(coords2):
 		if coords1_set.has(tile):
 			shared.append(tile)
 	return shared
 
 func get_owned_tiles() -> Array:
-	return tile_ownership_obj.get_owned_tiles(id)
+	return tile_ownership_obj.get_owned_tiles_by_country(country_id)
 
 func is_cell_available(coords: Vector2i) -> bool:
-	return !terminal_map.is_tile_taken(coords) and tile_ownership_obj.is_owned(id, coords) 
+	return !terminal_map.is_tile_taken(coords) and tile_ownership_obj.is_owned_by_country(country_id, coords) 
 
 func get_town_tiles() -> Array:
 	var toReturn: Array = []
@@ -368,7 +381,7 @@ func build_rail(start: Vector2i, end: Vector2i, criteria_for_tile: Callable) -> 
 
 func place_rail(coords: Vector2i, orientation: int) -> void:
 	#Note: If needed on same process bad things will happen
-	world_map.call_deferred_thread_group("set_cell_rail_placer_request", coords, orientation, 0, id)
+	world_map.call_deferred_thread_group("set_cell_rail_placer_request", coords, orientation, 0, country_id)
 	pending_deferred_calls += 1
 
 func get_rails_to_build(from: Vector2i, to: Vector2i, criteria_for_tile: Callable) -> Dictionary:
@@ -385,7 +398,7 @@ func get_rails_to_build(from: Vector2i, to: Vector2i, criteria_for_tile: Callabl
 	
 	#Used to only allow the top and bottom of the station to connect
 	var check: Array = [null, null, null, null, null, null]
-	var surrounding: Array[Vector2i] = world_map.get_surrounding_cells(from)
+	var surrounding: Array[Vector2i] = world_map.thread_get_surrounding_cells(from)
 	check[(starting_orientation + 3) % 6] = (surrounding[(starting_orientation + 1) % 6])
 	check[starting_orientation] = (surrounding[(starting_orientation + 4) % 6])
 	
@@ -404,7 +417,7 @@ func get_rails_to_build(from: Vector2i, to: Vector2i, criteria_for_tile: Callabl
 				intialize_tile_to_prev(tile_to_prev, cell, direction, curr)
 				found = true
 				break
-			elif cell != null and !check_visited(visited, cell, direction) and criteria_for_tile.call(cell, id):
+			elif cell != null and !check_visited(visited, cell, direction) and criteria_for_tile.call(cell, country_id):
 				intialize_visited(visited, cell, direction)
 				intialize_order(order, cell, direction)
 				intialize_tile_to_prev(tile_to_prev, cell, direction, curr)
@@ -447,7 +460,7 @@ func swap_direction(num: int) -> int:
 func get_cells_in_front(coords: Vector2i, directions: Array) -> Array:
 	var index: int = 2
 	var toReturn: Array = [null, null, null, null, null, null]
-	for cell: Vector2i in world_map.get_surrounding_cells(coords):
+	for cell: Vector2i in world_map.thread_get_surrounding_cells(coords):
 		if directions[index] or directions[(index + 1) % 6] or directions[(index + 5) % 6] and !terminal_map.is_tile_taken(cell):
 			toReturn[index] = cell
 		index = (index + 1) % 6

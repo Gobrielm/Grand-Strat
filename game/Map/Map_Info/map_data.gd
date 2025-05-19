@@ -44,7 +44,9 @@ func is_owned_depot(coords: Vector2i, id: int) -> bool:
 	return depots.has(coords) and depots[coords].get_player_owner() == id
 
 func add_hold(coords: Vector2i, hold_name: String, player_id: int) -> void:
+	mutex.lock()
 	holds[coords] = [hold_name, player_id]
+	mutex.unlock()
 
 func get_hold_name(coords: Vector2i) -> String:
 	if holds.has(coords):
@@ -58,28 +60,32 @@ func is_owned_hold(coords: Vector2i, id: int) -> bool:
 	return holds.has(coords) and holds[coords][1] == id
 
 func create_new_province() -> int:
+	mutex.lock()
 	var province_id: int = provinces.size()
 	provinces[province_id] = province.new(province_id)
+	mutex.unlock()
 	return province_id
 
 func create_new_if_empty(province_id: int) -> void:
+	mutex.lock()
 	if !provinces.has(province_id):
 		provinces[province_id] = province.new(province_id)
+	mutex.unlock()
 
 func add_tile_to_province(province_id: int, tile: Vector2i) -> void:
 	assert(!tiles_to_province_id.has(tile))
+	mutex.lock()
 	tiles_to_province_id[tile] = province_id
 	provinces[province_id].add_tile(tile)
+	mutex.unlock()
 
 func add_many_tiles_to_province(province_id: int, tiles: Array) -> void:
 	for tile: Vector2i in tiles:
 		add_tile_to_province(province_id, tile)
 
 func add_population_to_province(tile: Vector2i, pop: int) -> void:
-	mutex.lock()
 	var id: int = get_province_id(tile)
 	get_province(id).population += pop
-	mutex.unlock()
 
 func get_province_population(tile: Vector2i) -> int:
 	var id: int = get_province_id(tile)
@@ -89,10 +95,19 @@ func get_population(province_id: int) -> int:
 	return get_province(province_id).population
 
 func is_tile_a_province(tile: Vector2i) -> bool:
-	return tiles_to_province_id.has(tile)
+	mutex.lock()
+	var toReturn: bool = tiles_to_province_id.has(tile)
+	mutex.unlock()
+	return toReturn
 
 func get_province_id(tile: Vector2i) -> int:
-	return tiles_to_province_id[tile]
+	mutex.lock()
+	var toReturn: int = tiles_to_province_id[tile]
+	mutex.unlock()
+	return toReturn
 
 func get_province(province_id: int) -> province:
-	return provinces[province_id]
+	mutex.lock()
+	var toReturn: province = provinces[province_id] 
+	mutex.unlock()
+	return toReturn

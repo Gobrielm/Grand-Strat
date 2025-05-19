@@ -6,8 +6,6 @@ var map_node: Node
 var clock: clock_singleton = clock_singleton.get_instance()
 var ticks: int = 0
 
-#Add second tick instead for use
-
 @export var TICKS_IN_DAY: int = 40
 
 func _init() -> void:
@@ -21,10 +19,6 @@ static func get_instance() -> cargo_controller:
 func _ready() -> void:
 	$basic_tick.wait_time = 1.0 / TICKS_IN_DAY
 
-func assign_map_node(_map_node: Node) -> void:
-	map_node = _map_node
-	$basic_tick.autostart = true
-
 func change_speed(p_speed: float) -> void:
 	$basic_tick.wait_time = 1.0 / TICKS_IN_DAY / p_speed
 
@@ -36,7 +30,6 @@ func _process(delta: float) -> void:
 
 func day_tick() -> void:
 	terminal_map._on_day_tick_timeout()
-	map_node._on_day_tick_timeout()
 	#Calls server first as it needs correct day
 	clock.iterate_day()
 	if clock.is_next_month():
@@ -45,7 +38,6 @@ func day_tick() -> void:
 
 func _on_month_tick_timeout() -> void:
 	terminal_map._on_month_tick_timeout()
-	map_node._on_month_tick_timeout()
 
 func _on_basic_tick_timeout() -> void:
 	ticks += 1

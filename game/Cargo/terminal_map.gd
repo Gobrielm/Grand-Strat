@@ -49,6 +49,7 @@ static func _on_month_tick_timeout() -> void:
 	for obj: terminal in cargo_map_terminals.values():
 		if obj.has_method("month_tick"):
 			obj.month_tick()
+	mutex.unlock()
 
 static func create(_map: TileMapLayer) -> void:
 	map = _map
@@ -56,6 +57,7 @@ static func create(_map: TileMapLayer) -> void:
 static func clear() -> void:
 	mutex.lock()
 	cargo_map_terminals.clear()
+	mutex.unlock()
 
 static func create_amount_of_primary_goods() -> void:
 	mutex.lock()
@@ -63,6 +65,7 @@ static func create_amount_of_primary_goods() -> void:
 		var cargo_name: String = cargo_types[i]
 		if cargo_name == "gold":
 			amount_of_primary_goods = i + 1
+	mutex.unlock()
 
 static func get_available_resources(coords: Vector2i) -> Dictionary:
 	mutex.lock()
@@ -79,14 +82,18 @@ static func create_station(coords: Vector2i, new_owner: int) -> void:
 
 static func create_road_depot(coords: Vector2i, player_id: int) -> void:
 	mutex.lock()
-	if !cargo_map_terminals.has(coords):
+	var check: bool = cargo_map_terminals.has(coords)
+	mutex.unlock()
+	if !check:
+		mutex.lock()
 		cargo_map_terminals[coords] = road_depot.new(coords, player_id)
 		mutex.unlock()
 		create_terminal(cargo_map_terminals[coords])
+	
 
 static func create_terminal(p_terminal: terminal) -> void:
-	mutex.lock()
 	var coords: Vector2i = p_terminal.get_location()
+	mutex.lock()
 	cargo_map_terminals[coords] = p_terminal
 	add_connected_terminals(p_terminal)
 	mutex.unlock()
@@ -120,7 +127,6 @@ static func get_hold(coords: Vector2i) -> Dictionary:
 		var toReturn: Dictionary = cargo_map_terminals[coords].get_current_hold()
 		mutex.unlock()
 		return toReturn
-	mutex.unlock()
 	return {}
 
 static func is_owned_recipeless_construction_site(coords: Vector2i) -> bool:

@@ -87,12 +87,8 @@ func _input(event: InputEvent) -> void:
 		main_map.create_train.rpc(get_cell_position())
 	elif event.is_action_pressed("debug_print") and state_machine.is_controlling_camera():
 		unit_creator_window.popup()
-
-func _on_day_tick_timeout() -> void:
-	pass
-
-func _on_month_tick_timeout() -> void:
-	pass
+	elif event.is_action_pressed("debug_ai_cycle") and state_machine.is_controlling_camera():
+		ai_manager.get_instance()._on_ai_timer_timeout()
 
 #Factory
 func create_factory() -> void:

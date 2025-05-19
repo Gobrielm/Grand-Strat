@@ -54,7 +54,6 @@ func _ready() -> void:
 		unit_map = load("res://Map/unit_map.tscn").instantiate()
 		add_child(unit_map)
 		var cargo_cntrlr: cargo_controller = load("res://Singletons/cargo_controller.tscn").instantiate()
-		cargo_cntrlr.assign_map_node(map_node)
 		add_child(cargo_cntrlr)
 		terminal_map.create(self)
 		recipe.create_set_recipes()
@@ -419,7 +418,7 @@ func is_water(coords: Vector2i) -> bool:
 	mutex.lock()
 	var atlas: Vector2i = get_cell_atlas_coords(coords)
 	mutex.unlock()
-	if (atlas.y == 0 and atlas.x >= 6):
+	if (atlas.y == 0 and atlas.x >= 6) or atlas == Vector2i(-1, -1):
 		return true
 	return false
 
@@ -488,6 +487,7 @@ func open_tile_window(coords: Vector2i) -> void:
 		tile_window.hide()
 
 #Rail General
+#TODO/PBUG: Needs to swap owners and countries around, used interchangably, but not
 func remove_rail(coords: Vector2i, orientation: int, p_type: int) -> void:
 	#TODO: Needed for testing, but should be updated and/or removed
 	if unique_id == 1:

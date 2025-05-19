@@ -126,10 +126,11 @@ func place_population() -> void:
 func create_territories() -> void:
 	var provinces: TileMapLayer = preload("res://Map/Map_Info/provinces.tscn").instantiate()
 	var tile_info: map_data = map_data.get_instance()
+	assert(tile_info != null)
 	for real_x: int in range(-609, 671):
 		for real_y: int in range(-243, 282):
 			var tile: Vector2i = Vector2i(real_x, real_y)
-			if !tile_info.is_tile_a_province(tile) and !is_tile_water(tile):
+			if !tile_info.is_tile_a_province(tile) and !Utils.is_tile_water(tile):
 				var group: Array = create_territory(tile, provinces)
 				var province_id: int = tile_info.create_new_province()
 				tile_info.add_many_tiles_to_province(province_id, group)
@@ -170,7 +171,7 @@ func refresh_territories() -> void:
 			var y: int = (real_y + 243) * 7 / 4
 			var tile: Vector2i = Vector2i(real_x, real_y)
 			var color: Color = get_closest_color(im_provinces.get_pixel(x, y))
-			if is_tile_water(tile):
+			if Utils.is_tile_water(tile):
 				continue
 
 			if !colors_to_province_id.has(color):
@@ -195,7 +196,7 @@ func refresh_territories() -> void:
 			@warning_ignore("integer_division")
 			var y: int = (real_y + 243) * 7 / 4
 			var tile: Vector2i = Vector2i(real_x, real_y)
-			if is_tile_water(tile):
+			if Utils.is_tile_water(tile):
 				continue
 			new_image.set_pixel(x, y, provinces.get_color(tile))
 			if x != 0 and y != 0:
@@ -229,10 +230,6 @@ func create_colors_to_province_id(colors_to_province_id: Dictionary) -> void:
 	colors_to_province_id[Color(0.5, 0.5, 0, 1)] = 3
 	colors_to_province_id[Color(0.5, 0, 0.5, 1)] = 4
 	colors_to_province_id[Color(0, 0.5, 0.5, 1)] = 5
-
-func is_tile_water(coords: Vector2i) -> bool:
-	var atlas: Vector2i = map.get_cell_atlas_coords(coords)
-	return atlas == Vector2i(6, 0) or atlas == Vector2i(7, 0) or atlas == Vector2i(-1, -1)
 
 func is_tile_water_and_real(coords: Vector2i) -> bool:
 	var atlas: Vector2i = map.get_cell_atlas_coords(coords)

@@ -16,7 +16,7 @@ func _init() -> void:
 	ai_timer = Timer.new()
 	ai_timer.wait_time = 0.05
 	ai_timer.connect("timeout", _on_ai_timer_timeout)
-	ai_timer.autostart = true
+	#ai_timer.autostart = true
 
 static func get_instance() -> ai_manager:
 	assert(singleton_instance != null, "Train_Manager has not be created, and has been accessed")
