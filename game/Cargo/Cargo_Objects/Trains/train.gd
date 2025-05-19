@@ -455,7 +455,7 @@ func get_train_dir_in_array() -> Array:
 	return toReturn
 
 func get_possible_directions_for_train() -> Array:
-	return Utils.rail_placer.get_track_connections(location)
+	return rail_placer.get_instance().get_track_connections(location)
 
 func get_direction() -> int:
 	var dir: int = round(rad_to_deg(rotation))

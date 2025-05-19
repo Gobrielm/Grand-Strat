@@ -5,7 +5,7 @@ var world_map: TileMapLayer
 var tile_ownership_obj: tile_ownership
 var cargo_map: TileMapLayer = terminal_map.cargo_map
 var cargo_values: Node = cargo_map.cargo_values
-var rail_placer: Node
+var rail_placer_obj: rail_placer
 
 var mutex: Mutex
 
@@ -23,7 +23,7 @@ func _init(_id: int, p_country_id: int) -> void:
 	mutex = Mutex.new()
 	world_map = Utils.world_map
 	tile_ownership_obj = tile_ownership.get_instance()
-	rail_placer = world_map.rail_placer
+	rail_placer_obj = rail_placer.get_instance()
 
 func process() -> void:
 	if thread.is_alive():
@@ -82,7 +82,7 @@ func check_if_target_has_no_station(target: Callable) -> bool:
 		if target.call(tile):
 			var found: bool = false
 			for cell: Vector2i in world_map.thread_get_surrounding_cells(tile):
-				if tile_ownership_obj.is_owned_by_country(country_id, cell) and terminal_map.is_station(cell):
+				if tile_ownership_obj.is_owned(id, cell) and terminal_map.is_station(cell):
 					found = true
 			if !found:
 				stored_tile = tile
@@ -145,7 +145,7 @@ func is_tile_open(coords: Vector2i) -> bool:
 	return !terminal_map.is_building(coords)
 
 func is_tile_valid(coords: Vector2i) -> bool:
-	return !world_map.is_water(coords) and tile_ownership_obj.is_owned_by_country(country_id, coords)
+	return !world_map.is_water(coords) and tile_ownership_obj.is_owned(id, coords)
 
 func station_would_be_unblocked(station_tile: Vector2i) -> bool:
 	for tile: Vector2i in world_map.thread_get_surrounding_cells(station_tile):
@@ -161,10 +161,9 @@ func get_orientation_for_station(station_tile: Vector2i) -> int:
 		orien += 1
 	return -1
 
-func create_station(location: Vector2i, orientation: int) -> void:
+func create_station(coords: Vector2i, orientation: int) -> void:
 	#Note: If needed on same process bad things will happen
-	world_map.call_deferred_thread_group("set_cell_rail_placer_request", location, orientation, 2, country_id)
-	pending_deferred_calls += 1
+	rail_placer_obj.call_deferred_thread_group("place_tile", coords, orientation, 2, id)
 
 func place_factory(type: int) -> void:
 	var best_tile: Vector2i
@@ -185,7 +184,7 @@ func get_optimal_primary_industry(type: int) -> Vector2i:
 	var best_location: Vector2i
 	var score: int = -10000
 	for tile: Vector2i in get_owned_tiles():
-		if !Utils.is_tile_open(tile, country_id):
+		if !Utils.is_tile_open(tile, id):
 			continue
 		#TODO: Will kill runtime if station isn't close or doesn't exist
 		var distance: int = distance_to_closest_station(tile)
@@ -215,7 +214,7 @@ func is_tile_connected_to_world(coords: Vector2i) -> bool:
 			if !visited.has(tile):
 				if terminal_map.is_town(tile) or terminal_map.is_station(tile):
 					return true
-				elif Utils.just_has_rails(tile, country_id):
+				elif Utils.just_has_rails(tile, id):
 					visited[tile] = 0
 					queue.append(tile)
 	return false
@@ -252,10 +251,10 @@ func info_of_closest_target(coords: Vector2i, target: Callable, secondary_target
 			#TODO: Add logic to account for docks and disconnected territory
 			#TODO: Add logic that the closest station isnt the best to connect to
 			#TODO: Add logic about not checking tiles that have buildings but allow towns and rails
-			if !visited.has(tile) and tile_ownership_obj.is_owned_by_country(country_id, tile):
+			if !visited.has(tile) and tile_ownership_obj.is_owned(id, tile):
 				if target.call(tile):
 					return [(visited[curr] + 1), tile]
-				elif tile_ownership_obj.is_owned_by_country(country_id, tile):
+				elif tile_ownership_obj.is_owned(id, tile):
 					visited[tile] = visited[curr] + 1
 					queue.append(tile)
 				if closest_secondary_target == null and secondary_target.call(tile):
@@ -301,7 +300,7 @@ func get_closest_info(center: Vector2i, dest: Vector2i) -> Array:
 	var orientation: int
 	var orientation_tracker: int = 2
 	for tile: Vector2i in world_map.thread_get_surrounding_cells(center):
-		if Utils.is_tile_open(tile, country_id):
+		if Utils.is_tile_open(tile, id):
 			var dist: float = tile.distance_to(dest)
 			if closest_dist > dist:
 				closest_dist = dist
@@ -354,10 +353,10 @@ func get_shared_tile_between(coords1: Vector2i, coords2: Vector2i) -> Array:
 	return shared
 
 func get_owned_tiles() -> Array:
-	return tile_ownership_obj.get_owned_tiles_by_country(country_id)
+	return tile_ownership_obj.get_owned_tiles(id)
 
 func is_cell_available(coords: Vector2i) -> bool:
-	return !terminal_map.is_tile_taken(coords) and tile_ownership_obj.is_owned_by_country(country_id, coords) 
+	return !terminal_map.is_tile_taken(coords) and tile_ownership_obj.is_owned(id, coords) 
 
 func get_town_tiles() -> Array:
 	var toReturn: Array = []
@@ -381,12 +380,11 @@ func build_rail(start: Vector2i, end: Vector2i, criteria_for_tile: Callable) -> 
 
 func place_rail(coords: Vector2i, orientation: int) -> void:
 	#Note: If needed on same process bad things will happen
-	world_map.call_deferred_thread_group("set_cell_rail_placer_request", coords, orientation, 0, country_id)
-	pending_deferred_calls += 1
+	rail_placer_obj.call_deferred_thread_group("place_tile", coords, orientation, 0, id)
 
 func get_rails_to_build(from: Vector2i, to: Vector2i, criteria_for_tile: Callable) -> Dictionary:
-	var starting_orientation: int = rail_placer.get_station_orientation(from)
-	var ending_orientation: int = rail_placer.get_station_orientation(to)
+	var starting_orientation: int = rail_placer_obj.get_station_orientation(from)
+	var ending_orientation: int = rail_placer_obj.get_station_orientation(to)
 	#TODO: Rail Algorithm navigates around pre-built rails, most solve
 	var queue: Array = [from]
 	var tile_to_prev: Dictionary = {} # Vector2i -> Array[Tile for each direction]
@@ -417,7 +415,7 @@ func get_rails_to_build(from: Vector2i, to: Vector2i, criteria_for_tile: Callabl
 				intialize_tile_to_prev(tile_to_prev, cell, direction, curr)
 				found = true
 				break
-			elif cell != null and !check_visited(visited, cell, direction) and criteria_for_tile.call(cell, country_id):
+			elif cell != null and !check_visited(visited, cell, direction) and criteria_for_tile.call(cell, id):
 				intialize_visited(visited, cell, direction)
 				intialize_order(order, cell, direction)
 				intialize_tile_to_prev(tile_to_prev, cell, direction, curr)

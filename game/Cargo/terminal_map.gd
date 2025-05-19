@@ -256,8 +256,8 @@ static func create_ai_station(coords: Vector2i, orientation: int, p_owner: int) 
 	mutex.lock()
 	if !cargo_map_terminals.has(coords):
 		cargo_map_terminals[coords] = ai_station.new(coords, p_owner)
-		Utils.rail_placer.place_station.rpc(coords, orientation)
-		Utils.rail_placer.place_station.rpc(coords, (orientation + 3) % 6)
+		rail_placer.get_instance().place_station.rpc(coords, orientation)
+		rail_placer.get_instance().place_station.rpc(coords, (orientation + 3) % 6)
 	mutex.unlock()
 
 static func get_ai_station(coords: Vector2i) -> ai_station:

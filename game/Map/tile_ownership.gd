@@ -84,16 +84,12 @@ func is_owned(player_id: int, coords: Vector2i) -> bool:
 	mutex.lock()
 	if tile_to_country_id.has(coords):
 		var country_id: int = tile_to_country_id[coords]
-		toReturn = country_id_to_player_id.has(country_id) and country_id_to_player_id[country_id] == player_id
-	mutex.unlock()
-	return toReturn
-
-func is_owned_by_country(p_country_id: int, coords: Vector2i) -> bool:
-	var toReturn: bool = false
-	mutex.lock()
-	if tile_to_country_id.has(coords):
-		var country_id: int = tile_to_country_id[coords]
-		toReturn = p_country_id == country_id
+		if player_id > 0:
+			#Is player
+			toReturn = country_id_to_player_id.has(country_id) and country_id_to_player_id[country_id] == player_id
+		else:
+			#Is ai
+			toReturn = ai_manager.get_instance().get_ai(player_id).country_id == country_id
 	mutex.unlock()
 	return toReturn
 
@@ -101,15 +97,11 @@ func get_owned_tiles(player_id: int) -> Array:
 	var toReturn: Array = []
 	mutex.lock()
 	if player_id_to_country_id.has(player_id):
-		toReturn = country_id_to_tiles_owned[player_id_to_country_id[player_id]]
-	mutex.unlock()
-	return toReturn
-
-func get_owned_tiles_by_country(p_country_id: int) -> Array:
-	var toReturn: Array = []
-	mutex.lock()
-	if country_id_to_tiles_owned.has(p_country_id):
-		toReturn = country_id_to_tiles_owned[p_country_id]
+		if player_id > 0:
+			toReturn = country_id_to_tiles_owned[player_id_to_country_id[player_id]]
+		else:
+			var country_id: int =  ai_manager.get_instance().get_ai(player_id).country_id
+			toReturn = country_id_to_tiles_owned[country_id]
 	mutex.unlock()
 	return toReturn
 

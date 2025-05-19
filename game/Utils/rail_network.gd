@@ -54,7 +54,7 @@ func path_find_to_node(start: Vector2i) -> Array:
 	var map: TileMapLayer = Utils.world_map
 	var queue: Array = [start]
 	var visited: Dictionary = {} # Vector2i -> Array[Bool for each direction]
-	visited[start] = Utils.rail_placer.get_track_connections(start)
+	visited[start] =rail_placer.get_instance().get_track_connections(start)
 	var curr: Vector2i
 	while !queue.is_empty():
 		curr = queue.pop_front()
@@ -120,7 +120,7 @@ func create_network(start: Vector2i) -> void:
 	dist[start] = rail_info.new(start, 0, -1)
 	create_node(start)
 	all_network_coords[start] = true
-	visited[start] = Utils.rail_placer.get_track_connections(start)
+	visited[start] = rail_placer.get_instance().get_track_connections(start)
 	var curr: Vector2i
 	while !stack.is_empty():
 		curr = stack.pop_front()
@@ -160,7 +160,7 @@ func create_network(start: Vector2i) -> void:
 				dist[tile] = rail_info.new(tile, 0, -1)
 
 func is_node(tile: Vector2i) -> bool:
-	return is_station_node(tile) or Utils.rail_placer.get_track_connection_count(tile) >= 3 or map_data.get_instance().is_depot(tile)
+	return is_station_node(tile) or rail_placer.get_instance().get_track_connection_count(tile) >= 3 or map_data.get_instance().is_depot(tile)
 
 func is_station_node(tile: Vector2i) -> bool:
 	return terminal_map.is_station(tile) 

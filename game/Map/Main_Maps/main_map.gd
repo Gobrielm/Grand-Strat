@@ -12,14 +12,13 @@ var mutex: Mutex = Mutex.new()
 @onready var unit_creator_window: Window = $unit_creator_window
 @onready var tile_window: Window = $tile_window
 @onready var game: Node = get_parent().get_parent()
-@onready var rail_placer: Node = $Rail_Placer
+@onready var rail_placer_obj: rail_placer = $Rail_Placer
 @onready var map_node: Node = get_parent()
 var unit_map: TileMapLayer
 var untraversable_tiles: Dictionary = {}
 var visible_tiles: Array = []
 
 const train_scene_client: PackedScene = preload('res://Client_Objects/client_train.tscn')
-const depot: Script = preload("res://Cargo/vehicle_depot.gd")
 
 var testing: Node
 
@@ -57,7 +56,7 @@ func _ready() -> void:
 		add_child(cargo_cntrlr)
 		terminal_map.create(self)
 		recipe.create_set_recipes()
-		rail_placer.init_all_rails()
+		rail_placer_obj.init_all_rails()
 		$player_camera/CanvasLayer/Desync_Label.visible = true
 		testing = preload("res://Test/testing.gd").new(self)
 		start_test()
@@ -147,18 +146,18 @@ func get_rail_type_selected() -> int:
 	return 3
 
 func clear_all_temps() -> void:
-	rail_placer.clear_all_temps()
+	rail_placer_obj.clear_all_temps()
 
 func update_hover() -> void:
 	var rail_type: int = get_rail_type_selected()
 	if get_rail_type_selected() < 3:
-		rail_placer.hover(get_cell_position(), rail_type, map_to_local(get_cell_position()), get_mouse_local_to_map())
+		rail_placer_obj.hover(get_cell_position(), rail_type, map_to_local(get_cell_position()), get_mouse_local_to_map())
 	elif is_start_valid and track_button.active:
 		get_rail_to_hover()
 
 func record_hover_click() -> void:
-	var coords: Vector2i = rail_placer.get_coordinates()
-	var orientation: int = rail_placer.get_orientation()
+	var coords: Vector2i = rail_placer_obj.get_coordinates()
+	var orientation: int = rail_placer_obj.get_orientation()
 	if single_track_button.active:
 		place_rail_general(coords, orientation, 0)
 	elif depot_button.active:
@@ -167,11 +166,11 @@ func record_hover_click() -> void:
 		place_rail_general(coords, orientation, 2)
 
 func get_depot_direction(coords: Vector2i) -> int:
-	return rail_placer.get_depot_direction(coords)
+	return rail_placer_obj.get_depot_direction(coords)
 
 func place_road_depot() -> void:
 	if !state_machine.is_hovering_over_gui():
-		rail_placer.place_road_depot(get_cell_position(), unique_id)
+		rail_placer_obj.place_road_depot(get_cell_position(), unique_id)
 
 #Cargo
 func is_depot(coords: Vector2i) -> bool:
@@ -273,7 +272,7 @@ func get_rail_to_hover() -> void:
 		return
 	var end: Vector2i = get_cell_position()
 	var toReturn: Dictionary = get_rails_from(start, end)
-	rail_placer.hover_many_tiles(toReturn)
+	rail_placer_obj.hover_many_tiles(toReturn)
 
 func get_rails_from(begin: Vector2i, end: Vector2i) -> Dictionary:
 	var queue: Array = []
@@ -471,14 +470,11 @@ func update_money_label(amount: int) -> void:
 	camera.update_cash_label(amount)
 
 #Tile Data
-func get_tile_connections(coords: Vector2i) -> int:
-	return rail_placer.get_track_connections(coords)
-
 func request_tile_data(coordinates: Vector2i) -> TileData:
 	return get_cell_tile_data(coordinates)
 
 func do_tiles_connect(coord1: Vector2i, coord2: Vector2i) -> bool:
-	return rail_placer.are_tiles_connected_by_rail(coord1, coord2, get_surrounding_cells(coord1))
+	return rail_placer_obj.are_tiles_connected_by_rail(coord1, coord2, get_surrounding_cells(coord1))
 
 func open_tile_window(coords: Vector2i) -> void:
 	if !is_water(coords):
@@ -487,56 +483,17 @@ func open_tile_window(coords: Vector2i) -> void:
 		tile_window.hide()
 
 #Rail General
-#TODO/PBUG: Needs to swap owners and countries around, used interchangably, but not
 func remove_rail(coords: Vector2i, orientation: int, p_type: int) -> void:
 	#TODO: Needed for testing, but should be updated and/or removed
 	if unique_id == 1:
-		rail_placer.remove_tile(coords, orientation, p_type)
+		rail_placer_obj.remove_tile(coords, orientation, p_type)
 
-@rpc("authority", "call_local", "unreliable")
-func place_tile(coords: Vector2i, orientation: int, type: int, _new_owner: int) -> void:
-	rail_placer.place_tile(coords, orientation, type)
-
-func set_cell_rail_placer_request(coords: Vector2i, orientation: int, type: int, new_owner: int) -> void:
-	set_cell_rail_placer_server.rpc_id(1, coords, orientation, type, new_owner)
-
-@rpc("any_peer", "call_remote", "unreliable")
-func set_cell_rail_placer_server(coords: Vector2i, orientation: int, type: int, new_owner: int) -> void:
-	ai_manager.get_instance().acknowledge_pending_deferred_call(new_owner)
-	if rail_check(coords) and is_owned(new_owner, coords) and !terminal_map.is_station(coords):
-		place_tile.rpc(coords, (orientation) % 6, type, new_owner)
-		if type == 1:
-			encode_depot(coords, new_owner)
-			var depot_name: String = map_data.get_instance().get_depot_name(coords)
-			encode_depot_client.rpc(coords, depot_name, new_owner)
-		elif type == 2:
-			place_tile.rpc(coords, (orientation + 3) % 6, type, new_owner)
-			encode_station.rpc(coords, new_owner)
-			terminal_map.create_station(coords, new_owner)
-	else:
-		rail_placer.clear_all_temps()
-
-@rpc("authority", "call_local", "unreliable")
-func encode_depot(coords: Vector2i, new_owner: int) -> void:
-	map_data.get_instance().add_depot(coords, depot.new(coords, new_owner))
-
-@rpc("authority", "call_remote", "unreliable")
-func encode_depot_client(coords: Vector2i, depot_name: String, new_owner: int) -> void:
-	#TODO: Client map_data
-	pass
-	map_data.get_instance().add_depot(coords, depot.new(depot_name, new_owner))
-
-@rpc("authority", "call_local", "unreliable")
-func encode_station(coords: Vector2i, new_owner: int) -> void:
-	map_data.get_instance().add_hold(coords, "Station", new_owner)
-
-#Rails, Depot, Station
 func place_rail_general(coords: Vector2i, orientation: int, type: int) -> void:
 	if unique_id == 1:
-		set_cell_rail_placer_server(coords, orientation, type, unique_id)
+		rail_placer_obj.place_tile(coords, orientation, type, unique_id)
 	else:
-		set_cell_rail_placer_request(coords, orientation, type, unique_id)
-	
-func rail_check(coords: Vector2i) -> bool:
-	var atlas_coords: Vector2i = get_cell_atlas_coords(coords)
-	return !untraversable_tiles.has(atlas_coords)
+		set_cell_rail_placer_request.rpc_id(1, coords, orientation, type, unique_id)
+
+@rpc("any_peer", "call_remote", "unreliable")
+func set_cell_rail_placer_request(coords: Vector2i, orientation: int, type: int, new_owner: int) -> void:
+	rail_placer_obj.place_tile(coords, orientation, type, new_owner)

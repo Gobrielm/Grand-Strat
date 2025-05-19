@@ -54,7 +54,7 @@ func build_town(coords: Vector2i) -> void:
 	cargo_map.create_town(coords)
 
 func clear_test_stuff() -> void:
-	map.rail_placer.clear_all_real()
+	rail_placer.get_instance().clear_all_real()
 
 func runtime_test() -> void:
 	var start: float = Time.get_ticks_msec()
@@ -92,7 +92,7 @@ func train_algorithm_test() -> void:
 	
 	map.create_train(point1)
 	var train_obj: train = map.get_node("Train0")
-	var orientation: Array = Utils.rail_placer.get_track_connections(end_stop)
+	var orientation: Array = rail_placer.get_instance().get_track_connections(end_stop)
 	map.remove_rail(end_stop, orientation.find(true), 0)
 	map.place_rail_general(end_stop, orientation.find(true), 2)
 	train_obj.add_stop(end_stop)

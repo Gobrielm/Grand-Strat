@@ -48,6 +48,11 @@ func acknowledge_pending_deferred_call(ai_id: int) -> void:
 	if ai_instances.has(ai_id):
 		ai_instances[ai_id].acknowledge_pending_deferred_call()
 
+func get_ai(ai_id: int) -> ai_base:
+	if ai_instances.has(ai_id):
+		return ai_instances[ai_id]
+	return null
+
 func _on_ai_timer_timeout() -> void:
 	for ai: ai_base in ai_instances.values():
 		ai.process()

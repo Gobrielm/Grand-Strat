@@ -1,11 +1,8 @@
-extends Node2D
+class_name rail_placer extends Node2D
 
-@onready var rail_layer_0: TileMapLayer = $Rail_Layer_0
-@onready var rail_layer_1: TileMapLayer = $Rail_Layer_1
-@onready var rail_layer_2: TileMapLayer = $Rail_Layer_2
-@onready var rail_layer_3: TileMapLayer = $Rail_Layer_3
-@onready var rail_layer_4: TileMapLayer = $Rail_Layer_4
-@onready var rail_layer_5: TileMapLayer = $Rail_Layer_5
+static var singleton_instance: rail_placer
+
+var depot_script: GDScript = preload("res://Cargo/vehicle_depot.gd")
 
 var mutex: Mutex = Mutex.new()
 var temp_layer_array: Array[TileMapLayer] = []
@@ -23,8 +20,22 @@ var orientation: int = 0
 var type: int = -1
 var old_coordinates: Vector2i
 
+func _init() -> void:
+	assert(singleton_instance == null, "Cannot create multiple instances of singleton!")
+	singleton_instance = self
+
+static func get_instance() -> rail_placer:
+	assert(singleton_instance != null, "Train_Manager has not be created, and has been accessed")
+	return singleton_instance
+
+@onready var rail_layer_0: TileMapLayer = $Rail_Layer_0
+@onready var rail_layer_1: TileMapLayer = $Rail_Layer_1
+@onready var rail_layer_2: TileMapLayer = $Rail_Layer_2
+@onready var rail_layer_3: TileMapLayer = $Rail_Layer_3
+@onready var rail_layer_4: TileMapLayer = $Rail_Layer_4
+@onready var rail_layer_5: TileMapLayer = $Rail_Layer_5
+
 func _ready() -> void:
-	Utils.assign_rail_placer(self)
 	for item: Node in get_children():
 		if item.name.begins_with("Rail_Temp_Layer"):
 			temp_layer_array.append(item as TileMapLayer)
@@ -83,21 +94,40 @@ func clear_all_temps() -> void:
 	for layer: TileMapLayer in temp_layer_array:
 		layer.clear()
 
-func place_tile(coords: Vector2i, new_orientation: int, new_type: int) -> void:
-	clear_all_temps()
-	if is_already_built(coords, new_orientation):
-		return
-	var rail_layer: TileMapLayer = get_rail_layer(new_orientation)
-	rail_layer.set_cell(coords, 0, Vector2i(new_orientation, new_type))
-	add_track_connection(coords, new_orientation)
+func place_depot(coords: Vector2i, player_id: int) -> void:
+	encode_depot.rpc(coords, player_id)
 
 @rpc("authority", "call_local", "unreliable")
-func place_station(coords: Vector2i, p_orientation: int) -> void:
-	if is_already_built(coords, p_orientation):
+func encode_depot(coords: Vector2i, player_id: int) -> void:
+	map_data.get_instance().add_depot(coords, depot_script.new(coords, player_id))
+
+func place_station(coords: Vector2i, p_orientation: int, player_id: int) -> void:
+	create_map_tile.rpc(coords, (p_orientation + 3) % 6, 2)
+	encode_station.rpc(coords, player_id)
+	terminal_map.create_station(coords, player_id)
+
+@rpc("authority", "call_local", "unreliable")
+func encode_station(coords: Vector2i, new_owner: int) -> void:
+	map_data.get_instance().add_hold(coords, "Station", new_owner)
+
+#Should only be called as server
+func place_tile(coords: Vector2i, p_orientation: int, p_type: int, player_id: int) -> void:
+	#Checks if spot is taken, if tile is traversable, and player is in the country
+	if is_already_built(coords, p_orientation) and Utils.world_map.is_tile_traversable(coords) and tile_ownership.get_instance().is_owned(player_id, coords):
 		return
-	var rail_layer: TileMapLayer = get_rail_layer(p_orientation)
-	rail_layer.set_cell(coords, 0, Vector2i(p_orientation, 2))
 	add_track_connection(coords, p_orientation)
+	create_map_tile.rpc(coords, p_orientation, p_type)
+	if p_type == 1:
+		place_depot(coords, player_id)
+	elif p_type == 2:
+		place_station(coords, p_orientation, player_id)
+
+@rpc("authority", "call_local", "unreliable")
+func create_map_tile(coords: Vector2i, new_orientation: int, new_type: int) -> void:
+	var rail_layer: TileMapLayer = get_rail_layer(new_orientation)
+	mutex.lock()
+	rail_layer.set_cell(coords, 0, Vector2i(new_orientation, new_type))
+	mutex.unlock()
 
 func remove_tile(coords: Vector2i, new_orientation: int, _new_type: int) -> void:
 	#TODO: Doesn't delete station, or depot, but only used safely in testing
@@ -143,6 +173,7 @@ func get_rail_layer(curr_orientation: int) -> TileMapLayer:
 		return rail_layer_4
 	elif curr_orientation == 5:
 		return rail_layer_5
+	assert(false)
 	return rail_layer_0 # default fallback
 
 func get_temp_layer(curr_orientation: int) -> TileMapLayer:
@@ -152,17 +183,27 @@ func get_temp_layer(curr_orientation: int) -> TileMapLayer:
 
 @rpc("authority", "call_local", "reliable")
 func init_track_connection(coords: Vector2i) -> void:
+	mutex.lock()
 	track_connection[coords] = [false, false, false, false, false, false]
+	mutex.unlock()
 
 @rpc("authority", "call_local", "reliable")
 func add_track_connection(coords: Vector2i, new_orientation: int) -> void:
+	mutex.lock()
 	if !track_connection.has(coords):
+		mutex.unlock()
 		init_track_connection(coords)
+	else:
+		mutex.unlock()
+	mutex.lock()
 	track_connection[coords][new_orientation] = true
+	mutex.unlock()
 
 @rpc("authority", "call_local", "reliable")
 func delete_track_connection(coords: Vector2i, new_orientation: int) -> void:
+	mutex.lock()
 	track_connection[coords][new_orientation] = false
+	mutex.unlock()
 
 func get_track_connections(coords: Vector2i) -> Array[bool]:
 	var toReturn: Array[bool] = [false, false, false, false, false, false]
