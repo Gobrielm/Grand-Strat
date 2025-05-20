@@ -144,6 +144,12 @@ static func is_building(coords: Vector2i) -> bool:
 	mutex.unlock()
 	return toReturn
 
+static func is_owned_building(coords: Vector2i, id: int) -> bool:
+	var temp: terminal = get_terminal(coords)
+	if temp != null and temp.player_owner == id:
+		return true
+	return false
+
 static func is_owned_construction_site(coords: Vector2i) -> bool:
 	mutex.lock()
 	var toReturn: bool = cargo_map_terminals.has(coords) and cargo_map_terminals[coords] is construction_site
@@ -240,6 +246,12 @@ static func is_station(coords: Vector2i) -> bool:
 
 static func is_ai_station(coords: Vector2i) -> bool:
 	return get_terminal(coords) is ai_station
+
+static func is_owned_ai_station(coords: Vector2i, id: int) -> bool:
+	var temp: ai_station = get_ai_station(coords)
+	if temp != null:
+		return get_ai_station(coords).player_owner == id
+	return false
 
 static func is_broker(coords: Vector2i) -> bool:
 	return get_terminal(coords) is broker

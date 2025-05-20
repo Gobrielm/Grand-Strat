@@ -96,12 +96,11 @@ func is_owned(player_id: int, coords: Vector2i) -> bool:
 func get_owned_tiles(player_id: int) -> Array:
 	var toReturn: Array = []
 	mutex.lock()
-	if player_id_to_country_id.has(player_id):
-		if player_id > 0:
-			toReturn = country_id_to_tiles_owned[player_id_to_country_id[player_id]]
-		else:
-			var country_id: int =  ai_manager.get_instance().get_ai(player_id).country_id
-			toReturn = country_id_to_tiles_owned[country_id]
+	if player_id > 0 and player_id_to_country_id.has(player_id):
+		toReturn = country_id_to_tiles_owned[player_id_to_country_id[player_id]]
+	elif player_id < 0:
+		var country_id: int =  ai_manager.get_instance().get_ai(player_id).country_id
+		toReturn = country_id_to_tiles_owned[country_id]
 	mutex.unlock()
 	return toReturn
 

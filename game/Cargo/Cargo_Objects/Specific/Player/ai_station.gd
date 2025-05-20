@@ -110,3 +110,6 @@ func create_consolidated_market_for_desired_goods() -> Dictionary[int, trade_ord
 		toReturn[type] = trade_order.new(type, amount_total[type], false, market_price[type])
 	
 	return toReturn
+
+func has_station_connection() -> bool:
+	return stations_in_network.size() > 0

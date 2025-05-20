@@ -46,13 +46,11 @@ func run_ai_cycle() -> void:
 	#Add more actions later
 	if action_type == ai_actions.PLACE_STATION:
 		place_station(stored_tile)
+	elif action_type == ai_actions.CONNECT_STATION:
+		connect_station(stored_tile)
 	
 	if action_type == ai_actions.PLACE_FACTORY:
 		place_factory(get_most_needed_cargo())
-	elif action_type == ai_actions.CONNECT_STATION:
-		connect_station(stored_tile)
-	elif action_type == ai_actions.CONNECT_TOWN:
-		connect_town(stored_tile)
 	var end: float = Time.get_ticks_msec()
 	print(str((end - start) / 1000) + " Seconds passed for one cycle")
 
@@ -66,22 +64,12 @@ func choose_type_of_action() -> ai_actions:
 	#Other options later
 	return ai_actions.PLACE_FACTORY
 
-func are_there_unconnected_towns() -> bool:
-	var callable: Callable = Callable(terminal_map, "is_town")
-	assert(callable.is_valid())
-	return check_if_target_has_no_station(callable)
-
 func are_there_unconnected_buildings() -> bool:
-	#Includes towns, construction sites, and factories
-	var callable: Callable = Callable(terminal_map, "is_building")
-	assert(callable.is_valid())
-	return check_if_target_has_no_station(callable)
-
-func check_if_target_has_no_station(target: Callable) -> bool:
 	for tile: Vector2i in get_owned_tiles():
-		if target.call(tile):
+		if terminal_map.is_owned_building(tile, id):
 			var found: bool = false
 			for cell: Vector2i in world_map.thread_get_surrounding_cells(tile):
+				#Checks for player stations as well, but could be troublesome
 				if tile_ownership_obj.is_owned(id, cell) and terminal_map.is_station(cell):
 					found = true
 			if !found:
@@ -89,17 +77,17 @@ func check_if_target_has_no_station(target: Callable) -> bool:
 				return true
 	return false
 
+func get_owned_tiles() -> Array:
+	return tile_ownership_obj.get_owned_tiles(id)
+
 func are_there_unconnected_stations() -> bool:
 	for tile: Vector2i in get_owned_tiles():
-		if terminal_map.is_station(tile):
-			var found: bool = false
-			for cell: Vector2i in world_map.thread_get_surrounding_cells(tile):
-				#Check if there is rail
-				if world_map.do_tiles_connect(tile, cell):
-					found = true
-			if !found:
+		#Only survey owned ai_stations
+		if terminal_map.is_owned_ai_station(tile, id):
+			var stat: ai_station = terminal_map.get_ai_station(tile)
+			if !stat.has_station_connection():
 				stored_tile = tile
-				return true
+				return false
 	return false
 
 func place_station(center: Vector2i) -> void:
@@ -107,8 +95,8 @@ func place_station(center: Vector2i) -> void:
 	if dest == center:
 		dest = find_closest_building(center)
 		if dest == center:
-			#TODO: No other buildings either
-			return
+			#Just pick random tile
+			dest = (world_map.thread_get_surrounding_cells(center) as Array).pick_random()
 	var best_option: Vector2i
 	var dist: float = -1
 	for tile: Vector2i in world_map.thread_get_surrounding_cells(center):
@@ -118,6 +106,9 @@ func place_station(center: Vector2i) -> void:
 	if dist != -1:
 		var orientation: int = get_orientation_for_station(best_option)
 		create_station(best_option, orientation)
+	else:
+		#TODO: No good options that are unblocked, consider destroying?
+		pass
 
 func find_closest_station(start: Vector2i) -> Vector2i:
 	return find_closest_target(start, Callable(terminal_map, "is_station"))
@@ -128,16 +119,17 @@ func find_closest_building(start: Vector2i) -> Vector2i:
 func find_closest_target(start: Vector2i, target: Callable) -> Vector2i:
 	assert(target.is_valid())
 	var queue: Array = [start]
-	var visited: Dictionary[Vector2i, bool] = {}
-	visited[start] = true
+	var visited: Dictionary[Vector2i, int] = {}
+	visited[start] = 0
 	while !queue.is_empty():
 		var curr: Vector2i = queue.pop_front()
 		if target.call(curr) and curr != start:
 			return curr
 		for tile: Vector2i in world_map.thread_get_surrounding_cells(curr):
-			if !visited.has(tile) and is_tile_valid(tile):
+			#Stops after 100 tiles, since station position doesn't matter much
+			if !visited.has(tile) and is_tile_valid(tile) and visited[curr] < 100:
 				queue.append(tile)
-				visited[tile] = true
+				visited[tile] = visited[curr] + 1
 	return start
 
 #Checks for ownership, terrain, and buildings
@@ -145,9 +137,10 @@ func is_tile_open(coords: Vector2i) -> bool:
 	return !terminal_map.is_building(coords)
 
 func is_tile_valid(coords: Vector2i) -> bool:
-	return !world_map.is_water(coords) and tile_ownership_obj.is_owned(id, coords)
+	return world_map.is_tile_traversable(coords) and tile_ownership_obj.is_owned(id, coords)
 
 func station_would_be_unblocked(station_tile: Vector2i) -> bool:
+	#Doesn't look past one tile, so it could still be blocked
 	for tile: Vector2i in world_map.thread_get_surrounding_cells(station_tile):
 		if is_tile_valid(tile) and is_tile_open(tile):
 			return true
@@ -181,9 +174,16 @@ func create_factory(location: Vector2i, type: int) -> void:
 				break
 
 func get_optimal_primary_industry(type: int) -> Vector2i:
+	#TODO: Add calc for figuring out what towns need and building that, also profitablility
 	var best_location: Vector2i
 	var score: int = -10000
-	for tile: Vector2i in get_owned_tiles():
+	var array_of_tiles: Array = get_owned_tiles()
+	var i: int = 0
+	#Will only consider 1000 random tiles to limit too much calculate for quite simple stuff
+	while i < 1000:
+		i += 1
+		var rand_index: int = randi() % array_of_tiles.size()
+		var tile: Vector2i = array_of_tiles.pop_at(rand_index)
 		if !Utils.is_tile_open(tile, id):
 			continue
 		#TODO: Will kill runtime if station isn't close or doesn't exist
@@ -203,31 +203,33 @@ func get_optimal_primary_industry(type: int) -> Vector2i:
 			best_location = tile
 	return best_location
 
+func distance_to_closest_station(coords: Vector2i) -> int:
+	#TODO: Consider changing to closest rail
+	var closest: Vector2i = find_closest_station(coords)
+	if closest == coords:
+		#No close station, just return a bit more than 100
+		return 110
+	return round(closest.distance_to(coords))
+
 func is_tile_connected_to_world(coords: Vector2i) -> bool:
 	var queue: Array = [coords]
-	var visited: Dictionary = {}
+	var visited: Dictionary[Vector2i, int] = {}
 	visited[coords] = 0
-	
 	while !queue.is_empty():
 		var curr: Vector2i = queue.pop_front()
 		for tile: Vector2i in world_map.thread_get_surrounding_cells(curr):
-			if !visited.has(tile):
+			#Only survey 100 tiles out
+			if is_tile_valid(tile) and !visited.has(tile) and visited[curr] < 100:
 				if terminal_map.is_town(tile) or terminal_map.is_station(tile):
 					return true
-				elif Utils.just_has_rails(tile, id):
-					visited[tile] = 0
+				elif !terminal_map.is_building(tile):
+					#Isn't blocked by building that isn't station or town
+					visited[tile] = visited[curr] + 1
 					queue.append(tile)
 	return false
 
 func get_cargo_magnitude(coords: Vector2i, type: int) -> int:
 	return cargo_values.get_tile_magnitude(coords, type)
-
-func distance_to_closest_station(coords: Vector2i) -> int:
-	var target1: Callable = Callable(terminal_map, "is_station")
-	var target2: Callable = Callable(terminal_map, "is_town")
-	assert(target1.is_valid())
-	assert(target2.is_valid())
-	return info_of_closest_target(coords, target1, target2)[0]
 
 func coords_of_closest_station(coords: Vector2i) -> Vector2i:
 	var target1: Callable = Callable(terminal_map, "is_station")
@@ -351,9 +353,6 @@ func get_shared_tile_between(coords1: Vector2i, coords2: Vector2i) -> Array:
 		if coords1_set.has(tile):
 			shared.append(tile)
 	return shared
-
-func get_owned_tiles() -> Array:
-	return tile_ownership_obj.get_owned_tiles(id)
 
 func is_cell_available(coords: Vector2i) -> bool:
 	return !terminal_map.is_tile_taken(coords) and tile_ownership_obj.is_owned(id, coords) 
