@@ -66,7 +66,8 @@ func choose_type_of_action() -> ai_actions:
 
 func are_there_unconnected_buildings() -> bool:
 	for tile: Vector2i in get_owned_tiles():
-		if terminal_map.is_owned_building(tile, id):
+		#Checks for town's neutrally since they aren't really owned
+		if terminal_map.is_owned_building(tile, id) or terminal_map.is_town(tile):
 			var found: bool = false
 			for cell: Vector2i in world_map.thread_get_surrounding_cells(tile):
 				#Checks for player stations as well, but could be troublesome
@@ -79,6 +80,15 @@ func are_there_unconnected_buildings() -> bool:
 
 func get_owned_tiles() -> Array:
 	return tile_ownership_obj.get_owned_tiles(id)
+
+func get_owned_terminals() -> Array[terminal]:
+	var toReturn: Array[terminal] = []
+	var map_data_inst: map_data = map_data.get_instance()
+	for prov_id: int in map_data_inst.get_counties_provinces(country_id):
+		var prov: province = map_data_inst.get_province(prov_id)
+		for term: terminal in prov.get_terminals():
+			toReturn.append(term)
+	return toReturn
 
 func are_there_unconnected_stations() -> bool:
 	for tile: Vector2i in get_owned_tiles():

@@ -12,6 +12,8 @@ var provinces: Dictionary = {}
 
 var tiles_to_province_id: Dictionary = {}
 
+var country_id_to_province_ids: Dictionary[int, Dictionary] = {}
+
 var mutex: Mutex = Mutex.new()
 static var singleton_instance: map_data
 
@@ -111,3 +113,14 @@ func get_province(province_id: int) -> province:
 	var toReturn: province = provinces[province_id] 
 	mutex.unlock()
 	return toReturn
+
+func add_province_to_country(prov: province, country_id: int) -> void:
+	var old_id: int = prov.country_id
+	#Gets rid of it from old country
+	if old_id != -1:
+		country_id_to_province_ids[old_id].erase(prov.province_id)
+	prov.set_country_id(country_id)
+	country_id_to_province_ids[country_id][prov.province_id] = true
+
+func get_counties_provinces(country_id) -> Dictionary:
+	return country_id_to_province_ids[country_id]

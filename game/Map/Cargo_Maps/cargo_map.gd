@@ -11,10 +11,24 @@ func create_town(coords: Vector2i) -> void:
 	var new_town: terminal = town.new(coords, tile_ownership.get_instance().get_player_id_from_cell(coords))
 	Utils.world_map.make_cell_invisible(coords)
 	set_tile(coords, Vector2i(0, 1))
+	add_terminal_to_province(new_town)
 	terminal_map.create_terminal(new_town)
 
+func add_terminal_to_province(term: terminal) -> void:
+	var map_dat: map_data = map_data.get_instance()
+	var prov: province = map_dat.get_province(map_dat.get_province_id(term.location))
+	prov.add_terminal(term.location, term)
+
+func remove_terminal_from_province(coords: Vector2i) -> void:
+	var map_dat: map_data = map_data.get_instance()
+	var prov: province = map_dat.get_province(map_dat.get_province_id(coords))
+	prov.remove_terminal(coords)
+
 func transform_construction_site_to_factory(coords: Vector2i) -> void:
+	mutex.lock()
 	set_tile(coords, Vector2i(4, 1))
+	mutex.unlock()
+	add_terminal_to_province(terminal_map.get_terminal(coords))
 
 func place_random_industries() -> void:
 	var map_data_singleton: map_data = map_data.get_instance()
@@ -28,33 +42,25 @@ func place_random_industries() -> void:
 			{ "threshold": 0,        "mod": 30, "mult": 1, "count": 1 }
 		]
 		var prov: province = map_data_singleton.get_province(province_id)
+		create_town_in_province(prov, pop)
 		for entry: Dictionary in chances:
 			if pop > entry.threshold and randi() % entry.mod == 0:
 				pick_and_place_random_industry(prov, entry.count, entry.mult)
 				break
-		create_town_in_province(prov, pop)
-
+		
 func create_town_in_province(prov: province, pop: int) -> void:
-	#TODO
-	pass
+	var tile: Vector2i = prov.get_random_tile()
+	create_town(tile)
 
 func pick_and_place_random_industry(prov: province, count: int, multiplier: int) -> void:
 	for i: int in range(count):
-		place_random_industry(get_random_unowned_tile(prov), randi() % multiplier)
-
-func get_random_unowned_tile(prov: province) -> Vector2i:
-	var choices: Array = prov.get_tiles()
-	while true:
-		var temp: Vector2i = choices.pick_random()
-		if get_cell_atlas_coords(temp) == Vector2i(-1, -1):
-			return temp
-	assert(false, "Attempted to place industry where none could go")
-	return Vector2i(0, 0)
+		place_random_industry(prov.get_random_tile(), randi() % multiplier)
 
 func place_random_industry(tile: Vector2i, mult: int) -> void:
 	var best_resource: int = cargo_values.get_best_resource(tile)
 	if best_resource == -1:
 		return
+	#TODO: Gives it to player, maybe give to company
 	create_factory(tile_ownership.get_instance().get_player_id_from_cell(tile), tile, get_primary_recipe_for_type(best_resource), mult)
 
 func get_primary_recipe_for_type(type: int) -> Array:
@@ -73,6 +79,7 @@ func create_factory(p_player_id: int, coords: Vector2i, obj_recipe: Array, mult:
 	for i: int in range(1, mult):
 		new_factory.admin_upgrade()
 	set_tile(coords, get_atlas_cell(obj_recipe))
+	add_terminal_to_province(new_factory)
 	terminal_map.create_terminal(new_factory)
 
 func place_test_industry() -> void:
@@ -95,6 +102,7 @@ func create_construction_site(_player_id: int, coords: Vector2i) -> void:
 	mutex.lock()
 	set_tile(coords, Vector2i(3, 1))
 	mutex.unlock()
+	add_terminal_to_province(new_factory)
 	terminal_map.create_terminal(new_factory)
 
 func get_available_primary_recipes(coords: Vector2i) -> Array:

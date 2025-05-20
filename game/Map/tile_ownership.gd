@@ -20,9 +20,11 @@ static func get_instance() -> tile_ownership:
 	return singleton_instance
 
 func create_countries() -> void:
+	var map_data_inst: map_data = map_data.get_instance()
 	var provinces_to_add: Array = [Vector2i(89, -112), Vector2i(105, -116), Vector2i(103, -105), Vector2i(103, -97), Vector2i(114, -114)]
 	for cell: Vector2i in provinces_to_add:
-		var prov: province = map_data.get_instance().get_province(map_data.get_instance().get_province_id(cell))
+		var prov: province = map_data_inst.get_province(map_data_inst.get_province_id(cell))
+		map_data_inst.add_province_to_country(prov, 1)
 		for tile: Vector2i in prov.tiles:
 			add_tile_to_country(tile, 1)
 
