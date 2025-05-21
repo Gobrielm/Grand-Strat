@@ -120,7 +120,9 @@ func add_province_to_country(prov: province, country_id: int) -> void:
 	if old_id != -1:
 		country_id_to_province_ids[old_id].erase(prov.province_id)
 	prov.set_country_id(country_id)
+	if !country_id_to_province_ids.has(country_id):
+		country_id_to_province_ids[country_id] = {}
 	country_id_to_province_ids[country_id][prov.province_id] = true
 
-func get_counties_provinces(country_id) -> Dictionary:
+func get_counties_provinces(country_id: int) -> Dictionary:
 	return country_id_to_province_ids[country_id]

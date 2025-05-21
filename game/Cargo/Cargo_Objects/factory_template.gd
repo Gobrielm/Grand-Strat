@@ -15,9 +15,6 @@ func _init(new_location: Vector2i, _player_owner: int, new_inputs: Dictionary, n
 	super._init(new_location, _player_owner)
 	inputs = new_inputs
 	outputs = new_outputs
-	for type: int in inputs:
-		if inputs[type] != 0:
-			add_accept(type)
 	local_pricer = local_price_controller.new(inputs, outputs)
 	level = 1
 	employment_total = 1000

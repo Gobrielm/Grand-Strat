@@ -4,6 +4,7 @@ var hold_name: String
 var current_cargo: Dictionary
 var current_prices: Dictionary
 var current_cash: int
+var current_level: int
 
 const time_every_update: int = 1
 var progress: float = 0.0
@@ -32,11 +33,7 @@ func refresh_window() -> void:
 		request_current_name.rpc_id(1, location)
 		request_current_prices.rpc_id(1, location)
 		request_current_cash.rpc_id(1, location)
-
-@rpc("any_peer", "call_local", "unreliable")
-func request_current_name(coords: Vector2i) -> void:
-	var current_name: String = map_data.get_instance().get_hold_name(coords)
-	update_current_name.rpc_id(multiplayer.get_remote_sender_id(), current_name)
+		request_current_level.rpc_id(1, location)
 
 @rpc("any_peer", "call_local", "unreliable")
 func request_current_cargo(coords: Vector2i) -> void:
@@ -44,14 +41,24 @@ func request_current_cargo(coords: Vector2i) -> void:
 	update_current_cargo.rpc_id(multiplayer.get_remote_sender_id(), dict)
 
 @rpc("any_peer", "call_local", "unreliable")
-func request_current_cash(coords: Vector2i) -> void:
-	var _current_cash: int = terminal_map.get_cash_of_firm(coords)
-	update_current_cash.rpc_id(multiplayer.get_remote_sender_id(), _current_cash)
+func request_current_name(coords: Vector2i) -> void:
+	var current_name: String = map_data.get_instance().get_hold_name(coords)
+	update_current_name.rpc_id(multiplayer.get_remote_sender_id(), current_name)
 
 @rpc("any_peer", "call_local", "unreliable")
 func request_current_prices(coords: Vector2i) -> void:
 	var dict: Dictionary = terminal_map.get_local_prices(coords)
 	update_current_prices.rpc_id(multiplayer.get_remote_sender_id(), dict)
+
+@rpc("any_peer", "call_local", "unreliable")
+func request_current_cash(coords: Vector2i) -> void:
+	var _current_cash: int = terminal_map.get_cash_of_firm(coords)
+	update_current_cash.rpc_id(multiplayer.get_remote_sender_id(), _current_cash)
+
+@rpc("any_peer", "call_local", "unreliable")
+func request_current_level(coords: Vector2i) -> void:
+	var _current_level: int = (terminal_map.get_broker(coords) as factory_template).get_level()
+	update_current_level.rpc_id(multiplayer.get_remote_sender_id(), _current_level)
 
 @rpc("authority", "call_local", "unreliable")
 func update_current_cargo(new_current_cargo: Dictionary) -> void:
@@ -72,6 +79,11 @@ func update_current_cash(new_cash: int) -> void:
 func update_current_prices(new_prices: Dictionary) -> void:
 	current_prices = new_prices
 	display_current_prices()
+
+@rpc("authority", "call_local", "unreliable")
+func update_current_level(new_level: int) -> void:
+	current_level = new_level
+	$Level.text = "Level: " + str(current_level)
 
 func factory_window() -> void:
 	var cargo_list: ItemList = $Cargo_Node/Cargo_List

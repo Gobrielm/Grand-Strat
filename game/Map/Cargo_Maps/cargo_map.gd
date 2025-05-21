@@ -7,8 +7,12 @@ var mutex: Mutex = Mutex.new()
 func _ready() -> void:
 	Utils.assign_cargo_map(self)
 
-func create_town(coords: Vector2i) -> void:
-	var new_town: terminal = town.new(coords, tile_ownership.get_instance().get_player_id_from_cell(coords))
+func create_town(coords: Vector2i, pop: int) -> void:
+	const TOWN_THRESHOLD: int = 100000
+	if pop < TOWN_THRESHOLD:
+		return
+	var mult: int = floor(pop / 50000)
+	var new_town: terminal = town.new(coords, tile_ownership.get_instance().get_player_id_from_cell(coords), mult)
 	Utils.world_map.make_cell_invisible(coords)
 	set_tile(coords, Vector2i(0, 1))
 	add_terminal_to_province(new_town)
@@ -50,7 +54,8 @@ func place_random_industries() -> void:
 		
 func create_town_in_province(prov: province, pop: int) -> void:
 	var tile: Vector2i = prov.get_random_tile()
-	create_town(tile)
+	if tile != Vector2i(0, 0):
+		create_town(tile, pop)
 
 func pick_and_place_random_industry(prov: province, count: int, multiplier: int) -> void:
 	for i: int in range(count):

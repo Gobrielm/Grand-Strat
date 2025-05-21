@@ -24,14 +24,14 @@ func set_country_id(p_country_id: int) -> void:
 func get_tiles() -> Array:
 	return tiles
 
-func get_random_tile() -> Vector2i:
+func get_random_tile() -> Variant:
 	var temp_tiles: Array = tiles.duplicate()
 	var rand_index: int = randi() % temp_tiles.size()
 	var random_tile: Vector2i = temp_tiles.pop_at(rand_index)
 	while terminal_tiles.has(random_tile):
-		if temp_tiles.size() != 0:
+		if temp_tiles.size() == 0:
 			#Will probs never get called
-			assert(false)
+			return Vector2i(0, 0)
 		rand_index = randi() % temp_tiles.size()
 		random_tile = temp_tiles.pop_at(rand_index)
 	return random_tile

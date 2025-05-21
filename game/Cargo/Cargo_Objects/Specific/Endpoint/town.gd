@@ -1,29 +1,31 @@
 class_name town extends ai_factory
 
-func _init(new_location: Vector2i, _player_id: int) -> void:
-	var dict: Dictionary = create_inputs()
+func _init(new_location: Vector2i, _player_id: int, mult: int = 1) -> void:
+	var dict: Dictionary = create_inputs(mult)
 	super._init(new_location, _player_id, dict, {})
+	level = mult
 
-func create_inputs() -> Dictionary:
+func create_inputs(mult: int) -> Dictionary:
 	var toReturn: Dictionary = {}
-	toReturn[terminal_map.get_cargo_type("grain")] = 1
-	toReturn[terminal_map.get_cargo_type("wood")] = 1
-	toReturn[terminal_map.get_cargo_type("wine")] = 1
-	toReturn[terminal_map.get_cargo_type("furniture")] = 1
-	toReturn[terminal_map.get_cargo_type("wagons")] = 1
-	toReturn[terminal_map.get_cargo_type("paper")] = 1
-	toReturn[terminal_map.get_cargo_type("lumber")] = 1
-	toReturn[terminal_map.get_cargo_type("lanterns")] = 1
-	toReturn[terminal_map.get_cargo_type("luxury_clothes")] = 1
-	toReturn[terminal_map.get_cargo_type("clothes")] = 1
-	toReturn[terminal_map.get_cargo_type("bread")] = 1
-	toReturn[terminal_map.get_cargo_type("meat")] = 1
-	toReturn[terminal_map.get_cargo_type("liquor")] = 1
-	toReturn[terminal_map.get_cargo_type("coffee")] = 1
-	toReturn[terminal_map.get_cargo_type("tea")] = 1
-	toReturn[terminal_map.get_cargo_type("porcelain")] = 1
-	toReturn[terminal_map.get_cargo_type("cigarettes")] = 1
-	toReturn[terminal_map.get_cargo_type("gold")] = 1
+	#TODO: Redo scaling of goods needed
+	toReturn[terminal_map.get_cargo_type("grain")] = 1 * mult
+	toReturn[terminal_map.get_cargo_type("wood")] = 1 * mult
+	toReturn[terminal_map.get_cargo_type("wine")] = 1 * mult
+	toReturn[terminal_map.get_cargo_type("furniture")] = 1 * mult
+	toReturn[terminal_map.get_cargo_type("wagons")] = 1 * mult
+	toReturn[terminal_map.get_cargo_type("paper")] = 1 * mult
+	toReturn[terminal_map.get_cargo_type("lumber")] = 1 * mult
+	toReturn[terminal_map.get_cargo_type("lanterns")] = 1 * mult
+	toReturn[terminal_map.get_cargo_type("luxury_clothes")] = 1 * mult
+	toReturn[terminal_map.get_cargo_type("clothes")] = 1 * mult
+	toReturn[terminal_map.get_cargo_type("bread")] = 1 * mult
+	toReturn[terminal_map.get_cargo_type("meat")] = 1 * mult
+	toReturn[terminal_map.get_cargo_type("liquor")] = 1 * mult
+	toReturn[terminal_map.get_cargo_type("coffee")] = 1 * mult
+	toReturn[terminal_map.get_cargo_type("tea")] = 1 * mult
+	toReturn[terminal_map.get_cargo_type("porcelain")] = 1 * mult
+	toReturn[terminal_map.get_cargo_type("cigarettes")] = 1 * mult
+	toReturn[terminal_map.get_cargo_type("gold")] = 1 * mult
 	return toReturn
 
 func check_input(type: int) -> bool:

@@ -75,4 +75,11 @@ text = "Local Prices:"
 offset_right = 40.0
 offset_bottom = 23.0
 
+[node name="Level" type="Label" parent="."]
+offset_left = 417.0
+offset_top = 5.0
+offset_right = 466.0
+offset_bottom = 28.0
+text = "Level: "
+
 [connection signal="close_requested" from="." to="." method="_on_close_requested"]
