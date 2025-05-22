@@ -5,6 +5,9 @@ var backing_array: Array[weighted_value]
 func _init() -> void:
 	backing_array = []
 
+func size() -> int:
+	return backing_array.size()
+
 func get_backing_array() -> Array:
 	var toReturn: Array = []
 	for val: weighted_value in backing_array:

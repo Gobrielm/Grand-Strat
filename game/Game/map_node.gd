@@ -54,12 +54,9 @@ func _input(event: InputEvent) -> void:
 			create_factory()
 		elif state_machine.is_building_road_depot():
 			main_map.place_road_depot()
-		elif state_machine.is_selecting_unit() and main_map.is_unit_double_clicked():
-			main_map.show_unit_info_window()
 		else:
-			if state_machine.is_selecting_unit():
-				state_machine.unclick_unit()
-			main_map.unit_map.select_unit(get_cell_position(), unique_id)
+			main_map.unit_map.select_army(get_cell_position(), unique_id)
+			main_map.show_unit_info_window()
 	elif event.is_action_released("click"):
 		if state_machine.is_controlling_camera() and main_map.is_owned_station(get_cell_position(), unique_id):
 			station_window.open_window(get_cell_position())

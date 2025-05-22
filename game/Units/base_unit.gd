@@ -4,6 +4,7 @@ func _init() -> void:
 	pass
 
 func convert_to_client_array() -> Array:
+	#TODO: Add more stuff
 	return [manpower, morale, experience, org.get_organization()]
 
 static func get_cost() -> int:

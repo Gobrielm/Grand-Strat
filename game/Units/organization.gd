@@ -31,7 +31,7 @@ func use_supplies() -> void:
 	for type: int in supply_needed:
 		if current_supply.get_cargo_amount(type) < supply_needed[type]:
 			#TODO: Do something if supplies run 0
-			pass
+			break
 		current_supply.remove_cargo(type, supply_needed[type])
 
 #Return amount added

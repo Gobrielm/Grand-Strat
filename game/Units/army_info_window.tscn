@@ -1,8 +1,8 @@
 [gd_scene load_steps=2 format=3 uid="uid://dqvn8y35ax23b"]
 
-[ext_resource type="Script" uid="uid://b83e3r3ow62k8" path="res://Units/unit_info_window.gd" id="1_g6u0w"]
+[ext_resource type="Script" uid="uid://b83e3r3ow62k8" path="res://Units/army_info_window.gd" id="1_g6u0w"]
 
-[node name="unit_info_window" type="Window"]
+[node name="army_info_window" type="Window"]
 position = Vector2i(0, 36)
 size = Vector2i(500, 500)
 unfocusable = true

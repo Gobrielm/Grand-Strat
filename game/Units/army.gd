@@ -2,9 +2,6 @@ class_name army extends Node
 
 static var armies_created: int = 0
 
-const speed_mult_hilly: float = 0.65
-const speed_mult_other_unit: float = 0.45
-
 var player_id: int
 var army_id: int
 var location: Vector2i
@@ -14,10 +11,9 @@ var progress: float
 
 var units: sorted_stack = sorted_stack.new()
 
-
-
-func _init(p_player_id: int) -> void:
+func _init(p_player_id: int, p_location: Vector2i) -> void:
 	player_id = p_player_id
+	location = p_location
 	army_id = armies_created
 	armies_created += 1
 
@@ -29,6 +25,9 @@ func get_army_id() -> int:
 	return army_id
 
 # == Route Info ==
+func set_location(coords: Vector2i) -> void:
+	location = coords
+
 func get_location() -> Vector2i:
 	return location
 
@@ -69,14 +68,12 @@ func ready_to_move(progress_needed: float) -> bool:
 		return true
 	return false
 
-static func get_speed_mult(terrain_num: int) -> float:
-	if terrain_num == 0:
-		return speed_mult_hilly
-	else:
-		return 1.0
+# == Map functions == 
+func get_atlas_coord() -> Vector2i:
+	#TODO: Add modeling or smth
+	return Vector2i(0, 0)
 
 # == Army unit Stuff ==
-
 func add_unit(unit: base_unit) -> void:
 	units.insert_element(unit, get_unit_weight(unit))
 
@@ -96,11 +93,6 @@ func get_unit_weight(unit: base_unit) -> float:
 		return 0
 	return -1
 
-# == Map functions == 
-func get_atlas_coord() -> Vector2i:
-	#TODO: Add modeling or smth
-	return Vector2i(0, 0)
-
 #Returns duplicate
 func get_units() -> Array[base_unit]:
 	var toReturn: Array[base_unit] = []
@@ -118,7 +110,7 @@ func clear_units() -> void:
 	units.clear()
 
 func split() -> army:
-	var new_army: army = army.new(player_id)
+	var new_army: army = army.new(player_id, location)
 	var counter: bool = false
 	var units_array: Array[base_unit] = get_units()
 	var units_removed: int = 0
@@ -132,11 +124,46 @@ func split() -> army:
 	
 	return new_army
 
-func convert_to_client_array() -> Array:
+func get_units_client_arrays() -> Array:
 	var toReturn: Array[Array] = []
-	for unit: base_unit in units:
+	for unit: base_unit in get_units():
 		toReturn.append(unit.convert_to_client_array())
 	return toReturn
+
+##Unit array = [manpower, morale, experience, org.get_organization(), dest]
+func get_army_client_array() -> Array:
+	#Unit array = [manpower, morale, experience, org.get_organization()]
+	var toReturn: Array = get_units()[0].convert_to_client_array()
+	var skip: bool = true
+	for unit: base_unit in get_units():
+		if !skip:
+			var unit_array: Array = unit.convert_to_client_array()
+			for index: int in unit_array.size():
+				toReturn[index] += unit_array[index]
+		else:
+			skip = false
+	#Gets averages for morale and org
+	toReturn[1] /= units.size()
+	toReturn[3] /= units.size()
+	toReturn.append(get_destination())
+	return toReturn
+
+# == Interative Unit Functions == 
+func add_experience(multiple: float) -> void:
+	for unit: base_unit in get_units():
+		unit.add_experience(multiple)
+
+func use_supplies() -> void:
+	for unit: base_unit in get_units():
+		unit.use_supplies()
+
+func get_speed() -> float:
+	var slowest_speed: float = -1
+	for unit: base_unit in get_units():
+		if slowest_speed > unit.get_speed() or slowest_speed == -1:
+			slowest_speed = unit.get_speed()
+	return slowest_speed
+		
 
 func _to_string() -> String:
 	var toReturn: String = "["

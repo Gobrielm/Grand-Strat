@@ -6,8 +6,8 @@ func show_unit(unit_info_array: Array) -> void:
 
 func update_unit(unit_info_array: Array) -> void:
 	if !unit_info_array.is_empty():
-		$stat_label.text = "Manpower: " + str(unit_info_array[3]) + '\n' + "Morale: " + str(unit_info_array[4]) + '\n' + "Experience: " + str(unit_info_array[5]) + '\n' + "Organization: " + str(unit_info_array[6])
-		$destination_label.text = "destination: " + str(unit_info_array[2])
+		$stat_label.text = "Manpower: " + str(unit_info_array[0]) + '\n' + "Morale: " + str(unit_info_array[1]) + '\n' + "Experience: " + str(unit_info_array[2]) + '\n' + "Organization: " + str(unit_info_array[3])
+		$destination_label.text = "destination: " + str(unit_info_array[4])
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:

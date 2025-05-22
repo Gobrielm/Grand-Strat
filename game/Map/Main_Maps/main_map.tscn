@@ -9,7 +9,7 @@
 [ext_resource type="PackedScene" uid="uid://bmywob5ku4c3r" path="res://Gui/factory_window.tscn" id="9_p8wcw"]
 [ext_resource type="PackedScene" uid="uid://tgrwgdaijaeh" path="res://Gui/station_window.tscn" id="9_txwkn"]
 [ext_resource type="PackedScene" uid="uid://bipirwbhqdjb2" path="res://Gui/Player_Factory_Gui's/factory_recipe_gui.tscn" id="10_60crw"]
-[ext_resource type="PackedScene" uid="uid://dqvn8y35ax23b" path="res://Units/unit_info_window.tscn" id="10_75rfn"]
+[ext_resource type="PackedScene" uid="uid://dqvn8y35ax23b" path="res://Units/army_info_window.tscn" id="10_75rfn"]
 [ext_resource type="PackedScene" uid="uid://l3xw71d3y3e7" path="res://Gui/Player_Factory_Gui's/factory_construction_gui.tscn" id="11_46x22"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_tywjw"]

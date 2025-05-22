@@ -116,11 +116,13 @@ func is_tile_traversable(tile_to_check: Vector2i) -> bool:
 	return !untraversable_tiles.has(atlas_coords)
 
 func show_unit_info_window() -> void:
-	var unit_info_array: Array = unit_map.get_unit_client_array(get_cell_position())
-	$unit_info_window.show_unit(unit_info_array)
+	if unit_map.get_selected_army() == null:
+		return
+	var unit_info_array: Array = (unit_map.get_selected_army() as army).get_army_client_array()
+	$army_info_window.show_unit(unit_info_array)
 
 func update_info_window(unit_info_array: Array) -> void:
-	$unit_info_window.update_unit(unit_info_array)
+	$army_info_window.update_unit(unit_info_array)
 
 func create_unit() -> void:
 	unit_map.check_before_create.rpc_id(1, get_cell_position(), unit_creator_window.get_type_selected(), unique_id)
@@ -130,10 +132,7 @@ func refresh_unit_map(unit_tiles: Dictionary) -> void:
 	unit_map.refresh_map(visible_tiles, unit_tiles)
 
 func close_unit_box() -> void:
-	$unit_info_window.hide()
-
-func is_unit_double_clicked() -> bool:
-	return unit_map.is_unit_double_clicked(get_cell_position(), unique_id)
+	$army_info_window.hide()
 
 #Tracks
 func get_rail_type_selected() -> int:
@@ -428,6 +427,13 @@ func is_dry(coords: Vector2i) -> bool:
 	if (atlas.y == 1):
 		return true
 	return false
+
+func get_terrain_speed_mult(tile: Vector2) -> float:
+	if is_hilly(tile):
+		return 0.75
+	elif is_forested(tile):
+		return 0.8
+	return 1
 
 #Tile Effects
 func highlight_cell(coords: Vector2i) -> void:
