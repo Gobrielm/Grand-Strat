@@ -6,11 +6,11 @@ func _init(new_atlas_coords: Vector2i):
 	morale = 0
 	experience = 0
 	
-
+##[manpower, morale, experience, org.get_organization()]
 func update_stats(unit_info: Array):
-	manpower = unit_info[1]
-	morale = unit_info[2]
-	experience = unit_info[3]
+	manpower = unit_info[0]
+	morale = unit_info[1]
+	experience = unit_info[2]
 
 func convert_to_client_array() -> Array:
 	return [manpower, morale, experience]

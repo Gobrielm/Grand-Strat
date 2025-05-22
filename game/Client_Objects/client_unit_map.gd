@@ -3,7 +3,9 @@ extends TileMapLayer
 var unit_creator: Node
 var selected_unit: base_unit
 var map: TileMapLayer
-var unit_data: Dictionary[Vector2i, Array] = {} #Array[army]
+var army_locations: Dictionary[Vector2i, Array] = {} #Array[army]
+var attacking_army_locations: Dictionary[Vector2i, Array] = {} #Array[army]
+var army_data: Dictionary[int, army] #Army id -> Army
 
 const client_unit: GDScript = preload("res://Client_Objects/client_base_unit.gd")
 
@@ -121,40 +123,9 @@ func move_unit_to_regular(coords: Vector2i, move_to: Vector2i) -> void:
 		map.clear_highlights()
 	check_extra(coords)
 
-@rpc("authority", "call_local", "unreliable")
-func move_unit_to_extra(coords: Vector2i, move_to: Vector2i) -> void:
-	var unit: base_unit = unit_data[coords]
-	normal_move(coords)
-	extra_arrival(unit, move_to)
-	move_label_to_extra(coords, move_to)
-	if unit.get_destination() == null:
-		map.clear_highlights()
-	check_extra(coords)
-
-@rpc("authority", "call_local", "unreliable")
-func move_extra_unit_to_regular(coords: Vector2i, move_to: Vector2i) -> void:
-	var unit: base_unit = extra_unit_data[coords]
-	extra_move(coords)
-	normal_arrival(unit, move_to)
-	move_extra_label_to_normal(coords, move_to)
-	if unit.get_destination() == null:
-		map.clear_highlights()
-
-@rpc("authority", "call_local", "unreliable")
-func move_extra_unit_to_extra(coords: Vector2i, move_to: Vector2i) -> void:
-	var unit: base_unit = extra_unit_data[coords]
-	extra_move(coords)
-	extra_arrival(unit, move_to)
-	move_extra_label_to_extra(coords, move_to)
-	if unit.get_destination() == null:
-		map.clear_highlights()
-
 func normal_move(coords: Vector2i) -> void:
 	erase_cell(coords)
 	unit_data.erase(coords)
-
-func extra_move(coords: Vector2i) -> void:
-	extra_unit_data.erase(coords)
 
 func normal_arrival(unit: base_unit, move_to: Vector2i) -> void:
 	var unit_atlas: Vector2i = unit.get_atlas_coord()
@@ -166,34 +137,10 @@ func extra_arrival(unit: base_unit, move_to: Vector2i) -> void:
 	unit.set_location(move_to)
 	extra_unit_data[move_to] = unit
 
-func check_extra(coords: Vector2i) -> void:
-	if !unit_data.has(coords) and extra_unit_data.has(coords):
-		var unit: base_unit = extra_unit_data[coords]
-		extra_move(coords)
-		normal_arrival(unit, coords)
-		move_extra_label_to_normal(coords, coords)
-
 func move_label_to_normal(coords: Vector2i, move_to: Vector2i) -> void:
 	var node: Node = get_node(str(coords))
 	node.name = str(move_to)
 	node.position = map_to_local(move_to)
-
-func move_label_to_extra(coords: Vector2i, move_to: Vector2i) -> void:
-	var node: Node = get_node(str(coords))
-	node.name = str(move_to) + "extra"
-	node.position = map_to_local(move_to)
-	node.position.y += 50
-
-func move_extra_label_to_normal(coords: Vector2i, move_to: Vector2i) -> void:
-	var node: Node = get_node(str(coords) + "extra")
-	node.name = str(move_to)
-	node.position = map_to_local(move_to)
-
-func move_extra_label_to_extra(coords: Vector2i, move_to: Vector2i) -> void:
-	var node: Node = get_node(str(coords) + "extra")
-	node.name = str(move_to) + "extra"
-	node.position = map_to_local(move_to)
-	node.position.y += 50
 
 func select_unit(coords: Vector2i, player_id: int) -> void:
 	unhightlight_name()
@@ -304,13 +251,6 @@ func kill_normal_unit(coords: Vector2i) -> void:
 	unit_data.erase(coords)
 	clean_up_node(node)
 	erase_cell(coords)
-
-@rpc("authority", "call_local", "unreliable")
-func kill_extra_unit(coords: Vector2i) -> void:
-	var node: Control = get_node(str(coords) + "extra") as Control
-	extra_unit_data[coords].queue_free()
-	extra_unit_data.erase(coords)
-	clean_up_node(node)
 
 func clean_up_node(node: Node) -> void:
 	for child: Node in node.get_children():
