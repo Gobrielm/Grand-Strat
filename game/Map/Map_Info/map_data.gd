@@ -96,6 +96,10 @@ func get_province_population(tile: Vector2i) -> int:
 func get_population(province_id: int) -> int:
 	return get_province(province_id).population
 
+func get_population_as_level(province_id: int) -> int:
+	@warning_ignore("integer_division")
+	return get_province(province_id).population / 50000
+
 func is_tile_a_province(tile: Vector2i) -> bool:
 	mutex.lock()
 	var toReturn: bool = tiles_to_province_id.has(tile)

@@ -7,11 +7,12 @@ var mutex: Mutex = Mutex.new()
 func _ready() -> void:
 	Utils.assign_cargo_map(self)
 
-func create_town(coords: Vector2i, pop: int) -> void:
+func create_town(coords: Vector2i, prov_id: int) -> void:
 	const TOWN_THRESHOLD: int = 100000
-	if pop < TOWN_THRESHOLD:
+	var map_dat: map_data = map_data.get_instance()
+	if map_dat.get_population(prov_id) < TOWN_THRESHOLD:
 		return
-	var mult: int = floor(pop / 50000)
+	var mult: int = map_dat.get_population_as_level(prov_id)
 	var new_town: terminal = town.new(coords, tile_ownership.get_instance().get_player_id_from_cell(coords), mult)
 	Utils.world_map.make_cell_invisible(coords)
 	set_tile(coords, Vector2i(0, 1))
@@ -46,16 +47,16 @@ func place_random_industries() -> void:
 			{ "threshold": 0,        "mod": 30, "mult": 1, "count": 1 }
 		]
 		var prov: province = map_data_singleton.get_province(province_id)
-		create_town_in_province(prov, pop)
+		create_town_in_province(prov)
 		for entry: Dictionary in chances:
 			if pop > entry.threshold and randi() % entry.mod == 0:
 				pick_and_place_random_industry(prov, entry.count, entry.mult)
 				break
 		
-func create_town_in_province(prov: province, pop: int) -> void:
+func create_town_in_province(prov: province) -> void:
 	var tile: Vector2i = prov.get_random_tile()
 	if tile != Vector2i(0, 0):
-		create_town(tile, pop)
+		create_town(tile, prov.province_id)
 
 func pick_and_place_random_industry(prov: province, count: int, multiplier: int) -> void:
 	for i: int in range(count):
