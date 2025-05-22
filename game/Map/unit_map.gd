@@ -6,6 +6,7 @@ var unit_creator: Node
 var battle_script: Node
 var selected_unit: base_unit
 
+#TODO: Change to have unlimited units per tile, and use merging.
 var unit_data: Dictionary = {}
 var extra_unit_data: Dictionary = {}
 var temp_unit_data: Dictionary = {}
