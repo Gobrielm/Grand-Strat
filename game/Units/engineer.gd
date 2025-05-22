@@ -3,9 +3,8 @@ class_name engineer extends base_unit
 static func get_cost() -> int:
 	return 700
 
-func _init(new_location: Vector2i, new_player_id: int) -> void:
-	super._init(new_location, new_player_id)
-	
+func _init() -> void:
+
 	max_manpower = 100
 	manpower = max_manpower
 	morale = 100

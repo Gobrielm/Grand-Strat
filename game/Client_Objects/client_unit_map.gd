@@ -3,8 +3,7 @@ extends TileMapLayer
 var unit_creator: Node
 var selected_unit: base_unit
 var map: TileMapLayer
-var unit_data: Dictionary = {}
-var extra_unit_data: Dictionary = {}
+var unit_data: Dictionary[Vector2i, Array] = {} #Array[army]
 
 const client_unit: GDScript = preload("res://Client_Objects/client_base_unit.gd")
 
@@ -39,18 +38,12 @@ func request_refresh(_tile: Vector2i) -> void:
 	pass
 
 @rpc("authority", "call_local", "unreliable")
-func refresh_normal_unit(info_array: Array) -> void:
-	var coords: Vector2i = info_array[1]
-	var node: Node = get_node(str(coords))
-	var unit: base_unit = unit_data[coords]
-	refresh_unit(info_array, unit, node)
-
-@rpc("authority", "call_local", "unreliable")
-func refresh_extra_unit(info_array: Array) -> void:
-	var coords: Vector2i = info_array[1]
-	var node: Node = get_node(str(coords) + "extra")
-	var unit: base_unit = extra_unit_data[coords]
-	refresh_unit(info_array, unit, node)
+func refresh_army(info_array: Array) -> void:
+	for unit_array: Array in info_array:
+		var coords: Vector2i = unit_array[1]
+		var node: Node = get_node(str(coords))
+		var unit: base_unit = unit_data[coords]
+		refresh_unit(unit_array, unit, node)
 
 func refresh_unit(info_array: Array, unit: base_unit, node: Node) -> void:
 	var coords: Vector2i = info_array[1]

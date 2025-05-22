@@ -3,9 +3,9 @@ class_name organization extends Node
 var supply_needed: Dictionary[int, int] #Cargo type -> amount
 var current_supply: fixed_hold
 
-func _init(p_supply_needed: Dictionary[int, int], p_owner: int) -> void:
+func _init(p_supply_needed: Dictionary[int, int]) -> void:
 	supply_needed = p_supply_needed
-	current_supply = fixed_hold.new(Vector2i(0, 0), p_owner)
+	current_supply = fixed_hold.new(Vector2i(0, 0), 0) #Owner doesn;t matter
 	current_supply.set_max_storage(10)
 	for type: int in supply_needed:
 		current_supply.add_accept(type)

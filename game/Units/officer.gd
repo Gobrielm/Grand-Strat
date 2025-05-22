@@ -13,8 +13,7 @@ func add_battle_experience(multiple: float = 1.0) -> void:
 	super.add_battle_experience(multiple)
 	recalculate_experience_aura_boost()
 
-func _init(new_location: Vector2i, new_player_id: int) -> void:
-	super._init(new_location, new_player_id)
+func _init() -> void:
 	
 	max_manpower = 50
 	manpower = max_manpower
