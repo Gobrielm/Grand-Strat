@@ -17,3 +17,7 @@ func _ready() -> void:
 	print(army_obj)
 	print(new_army)
 	
+	army_obj.merge(new_army)
+	
+	print(army_obj)
+	print(new_army)

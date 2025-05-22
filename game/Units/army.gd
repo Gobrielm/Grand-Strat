@@ -34,7 +34,7 @@ func get_units() -> Array[base_unit]:
 
 func merge(army_to_merge_with: army) -> void:
 	for unit: base_unit in army_to_merge_with.get_units():
-		units.append(unit)
+		add_unit(unit)
 	army_to_merge_with.clear_units()
 
 func clear_units() -> void:

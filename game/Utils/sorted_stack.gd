@@ -99,5 +99,8 @@ func linear_search_for_element(starting_index: int, target: Variant, target_weig
 		else:
 			index += 1
 
+func clear() -> void:
+	backing_array.clear()
+
 func _to_string() -> String:
 	return str(backing_array)
