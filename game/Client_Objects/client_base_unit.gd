@@ -1,7 +1,6 @@
 extends base_unit
 
-func _init(new_atlas_coords: Vector2i):
-	set_atlas_coord(new_atlas_coords)
+func _init():
 	manpower = 0
 	morale = 0
 	experience = 0

@@ -1,11 +1,12 @@
 extends TileMapLayer
 
 var unit_creator: Node
-var selected_unit: base_unit
+var selected_army: army
 var map: TileMapLayer
+
 var army_locations: Dictionary[Vector2i, Array] = {} #Array[army]
 var attacking_army_locations: Dictionary[Vector2i, Array] = {} #Array[army]
-var army_data: Dictionary[int, army] #Army id -> Army
+var army_data: Dictionary[int, client_army] #Army id -> Army
 
 const client_unit: GDScript = preload("res://Client_Objects/client_base_unit.gd")
 
@@ -17,77 +18,101 @@ func _ready() -> void:
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("deselect"):
 		if state_machine.is_selecting_unit():
-			set_up_set_unit_route(selected_unit, map.get_cell_position())
-			map.update_info_window(get_unit_client_array(get_selected_coords()))
+			request_set_army_route.rpc_id(1, selected_army.get_army_id(), map.get_cell_position())
+			map.update_info_window(selected_army.get_army_client_array())
 
 @rpc("any_peer", "call_remote", "unreliable")
 func request_refresh_map() -> void:
 	pass
 
+#TODO: Write full resync function
 @rpc("authority", "call_remote", "reliable")
-func refresh_map(visible_tiles: Array, unit_atlas: Dictionary) -> void:
-	for coords: Vector2i in visible_tiles:
-		if !unit_atlas.has(coords):
-			kill_normal_unit(coords)
-		elif get_cell_atlas_coords(coords) == unit_atlas[coords]:
-			request_refresh.rpc_id(1, coords)
-		else:
-			create_unit(coords, unit_atlas[coords].y, 0)
-			request_refresh.rpc_id(1, coords)
+func refresh_map(_visible_tiles: Array, _unit_atlas: Dictionary) -> void:
+	pass
 
 @rpc("any_peer", "call_remote", "unreliable")
 func request_refresh(_tile: Vector2i) -> void:
 	pass
 
 @rpc("authority", "call_local", "unreliable")
-func refresh_army(info_array: Array) -> void:
-	for unit_array: Array in info_array:
-		var coords: Vector2i = unit_array[1]
-		var node: Node = get_node(str(coords))
-		var unit: base_unit = unit_data[coords]
-		refresh_unit(unit_array, unit, node)
+func refresh_army(army_id: int, info_array: Array, units_array: Array) -> void:
+	var node: Node = get_control_node(army_id)
+	var morale_bar: ProgressBar = node.get_node("MoraleBar")
+	morale_bar.value = info_array[1]
 
-func refresh_unit(info_array: Array, unit: base_unit, node: Node) -> void:
-	var coords: Vector2i = info_array[1]
-	if selected_unit != null and coords == selected_unit.get_location():
-		map.update_info_window(info_array)
-	unit.update_stats(info_array)
-	var morale_bar: ProgressBar = node.get_node("MoraleBar") as ProgressBar
-	morale_bar.value = info_array[4]
-	var manpower_label: RichTextLabel = node.get_node("Manpower_Label") as RichTextLabel
-	manpower_label.text = "[center]" + str(info_array[3]) + "[/center]"
+	var manpower_label: RichTextLabel = node.get_node("Manpower_Label")
+	manpower_label.text = "[center]" + str(info_array[0]) + "[/center]"
+	get_army(army_id).update_stats(info_array, units_array)
 
-func get_unit_client_array(coords: Vector2i) -> Array:
-	if unit_data.has(coords):
-		return unit_data[coords].convert_to_client_array()
-	return []
+# === Unit Checks ===
+func get_army(army_id: int) -> client_army:
+	return army_data[army_id]
+
+func get_top_army(tile: Vector2i) -> client_army:
+	return get_army(army_locations[tile][0])
+
+#TODO: Change in general to also allow neutral armies
+func tile_has_enemy_army(tile_to_check: Vector2i, player_id: int) -> bool:
+	return !tile_has_no_army(tile_to_check) and get_top_army(tile_to_check).get_player_id() != player_id
+
+func tile_has_no_army(tile_to_check: Vector2i) -> bool:
+	return !army_locations.has(tile_to_check) or army_locations[tile_to_check].is_empty()
+
+func tile_has_friendly_army(coords: Vector2i, player_id: int) -> bool:
+	#TODO: Change to allow alliances
+	return !tile_has_no_army(coords) and get_top_army(coords).get_player_id() == player_id
+
+func tile_has_attacking_army(coords: Vector2i) -> bool:
+	return attacking_army_locations.has(coords)
+
+func get_control_node(army_id: int) -> Control:
+	return get_node("Control_" + str(army_id))
 
 @rpc("any_peer", "call_local", "unreliable")
 func check_before_create(_coords: Vector2i, _type: int, _player_id: int) -> void:
 	pass
 
-@rpc("authority", "call_remote", "unreliable")
-func create_unit(coords: Vector2i, type: int, player_id: int) -> void:
-	set_cell(coords, 0, Vector2i(0, type))
-	unit_data[coords] = client_unit.new(coords, player_id, Vector2i(0, type))
-	var unit_class: Variant = unit_creator.get_unit_class(type)
-	create_label(coords, str(unit_class.toString()))
+@rpc("authority", "call_local", "unreliable")
+func create_army(coords: Vector2i, type: int, player_id: int) -> void:
+	if !army_locations.has(coords):
+		army_locations[coords] = []
+		set_cell(coords, 0, Vector2i(0, type))
+
+	var unit_class: GDScript = get_unit_class(type)
+	var new_army: client_army = client_army.new(player_id, coords)
+	army_locations[coords].append(new_army.army_id)
+	army_data[new_army.army_id] = new_army
+	new_army.add_unit(unit_class.new())
+
+	create_label(new_army.get_army_id(), coords, str(new_army))
 	request_refresh.rpc_id(1, coords)
 
-func create_label(coords: Vector2i, text: String) -> void:
+func get_unit_class(type: int) -> GDScript:
+	return unit_creator.get_unit_class(type)
+
+# === Label Creation ===
+func create_label(army_id: int, coords: Vector2i, text: String) -> void:
 	var label: Label = Label.new()
 	label.name = "Label"
+
 	var node: Control = Control.new()
 	add_child(node)
 	node.add_child(label)
-	node.name = str(coords)
+	node.name = "Control_" + str(army_id)
+
 	label.text = text
-	move_label_to_normal(coords, coords)
+	move_control(army_id, coords)
 	label.position = Vector2(-label.size.x / 2, label.size.y)
+
 	var morale_bar: ProgressBar = create_morale_bar(label.size)
 	node.add_child(morale_bar)
+
 	var manpower_label: RichTextLabel = create_manpower_label(label.size)
 	node.add_child(manpower_label)
+
+func move_control(army_id: int, move_to: Vector2i) -> void:
+	var node: Control = get_control_node(army_id)
+	node.position = map_to_local(move_to)
 
 func create_morale_bar(size: Vector2) -> ProgressBar:
 	var morale_bar: ProgressBar = ProgressBar.new()
@@ -96,12 +121,16 @@ func create_morale_bar(size: Vector2) -> ProgressBar:
 	morale_bar.value = 100
 	morale_bar.size = size
 	morale_bar.position = Vector2(-size.x / 2, size.y * 2)
+
 	var background_color: StyleBoxFlat = StyleBoxFlat.new()
 	background_color.bg_color = Color(1, 1, 1, 0)
+
 	var fill_color: StyleBoxFlat = StyleBoxFlat.new()
 	fill_color.bg_color = Color(0.5, 1, 0.5, 1)
+
 	morale_bar.add_theme_stylebox_override("background", background_color)
 	morale_bar.add_theme_stylebox_override("fill", fill_color)
+
 	return morale_bar
 
 func create_manpower_label(size: Vector2) -> RichTextLabel:
@@ -109,68 +138,44 @@ func create_manpower_label(size: Vector2) -> RichTextLabel:
 	manpower_label.name = "Manpower_Label"
 	manpower_label.size = size
 	manpower_label.bbcode_enabled = true
-	manpower_label.text = "[center]" + str(0) + "[/center]"
+	manpower_label.text = "[center]0[/center]"
 	manpower_label.position = Vector2(-size.x / 2, size.y * 2)
 	return manpower_label
 
-@rpc("authority", "call_local", "unreliable")
-func move_unit_to_regular(coords: Vector2i, move_to: Vector2i) -> void:
-	var unit: base_unit = unit_data[coords]
-	normal_move(coords)
-	normal_arrival(unit, move_to)
-	move_label_to_normal(coords, move_to)
-	if unit.get_destination() == null:
-		map.clear_highlights()
-	check_extra(coords)
-
-func normal_move(coords: Vector2i) -> void:
-	erase_cell(coords)
-	unit_data.erase(coords)
-
-func normal_arrival(unit: base_unit, move_to: Vector2i) -> void:
-	var unit_atlas: Vector2i = unit.get_atlas_coord()
-	unit.set_location(move_to)
-	set_cell(move_to, 0, unit_atlas)
-	unit_data[move_to] = unit
-
-func extra_arrival(unit: base_unit, move_to: Vector2i) -> void:
-	unit.set_location(move_to)
-	extra_unit_data[move_to] = unit
-
-func move_label_to_normal(coords: Vector2i, move_to: Vector2i) -> void:
-	var node: Node = get_node(str(coords))
-	node.name = str(move_to)
-	node.position = map_to_local(move_to)
-
-func select_unit(coords: Vector2i, player_id: int) -> void:
+func select_army(coords: Vector2i, player_id: int) -> void:
 	unhightlight_name()
-	if selected_unit != null and selected_unit.get_location() == coords:
-		cycle_unit_selection(coords)
+	if selected_army != null and selected_army.get_location() == coords:
+		cycle_army_selection(coords)
 		$select_unit_sound.play(0.5)
 		state_machine.click_unit()
-	elif unit_is_owned(coords, player_id):
-		selected_unit = unit_data[coords]
-		var soldier_atlas: Vector2i = get_cell_atlas_coords(coords)
-		if soldier_atlas != Vector2i(-1, -1):
-			$select_unit_sound.play(0.5)
-			state_machine.click_unit()
+	elif tile_has_friendly_army(coords, player_id):
+		selected_army = get_top_army(coords)
+		$select_unit_sound.play(0.5)
+		state_machine.click_unit()
 	else:
-		selected_unit = null
+		selected_army = null
+		state_machine.unclick_unit()
 		map.close_unit_box()
 	highlight_dest()
 	highlight_name()
 
-func cycle_unit_selection(coords: Vector2i) -> void:
-	if unit_is_bottom(selected_unit):
-		selected_unit = unit_data[coords]
-	else:
-		selected_unit = extra_unit_data[coords]
 
-func unit_is_bottom(unit: base_unit) -> bool:
-	if unit != null:
-		var coords: Vector2i = unit.get_location()
-		return extra_unit_data.has(coords) and extra_unit_data[coords] == unit
-	return false
+func cycle_army_selection(coords: Vector2i) -> void:
+	var next_unit: bool = false
+	var army_stack: Array = army_locations[coords]
+	for i: int in army_stack.size():
+		var army_id: int = army_stack[i]
+		#Will select new army after looping once
+		if next_unit:
+			selected_army = get_army(army_id)
+			next_unit = false
+			break
+		
+		if army_id == selected_army.get_army_id():
+			next_unit = true
+	#On last army, cycle back to first
+	if next_unit:
+		selected_army = get_top_army(coords)
 
 func highlight_name() -> void:
 	apply_color_to_selected_unit(Color(1, 0, 0, 1))
@@ -179,80 +184,116 @@ func unhightlight_name() -> void:
 	apply_color_to_selected_unit(Color(1, 1, 1, 1))
 
 func apply_color_to_selected_unit(color: Color) -> void:
-	if selected_unit == null:
+	if selected_army == null:
 		return
-	var coords: Vector2i = selected_unit.get_location()
-	var node: Node = get_node(str(coords))
-	if unit_is_bottom(selected_unit):
-		node = get_node(str(coords) + "extra")
-	if unit_is_owned(coords):
-		var unit_name: Label = node.get_node("Label") as Label
-		unit_name.add_theme_color_override("font_color", color)
+	var node: Control = get_control_node(selected_army.get_army_id())
+	var unit_name: Label = node.get_node("Label")
+	unit_name.add_theme_color_override("font_color", color)
 
 func highlight_cell(coords: Vector2i) -> void:
 	map.highlight_cell(coords)
 
 func highlight_dest() -> void:
-	if selected_unit != null:
-		var coords: Vector2i = selected_unit.get_location()
-		if selected_unit.get_destination() != null and unit_is_owned(coords):
-			map.highlight_cell(selected_unit.get_destination())
+	if selected_army != null:
+		if selected_army.get_destination() != null and army_is_owned(selected_army):
+			map.highlight_cell(selected_army.get_destination())
 		else:
 			map.clear_highlights()
 	else:
 		map.clear_highlights()
 
-func unit_is_owned(coords: Vector2i, player_id: int = multiplayer.get_unique_id()) -> bool:
-	return unit_data.has(coords) and unit_data[coords].get_player_id() == player_id
-
-func selected_unit_exists_and_owned(unique_id: int) -> bool:
-	return selected_unit != null and selected_unit.get_player_id() == unique_id
-
-# Moving Units
-func set_up_set_unit_route(unit: base_unit, move_to: Vector2i) -> void:
-	var coords: Vector2i = unit.get_location()
-	if unit == null:
-		return
-	elif unit_is_bottom(unit):
-		set_selected_unit_route.rpc_id(1, coords, true, move_to)
-		set_selected_unit_route(coords, true, move_to)
-	else:
-		set_selected_unit_route.rpc_id(1, coords, false, move_to)
-		set_selected_unit_route(coords, false, move_to)
-
+# Moving Armies
 @rpc("any_peer", "call_local", "unreliable")
-func set_selected_unit_route(_coords: Vector2i, _extra: bool, move_to: Vector2i) -> void:
-	$dest_sound.play(0.3)
-	highlight_cell(move_to)
+func request_set_army_route(army_id: int, move_to: Vector2i) -> void:
+	var army_obj: army = get_army(army_id)
+	if army_obj != null:
+		set_army_route.rpc(army_id, move_to)
 
 @rpc("authority", "call_local", "unreliable")
-func set_normal_unit_route(coords: Vector2i, _move_to: Vector2i) -> void:
-	request_refresh.rpc_id(1, coords)
+func set_army_route(army_id: int, move_to: Vector2i) -> void:
+	var army_obj: army = get_army(army_id)
+	set_army_route_locally(army_id, army_obj.get_location(), move_to)
+
+#Coords here for desync checking
+func set_army_route_locally(army_id: int, _coords: Vector2i, move_to: Vector2i) -> void:
+	var army_obj: army = get_army(army_id)
+	army_obj.set_route([move_to])
+	if army_obj == selected_army and army_obj.get_player_id() == multiplayer.get_unique_id():
+		$dest_sound.play(0.3)
+		highlight_dest()
 
 @rpc("authority", "call_local", "unreliable")
-func set_extra_unit_route(coords: Vector2i, _move_to: Vector2i) -> void:
-	request_refresh.rpc_id(1, coords)
+func move_army(army_id: int, coords: Vector2i, move_to: Vector2i) -> void:
+	var army_obj: army = get_army(army_id)
+	
+	do_army_arrival(army_obj, move_to)
+	do_army_leave(coords)
+	move_control(army_id, move_to)
 
-func get_selected_coords() -> Vector2i:
-	return selected_unit.get_location()
+# Move Helpers
+func do_army_arrival(army_obj: army, move_to: Vector2i) -> void:
+	var unit_atlas: Vector2i = army_obj.get_atlas_coord()
+	if get_cell_atlas_coords(move_to) == Vector2i(-1, -1):
+		set_cell(move_to, 0, unit_atlas)
+	#Gets rid of old army location
+	var army_stack: Array = army_locations[army_obj.get_location()]
+	for index: int in army_stack.size():
+		var army_id: int = army_stack[index]
+		if army_id == army_obj.get_army_id():
+			army_stack.remove_at(index)
+			break
+	#Adds new location
+	army_obj.set_location(move_to)
+	if !army_locations.has(move_to):
+		army_locations[move_to] = []
+	army_locations[move_to].append(army_obj.get_army_id())
 
-func is_unit_double_clicked(coords: Vector2i, unique_id: int) -> bool:
-	var toReturn: bool = get_selected_coords() == coords and selected_unit_exists_and_owned(unique_id)
-	if toReturn:
-		request_refresh.rpc_id(1, coords)
-	if extra_unit_data.has(coords):
-		return false
-	return toReturn
+func do_army_leave(coords: Vector2i) -> void:
+	if army_locations[coords].is_empty():
+		erase_cell(coords)
+
+func get_selected_army() -> army:
+	return selected_army
+	
+func army_is_owned(army_obj: army) -> bool:
+	return army_obj.get_player_id() == multiplayer.get_unique_id()
 
 @rpc("authority", "call_local", "unreliable")
-func kill_normal_unit(coords: Vector2i) -> void:
-	var node: Control = get_node(str(coords)) as Control
-	unit_data[coords].queue_free()
-	unit_data.erase(coords)
+func kill_army(army_id: int, coords: Vector2i) -> void:
+	var node: Control = get_control_node(army_id)
+	army_data.erase(army_id)
+	check_and_clean_army(army_id, coords)
+	check_and_clean_attacking_army(army_id, coords)
 	clean_up_node(node)
-	erase_cell(coords)
+	
+	if tile_has_no_army(coords):
+		if tile_has_attacking_army(coords):
+			move_attacking_armies_to_normal(coords)
+		else:
+			erase_cell(coords)
 
 func clean_up_node(node: Node) -> void:
 	for child: Node in node.get_children():
 		child.queue_free()
 	node.queue_free()
+
+func check_and_clean_army(army_id: int, coords: Vector2i) -> void:
+	#Cleans regular armies
+	var army_stack: Array = army_locations[coords]
+	for index: int in army_stack.size():
+		if army_stack[index] == army_id:
+			army_stack.remove_at(index)
+			break
+
+func check_and_clean_attacking_army(army_id: int, coords: Vector2i) -> void:
+	#Cleans attacking armies
+	var army_stack: Array = attacking_army_locations[coords]
+	for index: int in army_stack.size():
+		if army_stack[index] == army_id:
+			army_stack.remove_at(index)
+			break
+
+func move_attacking_armies_to_normal(coords: Vector2i) -> void:
+	for army_id: int in attacking_army_locations[coords]:
+		army_locations[coords].append(army_id)
+	attacking_army_locations[coords].clear()

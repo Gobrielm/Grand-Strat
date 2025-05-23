@@ -23,7 +23,7 @@ func _ready() -> void:
 
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("deselect") and state_machine.is_selecting_unit():
-		set_army_route(selected_army.get_army_id(), map.get_cell_position())
+		request_set_army_route(selected_army.get_army_id(), map.get_cell_position())
 		map.update_info_window(selected_army.get_army_client_array())
 
 # === Networking ===
@@ -50,7 +50,7 @@ func refresh_all_armies(armies: Array[int], sender_id: int) -> void:
 		refresh_army.rpc_id(sender_id, army_obj.get_army_id(), army_obj.get_army_client_array())
 
 @rpc("authority", "call_local", "unreliable")
-func refresh_army(army_id: int, info_array: Array) -> void:
+func refresh_army(army_id: int, info_array: Array, _units_array: Array) -> void:
 	var node: Node = get_control_node(army_id)
 	var morale_bar: ProgressBar = node.get_node("MoraleBar")
 	morale_bar.value = info_array[1]
@@ -111,7 +111,7 @@ func create_army(coords: Vector2i, type: int, player_id: int) -> void:
 	new_army.add_unit(unit_class.new())
 
 	create_label(new_army.get_army_id(), coords, str(new_army))
-	refresh_army(new_army.get_army_id(), new_army.get_army_client_array())
+	refresh_army(new_army.get_army_id(), new_army.get_army_client_array(), new_army.get_units_client_arrays())
 
 func get_unit_class(type: int) -> GDScript:
 	return unit_creator.get_unit_class(type)
@@ -167,10 +167,15 @@ func create_manpower_label(size: Vector2) -> RichTextLabel:
 
 # Moving Units
 @rpc("any_peer", "call_local", "unreliable")
-func set_army_route(army_id: int, move_to: Vector2i) -> void:
+func request_set_army_route(army_id: int, move_to: Vector2i) -> void:
 	var army_obj: army = get_army(army_id)
 	if army_obj != null:
-		set_army_route_locally(army_id, army_obj.get_location(), move_to)
+		set_army_route.rpc(army_id, move_to)
+
+@rpc("authority", "call_local", "unreliable")
+func set_army_route(army_id: int, move_to: Vector2i) -> void:
+	var army_obj: army = get_army(army_id)
+	set_army_route_locally(army_id, army_obj.get_location(), move_to)
 
 #Coords here for desync checking
 func set_army_route_locally(army_id: int, _coords: Vector2i, move_to: Vector2i) -> void:
@@ -363,7 +368,8 @@ func update_army_progress(army_obj: army, delta: float) -> void:
 
 func prepare_refresh_army(army_obj: army) -> void:
 	var info_array: Array = army_obj.get_army_client_array()
-	refresh_army.rpc(army_obj.get_army_id(), info_array)
+	var units_array: Array = army_obj.get_units_client_arrays()
+	refresh_army.rpc(army_obj.get_army_id(), info_array, units_array)
 
 func retreat_units() -> void:
 	for army_id: int in armies_to_retreat:
@@ -393,7 +399,7 @@ func kill_army(army_id: int, coords: Vector2i) -> void:
 	var node: Control = get_control_node(army_id)
 	army_data.erase(army_id)
 	check_and_clean_army(army_id, coords)
-	chech_and_clean_attacking_army(army_id, coords)
+	check_and_clean_attacking_army(army_id, coords)
 	clean_up_node(node)
 	
 	if tile_has_no_army(coords):
@@ -415,7 +421,7 @@ func check_and_clean_army(army_id: int, coords: Vector2i) -> void:
 			army_stack.remove_at(index)
 			break
 
-func chech_and_clean_attacking_army(army_id: int, coords: Vector2i) -> void:
+func check_and_clean_attacking_army(army_id: int, coords: Vector2i) -> void:
 	#Cleans attacking armies
 	var army_stack: Array = attacking_army_locations[coords]
 	for index: int in army_stack.size():
