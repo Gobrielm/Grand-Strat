@@ -27,7 +27,13 @@ static func get_instance() -> map_data:
 	return singleton_instance
 
 func add_depot(coords: Vector2i, depot: terminal) -> void:
+	mutex.lock()
 	depots[coords] = depot
+	mutex.unlock()
+
+@rpc("authority", "call_remote", "unreliable")
+func client_add_depot(coords: Vector2i, p_owner: int) -> void:
+	depots[coords] = vehicle_depot.new(coords, p_owner)
 
 func get_depot(coords: Vector2i) -> terminal:
 	if is_depot(coords):

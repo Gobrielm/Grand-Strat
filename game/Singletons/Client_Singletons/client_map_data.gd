@@ -1,1 +1,0 @@
-extends map_data

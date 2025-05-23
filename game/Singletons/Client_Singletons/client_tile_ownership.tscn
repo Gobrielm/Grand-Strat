@@ -5,16 +5,16 @@
 [ext_resource type="Script" uid="uid://181fipy6oh1k" path="res://Singletons/Client_Singletons/client_tile_ownership.gd" id="2_7gu2f"]
 [ext_resource type="AudioStream" uid="uid://hjwuqfregp64" path="res://Sounds/mixkit-negative-tone-interface-tap-2569.wav" id="3_jifi0"]
 
-[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_1b4vx"]
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_tabeg"]
 texture = ExtResource("1_3vshf")
-margins = Vector2i(0, 64)
-separation = Vector2i(0, 64)
-texture_region_size = Vector2i(128, 128)
-0:0/0 = 0
+margins = Vector2i(0, 38)
+texture_region_size = Vector2i(128, 192)
 1:0/0 = 0
+0:0/next_alternative_id = 4
+0:0/0 = 0
 2:0/0 = 0
-3:0/0 = 0
 4:0/0 = 0
+3:0/0 = 0
 5:0/0 = 0
 6:0/0 = 0
 7:0/0 = 0
@@ -27,19 +27,19 @@ texture_region_size = Vector2i(128, 128)
 6:1/0 = 0
 7:1/0 = 0
 
-[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_2aimb"]
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_csdo2"]
 texture = ExtResource("2_2iiey")
-margins = Vector2i(0, 64)
+margins = Vector2i(0, 70)
 separation = Vector2i(0, 64)
 texture_region_size = Vector2i(128, 128)
 0:0/0 = 0
+1:0/0 = 0
 2:0/0 = 0
 3:0/0 = 0
-1:0/0 = 0
 4:0/0 = 0
+5:0/0 = 0
 6:0/0 = 0
 7:0/0 = 0
-5:0/0 = 0
 7:1/0 = 0
 6:1/0 = 0
 5:1/0 = 0
@@ -49,15 +49,17 @@ texture_region_size = Vector2i(128, 128)
 1:1/0 = 0
 0:1/0 = 0
 
-[sub_resource type="TileSet" id="TileSet_bmynm"]
+[sub_resource type="TileSet" id="TileSet_yxa6a"]
 tile_shape = 3
 tile_offset_axis = 1
-tile_size = Vector2i(128, 115)
-sources/0 = SubResource("TileSetAtlasSource_1b4vx")
-sources/1 = SubResource("TileSetAtlasSource_2aimb")
+tile_size = Vector2i(127, 110)
+sources/0 = SubResource("TileSetAtlasSource_tabeg")
+sources/1 = SubResource("TileSetAtlasSource_csdo2")
 
 [node name="client_tile_ownership" type="TileMapLayer"]
-tile_set = SubResource("TileSet_bmynm")
+z_index = 1
+y_sort_enabled = true
+tile_set = SubResource("TileSet_yxa6a")
 script = ExtResource("2_7gu2f")
 
 [node name="click_noise" type="AudioStreamPlayer" parent="."]

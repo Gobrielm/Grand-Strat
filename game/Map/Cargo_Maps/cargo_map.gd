@@ -15,7 +15,7 @@ func create_town(coords: Vector2i, prov_id: int) -> void:
 	var mult: int = map_dat.get_population_as_level(prov_id)
 	var new_town: terminal = town.new(coords, tile_ownership.get_instance().get_player_id_from_cell(coords), mult)
 	Utils.world_map.make_cell_invisible(coords)
-	set_tile(coords, Vector2i(0, 1))
+	set_tile.rpc(coords, Vector2i(0, 1))
 	add_terminal_to_province(new_town)
 	terminal_map.create_terminal(new_town)
 
@@ -30,9 +30,7 @@ func remove_terminal_from_province(coords: Vector2i) -> void:
 	prov.remove_terminal(coords)
 
 func transform_construction_site_to_factory(coords: Vector2i) -> void:
-	mutex.lock()
-	set_tile(coords, Vector2i(4, 1))
-	mutex.unlock()
+	set_tile.rpc(coords, Vector2i(4, 1))
 	add_terminal_to_province(terminal_map.get_terminal(coords))
 
 func place_random_industries() -> void:
@@ -84,7 +82,7 @@ func create_factory(p_player_id: int, coords: Vector2i, obj_recipe: Array, mult:
 		new_factory =  ai_factory.new(coords, p_player_id, obj_recipe[0], obj_recipe[1])
 	for i: int in range(1, mult):
 		new_factory.admin_upgrade()
-	set_tile(coords, get_atlas_cell(obj_recipe))
+	set_tile.rpc(coords, get_atlas_cell(obj_recipe))
 	add_terminal_to_province(new_factory)
 	terminal_map.create_terminal(new_factory)
 
@@ -105,9 +103,7 @@ func get_atlas_cell(obj_recipe: Array) -> Vector2i:
 
 func create_construction_site(_player_id: int, coords: Vector2i) -> void:
 	var new_factory: construction_site = construction_site.new(coords, _player_id)
-	mutex.lock()
-	set_tile(coords, Vector2i(3, 1))
-	mutex.unlock()
+	set_tile.rpc(coords, Vector2i(3, 1))
 	add_terminal_to_province(new_factory)
 	terminal_map.create_terminal(new_factory)
 
@@ -117,8 +113,11 @@ func get_available_primary_recipes(coords: Vector2i) -> Array:
 func place_resources(map: TileMapLayer) -> void:
 	cargo_values.place_resources(map)
 
+@rpc("authority", "call_local", "unreliable")
 func set_tile(coords: Vector2i, atlas: Vector2i) -> void:
+	mutex.lock()
 	set_cell(coords, 0, atlas)
+	mutex.unlock()
 	Utils.world_map.make_cell_invisible(coords)
 
 func _on_cargo_values_finished_created_map_resources() -> void:

@@ -7,24 +7,24 @@ func open_window(_coords: Vector2i) -> void:
 	position = Vector2i(0, 0)
 	coords = _coords
 	if current_tab == 0:
-		open_province_window()
+		open_tile_window()
 	else:
-		open_state_window()
+		open_province_window()
 	popup()
 
-func open_state_window() -> void:
-	$Province_control.visible = false
-	request_province_id.rpc_id(1, coords)
-	request_province_pop.rpc_id(1, coords)
-	$State_control.visible = true
-
-func open_province_window() -> void:
+func open_tile_window() -> void:
 	$State_control.visible = false
 	#var resolution: Vector2i = get_tree().root.content_scale_size
 	$Province_control/Coords.text = str(coords)
 	request_biome.rpc_id(1, coords)
 	request_resources_available.rpc_id(1, coords)
 	$Province_control.visible = true
+
+func open_province_window() -> void:
+	$Province_control.visible = false
+	request_province_id.rpc_id(1, coords)
+	request_province_pop.rpc_id(1, coords)
+	$State_control.visible = true
 
 @rpc("any_peer", "call_local")
 func request_province_id(p_coords: Vector2i) -> void:

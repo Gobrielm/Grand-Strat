@@ -1,4 +1,4 @@
-extends terminal
+class_name vehicle_depot extends terminal
 var trains: Array = []
 
 const train_scene: PackedScene = preload("res://Cargo/Cargo_Objects/Trains/train.tscn")

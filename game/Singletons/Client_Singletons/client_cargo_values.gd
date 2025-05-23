@@ -5,9 +5,7 @@ var magnitude_layers: Array = []
 var mutex: Mutex = Mutex.new()
 
 func _ready() -> void:
-	get_parent().name = "cargo_map"
 	name = "cargo_values"
-	Utils.assign_cargo_map(get_parent())
 	create_magnitude_layers()
 
 func create_magnitude_layers() -> void:

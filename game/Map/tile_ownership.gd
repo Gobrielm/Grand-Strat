@@ -33,7 +33,13 @@ func add_tile_to_country(tile: Vector2i, country_id: int) -> void:
 	country_id_to_tiles_owned[country_id].append(tile)
 	tile_to_country_id[tile] = country_id
 	@warning_ignore("integer_division")
-	set_cell(tile, 0, Vector2i(country_id / 8, country_id % 8))
+	set_tile.rpc(tile, Vector2i(country_id / 8, country_id % 8))
+
+@rpc("authority", "call_local", "unreliable")
+func set_tile(tile: Vector2i, atlas: Vector2i) -> void:
+	mutex.lock()
+	set_cell(tile, 0, atlas)
+	mutex.unlock()
 
 @rpc("authority", "call_local", "reliable")
 func refresh_tile_ownership(_resource: Dictionary) -> void:
@@ -68,7 +74,7 @@ func add_player_to_country(player_id: int, coords: Vector2i) -> void:
 func select_nation(cells_to_change: Array) -> void:
 	var atlas: Vector2i = get_cell_atlas_coords(cells_to_change[0])
 	for cell: Vector2i in cells_to_change:
-		set_cell(cell, 1, atlas)
+		set_tile(cell, atlas)
 
 @rpc("authority", "call_local", "reliable")
 func play_noise() -> void:
@@ -78,7 +84,7 @@ func play_noise() -> void:
 func unselect_nation(cells_to_change: Array) -> void:
 	var atlas: Vector2i = get_cell_atlas_coords(cells_to_change[0])
 	for cell: Vector2i in cells_to_change:
-		set_cell(cell, 0, atlas)
+		set_tile(cell, atlas)
 
 func is_owned(player_id: int, coords: Vector2i) -> bool:
 	var toReturn: bool = false

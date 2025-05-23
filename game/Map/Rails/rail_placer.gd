@@ -42,7 +42,7 @@ func _ready() -> void:
 
 func init_all_rails() -> void:
 	for cell: Vector2i in Utils.world_map.get_used_cells():
-		init_track_connection.rpc(cell)
+		init_track_connection(cell)
 
 func get_rail_layers() -> Array[TileMapLayer]:
 	var toReturn: Array[TileMapLayer] = []
@@ -181,13 +181,11 @@ func get_temp_layer(curr_orientation: int) -> TileMapLayer:
 		return temp_layer_array[curr_orientation]
 	return null
 
-@rpc("authority", "call_local", "reliable")
 func init_track_connection(coords: Vector2i) -> void:
 	mutex.lock()
 	track_connection[coords] = [false, false, false, false, false, false]
 	mutex.unlock()
 
-@rpc("authority", "call_local", "reliable")
 func add_track_connection(coords: Vector2i, new_orientation: int) -> void:
 	mutex.lock()
 	if !track_connection.has(coords):
@@ -199,7 +197,6 @@ func add_track_connection(coords: Vector2i, new_orientation: int) -> void:
 	track_connection[coords][new_orientation] = true
 	mutex.unlock()
 
-@rpc("authority", "call_local", "reliable")
 func delete_track_connection(coords: Vector2i, new_orientation: int) -> void:
 	mutex.lock()
 	track_connection[coords][new_orientation] = false

@@ -50,8 +50,8 @@ func _ready() -> void:
 	Utils.assign_world_map(self)
 
 func initialize_game() -> void:
+	map_data.new(self)
 	if unique_id == 1:
-		map_data.new(self)
 		create_untraversable_tiles()
 		unit_map = load("res://Map/unit_map.tscn").instantiate()
 		add_child(unit_map)

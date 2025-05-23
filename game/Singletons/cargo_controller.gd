@@ -28,11 +28,9 @@ func get_game_speed() -> int:
 
 func day_tick() -> void:
 	terminal_map._on_day_tick_timeout()
-	#Calls server first as it needs correct day
 	clock.iterate_day()
 	if clock.is_next_month():
 		_on_month_tick_timeout()
-	clock.iterate_day.rpc()
 
 func _on_month_tick_timeout() -> void:
 	terminal_map._on_month_tick_timeout()
