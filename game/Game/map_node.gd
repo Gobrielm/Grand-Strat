@@ -17,6 +17,15 @@ var unique_id: int
 func _ready() -> void:
 	randomize()
 	unique_id = multiplayer.get_unique_id()
+	await get_tree().process_frame
+	await get_tree().process_frame
+	initialize_game()
+
+func initialize_game() -> void:
+	#Main map initialization is very basic, do first
+	main_map.initialize_game()
+	await get_tree().process_frame
+	await get_tree().process_frame
 	if unique_id != 1:
 		remove_child(cargo_map)
 		cargo_map.queue_free()
@@ -24,19 +33,19 @@ func _ready() -> void:
 		add_child(cargo_map)
 		remove_child(tile_ownership_obj)
 		tile_ownership_obj.queue_free()
-		tile_ownership_obj = preload("res://Client_Objects/client_tile_ownership.tscn").instantiate()
+		tile_ownership_obj = preload("res://Singletons/Client_Singletons/client_tile_ownership.tscn").instantiate()
 		tile_ownership_obj.name = "tile_ownership"
 		add_child(tile_ownership_obj)
 	else:
 		#Singleton Creation
 		train_manager.new()
 		ai_manager.new()
-		Utils.assign_world_map(main_map)
 		terminal_map.assign_cargo_map(cargo_map)
 		money_controller.new(multiplayer.get_peers())
 		main_map.on_singleton_creation()
+		cargo_map.place_resources(main_map)
+		tile_ownership_obj.create_countries()
 	enable_nation_picker()
-	cargo_map.place_resources(main_map)
 
 func _input(event: InputEvent) -> void:
 	main_map.update_hover()

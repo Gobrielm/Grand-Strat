@@ -1,7 +1,11 @@
-extends TileMapLayer
+extends tile_ownership
 
 func _ready() -> void:
+	singleton_instance = self
 	prepare_refresh_tile_ownership.rpc_id(1)
+
+func create_countries() -> void:
+	pass
 
 @rpc("authority", "call_remote", "reliable")
 func refresh_tile_ownership(resource: Dictionary) -> void:

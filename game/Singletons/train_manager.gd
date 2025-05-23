@@ -17,6 +17,9 @@ static func get_instance() -> train_manager:
 	assert(singleton_instance != null, "Train_Manager has not be created, and has been accessed")
 	return singleton_instance
 
+static func has_instance() -> bool:
+	return singleton_instance != null
+
 func get_network(network_id: int) -> rail_network:
 	return networks[network_id]
 

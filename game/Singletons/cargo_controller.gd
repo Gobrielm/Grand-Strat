@@ -20,13 +20,11 @@ func _ready() -> void:
 	$basic_tick.wait_time = 1.0 / TICKS_IN_DAY
 
 func change_speed(p_speed: float) -> void:
+	#TODO: Doesn't change
 	$basic_tick.wait_time = 1.0 / TICKS_IN_DAY / p_speed
 
 func get_game_speed() -> int:
 	return clock_singleton.get_instance().get_game_speed()
-
-func _process(delta: float) -> void:
-	train_manager.get_instance().process(delta * get_game_speed())
 
 func day_tick() -> void:
 	terminal_map._on_day_tick_timeout()
@@ -41,7 +39,8 @@ func _on_month_tick_timeout() -> void:
 
 func _on_basic_tick_timeout() -> void:
 	ticks += 1
-	train_manager.get_instance().process(get_tick_length())
+	if train_manager.has_instance():
+		train_manager.get_instance().process(get_tick_length())
 	
 	if ticks == TICKS_IN_DAY:
 		day_tick()

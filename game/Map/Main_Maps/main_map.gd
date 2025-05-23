@@ -29,6 +29,7 @@ func _on_timer_timeout() -> void:
 	if unique_id == 1:
 		for peer: int in multiplayer.get_peers():
 			if heart_beat[peer] != 0:
+				print("deysnc")
 				camera.update_desync_label(heart_beat[peer])
 			heart_beat[peer] += 1
 		server_heart_beat()
@@ -46,9 +47,11 @@ func recognize_heart_beat() -> void:
 
 func _ready() -> void:
 	unique_id = multiplayer.get_unique_id()
-	map_data.new(self)
+	Utils.assign_world_map(self)
+
+func initialize_game() -> void:
 	if unique_id == 1:
-		Utils.assign_world_map(self)
+		map_data.new(self)
 		create_untraversable_tiles()
 		unit_map = load("res://Map/unit_map.tscn").instantiate()
 		add_child(unit_map)

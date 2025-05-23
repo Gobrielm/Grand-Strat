@@ -13,7 +13,7 @@ static func round(num: float, places: int) -> float:
 
 static func assign_cargo_map(_cargo_map: Node) -> void:
 	cargo_map = _cargo_map
-	cargo_values = cargo_map.cargo_values
+	cargo_values = cargo_map.get_node("cargo_values")
 
 static func assign_world_map(_world_map: TileMapLayer) -> void:
 	world_map = _world_map

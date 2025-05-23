@@ -27,6 +27,9 @@ func _on_join_game_pressed() -> void:
 		lobby.join_game(ip_address)
 
 func parse_valid_ip_address(input: String) -> String:
+	if input.is_empty():
+		#PBUG: DO NOT KEEP THIS
+		input = "10.100.0.236"
 	var ip_address_blocks: Array = ["0", "0", "0", "0"]
 	var curr_block: int = 0
 	var tracker: int = 0

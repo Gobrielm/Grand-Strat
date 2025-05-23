@@ -86,7 +86,6 @@ func _on_single_track_button_pressed() -> void:
 func _on_factory_button_pressed() -> void:
 	state_machine.factory_button_toggled()
 
-
 func _on_start_or_ready_pressed() -> void:
 	Utils.world_map.get_parent().disable_nation_picker()
 	$nation_picker/start_or_ready.visible = false

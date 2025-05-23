@@ -8,7 +8,7 @@ signal player_disconnected(peer_id: int)
 signal server_disconnected
 
 const PORT: int = 7000
-const DEFAULT_SERVER_IP: String = "127.0.0.1" # IPv4 localhost
+const DEFAULT_SERVER_IP: String = "10.100.0.236" # IPv4 localhost
 const MAX_CONNECTIONS: int = 20
 
 # This will contain player info for every player,
@@ -93,6 +93,7 @@ func _register_player(new_player_info: Dictionary) -> void:
 
 
 func _on_player_disconnected(id: int) -> void:
+	print("Peer disconnected")
 	players.erase(id)
 	player_disconnected.emit(id)
 
@@ -104,10 +105,12 @@ func _on_connected_ok() -> void:
 
 
 func _on_connected_fail() -> void:
+	print("Peer's connection failed")
 	multiplayer.multiplayer_peer = null
 
 
 func _on_server_disconnected() -> void:
+	print("Server disconnected")
 	multiplayer.multiplayer_peer = null
 	players.clear()
 	server_disconnected.emit()

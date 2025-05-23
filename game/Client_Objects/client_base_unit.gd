@@ -1,12 +1,12 @@
 extends base_unit
 
-func _init():
+func _init() -> void:
 	manpower = 0
 	morale = 0
 	experience = 0
 	
 ##[manpower, morale, experience, org.get_organization()]
-func update_stats(unit_info: Array):
+func update_stats(unit_info: Array) -> void:
 	manpower = unit_info[0]
 	morale = unit_info[1]
 	experience = unit_info[2]

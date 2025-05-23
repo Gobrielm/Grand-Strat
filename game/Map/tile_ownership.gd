@@ -12,11 +12,10 @@ static var singleton_instance: tile_ownership = null
 
 func _ready() -> void:
 	assert(singleton_instance == null, "Cannot create multiple instances of singleton!")
-	call_deferred("create_countries")
 	singleton_instance = self
 
 static func get_instance() -> tile_ownership:
-	assert(singleton_instance != null, "Train_Manager has not be created, and has been accessed")
+	assert(singleton_instance != null, "Tile_Ownership has not be created, and has been accessed")
 	return singleton_instance
 
 func create_countries() -> void:
