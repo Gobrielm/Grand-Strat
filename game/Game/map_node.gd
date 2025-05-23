@@ -119,7 +119,7 @@ func disable_nation_picker() -> void:
 
 func pick_nation() -> void:
 	var coords: Vector2i = main_map.get_cell_position()
-	tile_ownership_obj.add_player_to_country.rpc_id(1, unique_id, coords)
+	tile_ownership_obj.add_player_to_country.rpc_id(1, coords)
 
 #Map Commands
 func get_cell_position() -> Vector2i:

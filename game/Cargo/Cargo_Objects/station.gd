@@ -50,12 +50,12 @@ func remove_order(type: int) -> void:
 
 func distribute_cargo() -> void:
 	#Prioritize re-supplying friendly units
-	supply_units()
+	supply_armies()
 	for order: trade_order in trade_orders.values():
 		if order.is_sell_order():
 			distribute_from_order(order)
 
-func supply_units() -> void:
+func supply_armies() -> void:
 	var units_to_supply: Dictionary[Vector2i, int] = get_units_to_supply()
 	if units_to_supply.size() > 0:
 		print("supplying unit")
@@ -63,7 +63,7 @@ func supply_units() -> void:
 		for type: int in storage:
 			if storage[type] == 0:
 				continue
-			supply_unit(tile, type, units_to_supply[tile])
+			supply_army(tile, type, units_to_supply[tile])
 
 func get_units_to_supply() -> Dictionary[Vector2i, int]:
 	var map: TileMapLayer = Utils.world_map
@@ -77,19 +77,23 @@ func get_units_to_supply() -> Dictionary[Vector2i, int]:
 		for tile: Vector2i in map.get_surrounding_cells(curr):
 			if !visited.has(tile) or (visited.has(tile) and visited[tile] < visited[curr] - SUPPLY_DROPOFF):
 				#Can't supply through enemy units
-				if unit_map.tile_has_enemy_unit(tile, player_owner):
+				if unit_map.tile_has_enemy_army(tile, player_owner):
 					continue
 				visited[tile] = visited[curr] - SUPPLY_DROPOFF
 				if visited[tile] > 0:
 					queue.push_back(tile)
-					if unit_map.tile_has_friendly_unit(tile, player_owner):
+					if unit_map.tile_has_friendly_army(tile, player_owner):
 						units_to_supply[tile] = visited[tile]
 	return units_to_supply
 
-func supply_unit(tile: Vector2i, type: int, max_supply: int) -> void:
-	var unit: base_unit = Utils.unit_map.get_unit(tile, player_owner)
-	if unit == null:
+func supply_army(tile: Vector2i, type: int, max_supply: int) -> void:
+	var army_obj: army = Utils.unit_map.get_army(tile, player_owner)
+	if army_obj == null:
 		return
+	for unit: base_unit in army_obj.get_units():
+		supply_unit(unit, type, max_supply)
+	
+func supply_unit(unit: base_unit, type: int, max_supply: int) -> void:
 	var org: organization = unit.org
 	var desired: int = min(org.get_desired_cargo(type), max_supply)
 	var amount: int = transfer_cargo(type, desired)

@@ -35,7 +35,7 @@ func add_tile_to_country(tile: Vector2i, country_id: int) -> void:
 	@warning_ignore("integer_division")
 	set_tile.rpc(tile, Vector2i(country_id / 8, country_id % 8))
 
-@rpc("authority", "call_local", "unreliable")
+@rpc("authority", "call_local", "reliable")
 func set_tile(tile: Vector2i, atlas: Vector2i) -> void:
 	mutex.lock()
 	set_cell(tile, 0, atlas)
@@ -53,38 +53,36 @@ func prepare_refresh_tile_ownership() -> void:
 	refresh_tile_ownership.rpc_id(multiplayer.get_remote_sender_id(), dict)
 
 @rpc("any_peer", "call_local", "unreliable")
-func add_player_to_country(player_id: int, coords: Vector2i) -> void:
+func add_player_to_country(coords: Vector2i) -> void:
 	if !tile_to_country_id.has(coords):
 		return
+	var player_id: int = multiplayer.get_remote_sender_id()
 	var country_id: int = tile_to_country_id[coords]
 	
 	if !country_id_to_player_id.has(country_id):
 		if player_id_to_country_id.has(player_id):
 			var last_country_id: int = player_id_to_country_id[player_id]
 			country_id_to_player_id.erase(last_country_id)
-			unselect_nation.rpc(last_country_id)
+			unselect_nation.rpc()
 		
 		country_id_to_player_id[country_id] = player_id
 		player_id_to_country_id[player_id] = country_id
-		$click_noise.play()
-		select_nation.rpc(country_id_to_tiles_owned[country_id])
+		select_nation.rpc()
 		play_noise.rpc_id(player_id)
 
 @rpc("any_peer", "call_local", "reliable")
-func select_nation(cells_to_change: Array) -> void:
-	var atlas: Vector2i = get_cell_atlas_coords(cells_to_change[0])
-	for cell: Vector2i in cells_to_change:
-		set_tile(cell, atlas)
+func select_nation() -> void:
+	#TODO: Country Browser Thingy
+	pass
 
 @rpc("authority", "call_local", "reliable")
 func play_noise() -> void:
 	$click_noise.play()
 
 @rpc("any_peer", "call_local", "reliable")
-func unselect_nation(cells_to_change: Array) -> void:
-	var atlas: Vector2i = get_cell_atlas_coords(cells_to_change[0])
-	for cell: Vector2i in cells_to_change:
-		set_tile(cell, atlas)
+func unselect_nation() -> void:
+	#TODO: Country Browser Thingy
+	pass
 
 func is_owned(player_id: int, coords: Vector2i) -> bool:
 	var toReturn: bool = false

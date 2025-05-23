@@ -2,8 +2,6 @@ class_name rail_placer extends Node2D
 
 static var singleton_instance: rail_placer
 
-var depot_script: GDScript = preload("res://Cargo/vehicle_depot.gd")
-
 var mutex: Mutex = Mutex.new()
 var temp_layer_array: Array[TileMapLayer] = []
 var track_connection: Dictionary[Vector2i, Array] = {}
@@ -90,6 +88,7 @@ func clear_all_real() -> void:
 		if layer.name.begins_with("Rail_Layer"):
 			(layer as TileMapLayer).clear()
 
+@rpc("authority", "call_local", "unreliable")
 func clear_all_temps() -> void:
 	for layer: TileMapLayer in temp_layer_array:
 		layer.clear()
@@ -99,7 +98,7 @@ func place_depot(coords: Vector2i, player_id: int) -> void:
 
 @rpc("authority", "call_local", "unreliable")
 func encode_depot(coords: Vector2i, player_id: int) -> void:
-	map_data.get_instance().add_depot(coords, depot_script.new(coords, player_id))
+	map_data.get_instance().add_depot(coords, vehicle_depot.new(coords, player_id))
 
 func place_station(coords: Vector2i, p_orientation: int, player_id: int) -> void:
 	create_map_tile.rpc(coords, (p_orientation + 3) % 6, 2)
@@ -112,6 +111,7 @@ func encode_station(coords: Vector2i, new_owner: int) -> void:
 
 #Should only be called as server
 func place_tile(coords: Vector2i, p_orientation: int, p_type: int, player_id: int) -> void:
+	clear_all_temps.rpc_id(player_id)
 	#Checks if spot is taken, if tile is traversable, and player is in the country
 	if is_already_built(coords, p_orientation) and Utils.world_map.is_tile_traversable(coords) and tile_ownership.get_instance().is_owned(player_id, coords):
 		return

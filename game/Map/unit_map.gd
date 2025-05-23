@@ -72,6 +72,7 @@ func get_army(army_id: int) -> army:
 func get_top_army(tile: Vector2i) -> army:
 	return get_army(army_locations[tile][0])
 #TODO: Change in general to also allow neutral armies
+
 func tile_has_enemy_army(tile_to_check: Vector2i, player_id: int) -> bool:
 	return !tile_has_no_army(tile_to_check) and get_top_army(tile_to_check).get_player_id() != player_id
 
