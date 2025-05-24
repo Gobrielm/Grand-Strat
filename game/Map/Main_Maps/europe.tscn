@@ -4,7 +4,7 @@
 [ext_resource type="Script" uid="uid://xip1aplnqbgb" path="res://Map/Main_Maps/main_map.gd" id="2_os223"]
 [ext_resource type="PackedScene" uid="uid://c6spn0m6m85vs" path="res://Player/player_camera.tscn" id="3_0haru"]
 [ext_resource type="PackedScene" uid="uid://denddx5f87r3r" path="res://Map/Rails/rail_placer.tscn" id="4_xigxy"]
-[ext_resource type="PackedScene" uid="uid://d2x16vqu0dy7j" path="res://Units/unit_managers/unit_creator_window.tscn" id="5_xl4ii"]
+[ext_resource type="PackedScene" uid="uid://d2x16vqu0dy7j" path="res://Units/unit_managers/army_creator_window.tscn" id="5_xl4ii"]
 [ext_resource type="PackedScene" uid="uid://dqvn8y35ax23b" path="res://Units/army_info_window.tscn" id="6_krssg"]
 [ext_resource type="PackedScene" uid="uid://bsap4yl65x1wd" path="res://Gui/Train_Gui/depot_window.tscn" id="7_2srfs"]
 [ext_resource type="PackedScene" uid="uid://tgrwgdaijaeh" path="res://Gui/station_window.tscn" id="8_54086"]

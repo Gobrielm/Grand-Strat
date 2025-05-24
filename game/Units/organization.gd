@@ -11,6 +11,15 @@ func _init(p_supply_needed: Dictionary[int, int]) -> void:
 		current_supply.add_accept(type)
 		current_supply.add_cargo(type, current_supply.max_amount)
 
+static func create_with_client_array(client_array: Array) -> organization:
+	var toReturn: organization = organization.new(client_array[0])
+	toReturn.set_current_storage(client_array[1])
+	return toReturn
+
+func set_current_storage(p_storage: Dictionary) -> void:
+	current_supply.storage = p_storage
+
+##[supply_needed, current_supply.storage]
 func convert_to_client_array() -> Array:
 	return [supply_needed, current_supply.storage]
 

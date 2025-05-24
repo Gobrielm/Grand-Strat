@@ -244,6 +244,10 @@ static func get_broker(coords: Vector2i) -> broker:
 static func is_station(coords: Vector2i) -> bool:
 	return get_terminal(coords) is station
 
+static func is_owned_station(coords: Vector2i, player_id: int) -> bool:
+	var temp: station = get_station(coords)
+	return temp != null and temp.get_player_owner() == player_id
+
 static func is_ai_station(coords: Vector2i) -> bool:
 	return get_terminal(coords) is ai_station
 

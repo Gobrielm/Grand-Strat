@@ -3,9 +3,21 @@ class_name base_unit extends Node
 func _init() -> void:
 	pass
 
+##return [manpower, morale, experience, org.convert_to_client_array()]
 func convert_to_client_array() -> Array:
 	#TODO: Add more stuff
+	return [manpower, morale, experience, org.convert_to_client_array()]
+
+##return [manpower, morale, experience, org.get_organization()]
+func convert_to_client_array_for_army() -> Array:
+	#TODO: Add more stuff
 	return [manpower, morale, experience, org.get_organization()]
+
+func update_stats(unit_info: Array) -> void:
+	manpower = unit_info[0]
+	morale = unit_info[1]
+	experience = unit_info[2]
+	org = organization.create_with_client_array(unit_info[3])
 
 static func get_cost() -> int:
 	return 0

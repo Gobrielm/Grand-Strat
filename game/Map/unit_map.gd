@@ -4,7 +4,9 @@ extends TileMapLayer
 var map: TileMapLayer
 var unit_creator: Node
 var battle_script: Node
-var selected_army: army
+var selected_armies: Array[army] = []
+var last_click: Vector2i
+var click_valid: bool = false
 
 #Assuming only matching player_id armies can stand on same tile, will change later
 var army_locations: Dictionary[Vector2i, Array] = {} #Array[army]
@@ -17,16 +19,43 @@ var armies_to_retreat: Dictionary[int, bool] = {}
 # === Built-ins ===
 func _ready() -> void:
 	battle_script = load("res://Units/unit_managers/battle_script.gd").new(self)
-	unit_creator = load("res://Units/unit_managers/unit_creator.gd").new()
+	unit_creator = load("res://Units/unit_managers/army_creator.gd").new()
 	map = get_parent()
 	Utils.assign_unit_map(self)
 
 func _input(event: InputEvent) -> void:
-	if event.is_action_pressed("deselect") and state_machine.is_selecting_unit():
-		request_set_army_route(selected_army.get_army_id(), map.get_cell_position())
-		map.update_info_window(selected_army.get_army_client_array())
+	if event.is_action_pressed("click") and (state_machine.is_controlling_camera() or state_machine.is_selecting_unit()):
+		last_click = map.get_cell_position()
+		click_valid = true
+	elif event.is_action_released("click") and (state_machine.is_controlling_camera() or state_machine.is_selecting_unit()):
+		select_many_armies(map.get_cell_position(), last_click, multiplayer.get_unique_id())
+		click_valid = false
+		show_army_info_window()
+	
+	elif event.is_action_pressed("deselect") and state_machine.is_selecting_unit():
+		request_set_army_route(get_selected_army_ids(), map.get_cell_position())
+		if is_selecting_one_army():
+			map.update_info_window(get_selected_army().get_army_client_array())
+	elif event.is_action_pressed("merge_units") and state_machine.is_selecting_unit():
+		pass
+
+# === Gui ===
+func show_army_info_window() -> void:
+	if !is_selecting_one_army():
+		return
+	var unit_info_array: Array = (get_selected_army() as army).get_army_client_array()
+	map.show_army_info_window(unit_info_array)
 
 # === Networking ===
+func is_selecting_one_army() -> bool:
+	return selected_armies.size() == 1
+
+func get_selected_army_ids() -> Array[int]:
+	var toReturn: Array[int] = []
+	for selected_army: army in selected_armies:
+		toReturn.append(selected_army.get_army_id())
+	return toReturn
+
 func send_data_to_clients() -> void:
 	map.refresh_unit_map.rpc(get_used_cells_dictionary())
 
@@ -97,7 +126,7 @@ func check_before_create(coords: Vector2i, type: int, player_id: int) -> void:
 	var cost: int = unit_class.get_cost()
 	var money_cntrl: money_controller = money_controller.get_instance()
 	
-	if !army_locations.has(coords) and money_cntrl.player_has_enough_money(player_id, cost):
+	if money_cntrl.player_has_enough_money(player_id, cost):
 		money_cntrl.remove_money_from_player(player_id, cost)
 		create_army_locally(coords, type, player_id)
 		create_army.rpc(coords, type, player_id, army_locations[coords].back())
@@ -174,10 +203,11 @@ func create_manpower_label(size: Vector2) -> RichTextLabel:
 
 # Moving Units
 @rpc("any_peer", "call_local", "unreliable")
-func request_set_army_route(army_id: int, move_to: Vector2i) -> void:
-	var army_obj: army = get_army(army_id)
-	if army_obj != null:
-		set_army_route.rpc(army_id, move_to)
+func request_set_army_route(army_ids: Array[int], move_to: Vector2i) -> void:
+	for army_id: int in army_ids:
+		var army_obj: army = get_army(army_id)
+		if army_obj != null:
+			set_army_route.rpc(army_id, move_to)
 
 @rpc("authority", "call_local", "unreliable")
 func set_army_route(army_id: int, move_to: Vector2i) -> void:
@@ -188,12 +218,9 @@ func set_army_route(army_id: int, move_to: Vector2i) -> void:
 func set_army_route_locally(army_id: int, _coords: Vector2i, move_to: Vector2i) -> void:
 	var army_obj: army = get_army(army_id)
 	army_obj.set_route(bfs_to_destination(army_obj, move_to))
-	if army_obj == selected_army and army_obj.get_player_id() == multiplayer.get_unique_id():
+	if selected_armies.has(army_obj) and army_obj.get_player_id() == multiplayer.get_unique_id():
 		$dest_sound.play(0.3)
 		highlight_dest()
-
-func get_selected_coords() -> Vector2i:
-	return selected_army.get_location()
 
 # Movement Logic
 func check_move(army_obj: army) -> void:
@@ -290,23 +317,58 @@ func unit_battle(attacker: army, defender: army) -> void:
 		armies_to_retreat[attacker.get_army_id()] = true
 
 func get_selected_army() -> army:
-	return selected_army
+	if selected_armies.size() == 1:
+		return selected_armies[0]
+	return null
 
 func army_is_owned(army_obj: army) -> bool:
 	return army_obj.get_player_id() == multiplayer.get_unique_id()
 
+func select_many_armies(tile1: Vector2i, tile2: Vector2i, player_id: int) -> void:
+	if tile1 == tile2:
+		select_army(tile1, player_id)
+		return
+	unhightlight_name()
+	selected_armies.clear()
+	var coords1: Vector2 = map.map_to_local(tile1)
+	var coords2: Vector2 = map.map_to_local(tile2)
+	if (coords1.x > coords2.x):
+		var temp: float = coords1.x
+		coords1.x = coords2.x
+		coords2.x = temp
+	if (coords1.y > coords2.y):
+		var temp: float = coords1.y
+		coords1.y = coords2.y
+		coords2.y = temp
+	
+	#Steps are width/height of a tile
+	for x: float in range(coords1.x, coords2.x, 127):
+		for y: float in range(coords1.y, coords2.y, 110):
+			var coords: Vector2i = map.local_to_map(Vector2(x, y))
+			if tile_has_friendly_army(coords, player_id):
+				selected_armies.append(get_top_army(coords))
+				$select_unit_sound.play(0.5)
+				state_machine.click_unit()
+			highlight_dest()
+			highlight_name()
+	
+	if selected_armies.is_empty():
+		state_machine.unclick_unit()
+		map.close_unit_box()
+
 func select_army(coords: Vector2i, player_id: int) -> void:
 	unhightlight_name()
-	if selected_army != null and selected_army.get_location() == coords:
+	if is_selecting_one_army() and get_selected_army().get_location() == coords:
 		cycle_army_selection(coords)
 		$select_unit_sound.play(0.5)
 		state_machine.click_unit()
 	elif tile_has_friendly_army(coords, player_id):
-		selected_army = get_top_army(coords)
+		selected_armies.clear()
+		selected_armies.append(get_top_army(coords))
 		$select_unit_sound.play(0.5)
 		state_machine.click_unit()
 	else:
-		selected_army = null
+		selected_armies.clear()
 		state_machine.unclick_unit()
 		map.close_unit_box()
 	highlight_dest()
@@ -314,12 +376,14 @@ func select_army(coords: Vector2i, player_id: int) -> void:
 
 func cycle_army_selection(coords: Vector2i) -> void:
 	var next_unit: bool = false
+	var selected_army: army = get_selected_army()
+	selected_armies.clear()
 	var army_stack: Array = army_locations[coords]
 	for i: int in army_stack.size():
 		var army_id: int = army_stack[i]
 		#Will select new army after looping once
 		if next_unit:
-			selected_army = get_army(army_id)
+			selected_armies.append(get_army(army_id))
 			next_unit = false
 			break
 		
@@ -327,7 +391,7 @@ func cycle_army_selection(coords: Vector2i) -> void:
 			next_unit = true
 	#On last army, cycle back to first
 	if next_unit:
-		selected_army = get_top_army(coords)
+		selected_armies.append(get_top_army(coords))
 
 func highlight_name() -> void:
 	apply_color_to_selected_unit(Color(1, 0, 0, 1))
@@ -336,20 +400,20 @@ func unhightlight_name() -> void:
 	apply_color_to_selected_unit(Color(1, 1, 1, 1))
 
 func apply_color_to_selected_unit(color: Color) -> void:
-	if selected_army == null:
+	if selected_armies.is_empty():
 		return
-	var node: Control = get_control_node(selected_army.get_army_id())
-	var unit_name: Label = node.get_node("Label")
-	unit_name.add_theme_color_override("font_color", color)
+	for selected_army: army in selected_armies:
+		var node: Control = get_control_node(selected_army.get_army_id())
+		var unit_name: Label = node.get_node("Label")
+		unit_name.add_theme_color_override("font_color", color)
 
 func highlight_dest() -> void:
-	if selected_army != null:
-		if selected_army.get_destination() != null and army_is_owned(selected_army):
-			map.highlight_cell(selected_army.get_destination())
-		else:
-			map.clear_highlights()
-	else:
+	if selected_armies.is_empty():
 		map.clear_highlights()
+	for selected_army: army in selected_armies:
+		if selected_army.get_destination() != null:
+			map.highlight_cell(selected_army.get_destination())
+		
 
 func _process(delta: float) -> void:
 	for location: Vector2i in army_locations:

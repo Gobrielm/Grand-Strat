@@ -8,11 +8,9 @@ var army_locations: Dictionary[Vector2i, Array] = {} #Array[army]
 var attacking_army_locations: Dictionary[Vector2i, Array] = {} #Array[army]
 var army_data: Dictionary[int, client_army] #Army id -> Army
 
-const client_unit: GDScript = preload("res://Client_Objects/client_base_unit.gd")
-
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
-	unit_creator = preload("res://Units/unit_managers/unit_creator.gd").new()
+	unit_creator = preload("res://Units/unit_managers/army_creator.gd").new()
 	map = get_parent() as TileMapLayer
 
 func _input(event: InputEvent) -> void:
@@ -36,13 +34,13 @@ func request_refresh(_tile: Vector2i) -> void:
 
 @rpc("authority", "call_local", "unreliable")
 func refresh_army(army_id: int, info_array: Array, units_array: Array) -> void:
+	get_army(army_id).update_stats(info_array, units_array)
 	var node: Node = get_control_node(army_id)
 	var morale_bar: ProgressBar = node.get_node("MoraleBar")
 	morale_bar.value = info_array[1]
 
 	var manpower_label: RichTextLabel = node.get_node("Manpower_Label")
 	manpower_label.text = "[center]" + str(info_array[0]) + "[/center]"
-	get_army(army_id).update_stats(info_array, units_array)
 
 # === Unit Checks ===
 func get_army(army_id: int) -> client_army:
@@ -74,7 +72,7 @@ func get_control_node(army_id: int) -> Control:
 func check_before_create(_coords: Vector2i, _type: int, _player_id: int) -> void:
 	pass
 
-@rpc("authority", "call_local", "unreliable")
+@rpc("authority", "call_remote", "unreliable")
 func create_army(coords: Vector2i, type: int, player_id: int, army_id: int) -> void:
 	create_army_locally(coords, type, player_id, army_id)
 
@@ -85,8 +83,8 @@ func create_army_locally(coords: Vector2i, type: int, player_id: int, army_id: i
 
 	var unit_class: GDScript = get_unit_class(type)
 	var new_army: client_army = client_army.new(player_id, coords, army_id)
-	army_locations[coords].append(new_army.army_id)
-	army_data[new_army.army_id] = new_army
+	army_locations[coords].append(army_id)
+	army_data[army_id] = new_army
 	new_army.add_unit(unit_class.new())
 
 	create_label(new_army.get_army_id(), coords, str(new_army))

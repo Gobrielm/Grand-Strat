@@ -118,10 +118,7 @@ func is_tile_traversable(tile_to_check: Vector2i) -> bool:
 	var atlas_coords: Vector2i = get_cell_atlas_coords(tile_to_check)
 	return !untraversable_tiles.has(atlas_coords)
 
-func show_unit_info_window() -> void:
-	if unit_map.get_selected_army() == null:
-		return
-	var unit_info_array: Array = (unit_map.get_selected_army() as army).get_army_client_array()
+func show_army_info_window(unit_info_array: Array) -> void:
 	$army_info_window.show_unit(unit_info_array)
 
 func update_info_window(unit_info_array: Array) -> void:
@@ -175,24 +172,6 @@ func place_road_depot() -> void:
 		rail_placer_obj.place_road_depot(get_cell_position(), unique_id)
 
 #Cargo
-func is_depot(coords: Vector2i) -> bool:
-	return map_data.get_instance().is_depot(coords)
-
-func is_owned_depot(coords: Vector2i) -> bool:
-	return map_data.get_instance().is_owned_depot(coords, unique_id)
-
-func is_hold(coords: Vector2i) -> bool:
-	return terminal_map.is_hold(coords)
-
-func is_owned_hold(coords: Vector2i) -> bool:
-	return map_data.get_instance().is_owned_hold(coords, unique_id)
-
-func is_factory(coords: Vector2i) -> bool:
-	return terminal_map.is_factory(coords)
-
-func is_owned_station(coords: Vector2i, id: int) -> bool:
-	return terminal_map.is_station(coords) and terminal_map.get_station(coords).player_owner == id
-
 func is_location_valid_stop(coords: Vector2i) -> bool:
 	return map_data.get_instance().is_hold(coords) or map_data.get_instance().is_depot(coords)
 

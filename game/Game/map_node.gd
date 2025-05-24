@@ -63,11 +63,8 @@ func _input(event: InputEvent) -> void:
 			create_factory()
 		elif state_machine.is_building_road_depot():
 			main_map.place_road_depot()
-		else:
-			main_map.unit_map.select_army(get_cell_position(), unique_id)
-			main_map.show_unit_info_window()
 	elif event.is_action_released("click"):
-		if state_machine.is_controlling_camera() and main_map.is_owned_station(get_cell_position(), unique_id):
+		if state_machine.is_controlling_camera() and terminal_map.is_owned_station(get_cell_position(), unique_id):
 			station_window.open_window(get_cell_position())
 		elif state_machine.is_controlling_camera() and terminal_map.is_station(get_cell_position()):
 			viewer_station_window.open_window(get_cell_position())
@@ -75,9 +72,9 @@ func _input(event: InputEvent) -> void:
 			factory_recipe_window.open_window(get_cell_position())
 		elif state_machine.is_controlling_camera() and terminal_map.is_owned_construction_site(get_cell_position()):
 			factory_construction_window.open_window(get_cell_position())
-		elif state_machine.is_controlling_camera() and main_map.is_factory(get_cell_position()):
+		elif state_machine.is_controlling_camera() and terminal_map.is_factory(get_cell_position()):
 			factory_window.open_window(get_cell_position())
-		elif state_machine.is_controlling_camera() and main_map.is_owned_depot(get_cell_position()):
+		elif state_machine.is_controlling_camera() and map_data.get_instance().is_owned_depot(get_cell_position(), unique_id):
 			depot_window.open_window(get_cell_position())
 		elif state_machine.is_building_many_rails():
 			main_map.place_rail_to_start()
