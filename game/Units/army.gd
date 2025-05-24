@@ -135,7 +135,6 @@ func get_units_client_arrays() -> Array:
 
 ##Unit array = [manpower, morale, experience, org.get_organization(), dest]
 func get_army_client_array() -> Array:
-	#Unit array = [manpower, morale, experience, org]
 	var toReturn: Array = get_units()[0].convert_to_client_array_for_army()
 	#Skip the first since we started with it
 	var skip: bool = true

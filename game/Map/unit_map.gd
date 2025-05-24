@@ -112,11 +112,22 @@ func refresh_all_armies(armies: Array[int], sender_id: int) -> void:
 @rpc("authority", "call_local", "unreliable")
 func refresh_army(army_id: int, info_array: Array, _units_array: Array) -> void:
 	var node: Node = get_control_node(army_id)
+	var coords: Vector2i = get_army(army_id).get_location()
+	move_control(army_id, coords)
+	
 	var morale_bar: ProgressBar = node.get_node("MoraleBar")
 	morale_bar.value = info_array[1]
 
 	var manpower_label: RichTextLabel = node.get_node("Manpower_Label")
 	manpower_label.text = "[center]" + str(info_array[0]) + "[/center]"
+
+func get_army_depth(army_id: int, coords: Vector2i) -> int:
+	var index: int = 0
+	for id: int in army_locations[coords]:
+		if id == army_id:
+			return index
+		index += 1
+	return -1
 
 # === Utility ===
 func get_used_cells_dictionary() -> Dictionary:
@@ -255,7 +266,6 @@ func create_morale_bar(size: Vector2) -> ProgressBar:
 
 	return morale_bar
 
-
 func create_manpower_label(size: Vector2) -> RichTextLabel:
 	var manpower_label: RichTextLabel = RichTextLabel.new()
 	manpower_label.name = "Manpower_Label"
@@ -329,7 +339,58 @@ func get_control_node(army_id: int) -> Control:
 
 func move_control(army_id: int, move_to: Vector2i) -> void:
 	var node: Control = get_control_node(army_id)
+	fix_control_gui(army_id, move_to)
+	
 	node.position = map_to_local(move_to)
+
+func fix_control_gui(army_id: int, coords: Vector2i) -> void:
+	var node: Control = get_control_node(army_id)
+	#Fixes moving army gui
+	change_gui_with_stack_size(coords)
+	#Fixes army that was potentially left
+	change_gui_with_stack_size(coords)
+	unhightlight_name()
+	highlight_name()
+	var depth: int = get_army_depth(army_id, coords)
+	if depth != 0:
+		node.visible = false
+	else:
+		node.visible = true
+
+func change_gui_with_stack_size(coords: Vector2i) -> void:
+	if !army_locations.has(coords):
+		return
+	if army_locations[coords].size() == 1:
+		#Gets rid of old tokens
+		var top_army_id: int = army_locations[coords][0]
+		make_control_normal(top_army_id)
+		#Brings back bar
+		var node: Control = get_control_node(top_army_id)
+		node.visible = true
+	elif army_locations[coords].size() > 1:
+		make_control_top_level(army_locations[coords][0], coords)
+
+func make_control_normal(army_id: int) -> void:
+	var node: Control = get_control_node(army_id)
+	for child: Node in node.get_children():
+		if child.name.begins_with("Rect"):
+			node.remove_child(child)
+			child.queue_free()
+
+func make_control_top_level(army_id: int, coords: Vector2i) -> void:
+	var number: int = army_locations[coords].size()
+	var node: Control = get_control_node(army_id)
+	for i: int in range(number):
+		var rect: ColorRect
+		if !node.has_node("Rect" + str(i)):
+			rect = ColorRect.new()
+			rect.name = "Rect" + str(i)
+			rect.size = Vector2(10, 10)
+			node.add_child(rect)
+		else:
+			rect = node.get_node("Rect" + str(i))
+		rect.color = Color(0.3, 0.3, 0.3, 0.5)
+		rect.position = Vector2(-35 + i * 13, 70)
 
 # Availability Checking
 func location_is_attack(coords_of_defender: Vector2i, player_id: int) -> bool:
@@ -416,8 +477,8 @@ func select_many_armies(tile1: Vector2i, tile2: Vector2i, player_id: int) -> voi
 					selected_armies.append(get_army(army_id))
 				$select_unit_sound.play(0.5)
 				state_machine.click_unit()
-			highlight_dest()
-			highlight_name()
+	highlight_dest()
+	highlight_name()
 	
 	if selected_armies.is_empty():
 		state_machine.unclick_unit()
@@ -462,17 +523,26 @@ func cycle_army_selection(coords: Vector2i) -> void:
 
 func highlight_name() -> void:
 	apply_color_to_selected_unit(Color(1, 0, 0, 1))
+	apply_color_to_stack_tokens(Color(1, 0.3, 0.3, 0.5))
 
 func unhightlight_name() -> void:
 	apply_color_to_selected_unit(Color(1, 1, 1, 1))
+	apply_color_to_stack_tokens(Color(0.3, 0.3, 0.3, 0.5))
 
 func apply_color_to_selected_unit(color: Color) -> void:
-	if selected_armies.is_empty():
-		return
 	for selected_army: army in selected_armies:
 		var node: Control = get_control_node(selected_army.get_army_id())
 		var unit_name: Label = node.get_node("Label")
 		unit_name.add_theme_color_override("font_color", color)
+
+func apply_color_to_stack_tokens(color: Color) -> void:
+	for selected_army: army in selected_armies:
+		var coords: Vector2i = selected_army.get_location()
+		var depth: int = get_army_depth(selected_army.get_army_id(), coords)
+		var c_node: Control = get_control_node(get_top_army(coords).get_army_id())
+		if c_node.has_node("Rect" + str(depth)):
+			var rect: ColorRect = c_node.get_node("Rect" + str(depth))
+			rect.color = color
 
 func highlight_dest() -> void:
 	if selected_armies.is_empty():
