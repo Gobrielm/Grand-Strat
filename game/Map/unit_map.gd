@@ -30,6 +30,7 @@ func _input(event: InputEvent) -> void:
 	elif event.is_action_released("click") and (state_machine.is_controlling_camera() or state_machine.is_selecting_unit()):
 		select_many_armies(map.get_cell_position(), last_click, multiplayer.get_unique_id())
 		click_valid = false
+		remove_selection_box()
 		show_army_info_window()
 	
 	elif event.is_action_pressed("deselect") and state_machine.is_selecting_unit():
@@ -40,6 +41,32 @@ func _input(event: InputEvent) -> void:
 		pass
 
 # === Gui ===
+func process_gui() -> void:
+	if Input.is_action_pressed("click") and click_valid:
+		update_selection_box()
+
+func update_selection_box() -> void:
+	var rectangle: ColorRect
+	if has_node("selection_box"):
+		rectangle = get_node("selection_box")
+	else:
+		rectangle = ColorRect.new()
+		rectangle.name = "selection_box"
+		rectangle.color = Color(0.5, 0.5, 0.5, 0.3) 
+		add_child(rectangle)
+	var coords1: Vector2 = map_to_local(last_click)
+	var coords2: Vector2 = map_to_local(map.get_cell_position())
+	var top_left: Vector2 = coords1.min(coords2)
+	var size: Vector2 = (coords1 - coords2).abs()
+
+	rectangle.position = top_left
+	rectangle.size = size
+
+func remove_selection_box() -> void:
+	var box: ColorRect = get_node("selection_box")
+	remove_child(box)
+	box.queue_free()
+
 func show_army_info_window() -> void:
 	if !is_selecting_one_army():
 		return
@@ -416,6 +443,7 @@ func highlight_dest() -> void:
 		
 
 func _process(delta: float) -> void:
+	process_gui()
 	for location: Vector2i in army_locations:
 		var army_stack: Array = army_locations[location]
 		for army_id: int in army_stack:
