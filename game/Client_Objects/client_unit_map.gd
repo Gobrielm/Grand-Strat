@@ -46,6 +46,8 @@ func refresh_army(army_id: int, info_array: Array, units_array: Array) -> void:
 
 # === Unit Checks ===
 func get_army(army_id: int) -> client_army:
+	if !army_data.has(army_id):
+		assert(false, "Desync")
 	return army_data[army_id]
 
 func get_top_army(tile: Vector2i) -> client_army:
@@ -73,13 +75,16 @@ func check_before_create(_coords: Vector2i, _type: int, _player_id: int) -> void
 	pass
 
 @rpc("authority", "call_local", "unreliable")
-func create_army(coords: Vector2i, type: int, player_id: int) -> void:
+func create_army(coords: Vector2i, type: int, player_id: int, army_id: int) -> void:
+	create_army_locally(coords, type, player_id, army_id)
+
+func create_army_locally(coords: Vector2i, type: int, player_id: int, army_id: int) -> void:
 	if !army_locations.has(coords):
 		army_locations[coords] = []
 		set_cell(coords, 0, Vector2i(0, type))
 
 	var unit_class: GDScript = get_unit_class(type)
-	var new_army: client_army = client_army.new(player_id, coords)
+	var new_army: client_army = client_army.new(player_id, coords, army_id)
 	army_locations[coords].append(new_army.army_id)
 	army_data[new_army.army_id] = new_army
 	new_army.add_unit(unit_class.new())

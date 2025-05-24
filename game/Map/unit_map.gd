@@ -42,12 +42,14 @@ func refresh_map(_visible_tiles: Array, _unit_atlas: Dictionary) -> void:
 func request_refresh(tile: Vector2i) -> void:
 	var sender_id: int = multiplayer.get_remote_sender_id()
 	if army_locations.has(tile):
-		refresh_all_armies(army_locations[tile], sender_id)
+		var temp: Array[int] = []
+		temp.assign(army_locations[tile])
+		refresh_all_armies(temp, sender_id)
 
 func refresh_all_armies(armies: Array[int], sender_id: int) -> void:
 	for army_id: int in armies:
 		var army_obj: army = army_data[army_id]
-		refresh_army.rpc_id(sender_id, army_obj.get_army_id(), army_obj.get_army_client_array())
+		refresh_army.rpc_id(sender_id, army_id, army_obj.get_army_client_array(), army_obj.get_units_client_arrays())
 
 @rpc("authority", "call_local", "unreliable")
 func refresh_army(army_id: int, info_array: Array, _units_array: Array) -> void:
@@ -97,10 +99,14 @@ func check_before_create(coords: Vector2i, type: int, player_id: int) -> void:
 	
 	if !army_locations.has(coords) and money_cntrl.player_has_enough_money(player_id, cost):
 		money_cntrl.remove_money_from_player(player_id, cost)
-		create_army.rpc(coords, type, player_id)
+		create_army_locally(coords, type, player_id)
+		create_army.rpc(coords, type, player_id, army_locations[coords].back())
 
-@rpc("authority", "call_local", "unreliable")
-func create_army(coords: Vector2i, type: int, player_id: int) -> void:
+@rpc("authority", "call_remote", "unreliable")
+func create_army(_coords: Vector2i, _type: int, _player_id: int, _army_id: int) -> void:
+	pass
+
+func create_army_locally(coords: Vector2i, type: int, player_id: int) -> void:
 	if !army_locations.has(coords):
 		army_locations[coords] = []
 		set_cell(coords, 0, Vector2i(0, type))
@@ -444,7 +450,7 @@ func regen_tick(army_obj: army) -> void:
 	army_obj.add_experience(multiple)
 	manpower_and_morale_tick(army_obj)
 	army_obj.use_supplies()
-	refresh_army.rpc(army_obj.get_army_id(), army_obj.get_army_client_array())
+	refresh_army.rpc(army_obj.get_army_id(), army_obj.get_army_client_array(), army_obj.get_units_client_arrays())
 
 func manpower_and_morale_tick(army_obj: army) -> void:
 	#Works on each unit individually since they all regen differently

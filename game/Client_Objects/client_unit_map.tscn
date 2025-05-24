@@ -5,26 +5,27 @@
 [ext_resource type="AudioStream" uid="uid://bmoxstbk6x7w" path="res://Sounds/pick-92276.mp3" id="3_ycd8n"]
 [ext_resource type="AudioStream" uid="uid://closnylfsplm2" path="res://Sounds/interface-124464.mp3" id="4_dgh7s"]
 
-[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_o3i8j"]
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_hwa8g"]
 resource_name = "unit_models"
 texture = ExtResource("1_bodqu")
 margins = Vector2i(0, 64)
 separation = Vector2i(0, 64)
 texture_region_size = Vector2i(128, 128)
+use_texture_padding = false
 0:0/0 = 0
 0:1/0 = 0
 0:2/0 = 0
 0:3/0 = 0
 0:4/0 = 0
 
-[sub_resource type="TileSet" id="TileSet_x2d0v"]
+[sub_resource type="TileSet" id="TileSet_ojujq"]
 tile_shape = 3
 tile_offset_axis = 1
-tile_size = Vector2i(128, 110)
-sources/0 = SubResource("TileSetAtlasSource_o3i8j")
+tile_size = Vector2i(127, 110)
+sources/0 = SubResource("TileSetAtlasSource_hwa8g")
 
 [node name="client_unit_map" type="TileMapLayer"]
-tile_set = SubResource("TileSet_x2d0v")
+tile_set = SubResource("TileSet_ojujq")
 script = ExtResource("2_j5hs4")
 
 [node name="select_unit_sound" type="AudioStreamPlayer" parent="."]

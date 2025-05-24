@@ -27,10 +27,7 @@ func create_resource_array() -> Array:
 		toReturn.push_back({})
 	
 	
-	var start: float = Time.get_ticks_msec()
 	start_threads_on_grid(-609, 671, -243, 282, 4, toReturn)
-	var end: float = Time.get_ticks_msec()
-	print(str((end - start) / 1000) + " Seconds passed to create network")
 	return toReturn
 
 func start_threads_on_grid(x_min: int, x_max: int, y_min: int, y_max: int, n: int, toReturn: Array) -> void:

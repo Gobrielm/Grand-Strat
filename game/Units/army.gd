@@ -134,6 +134,7 @@ func get_units_client_arrays() -> Array:
 func get_army_client_array() -> Array:
 	#Unit array = [manpower, morale, experience, org.get_organization()]
 	var toReturn: Array = get_units()[0].convert_to_client_array()
+	#Skip the first since we started with it
 	var skip: bool = true
 	for unit: base_unit in get_units():
 		if !skip:
@@ -163,7 +164,6 @@ func get_speed() -> float:
 		if slowest_speed > unit.get_speed() or slowest_speed == -1:
 			slowest_speed = unit.get_speed()
 	return slowest_speed
-		
 
 func _to_string() -> String:
 	var toReturn: String = "["
