@@ -79,13 +79,15 @@ func create_army(coords: Vector2i, type: int, player_id: int, army_id: int) -> v
 func create_army_locally(coords: Vector2i, type: int, player_id: int, army_id: int) -> void:
 	if !army_locations.has(coords):
 		army_locations[coords] = []
-		set_cell(coords, 0, Vector2i(0, type))
+		set_cell(coords, 0, Vector2i(0, 0))
 
-	var unit_class: GDScript = get_unit_class(type)
+	
 	var new_army: client_army = client_army.new(player_id, coords, army_id)
 	army_locations[coords].append(army_id)
 	army_data[army_id] = new_army
-	new_army.add_unit(unit_class.new())
+	if type != -1:
+		var unit_class: GDScript = get_unit_class(type)
+		new_army.add_unit(unit_class.new())
 
 	create_label(new_army.get_army_id(), coords, str(new_army))
 	request_refresh.rpc_id(1, coords)

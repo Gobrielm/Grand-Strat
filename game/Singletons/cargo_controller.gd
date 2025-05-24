@@ -34,6 +34,7 @@ func day_tick() -> void:
 
 func _on_month_tick_timeout() -> void:
 	terminal_map._on_month_tick_timeout()
+	Utils.unit_map._on_month_tick_timeout()
 
 func _process(delta: float) -> void:
 	ticks += delta * game_speed

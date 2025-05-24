@@ -38,9 +38,3 @@ volume_db = -21.667
 stream = ExtResource("4_dn7ni")
 volume_db = -21.667
 pitch_scale = 0.5
-
-[node name="regen_timer" type="Timer" parent="."]
-wait_time = 10.0
-autostart = true
-
-[connection signal="timeout" from="regen_timer" to="." method="_on_regen_timer_timeout"]

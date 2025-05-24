@@ -109,6 +109,9 @@ func merge(army_to_merge_with: army) -> void:
 func clear_units() -> void:
 	units.clear()
 
+func can_split() -> bool:
+	return units.size() >= 2
+
 func split() -> army:
 	var new_army: army = army.new(player_id, location)
 	var counter: bool = false
@@ -138,7 +141,7 @@ func get_army_client_array() -> Array:
 	var skip: bool = true
 	for unit: base_unit in get_units():
 		if !skip:
-			var unit_array: Array = unit.convert_to_client_array()
+			var unit_array: Array = unit.convert_to_client_array_for_army()
 			for index: int in unit_array.size():
 				toReturn[index] += unit_array[index]
 		else:

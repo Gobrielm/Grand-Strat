@@ -37,8 +37,10 @@ func _input(event: InputEvent) -> void:
 		request_set_army_route(get_selected_army_ids(), map.get_cell_position())
 		if is_selecting_one_army():
 			map.update_info_window(get_selected_army().get_army_client_array())
-	elif event.is_action_pressed("merge_units") and state_machine.is_selecting_unit():
-		pass
+	elif event.is_action_pressed("merge_armies") and state_machine.is_selecting_unit():
+		merge_armies()
+	elif event.is_action_pressed("split_armies") and state_machine.is_selecting_unit():
+		split_armies()
 
 # === Gui ===
 func process_gui() -> void:
@@ -123,6 +125,31 @@ func get_used_cells_dictionary() -> Dictionary:
 		to_return[tile] = get_cell_atlas_coords(tile)
 	return to_return
 
+# === Army Utilities ===
+func merge_armies() -> void:
+	if selected_armies.size() < 2:
+		return
+	var coords: Vector2i = selected_armies[0].get_location()
+	for selected_army: army in selected_armies:
+		if selected_army.get_location() != coords:
+			return
+	var top_army: army = get_top_army(coords)
+	for index: int in range(1, selected_armies.size()):
+		var selected_army: army = selected_armies[index]
+		top_army.merge(selected_army)
+		kill_army(selected_army.army_id, coords)
+	selected_armies.clear()
+	selected_armies.push_back(top_army)
+	refresh_army.rpc(top_army.get_army_id(), top_army.get_army_client_array(), top_army.get_units_client_arrays())
+
+func split_armies() -> void:
+	for selected_army: army in selected_armies:
+		if selected_army.can_split():
+			var new_army: army = selected_army.split()
+			create_army_from_object(new_army)
+			refresh_army(new_army.get_army_id(), new_army.get_army_client_array(), new_army.get_units_client_arrays())
+			
+
 # === Unit Checks ===
 func get_army(army_id: int) -> army:
 	return army_data[army_id]
@@ -175,6 +202,16 @@ func create_army_locally(coords: Vector2i, type: int, player_id: int) -> void:
 
 	create_label(new_army.get_army_id(), coords, str(new_army))
 	refresh_army(new_army.get_army_id(), new_army.get_army_client_array(), new_army.get_units_client_arrays())
+
+func create_army_from_object(new_army: army) -> void:
+	var coords: Vector2i = new_army.get_location()
+	var player_id: int = new_army.get_player_id()
+	army_locations[coords].append(new_army.army_id)
+	army_data[new_army.army_id] = new_army
+
+	create_label(new_army.get_army_id(), coords, str(new_army))
+	refresh_army(new_army.get_army_id(), new_army.get_army_client_array(), new_army.get_units_client_arrays())
+	create_army.rpc(coords, -1, player_id, army_locations[coords].back())
 
 func get_unit_class(type: int) -> GDScript:
 	return unit_creator.get_unit_class(type)
@@ -343,6 +380,8 @@ func unit_battle(attacker: army, defender: army) -> void:
 	elif result == 3:
 		armies_to_retreat[attacker.get_army_id()] = true
 
+# === Army Selecting === 
+
 func get_selected_army() -> army:
 	if selected_armies.size() == 1:
 		return selected_armies[0]
@@ -373,7 +412,8 @@ func select_many_armies(tile1: Vector2i, tile2: Vector2i, player_id: int) -> voi
 		for y: float in range(coords1.y, coords2.y, 110):
 			var coords: Vector2i = map.local_to_map(Vector2(x, y))
 			if tile_has_friendly_army(coords, player_id):
-				selected_armies.append(get_top_army(coords))
+				for army_id: int in army_locations[coords]:
+					selected_armies.append(get_army(army_id))
 				$select_unit_sound.play(0.5)
 				state_machine.click_unit()
 			highlight_dest()
@@ -441,6 +481,8 @@ func highlight_dest() -> void:
 		if selected_army.get_destination() != null:
 			map.highlight_cell(selected_army.get_destination())
 		
+
+# === Processses ===
 
 func _process(delta: float) -> void:
 	process_gui()
@@ -514,26 +556,28 @@ func move_attacking_armies_to_normal(coords: Vector2i) -> void:
 
 func check_and_clean_army(army_id: int, coords: Vector2i) -> void:
 	#Cleans regular armies
-	var army_stack: Array = army_locations[coords]
-	for index: int in army_stack.size():
-		if army_stack[index] == army_id:
-			army_stack.remove_at(index)
-			break
+	if army_locations.has(coords):
+		var army_stack: Array = army_locations[coords]
+		for index: int in army_stack.size():
+			if army_stack[index] == army_id:
+				army_stack.remove_at(index)
+				break
 
 func check_and_clean_attacking_army(army_id: int, coords: Vector2i) -> void:
 	#Cleans attacking armies
-	var army_stack: Array = attacking_army_locations[coords]
-	for index: int in army_stack.size():
-		if army_stack[index] == army_id:
-			army_stack.remove_at(index)
-			break
+	if attacking_army_locations.has(coords):
+		var army_stack: Array = attacking_army_locations[coords]
+		for index: int in army_stack.size():
+			if army_stack[index] == army_id:
+				army_stack.remove_at(index)
+				break
 
 func clean_up_node(node: Node) -> void:
 	for child: Node in node.get_children():
 		child.queue_free()
 	node.queue_free()
 
-func _on_regen_timer_timeout() -> void:
+func _on_month_tick_timeout() -> void:
 	for army_obj: army in army_data.values():
 		regen_tick(army_obj)
 
