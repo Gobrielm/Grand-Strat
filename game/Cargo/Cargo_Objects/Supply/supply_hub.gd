@@ -8,7 +8,7 @@ func _init(coords: Vector2i, _player_owner: int) -> void:
 	super._init(coords, _player_owner)
 
 func distribute_cargo() -> void:
-	supply_units()
+	supply_armies()
 
 func place_order(type: int, amount: int, buy: bool, max_price: float) -> void:
 	if buy:

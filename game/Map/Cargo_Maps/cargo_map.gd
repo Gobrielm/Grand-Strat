@@ -58,14 +58,19 @@ func create_town_in_province(prov: province) -> void:
 
 func pick_and_place_random_industry(prov: province, count: int, multiplier: int) -> void:
 	for i: int in range(count):
-		place_random_industry(prov.get_random_tile(), randi() % multiplier)
+		var result: bool = place_random_industry(prov.get_random_tile(), randi() % multiplier)
+		var tries: int = 0
+		while !result and tries < 10:
+			result = place_random_industry(prov.get_random_tile(), randi() % multiplier)
+			tries += 1
 
-func place_random_industry(tile: Vector2i, mult: int) -> void:
+func place_random_industry(tile: Vector2i, mult: int) -> bool:
 	var best_resource: int = cargo_values.get_best_resource(tile)
 	if best_resource == -1:
-		return
+		return false
 	#TODO: Gives it to player, maybe give to company
 	create_factory(tile_ownership.get_instance().get_player_id_from_cell(tile), tile, get_primary_recipe_for_type(best_resource), mult)
+	return true
 
 func get_primary_recipe_for_type(type: int) -> Array:
 	for recipe_set: Array in recipe.get_set_recipes():

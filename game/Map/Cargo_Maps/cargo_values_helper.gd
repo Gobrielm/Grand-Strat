@@ -26,20 +26,44 @@ func create_resource_array() -> Array:
 	for i: int in terminal_map.amount_of_primary_goods:
 		toReturn.push_back({})
 	
+	
+	var start: float = Time.get_ticks_msec()
+	start_threads_on_grid(-609, 671, -243, 282, 4, toReturn)
+	var end: float = Time.get_ticks_msec()
+	print(str((end - start) / 1000) + " Seconds passed to create network")
+	return toReturn
+
+func start_threads_on_grid(x_min: int, x_max: int, y_min: int, y_max: int, n: int, toReturn: Array) -> void:
+	assert(sqrt(n) == int(sqrt(n)), "n must be a perfect square (1, 4, 9, 16, ...)")
+
+	var threads: Array[Thread] = []
+	@warning_ignore("narrowing_conversion")
+	var grid_size: int = (sqrt(n))
+	@warning_ignore("integer_division")
+	var x_step: int = ((x_max - x_min) / grid_size)
+	@warning_ignore("integer_division")
+	var y_step: int = ((y_max - y_min) / grid_size)
+
+	for i: int in range(grid_size):
+		for j: int in range(grid_size):
+			var x_start: int = x_min + i * x_step
+			var x_end: int = x_start + x_step
+			var y_start: int = y_min + j * y_step
+			var y_end: int = y_start + y_step
+			
+			if i == (grid_size - 1):
+				x_end = 671
+			if j == (grid_size - 1):
+				y_end = 282
+			
+			var thread: Thread = Thread.new()
+			thread.start(create_part_of_array.bind(x_start, x_end, y_start, y_end, toReturn))
+			threads.append(thread)
+	
 	toReturn[0] = get_tiles_for_clay()
 	
-	var thread: Thread = Thread.new()
-	var thread1: Thread = Thread.new()
-	var thread2: Thread = Thread.new()
-	var thread3: Thread = Thread.new()
-	thread.start(create_part_of_array.bind(-609, 0, -243, 0, toReturn))
-	thread1.start(create_part_of_array.bind(0, 671, -243, 0, toReturn))
-	thread2.start(create_part_of_array.bind(-609, 0, 0, 282, toReturn))
-	thread3.start(create_part_of_array.bind(0, 671, 0, 282, toReturn))
-	var threads: Array[Thread] = [thread, thread1, thread2, thread3]
-	for thd: Thread in threads:
-		thd.wait_to_finish()
-	return toReturn
+	for thread: Thread in threads:
+		thread.wait_to_finish()
 
 func get_tiles_for_clay() -> Dictionary:
 	var toReturn: Dictionary = {}
@@ -47,11 +71,15 @@ func get_tiles_for_clay() -> Dictionary:
 		if is_tile_river(tile):
 			for cell: Vector2i in map.get_surrounding_cells(tile):
 				if !is_tile_water(cell):
+					mutex.lock()
 					toReturn[cell] = 1
+					mutex.unlock()
 	for tile: Vector2i in map.get_used_cells_by_id(0, Vector2i(5, 0)):
 		for cell: Vector2i in map.get_surrounding_cells(tile):
 			if get_tile_elevation(map.get_cell_atlas_coords(cell)) == 0:
+				mutex.lock()
 				toReturn[cell] = 1
+				mutex.unlock()
 	
 	return toReturn
 
@@ -66,6 +94,7 @@ func create_part_of_array(from_x: int, to_x: int, from_y: int, to_y: int, toRetu
 			helper(x, y, tile, toReturn)
 
 func helper(x: int, y: int, tile: Vector2i, toReturn: Array) -> void:
+	
 	add_basic_resource(toReturn, tile)
 	
 	var color: Color = im_volcanoes.get_pixel(x, y)

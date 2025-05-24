@@ -113,7 +113,7 @@ func encode_station(coords: Vector2i, new_owner: int) -> void:
 func place_tile(coords: Vector2i, p_orientation: int, p_type: int, player_id: int) -> void:
 	clear_all_temps.rpc_id(player_id)
 	#Checks if spot is taken, if tile is traversable, and player is in the country
-	if is_already_built(coords, p_orientation) and Utils.world_map.is_tile_traversable(coords) and tile_ownership.get_instance().is_owned(player_id, coords):
+	if is_already_built(coords, p_orientation) or !Utils.world_map.is_tile_traversable(coords) or !tile_ownership.get_instance().is_owned(player_id, coords):
 		return
 	add_track_connection(coords, p_orientation)
 	create_map_tile.rpc(coords, p_orientation, p_type)

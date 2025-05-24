@@ -8,7 +8,7 @@ func _init(new_map: TileMapLayer) -> void:
 
 func test() -> void:
 	var ownership: tile_ownership = tile_ownership.get_instance()
-	ownership.add_player_to_country(1, Vector2i(0, 0))
+	ownership.add_player_to_country(Vector2i(0, 0))
 	cargo_map = Utils.cargo_map
 	#print("runtime_test")
 	#runtime_test()

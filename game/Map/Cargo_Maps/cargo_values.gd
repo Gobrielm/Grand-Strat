@@ -30,7 +30,10 @@ func get_layer(type: int) -> TileMapLayer:
 func set_resource_rpc(type: int, coords: Vector2i, atlas: Vector2i) -> void:
 	set_cell_rpc.rpc(type, coords, atlas)
 
-@rpc("authority", "call_local", "reliable")
+func set_resource_locally(type: int, coords: Vector2i, atlas: Vector2i) -> void:
+	get_layer(type).set_cell(coords, 1, atlas)
+
+@rpc("authority", "call_remote", "reliable")
 func set_cell_rpc(type: int, coords: Vector2i, atlas: Vector2i) -> void:
 	get_layer(type).set_cell(coords, 1, atlas)
 
@@ -67,14 +70,14 @@ func close_all_layers() -> void:
 		get_layer(i).visible = false
 
 func get_tile_magnitude(coords: Vector2i, type: int) -> int:
+	mutex.lock()
 	var layer: TileMapLayer = get_layer(type)
+	mutex.unlock()
 	assert(layer != null)
 	var toReturn: int = 0
-	mutex.lock()
 	var atlas: Vector2i = layer.get_cell_atlas_coords(coords)
 	if atlas != Vector2i(-1, -1):
 		toReturn = atlas.y * TILES_PER_ROW + atlas.x
-	mutex.unlock()
 	return toReturn
 
 func get_atlas_for_magnitude(num: int) -> Vector2i:
@@ -101,17 +104,17 @@ func place_resources(_map: TileMapLayer) -> void:
 	var resource_array: Array = helper.create_resource_array()
 	assert(resource_array != null or resource_array.is_empty(), "Resources generated improperly")
 	helper.queue_free()
-	create_territories()
-	place_population()
 	var threads: Array = []
+	
 	for i: int in get_child_count():
 		var thread: Thread = Thread.new()
 		threads.append(thread)
 		thread.start(autoplace_resource.bind(resource_array[i], i, MAX_RESOURCES[i]))
+	create_territories()
+	place_population()
 	for thread: Thread in threads:
 		thread.wait_to_finish()
 	finished_created_map_resources.emit()
-	
 
 func autoplace_resource(tiles: Dictionary, type: int, max_resouces: int) -> void:
 	var array: Array = tiles.keys()
@@ -120,6 +123,7 @@ func autoplace_resource(tiles: Dictionary, type: int, max_resouces: int) -> void
 	for cell: Vector2i in array:
 		
 		var mag: int = randi() % 4 + tiles[cell]
+		set_resource_locally(type, cell, get_atlas_for_magnitude(mag))
 		call_deferred("set_resource_rpc", type, cell, get_atlas_for_magnitude(mag))
 		count += mag
 		if count > max_resouces and max_resouces != -1:
