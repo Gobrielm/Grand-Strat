@@ -2,11 +2,11 @@ class_name factory_template extends broker
 
 const COST_FOR_UPGRADE: int = 1000
 
-var income_array: Array[int]
-var last_money_cash: int
+var income_array: Array[float]
+var last_money_cash: float
 
 var level: int
-var employment: int
+var employees: Array[base_pop] = []
 var employment_total: int
 
 var inputs: Dictionary
@@ -86,9 +86,10 @@ func distribute_cargo() -> void:
 
 func get_level() -> int:
 	#TODO: Employment
+	#var employment: int = get_employement()
 	#if employment == 0:
 		#return 0
-	#return round(float(level * 10) * employment_total / employment)
+	#return round(level * employment / employment_total)
 	return level
 
 func get_cost_for_upgrade() -> int:
@@ -122,12 +123,21 @@ func update_income_array() -> void:
 		income_array.pop_back()
 	last_money_cash = cash
 
-func get_last_month_income() -> int:
+func get_last_month_income() -> float:
 	if income_array.size() == 0:
 		return 0
 	return income_array[0]
 
 # === Employment ===
+func get_employement() -> int:
+	return employees.size() * base_pop.PEOPLE_PER_POP
+
+func is_hiring() -> bool:
+	return employment_total - get_employement() >= base_pop.PEOPLE_PER_POP and get_last_month_income() * 0.9 > 0
+
+func is_firing() -> bool:
+	return get_employement() != 0 and get_last_month_income() < 0
+
 func get_wage() -> float:
 	#TODO: Kinda stupid but testing
 	var available_for_wages: float = get_last_month_income() * 0.9
@@ -135,8 +145,25 @@ func get_wage() -> float:
 	return wage
 
 func work_here(pop: base_pop) -> void:
-	if employment_total - employment_total >= pop.PEOPLE_PER_POP:
-		pop.set_income()
+	if employment_total - employment_total >= base_pop.PEOPLE_PER_POP:
+		employees.insert(randi() % employees.size(), pop) #Randomly insert
+		pop.employ(self)
+
+func pay_employees() -> void:
+	var wage: float = get_wage()
+	for employee: base_pop in employees:
+		employee.pay_wage(transfer_cash(wage))
+
+func fire_employees() -> void:
+	var fired: int = 0
+	var to_fire: int = max(employees.size() * 0.1, 100)
+	while true:
+		var rand_index: int = randi() % employees.size()
+		var pop: base_pop = employees.pop_at(rand_index)
+		pop.fire(self)
+		fired += 1
+		if fired >= to_fire:
+			break
 
 # === Processes ===
 
@@ -146,4 +173,7 @@ func day_tick() -> void:
 
 func month_tick() -> void:
 	update_income_array()
+	pay_employees()
+	if is_firing():
+		fire_employees()
 	

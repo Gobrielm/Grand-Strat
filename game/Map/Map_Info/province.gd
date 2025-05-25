@@ -5,6 +5,7 @@ var population: int
 var tiles: Array
 var terminal_tiles: Dictionary[Vector2i, terminal]
 var country_id: int = -1
+var pops: Array[base_pop] = []
 
 func _init(_province_id: int) -> void:
 	province_id = _province_id
@@ -52,6 +53,18 @@ func remove_terminal(coords: Vector2i) -> void:
 func get_terminals() -> Array[terminal]:
 	return terminal_tiles.values()
 
+# === Pops ===
+
+func create_pops() -> void:
+	@warning_ignore("narrowing_conversion")
+	var number_of_rural_pops: int = (population / 10.0 * 0.8)
+	@warning_ignore("narrowing_conversion")
+	var number_of_city_pops: int = (population / 10.0 * 0.2)
+	for i: int in number_of_rural_pops:
+		pops.push_back(rural_pop.new(province_id))
+	for i: int in number_of_city_pops:
+		pops.push_back(city_pop.new(province_id))
+
 func find_employment(pop: base_pop) -> factory_template:
 	if pop is city_pop:
 		pass
@@ -63,6 +76,8 @@ func find_employment(pop: base_pop) -> factory_template:
 	return null
 
 func will_work_here(pop: base_pop, industry: factory_template) -> bool:
+	if !industry.is_hiring():
+		return false
 	var income: float = industry.get_wage()
 	if pop.is_income_acceptable(income):
 		return true

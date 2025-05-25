@@ -26,6 +26,8 @@ static func get_instance() -> map_data:
 	assert(singleton_instance != null, "Map_Data has not be created, and has been accessed")
 	return singleton_instance
 
+# === Terminal Checks ===
+
 func add_depot(coords: Vector2i, depot: terminal) -> void:
 	mutex.lock()
 	depots[coords] = depot
@@ -67,6 +69,8 @@ func is_hold(coords: Vector2i) -> bool:
 func is_owned_hold(coords: Vector2i, id: int) -> bool:
 	return holds.has(coords) and holds[coords][1] == id
 
+# === Creators ===
+
 func create_new_province() -> int:
 	mutex.lock()
 	var province_id: int = provinces.size()
@@ -91,6 +95,8 @@ func add_many_tiles_to_province(province_id: int, tiles: Array) -> void:
 	for tile: Vector2i in tiles:
 		add_tile_to_province(province_id, tile)
 
+# === Pop stuff ===
+
 func add_population_to_province(tile: Vector2i, pop: int) -> void:
 	var id: int = get_province_id(tile)
 	get_province(id).add_population(pop)
@@ -105,6 +111,33 @@ func get_population(province_id: int) -> int:
 func get_population_as_level(province_id: int) -> int:
 	@warning_ignore("integer_division")
 	return get_province(province_id).get_population() / 50000
+
+func get_total_population() -> int:
+	var total: int = 0
+	for prov: province in provinces.values():
+		total += prov.get_population()
+	return total
+
+func create_pops() -> void:
+	var progress: int = 0
+	var threads: Array[Thread] = []
+	var start: float = Time.get_ticks_msec()
+	for prov: province in provinces.values():
+		progress += prov.get_population() / 10
+		var thread: Thread = Thread.new()
+		thread.start(prov.create_pops.bind())
+		threads.push_back(thread)
+		if threads.size() > 30:
+			for thread1: Thread in threads:
+				thread1.wait_to_finish()
+			threads.clear()
+		print(str(progress / 1000000) + "% Done")
+	for thread: Thread in threads:
+		thread.wait_to_finish()
+	var end: float = Time.get_ticks_msec()
+	print(str((end - start) / 1000) + " Seconds passed for one cycle")
+
+# === Province Checks ===
 
 func is_tile_a_province(tile: Vector2i) -> bool:
 	mutex.lock()

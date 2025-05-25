@@ -43,8 +43,10 @@ func initialize_game() -> void:
 		terminal_map.assign_cargo_map(cargo_map)
 		money_controller.new(multiplayer.get_peers())
 		main_map.on_singleton_creation()
-		#cargo_map.place_resources(main_map)
-		#tile_ownership_obj.create_countries()
+		cargo_map.place_resources(main_map)
+		tile_ownership_obj.create_countries()
+		print(map_data.get_instance().get_total_population())
+		#map_data.get_instance().create_pops()
 	enable_nation_picker()
 
 func _input(event: InputEvent) -> void:
