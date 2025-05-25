@@ -5,8 +5,9 @@ var map: TileMapLayer
 var unit_creator: Node
 var battle_script: Node
 var selected_armies: Array[army] = []
-var last_click: Vector2i
+var last_click: Vector2
 var click_valid: bool = false
+var shift_held: bool = false
 
 #Assuming only matching player_id armies can stand on same tile, will change later
 var army_locations: Dictionary[Vector2i, Array] = {} #Array[army]
@@ -25,10 +26,10 @@ func _ready() -> void:
 
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("click") and (state_machine.is_controlling_camera() or state_machine.is_selecting_unit()):
-		last_click = map.get_cell_position()
+		last_click = map.get_mouse_local_to_map()
 		click_valid = true
 	elif event.is_action_released("click") and (state_machine.is_controlling_camera() or state_machine.is_selecting_unit()):
-		select_many_armies(map.get_cell_position(), last_click, multiplayer.get_unique_id())
+		select_many_armies(map.get_mouse_local_to_map(), last_click , multiplayer.get_unique_id(), shift_held)
 		click_valid = false
 		remove_selection_box()
 		show_army_info_window()
@@ -46,6 +47,10 @@ func _input(event: InputEvent) -> void:
 func process_gui() -> void:
 	if Input.is_action_pressed("click") and click_valid:
 		update_selection_box()
+	if Input.is_action_pressed("shift"):
+		shift_held = true
+	else:
+		shift_held = false
 
 func update_selection_box() -> void:
 	var rectangle: ColorRect
@@ -56,8 +61,8 @@ func update_selection_box() -> void:
 		rectangle.name = "selection_box"
 		rectangle.color = Color(0.5, 0.5, 0.5, 0.3) 
 		add_child(rectangle)
-	var coords1: Vector2 = map_to_local(last_click)
-	var coords2: Vector2 = map_to_local(map.get_cell_position())
+	var coords1: Vector2 = last_click
+	var coords2: Vector2 = map.get_mouse_local_to_map()
 	var top_left: Vector2 = coords1.min(coords2)
 	var size: Vector2 = (coords1 - coords2).abs()
 
@@ -95,6 +100,15 @@ func request_refresh_map() -> void:
 @rpc("authority", "call_remote", "reliable")
 func refresh_map(_visible_tiles: Array, _unit_atlas: Dictionary) -> void:
 	pass
+
+func force_refresh_all(tile: Vector2i) -> void:
+	var ids: Array = multiplayer.get_peers()
+	ids.append(1)
+	for sender_id: int in ids:
+		if army_locations.has(tile):
+			var temp: Array[int] = []
+			temp.assign(army_locations[tile])
+			refresh_all_armies(temp, sender_id)
 
 @rpc("any_peer", "call_remote", "unreliable")
 func request_refresh(tile: Vector2i) -> void:
@@ -144,21 +158,25 @@ func merge_armies() -> void:
 	for selected_army: army in selected_armies:
 		if selected_army.get_location() != coords:
 			return
-	var top_army: army = get_top_army(coords)
+	var first_army: army = selected_armies[0]
 	for index: int in range(1, selected_armies.size()):
 		var selected_army: army = selected_armies[index]
-		top_army.merge(selected_army)
+		first_army.merge(selected_army)
 		kill_army(selected_army.army_id, coords)
 	selected_armies.clear()
-	selected_armies.push_back(top_army)
-	refresh_army.rpc(top_army.get_army_id(), top_army.get_army_client_array(), top_army.get_units_client_arrays())
+	selected_armies.push_back(first_army)
+	force_refresh_all(coords)
 
 func split_armies() -> void:
+	var tiles_refresh: Dictionary[Vector2i, bool] = {}
 	for selected_army: army in selected_armies:
 		if selected_army.can_split():
 			var new_army: army = selected_army.split()
 			create_army_from_object(new_army)
-			refresh_army(new_army.get_army_id(), new_army.get_army_client_array(), new_army.get_units_client_arrays())
+			var coords: Vector2i = selected_army.get_location()
+			if !tiles_refresh.has(coords):
+				force_refresh_all(coords)
+				tiles_refresh[coords] = true
 			
 
 # === Unit Checks ===
@@ -311,6 +329,7 @@ func move_army(army_id: int, coords: Vector2i, move_to: Vector2i) -> void:
 	do_army_arrival(army_obj, move_to)
 	do_army_leave(coords)
 	move_control(army_id, move_to)
+	highlight_dest()
 
 # Move Helpers
 func do_army_arrival(army_obj: army, move_to: Vector2i) -> void:
@@ -345,10 +364,11 @@ func move_control(army_id: int, move_to: Vector2i) -> void:
 
 func fix_control_gui(army_id: int, coords: Vector2i) -> void:
 	var node: Control = get_control_node(army_id)
+	var move_from: Vector2i = map.local_to_map(node.position)
 	#Fixes moving army gui
 	change_gui_with_stack_size(coords)
 	#Fixes army that was potentially left
-	change_gui_with_stack_size(coords)
+	change_gui_with_stack_size(move_from)
 	unhightlight_name()
 	highlight_name()
 	var depth: int = get_army_depth(army_id, coords)
@@ -378,19 +398,29 @@ func make_control_normal(army_id: int) -> void:
 			child.queue_free()
 
 func make_control_top_level(army_id: int, coords: Vector2i) -> void:
-	var number: int = army_locations[coords].size()
+	var depth: int = army_locations[coords].size()
 	var node: Control = get_control_node(army_id)
-	for i: int in range(number):
-		var rect: ColorRect
-		if !node.has_node("Rect" + str(i)):
-			rect = ColorRect.new()
-			rect.name = "Rect" + str(i)
-			rect.size = Vector2(10, 10)
-			node.add_child(rect)
+	var depth_before: int = 0
+	for child: Node in node.get_children():
+		if child is ColorRect:
+			depth_before += 1
+	
+	for i: int in range(max(depth, depth_before)):
+		if (i < depth):
+			var rect: ColorRect
+			if !node.has_node("Rect" + str(i)):
+				rect = ColorRect.new()
+				rect.name = "Rect" + str(i)
+				rect.size = Vector2(10, 10)
+				node.add_child(rect)
+			else:
+				rect = node.get_node("Rect" + str(i))
+			rect.color = Color(0.3, 0.3, 0.3, 0.5)
+			rect.position = Vector2(-35 + i * 13, 70)
 		else:
-			rect = node.get_node("Rect" + str(i))
-		rect.color = Color(0.3, 0.3, 0.3, 0.5)
-		rect.position = Vector2(-35 + i * 13, 70)
+			var rect: ColorRect = node.get_node("Rect" + str(i))
+			node.remove_child(rect)
+			rect.queue_free()
 
 # Availability Checking
 func location_is_attack(coords_of_defender: Vector2i, player_id: int) -> bool:
@@ -451,14 +481,14 @@ func get_selected_army() -> army:
 func army_is_owned(army_obj: army) -> bool:
 	return army_obj.get_player_id() == multiplayer.get_unique_id()
 
-func select_many_armies(tile1: Vector2i, tile2: Vector2i, player_id: int) -> void:
-	if tile1 == tile2:
-		select_army(tile1, player_id)
+func select_many_armies(coords1: Vector2, coords2: Vector2, player_id: int, additive: bool = false) -> void:
+	var tile1: Vector2i = map.local_to_map(coords1)
+	if tile1 == map.local_to_map(coords2):
+		select_army(tile1, player_id, additive)
 		return
 	unhightlight_name()
-	selected_armies.clear()
-	var coords1: Vector2 = map.map_to_local(tile1)
-	var coords2: Vector2 = map.map_to_local(tile2)
+	if !additive:
+		selected_armies.clear()
 	if (coords1.x > coords2.x):
 		var temp: float = coords1.x
 		coords1.x = coords2.x
@@ -467,59 +497,63 @@ func select_many_armies(tile1: Vector2i, tile2: Vector2i, player_id: int) -> voi
 		var temp: float = coords1.y
 		coords1.y = coords2.y
 		coords2.y = temp
-	
+	var added_armies: Dictionary[int, bool] = {}
 	#Steps are width/height of a tile
-	for x: float in range(coords1.x, coords2.x, 127):
-		for y: float in range(coords1.y, coords2.y, 110):
+	for x: float in range(coords1.x, coords2.x, 60):
+		for y: float in range(coords1.y, coords2.y, 55):
 			var coords: Vector2i = map.local_to_map(Vector2(x, y))
 			if tile_has_friendly_army(coords, player_id):
 				for army_id: int in army_locations[coords]:
-					selected_armies.append(get_army(army_id))
+					if !added_armies.has(army_id):
+						selected_armies.append(get_army(army_id))
+					added_armies[army_id] = true
 				$select_unit_sound.play(0.5)
-				state_machine.click_unit()
-	highlight_dest()
-	highlight_name()
-	
+				
 	if selected_armies.is_empty():
 		state_machine.unclick_unit()
 		map.close_unit_box()
+	else:
+		state_machine.click_unit()
+		highlight_dest()
+		highlight_name()
 
-func select_army(coords: Vector2i, player_id: int) -> void:
+func select_army(coords: Vector2i, player_id: int, additive: bool = false) -> void:
+	var toAdd: army = null
 	unhightlight_name()
 	if is_selecting_one_army() and get_selected_army().get_location() == coords:
-		cycle_army_selection(coords)
+		toAdd = cycle_army_selection(coords)
 		$select_unit_sound.play(0.5)
 		state_machine.click_unit()
 	elif tile_has_friendly_army(coords, player_id):
-		selected_armies.clear()
-		selected_armies.append(get_top_army(coords))
+		toAdd = get_top_army(coords)
 		$select_unit_sound.play(0.5)
 		state_machine.click_unit()
 	else:
-		selected_armies.clear()
+		
 		state_machine.unclick_unit()
 		map.close_unit_box()
-	highlight_dest()
-	highlight_name()
+	if !additive:
+		selected_armies.clear()
+	if toAdd != null:
+		selected_armies.append(toAdd)
+		highlight_dest()
+		highlight_name()
 
-func cycle_army_selection(coords: Vector2i) -> void:
+func cycle_army_selection(coords: Vector2i) -> army:
 	var next_unit: bool = false
 	var selected_army: army = get_selected_army()
-	selected_armies.clear()
 	var army_stack: Array = army_locations[coords]
 	for i: int in army_stack.size():
 		var army_id: int = army_stack[i]
 		#Will select new army after looping once
 		if next_unit:
-			selected_armies.append(get_army(army_id))
-			next_unit = false
-			break
+			return get_army(army_id)
 		
 		if army_id == selected_army.get_army_id():
 			next_unit = true
+	
 	#On last army, cycle back to first
-	if next_unit:
-		selected_armies.append(get_top_army(coords))
+	return get_top_army(coords)
 
 func highlight_name() -> void:
 	apply_color_to_selected_unit(Color(1, 0, 0, 1))
@@ -545,8 +579,7 @@ func apply_color_to_stack_tokens(color: Color) -> void:
 			rect.color = color
 
 func highlight_dest() -> void:
-	if selected_armies.is_empty():
-		map.clear_highlights()
+	map.clear_highlights()
 	for selected_army: army in selected_armies:
 		if selected_army.get_destination() != null:
 			map.highlight_cell(selected_army.get_destination())
