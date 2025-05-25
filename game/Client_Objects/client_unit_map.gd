@@ -17,6 +17,9 @@ func _ready() -> void:
 	unit_creator = preload("res://Units/unit_managers/army_creator.gd").new()
 	map = get_parent() as TileMapLayer
 
+func _process(_delta: float) -> void:
+	process_gui()
+
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("click") and (state_machine.is_controlling_camera() or state_machine.is_selecting_unit()):
 		last_click = map.get_mouse_local_to_map()
@@ -63,9 +66,10 @@ func update_selection_box() -> void:
 	rectangle.size = size
 
 func remove_selection_box() -> void:
-	var box: ColorRect = get_node("selection_box")
-	remove_child(box)
-	box.queue_free()
+	if has_node("selection_box"):
+		var box: ColorRect = get_node("selection_box")
+		remove_child(box)
+		box.queue_free()
 
 func show_army_info_window() -> void:
 	if !is_selecting_one_army():
@@ -88,8 +92,8 @@ func request_refresh(_tile: Vector2i) -> void:
 	pass
 
 @rpc("authority", "call_local", "unreliable")
-func refresh_army(army_id: int, info_array: Array, units_array: Array) -> void:
-	get_army(army_id).update_stats(info_array, units_array)
+func refresh_army(army_id: int, info_array: Array) -> void:
+	get_army(army_id).update_stats(info_array)
 	move_control(army_id, get_army(army_id).get_location())
 	var node: Node = get_control_node(army_id)
 	var morale_bar: ProgressBar = node.get_node("MoraleBar")
@@ -97,6 +101,15 @@ func refresh_army(army_id: int, info_array: Array, units_array: Array) -> void:
 
 	var manpower_label: RichTextLabel = node.get_node("Manpower_Label")
 	manpower_label.text = "[center]" + str(info_array[0]) + "[/center]"
+
+	var name_label: Label = node.get_node("Label")
+	name_label.text = str(get_army(army_id))
+
+@rpc("authority", "call_remote", "unreliable")
+func refresh_unit_in_army(army_id: int, index: int, unit_array: Array) -> void:
+	var army_obj: client_army = get_army(army_id)
+	if army_obj != null:
+		army_obj.refresh_unit(index, unit_array)
 
 # === Unit Checks ===
 func is_selecting_one_army() -> bool:
@@ -118,7 +131,8 @@ func get_army_depth(army_id: int, coords: Vector2i) -> int:
 
 func get_army(army_id: int) -> client_army:
 	if !army_data.has(army_id):
-		assert(false, "Desync")
+		return null
+		#assert(false, "Desync")
 	return army_data[army_id]
 
 func get_top_army(tile: Vector2i) -> client_army:
@@ -166,8 +180,12 @@ func request_split_armies(_selected_army_ids: Array) -> void:
 	pass
 
 @rpc("authority", "call_local", "unreliable")
-func split_armies(_selected_army_ids: Array, _unique_id: int) -> void:
-	pass
+func split_armies(selected_army_ids: Array) -> void:
+	for army_id: int in selected_army_ids:
+		var selected_army: army = get_army(army_id)
+		if selected_army.can_split():
+			var new_army: army = selected_army.split()
+			create_army_from_object(new_army)
 
 # === Unit creation === 
 func get_control_node(army_id: int) -> Control:
@@ -196,6 +214,16 @@ func create_army_locally(coords: Vector2i, type: int, player_id: int, army_id: i
 
 	create_label(new_army.get_army_id(), coords, str(new_army))
 	request_refresh.rpc_id(1, coords)
+
+func create_army_from_object(new_army: army) -> void:
+	var coords: Vector2i = new_army.get_location()
+	var player_id: int = new_army.get_player_id()
+	army_locations[coords].append(new_army.army_id)
+	army_data[new_army.army_id] = new_army
+
+	create_label(new_army.get_army_id(), coords, str(new_army))
+	refresh_army(new_army.get_army_id(), new_army.get_army_client_array())
+	create_army.rpc(coords, -1, player_id, army_locations[coords].back())
 
 func get_unit_class(type: int) -> GDScript:
 	return unit_creator.get_unit_class(type)

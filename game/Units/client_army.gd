@@ -7,11 +7,15 @@ func _init(p_player_id: int, p_location: Vector2i, p_army_id: int) -> void:
 
 
 ##Unit array = [manpower, morale, experience, org.get_organization(), dest]
-func update_stats(army_info: Array, units_info: Array) -> void:
-	units.clear()
-	for unit_info: Array in units_info:
-		var unit: base_unit = base_unit.new()
-		unit.update_stats(unit_info)
-		add_unit(unit)
+func update_stats(army_info: Array) -> void:
 	if army_info[4]:
 		route = [army_info[4]]
+
+func refresh_unit(index: int, unit_array: Array) -> void:
+	var base_units: Array[base_unit] = get_units()
+	var unit: base_unit
+	if base_units.size() <= index:
+		unit = base_unit.new()
+	else:
+		unit = base_units[index]
+	unit.update_stats(unit_array)

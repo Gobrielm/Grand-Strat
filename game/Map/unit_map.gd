@@ -70,9 +70,10 @@ func update_selection_box() -> void:
 	rectangle.size = size
 
 func remove_selection_box() -> void:
-	var box: ColorRect = get_node("selection_box")
-	remove_child(box)
-	box.queue_free()
+	if has_node("selection_box"):
+		var box: ColorRect = get_node("selection_box")
+		remove_child(box)
+		box.queue_free()
 
 func show_army_info_window() -> void:
 	if !is_selecting_one_army():
@@ -122,10 +123,10 @@ func request_refresh(tile: Vector2i) -> void:
 func refresh_all_armies(armies: Array[int], sender_id: int) -> void:
 	for army_id: int in armies:
 		var army_obj: army = army_data[army_id]
-		refresh_army.rpc_id(sender_id, army_id, army_obj.get_army_client_array(), army_obj.get_units_client_arrays())
+		refresh_army.rpc_id(sender_id, army_id, army_obj.get_army_client_array())
 
 @rpc("authority", "call_local", "unreliable")
-func refresh_army(army_id: int, info_array: Array, _units_array: Array) -> void:
+func refresh_army(army_id: int, info_array: Array) -> void:
 	var node: Node = get_control_node(army_id)
 	var coords: Vector2i = get_army(army_id).get_location()
 	move_control(army_id, coords)
@@ -135,6 +136,18 @@ func refresh_army(army_id: int, info_array: Array, _units_array: Array) -> void:
 
 	var manpower_label: RichTextLabel = node.get_node("Manpower_Label")
 	manpower_label.text = "[center]" + str(info_array[0]) + "[/center]"
+	refresh_units_in_army(army_id)
+
+func refresh_units_in_army(army_id: int) -> void:
+	var army_obj: army = get_army(army_id)
+	var units: Array[base_unit] = army_obj.get_units()
+	for index: int in units.size():
+		var unit: base_unit = units[index]
+		refresh_unit_in_army.rpc(army_id, index, unit.convert_to_client_array())
+
+@rpc("authority", "call_remote", "unreliable")
+func refresh_unit_in_army(_army_id: int, _index: int, _unit_array: Array) -> void:
+	pass
 
 func get_army_depth(army_id: int, coords: Vector2i) -> int:
 	var index: int = 0
@@ -244,7 +257,7 @@ func create_army_locally(coords: Vector2i, type: int, player_id: int) -> void:
 	new_army.add_unit(unit_class.new())
 
 	create_label(new_army.get_army_id(), coords, str(new_army))
-	refresh_army(new_army.get_army_id(), new_army.get_army_client_array(), new_army.get_units_client_arrays())
+	refresh_army(new_army.get_army_id(), new_army.get_army_client_array())
 
 func create_army_from_object(new_army: army) -> void:
 	var coords: Vector2i = new_army.get_location()
@@ -253,7 +266,7 @@ func create_army_from_object(new_army: army) -> void:
 	army_data[new_army.army_id] = new_army
 
 	create_label(new_army.get_army_id(), coords, str(new_army))
-	refresh_army(new_army.get_army_id(), new_army.get_army_client_array(), new_army.get_units_client_arrays())
+	refresh_army(new_army.get_army_id(), new_army.get_army_client_array())
 	create_army.rpc(coords, -1, player_id, army_locations[coords].back())
 
 func get_unit_class(type: int) -> GDScript:
@@ -626,8 +639,7 @@ func update_army_progress(army_obj: army, delta: float) -> void:
 
 func prepare_refresh_army(army_obj: army) -> void:
 	var info_array: Array = army_obj.get_army_client_array()
-	var units_array: Array = army_obj.get_units_client_arrays()
-	refresh_army.rpc(army_obj.get_army_id(), info_array, units_array)
+	refresh_army.rpc(army_obj.get_army_id(), info_array)
 
 func retreat_units() -> void:
 	for army_id: int in armies_to_retreat:
@@ -703,7 +715,7 @@ func regen_tick(army_obj: army) -> void:
 	army_obj.add_experience(multiple)
 	manpower_and_morale_tick(army_obj)
 	army_obj.use_supplies()
-	refresh_army.rpc(army_obj.get_army_id(), army_obj.get_army_client_array(), army_obj.get_units_client_arrays())
+	refresh_army.rpc(army_obj.get_army_id(), army_obj.get_army_client_array())
 
 func manpower_and_morale_tick(army_obj: army) -> void:
 	#Works on each unit individually since they all regen differently
