@@ -93,18 +93,18 @@ func add_many_tiles_to_province(province_id: int, tiles: Array) -> void:
 
 func add_population_to_province(tile: Vector2i, pop: int) -> void:
 	var id: int = get_province_id(tile)
-	get_province(id).population += pop
+	get_province(id).add_population(pop)
 
 func get_province_population(tile: Vector2i) -> int:
 	var id: int = get_province_id(tile)
-	return get_province(id).population
+	return get_province(id).get_population()
 
 func get_population(province_id: int) -> int:
-	return get_province(province_id).population
+	return get_province(province_id).get_population()
 
 func get_population_as_level(province_id: int) -> int:
 	@warning_ignore("integer_division")
-	return get_province(province_id).population / 50000
+	return get_province(province_id).get_population() / 50000
 
 func is_tile_a_province(tile: Vector2i) -> bool:
 	mutex.lock()

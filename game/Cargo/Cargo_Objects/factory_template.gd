@@ -2,6 +2,9 @@ class_name factory_template extends broker
 
 const COST_FOR_UPGRADE: int = 1000
 
+var income_array: Array[int]
+var last_money_cash: int
+
 var level: int
 var employment: int
 var employment_total: int
@@ -19,6 +22,8 @@ func _init(new_location: Vector2i, _player_owner: int, new_inputs: Dictionary, n
 	level = 1
 	employment_total = 1000
 
+# === Trade ===
+
 #For Selling only, assuming only one type to sell
 func get_min_price(_type: int) -> float:
 	assert(outputs.size() == 1)
@@ -32,14 +37,16 @@ func get_max_price(_type: int) -> float:
 	#TODO: eventually use expenses
 	return 100.0
 
-func does_create(type: int) -> bool:
-	return outputs.has(type)
-
 func get_monthly_demand(type: int) -> int:
 	return inputs[type] * clock_singleton.get_instance().get_days_in_current_month() * level
 
 func get_monthly_supply(type: int) -> int:
 	return outputs[type] * clock_singleton.get_instance().get_days_in_current_month() * level
+
+# === Creation of Goods ===
+
+func does_create(type: int) -> bool:
+	return outputs.has(type)
 
 func create_recipe() -> void:
 	var batch_size: int = get_batch_size()
@@ -66,12 +73,16 @@ func add_outputs(batch_size: int) -> void:
 		var amount: int = outputs[index] * batch_size
 		amount = add_cargo_ignore_accepts(index, amount)
 
+# === Selling ===
+
 func distribute_cargo() -> void:
 	for type: int in outputs:
 		if trade_orders.has(type):
 			var order: trade_order = trade_orders[type]
 			if order.is_sell_order():
 				distribute_from_order(order)
+
+# === Levels & Upgrades ===
 
 func get_level() -> int:
 	#TODO: Employment
@@ -104,11 +115,35 @@ func admin_upgrade() -> void:
 			level += 1
 			employment_total = level * 1000
 
+func update_income_array() -> void:
+	var income: float = cash - last_money_cash
+	income_array.push_front(income)
+	if income_array.size() == 27: #Last two years
+		income_array.pop_back()
+	last_money_cash = cash
+
+func get_last_month_income() -> int:
+	if income_array.size() == 0:
+		return 0
+	return income_array[0]
+
+# === Employment ===
+func get_wage() -> float:
+	#TODO: Kinda stupid but testing
+	var available_for_wages: float = get_last_month_income() * 0.9
+	var wage: float = available_for_wages / employment_total
+	return wage
+
+func work_here(pop: base_pop) -> void:
+	if employment_total - employment_total >= pop.PEOPLE_PER_POP:
+		pop.set_income()
+
+# === Processes ===
+
 func day_tick() -> void:
 	print("Default implementation")
 	assert(false)
 
 func month_tick() -> void:
-	print("Default implementation")
-	assert(false)
+	update_income_array()
 	

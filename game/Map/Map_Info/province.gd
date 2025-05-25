@@ -15,6 +15,12 @@ func _init(_province_id: int) -> void:
 func add_tile(coords: Vector2i) -> void:
 	tiles.append(coords)
 
+func get_population() -> int:
+	return population
+
+func add_population(pop: int) -> void:
+	population += pop
+
 func set_population(new_pop: int) -> void:
 	population = new_pop
 
@@ -45,3 +51,19 @@ func remove_terminal(coords: Vector2i) -> void:
 
 func get_terminals() -> Array[terminal]:
 	return terminal_tiles.values()
+
+func find_employment(pop: base_pop) -> factory_template:
+	if pop is city_pop:
+		pass
+		#TODO: Add buildings to cities
+	elif pop is rural_pop:
+		for term: terminal in get_terminals():
+			if term is factory_template and will_work_here(pop, term):
+				return term
+	return null
+
+func will_work_here(pop: base_pop, industry: factory_template) -> bool:
+	var income: float = industry.get_wage()
+	if pop.is_income_acceptable(income):
+		return true
+	return false

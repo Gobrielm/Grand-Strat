@@ -32,6 +32,7 @@ func day_tick() -> void:
 		distribute_cargo()
 
 func month_tick() -> void:
+	super.month_tick()
 	for type: int in inputs:
 		local_pricer.vary_input_price(get_monthly_demand(type), type)
 	for type: int in outputs:
