@@ -39,9 +39,9 @@ func _input(event: InputEvent) -> void:
 		if is_selecting_one_army():
 			map.update_info_window(get_selected_army().get_army_client_array())
 	elif event.is_action_pressed("merge_armies") and state_machine.is_selecting_unit():
-		merge_armies()
+		request_merge_armies.rpc_id(1, get_selected_army_ids())
 	elif event.is_action_pressed("split_armies") and state_machine.is_selecting_unit():
-		split_armies()
+		request_split_armies.rpc_id(1, get_selected_army_ids())
 
 # === Gui ===
 func process_gui() -> void:
@@ -118,6 +118,7 @@ func request_refresh(tile: Vector2i) -> void:
 		temp.assign(army_locations[tile])
 		refresh_all_armies(temp, sender_id)
 
+#TODO: Optimize function to send individual rpcs for each unit indexed for each army to just replace data
 func refresh_all_armies(armies: Array[int], sender_id: int) -> void:
 	for army_id: int in armies:
 		var army_obj: army = army_data[army_id]
@@ -151,25 +152,38 @@ func get_used_cells_dictionary() -> Dictionary:
 	return to_return
 
 # === Army Utilities ===
-func merge_armies() -> void:
-	if selected_armies.size() < 2:
+@rpc("any_peer", "call_local", "unreliable")
+func request_merge_armies(selected_army_ids: Array) -> void:
+	merge_armies.rpc(selected_army_ids, multiplayer.get_remote_sender_id())
+
+@rpc("authority", "call_local", "unreliable")
+func merge_armies(selected_army_ids: Array, unique_id: int) -> void:
+	if selected_army_ids.size() < 2:
 		return
-	var coords: Vector2i = selected_armies[0].get_location()
-	for selected_army: army in selected_armies:
+	var coords: Vector2i = get_army(selected_army_ids[0]).get_location()
+	for army_id: int in selected_army_ids:
+		var selected_army: army = get_army(army_id)
 		if selected_army.get_location() != coords:
 			return
-	var first_army: army = selected_armies[0]
-	for index: int in range(1, selected_armies.size()):
-		var selected_army: army = selected_armies[index]
+	var first_army: army = get_army(selected_army_ids[0])
+	for index: int in range(1, selected_army_ids.size()):
+		var selected_army: army = get_army(selected_army_ids[index])
 		first_army.merge(selected_army)
 		kill_army(selected_army.army_id, coords)
-	selected_armies.clear()
-	selected_armies.push_back(first_army)
+	if multiplayer.get_unique_id() == unique_id:
+		selected_armies.clear()
+		selected_armies.push_back(first_army)
 	force_refresh_all(coords)
 
-func split_armies() -> void:
+@rpc("any_peer", "call_local", "unreliable")
+func request_split_armies(selected_army_ids: Array) -> void:
+	split_armies.rpc(selected_army_ids)
+
+@rpc("authority", "call_local", "unreliable")
+func split_armies(selected_army_ids: Array) -> void:
 	var tiles_refresh: Dictionary[Vector2i, bool] = {}
-	for selected_army: army in selected_armies:
+	for army_id: int in selected_army_ids:
+		var selected_army: army = get_army(army_id)
 		if selected_army.can_split():
 			var new_army: army = selected_army.split()
 			create_army_from_object(new_army)

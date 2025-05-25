@@ -25,6 +25,8 @@ tile_size = Vector2i(127, 110)
 sources/0 = SubResource("TileSetAtlasSource_hwa8g")
 
 [node name="client_unit_map" type="TileMapLayer"]
+z_index = 2
+y_sort_enabled = true
 tile_set = SubResource("TileSet_ojujq")
 script = ExtResource("2_j5hs4")
 
