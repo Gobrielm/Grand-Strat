@@ -118,11 +118,11 @@ func is_tile_traversable(tile_to_check: Vector2i) -> bool:
 	var atlas_coords: Vector2i = get_cell_atlas_coords(tile_to_check)
 	return !untraversable_tiles.has(atlas_coords)
 
-func show_army_info_window(unit_info_array: Array) -> void:
-	$army_info_window.show_unit(unit_info_array)
+func show_army_info_window(army_obj: army) -> void:
+	$army_info_window.show_army(army_obj)
 
-func update_info_window(unit_info_array: Array) -> void:
-	$army_info_window.update_unit(unit_info_array)
+func update_info_window(army_obj: army) -> void:
+	$army_info_window.update_unit(army_obj)
 
 func create_unit() -> void:
 	unit_map.check_before_create.rpc_id(1, get_cell_position(), unit_creator_window.get_type_selected(), unique_id)

@@ -9,6 +9,11 @@ func _init() -> void:
 	manpower = max_manpower
 	morale = 100
 	
+	var supply_neeeded: Dictionary[int, int] = {}
+	supply_neeeded[terminal_map.get_cargo_type("grain")] = 2
+	supply_neeeded[terminal_map.get_cargo_type("artillery")] = 1
+	org = organization.new(supply_neeeded)
+	
 	speed = 10
 	unit_range = 2
 	shock = 40

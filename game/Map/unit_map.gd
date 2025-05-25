@@ -37,7 +37,7 @@ func _input(event: InputEvent) -> void:
 	elif event.is_action_pressed("deselect") and state_machine.is_selecting_unit():
 		request_set_army_route(get_selected_army_ids(), map.get_cell_position())
 		if is_selecting_one_army():
-			map.update_info_window(get_selected_army().get_army_client_array())
+			map.update_info_window(get_selected_army())
 	elif event.is_action_pressed("merge_armies") and state_machine.is_selecting_unit():
 		request_merge_armies.rpc_id(1, get_selected_army_ids())
 	elif event.is_action_pressed("split_armies") and state_machine.is_selecting_unit():
@@ -78,8 +78,8 @@ func remove_selection_box() -> void:
 func show_army_info_window() -> void:
 	if !is_selecting_one_army():
 		return
-	var unit_info_array: Array = (get_selected_army() as army).get_army_client_array()
-	map.show_army_info_window(unit_info_array)
+	var army_obj: army = get_selected_army()
+	map.show_army_info_window(army_obj)
 
 # === Networking ===
 func is_selecting_one_army() -> bool:

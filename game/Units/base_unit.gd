@@ -3,12 +3,12 @@ class_name base_unit extends Node
 func _init() -> void:
 	pass
 
-##return [manpower, morale, experience, org.convert_to_client_array()]
+##return [manpower, morale, experience, org.convert_to_client_array(), atlas_inof]
 func convert_to_client_array() -> Array:
 	#TODO: Add more stuff
-	return [manpower, morale, experience, org.convert_to_client_array()]
+	return [manpower, morale, experience, org.convert_to_client_array(), get_atlas_coord()]
 
-##return [manpower, morale, experience, org.get_organization()]
+##return [manpower, morale, experience, org.get_organization(), atlas_inof]
 func convert_to_client_array_for_army() -> Array:
 	#TODO: Add more stuff
 	return [manpower, morale, experience, org.get_organization()]
@@ -18,6 +18,8 @@ func update_stats(unit_info: Array) -> void:
 	morale = unit_info[1]
 	experience = unit_info[2]
 	org = organization.create_with_client_array(unit_info[3])
+	specific_type = unit_info[4].x
+	combat_arm = unit_info[4].y
 
 static func get_cost() -> int:
 	return 0
@@ -52,13 +54,35 @@ var cohesion: int
 #The disipline and skill of the unit
 var experience: int
 
+func get_level() -> int:
+	if experience > 5000:
+		return 5
+	elif experience > 2000:
+		return 4
+	elif experience > 1000:
+		return 3
+	elif experience > 500:
+		return 2
+	elif experience > 200:
+		return 1
+	else:
+		return 0
+
+func get_level_as_string() -> String:
+	if experience > 5000:
+		return "Elite"
+	elif experience > 2000:
+		return "Verteran"
+	elif experience > 1000:
+		return "Expert"
+	elif experience > 500:
+		return "Experienced"
+	elif experience > 200:
+		return "Trained"
+	else:
+		return "Inexperienced"
+
 #The rate at which a unit gains experience
-#level 0 - inexperienced, 0 - 200
-#level 1 - trained,       200 - 500
-#level 2 - experienced,   500 - 1000
-#level 3 - expert,        1000 - 2000
-#level 4 - verteran,      2000 - 5000
-#level 5 - elite,         5000 - ∞
 var experience_gain: int
 #The bonus to experience_gain when in battle
 var battle_multiple: int
@@ -124,20 +148,6 @@ func add_experience(multiple: float = 1.0) -> void:
 
 func add_battle_experience(multiple: float = 1.0) -> void:
 	experience += round(float(experience_gain) * float(battle_multiple) * multiple)
-
-func get_level() -> int:
-	if experience > 5000:
-		return 5
-	elif experience > 2000:
-		return 4
-	elif experience > 1000:
-		return 3
-	elif experience > 500:
-		return 2
-	elif experience > 200:
-		return 1
-	else:
-		return 0
 
 func set_atlas_coord(atlas_coords: Vector2i) -> void:
 	specific_type = atlas_coords.x
