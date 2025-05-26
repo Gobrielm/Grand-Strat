@@ -56,14 +56,15 @@ func get_terminals() -> Array[terminal]:
 # === Pops ===
 
 func create_pops() -> void:
-	@warning_ignore("narrowing_conversion")
-	var number_of_rural_pops: int = (population / 1000.0 * 0.8)
-	@warning_ignore("narrowing_conversion")
-	var number_of_city_pops: int = (population / 1000.0 * 0.2)
+	var number_of_rural_pops: int = floor(population * 0.8 / base_pop.PEOPLE_PER_POP)
+	var number_of_city_pops: int = floor(population * 0.2 / base_pop.PEOPLE_PER_POP)
 	for i: int in number_of_rural_pops:
 		pops.push_back(rural_pop.new(province_id))
 	for i: int in number_of_city_pops:
 		pops.push_back(city_pop.new(province_id))
+
+func count_pops() -> int:
+	return pops.size()
 
 func find_employment(pop: base_pop) -> factory_template:
 	if pop is city_pop:

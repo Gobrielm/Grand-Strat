@@ -1,6 +1,6 @@
 class_name base_pop extends Node
 
-static var PEOPLE_PER_POP: int = 10
+static var PEOPLE_PER_POP: int = 1000
 
 var education_level: int = 0
 var wealth: float = 0

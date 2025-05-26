@@ -118,40 +118,17 @@ func get_total_population() -> int:
 		total += prov.get_population()
 	return total
 
-#func create_pops() -> void:
-	##var max_thread_count: int = 4
-	##var threads: Array[Thread] = []
-	#var start: float = Time.get_ticks_msec()
-	#for prov: province in provinces.values():
-		#prov.create_pops()
-		##var thread: Thread = Thread.new()
-		##thread.start(prov.create_pops.bind())
-		##threads.push_back(thread)
-		##if threads.size() == max_thread_count:
-			##threads[0].wait_to_finish()
-			##threads.pop_front()
-	##for thread: Thread in threads:
-		##thread.wait_to_finish()
-	#var end: float = Time.get_ticks_msec()
-	#print(str((end - start) / 1000) + " Seconds passed to create pops")
-
 func create_pops() -> void:
 	var start: float = Time.get_ticks_msec()
 	var threads: Array[Thread] = []
 	var provs: Array = provinces.values()
-	var thread: Thread = Thread.new()
-	thread.start(create_pops_range.bind(0, provs.size() / 4, provs))
-	threads.push_back(thread)
-	thread = Thread.new()
-	thread.start(create_pops_range.bind( provs.size() / 4, provs.size() / 2, provs))
-	threads.push_back(thread)
-	thread = Thread.new()
-	thread.start(create_pops_range.bind( provs.size() / 2, provs.size() / 4 * 3, provs))
-	threads.push_back(thread)
-	thread = Thread.new()
-	thread.start(create_pops_range.bind( provs.size() / 4 * 3, provs.size(), provs))
-	threads.push_back(thread)
-	
+	var amount_of_threads: int = 4
+	var thread: Thread
+	for i: int in range(amount_of_threads):
+		thread = Thread.new()
+		@warning_ignore("integer_division")
+		thread.start(create_pops_range.bind(i * (provs.size() / amount_of_threads), (i + 1) * (provs.size() / amount_of_threads), provs))
+		threads.push_back(thread)
 	
 	for thrd: Thread in threads:
 		thrd.wait_to_finish()
