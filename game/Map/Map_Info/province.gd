@@ -57,9 +57,9 @@ func get_terminals() -> Array[terminal]:
 
 func create_pops() -> void:
 	@warning_ignore("narrowing_conversion")
-	var number_of_rural_pops: int = (population / 10.0 * 0.8)
+	var number_of_rural_pops: int = (population / 1000.0 * 0.8)
 	@warning_ignore("narrowing_conversion")
-	var number_of_city_pops: int = (population / 10.0 * 0.2)
+	var number_of_city_pops: int = (population / 1000.0 * 0.2)
 	for i: int in number_of_rural_pops:
 		pops.push_back(rural_pop.new(province_id))
 	for i: int in number_of_city_pops:

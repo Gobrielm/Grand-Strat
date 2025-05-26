@@ -6,7 +6,9 @@ var education_level: int = 0
 var wealth: float = 0
 var home_prov_id: int = -1
 var culture: Object = null #TODO
-var employment: factory_template = null #TODO, how they own things/businesses
+var income: float = 0.0
+var employed: bool = false
+ #TODO, how they own things/businesses
 
 func _init(home_prov: int, p_culture: Variant) -> void:
 	home_prov_id = home_prov
@@ -19,7 +21,7 @@ func find_employment() -> void:
 	work.work_here(self)
 
 func is_seeking_employement() -> bool:
-	if employment == null:
+	if !employed:
 		return true
 	else:
 		#TODO: Stuff with expected sol
@@ -28,17 +30,17 @@ func is_seeking_employement() -> bool:
 func pay_wage(wage: float) -> void:
 	wealth += wage
 
-func employ(industry: factory_template) -> void:
-	employment = industry
+func employ(wage: float) -> void:
+	employed = true
+	income = wage
 
-func fire(_industry: factory_template) -> void:
-	employment = null
+func fire() -> void:
+	employed = false
+	income = 0.0
 
 # === Living Standards === 
 func get_income() -> float:
-	if employment is factory_template:
-		return employment.get_wage()
-	return 0.0
+	return income
 
 func is_income_acceptable(p_income: float) -> bool:
 	return p_income > get_expected_income() and p_income > get_income()

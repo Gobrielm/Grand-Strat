@@ -45,8 +45,7 @@ func initialize_game() -> void:
 		main_map.on_singleton_creation()
 		cargo_map.place_resources(main_map)
 		tile_ownership_obj.create_countries()
-		print(map_data.get_instance().get_total_population())
-		#map_data.get_instance().create_pops()
+		map_data.get_instance().create_pops()
 	enable_nation_picker()
 
 func _input(event: InputEvent) -> void:

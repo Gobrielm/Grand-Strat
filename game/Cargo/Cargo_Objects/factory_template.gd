@@ -147,7 +147,7 @@ func get_wage() -> float:
 func work_here(pop: base_pop) -> void:
 	if employment_total - employment_total >= base_pop.PEOPLE_PER_POP:
 		employees.insert(randi() % employees.size(), pop) #Randomly insert
-		pop.employ(self)
+		pop.employ(get_wage())
 
 func pay_employees() -> void:
 	var wage: float = get_wage()
@@ -160,7 +160,7 @@ func fire_employees() -> void:
 	while true:
 		var rand_index: int = randi() % employees.size()
 		var pop: base_pop = employees.pop_at(rand_index)
-		pop.fire(self)
+		pop.fire()
 		fired += 1
 		if fired >= to_fire:
 			break

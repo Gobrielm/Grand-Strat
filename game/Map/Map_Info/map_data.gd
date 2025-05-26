@@ -119,23 +119,17 @@ func get_total_population() -> int:
 	return total
 
 func create_pops() -> void:
-	var progress: int = 0
+	var max_thread_count: int = OS.get_processor_count()
 	var threads: Array[Thread] = []
-	var start: float = Time.get_ticks_msec()
 	for prov: province in provinces.values():
-		progress += prov.get_population() / 10
 		var thread: Thread = Thread.new()
 		thread.start(prov.create_pops.bind())
 		threads.push_back(thread)
-		if threads.size() > 30:
-			for thread1: Thread in threads:
-				thread1.wait_to_finish()
-			threads.clear()
-		print(str(progress / 1000000) + "% Done")
+		if threads.size() == max_thread_count:
+			threads[0].wait_to_finish()
+			threads.pop_front()
 	for thread: Thread in threads:
 		thread.wait_to_finish()
-	var end: float = Time.get_ticks_msec()
-	print(str((end - start) / 1000) + " Seconds passed for one cycle")
 
 # === Province Checks ===
 
