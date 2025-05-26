@@ -9,7 +9,7 @@ var local_pricer: local_price_controller
 var change_in_cash: float = 0
 
 func can_afford(price: int) -> bool:
-	return cash >= price
+	return get_cash() >= price
 
 func get_local_prices() -> Dictionary:
 	return local_pricer.local_prices

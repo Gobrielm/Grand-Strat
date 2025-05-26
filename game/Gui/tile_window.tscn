@@ -15,7 +15,6 @@ font_color = Color(0, 0, 0, 1)
 font_color = Color(0, 0, 0, 1)
 
 [node name="tile_window" type="Window"]
-position = Vector2i(0, 124)
 size = Vector2i(500, 400)
 unresizable = true
 borderless = true
@@ -153,6 +152,13 @@ offset_top = 46.0
 offset_right = 135.0
 offset_bottom = 95.0
 text = "10000"
+
+[node name="Pops" type="Label" parent="State_control"]
+offset_left = 2.0
+offset_top = 79.0
+offset_right = 48.0
+offset_bottom = 128.0
+text = "Pops: 0"
 
 [node name="TabBar" type="TabBar" parent="."]
 offset_right = 253.0

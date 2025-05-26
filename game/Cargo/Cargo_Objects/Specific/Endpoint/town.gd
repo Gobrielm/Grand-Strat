@@ -2,6 +2,8 @@ class_name town extends ai_factory
 
 var internal_factories: Dictionary[int, Array] = {}
 
+#TODO: Completly redo town to use pops as buyers rather than town having its own money
+
 func _init(new_location: Vector2i, _player_id: int, mult: int = 1) -> void:
 	var dict: Dictionary = create_inputs(mult)
 	super._init(new_location, _player_id, dict, {})

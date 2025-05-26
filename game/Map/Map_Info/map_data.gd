@@ -149,14 +149,18 @@ func is_tile_a_province(tile: Vector2i) -> bool:
 	return toReturn
 
 func get_province_id(tile: Vector2i) -> int:
+	var toReturn: int = -1
 	mutex.lock()
-	var toReturn: int = tiles_to_province_id[tile]
+	if tiles_to_province_id.has(tile):
+		toReturn = tiles_to_province_id[tile]
 	mutex.unlock()
 	return toReturn
 
 func get_province(province_id: int) -> province:
+	var toReturn: province = null
 	mutex.lock()
-	var toReturn: province = provinces[province_id] 
+	if provinces.has(province_id):
+		toReturn = provinces[province_id] 
 	mutex.unlock()
 	return toReturn
 

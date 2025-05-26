@@ -100,7 +100,7 @@ func upgrade() -> bool:
 		var mag: int = cargo_values.get_tile_magnitude(location, outputs.values()[0])
 		if mag > level:
 			var cost: int = get_cost_for_upgrade()
-			if cash >= cost:
+			if get_cash() >= cost:
 				remove_cash(cost)
 				level += 1
 				pops_needed = level
@@ -119,7 +119,7 @@ func update_income_array() -> void:
 	income_array.push_front(change_in_cash)
 	if income_array.size() == 27: #Last two years
 		income_array.pop_back()
-	change_in_cash = cash
+	change_in_cash = get_cash()
 
 func get_last_month_income() -> float:
 	if income_array.size() == 0:

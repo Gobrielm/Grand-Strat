@@ -50,7 +50,7 @@ func consider_upgrade_primary() -> void:
 		amount += 1
 	total_diff /= amount
 	#TODO: Consider changing constant
-	if total_diff > -0.05 and get_cost_for_upgrade() < cash * CASH_NEEDED_MULTIPLIER and randi() % 5 == 0:
+	if total_diff > -0.05 and get_cost_for_upgrade() < get_cash() * CASH_NEEDED_MULTIPLIER and randi() % 5 == 0:
 		upgrade()
 
 func consider_upgrade_secondary() -> void:

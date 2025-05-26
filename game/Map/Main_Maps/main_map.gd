@@ -450,7 +450,7 @@ func make_cell_visible(coords: Vector2i) -> void:
 func get_cash_of_firm(coords: Vector2i) -> int:
 	return terminal_map.get_cash_of_firm(coords)
 
-func get_money(id: int) -> int:
+func get_money(id: int) -> float:
 	return money_controller.get_instance().get_money(id)
 
 @rpc("authority", "unreliable", "call_local")

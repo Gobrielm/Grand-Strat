@@ -3,8 +3,10 @@ extends Window
 var coords: Vector2i
 var current_tab: int
 
+func _ready() -> void:
+	hide()
+
 func open_window(_coords: Vector2i) -> void:
-	position = Vector2i(0, 0)
 	coords = _coords
 	if current_tab == 0:
 		open_tile_window()
@@ -24,6 +26,7 @@ func open_province_window() -> void:
 	$Province_control.visible = false
 	request_province_id.rpc_id(1, coords)
 	request_province_pop.rpc_id(1, coords)
+	request_province_pops.rpc_id(1, coords)
 	$State_control.visible = true
 
 @rpc("any_peer", "call_local")
@@ -38,9 +41,20 @@ func set_province_id(id: int) -> void:
 func request_province_pop(p_coords: Vector2i) -> void:
 	set_province_pop.rpc_id(multiplayer.get_remote_sender_id(), map_data.get_instance().get_province_population(p_coords))
 
+@rpc("any_peer", "call_local")
+func request_province_pops(p_coords: Vector2i) -> void:
+	var map_data_obj: map_data = map_data.get_instance()
+	var prov_id: int = map_data_obj.get_province_id(p_coords)
+	var prov: province = map_data_obj.get_province(prov_id)
+	set_province_pops.rpc_id(multiplayer.get_remote_sender_id(), prov.count_pops())
+
 @rpc("authority", "call_local")
 func set_province_pop(pop: int) -> void:
 	$State_control/Population.text = str(pop)
+
+@rpc("authority", "call_local")
+func set_province_pops(num: int) -> void:
+	$State_control/Pops.text = "Pops: " + str(num)
 
 @rpc("any_peer", "call_local")
 func request_biome(_coords: Vector2i) -> void:
@@ -49,14 +63,6 @@ func request_biome(_coords: Vector2i) -> void:
 @rpc("authority", "call_local")
 func set_biome(biome: String) -> void:
 	$Province_control/Biome.text = biome
-
-@rpc("any_peer", "call_local")
-func request_population(_coords: Vector2i) -> void:
-	pass
-
-@rpc("authority", "call_local")
-func set_population(num: int) -> void:
-	$Province_control/Population.text = str(num)
 
 @rpc("any_peer", "call_local")
 func request_resources_available(_coords: Vector2i) -> void:
