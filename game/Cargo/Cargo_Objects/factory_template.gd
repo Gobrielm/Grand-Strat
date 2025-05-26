@@ -2,8 +2,7 @@ class_name factory_template extends broker
 
 const COST_FOR_UPGRADE: int = 1000
 
-var income_array: Array[float]
-var last_money_cash: float
+var income_array: Array[float] = []
 
 var level: int
 var employees: Array[base_pop] = []
@@ -117,11 +116,10 @@ func admin_upgrade() -> void:
 			pops_needed = level
 
 func update_income_array() -> void:
-	var income: float = cash - last_money_cash
-	income_array.push_front(income)
+	income_array.push_front(change_in_cash)
 	if income_array.size() == 27: #Last two years
 		income_array.pop_back()
-	last_money_cash = cash
+	change_in_cash = cash
 
 func get_last_month_income() -> float:
 	if income_array.size() == 0:

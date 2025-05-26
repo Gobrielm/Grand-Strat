@@ -55,32 +55,15 @@ var cohesion: int
 var experience: int
 
 func get_level() -> int:
-	if experience > 5000:
-		return 5
-	elif experience > 2000:
-		return 4
-	elif experience > 1000:
-		return 3
-	elif experience > 500:
-		return 2
-	elif experience > 200:
-		return 1
-	else:
-		return 0
+	var experience_array: Array[int] = [-1, 200, 500, 1000, 2000, 5000]
+	for index: int in range(5, -1, -1):
+		if experience > experience_array[index]:
+			return index
+	return 0
 
 func get_level_as_string() -> String:
-	if experience > 5000:
-		return "Elite"
-	elif experience > 2000:
-		return "Verteran"
-	elif experience > 1000:
-		return "Expert"
-	elif experience > 500:
-		return "Experienced"
-	elif experience > 200:
-		return "Trained"
-	else:
-		return "Inexperienced"
+	var experience_names: Array[String] = ["Inexperienced", "Trained", "Experienced", "Expert", "Verteran", "Elite"]
+	return experience_names[get_level()]
 
 #The rate at which a unit gains experience
 var experience_gain: int

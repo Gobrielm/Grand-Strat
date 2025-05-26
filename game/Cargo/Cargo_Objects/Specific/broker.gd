@@ -6,6 +6,8 @@ var connected_terminals: Dictionary[Vector2i, bool] = {} #Set of directly connec
 
 var local_pricer: local_price_controller
 
+var change_in_cash: float = 0
+
 func can_afford(price: int) -> bool:
 	return cash >= price
 
@@ -32,15 +34,17 @@ func get_desired_cargo_from_train(type: int) -> int:
 func is_price_acceptable(type: int, price_per: float) -> bool:
 	return get_order(type).max_price >= price_per
 
-func buy_cargo(type: int, amount: int, price_per: float) -> void:
+func buy_cargo(type: int, amount: int, price: float) -> void:
 	add_cargo_ignore_accepts(type, amount)
-	remove_cash(round(amount * price_per))
+	remove_cash(round(amount * price))
+	change_in_cash -= round(amount * price)
 	local_pricer.report_change(type, amount)
 
 #Returns with the amount of cargo sold
 func sell_cargo(type: int, amount: int, price: float) -> int:
 	amount = transfer_cargo(type, amount)
 	add_cash(round(price * amount))
+	change_in_cash += round(amount * price)
 	local_pricer.report_change(type, -amount)
 	return amount
 

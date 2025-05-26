@@ -6,11 +6,14 @@ var tile_ownership_obj: tile_ownership
 var cargo_map: TileMapLayer = terminal_map.cargo_map
 var cargo_values: Node = cargo_map.cargo_values
 var rail_placer_obj: rail_placer
+var owned_factories: Array[factory_template]
+var max_factories: int = 0
 
 var mutex: Mutex
 
 #Set of Actions
 enum ai_actions {
+	NONE,
 	PLACE_FACTORY,
 	PLACE_STATION,
 	CONNECT_STATION,
@@ -55,14 +58,26 @@ func run_ai_cycle() -> void:
 	print(str((end - start) / 1000) + " Seconds passed for one cycle")
 
 func choose_type_of_action() -> ai_actions:
-	#Criteria to choose later
+	#Can always build stations and rails
 	if are_there_unconnected_buildings():
 		return ai_actions.PLACE_STATION
 	elif are_there_unconnected_stations():
 		return ai_actions.CONNECT_STATION
 	
+	#Placing factories is limited
+	if !can_build():
+		return ai_actions.NONE
+	
 	#Other options later
 	return ai_actions.PLACE_FACTORY
+
+# === Factory limits
+
+func can_build() -> bool:
+	return owned_factories.size() < max_factories
+
+func set_max_factories(max_f: int) -> void:
+	max_factories = max_f
 
 func are_there_unconnected_buildings() -> bool:
 	for tile: Vector2i in get_owned_tiles():
@@ -177,6 +192,9 @@ func place_factory(type: int) -> void:
 
 func create_factory(location: Vector2i, type: int) -> void:
 	cargo_map.create_construction_site(id, location)
+	var term: terminal = terminal_map.get_terminal(location)
+	assert(term is construction_site and term.player_owner == id)
+	owned_factories.append(term)
 	for recipe_set: Array in recipe.get_set_recipes():
 		for output: int in recipe_set[1]:
 			if output == type:

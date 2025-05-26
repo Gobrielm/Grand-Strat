@@ -25,15 +25,15 @@ func delete_peer(id: int) -> void:
 	assert(money.has(id))
 	money.erase(id)
 
-func add_money_to_player(id: int, amount: int) -> void:
+func add_money_to_player(id: int, amount: float) -> void:
 	money[id] += amount
 	var world_map: TileMapLayer = Utils.world_map
 	world_map.update_money_label.rpc_id(id, get_money(id))
 
-func remove_money_from_player(id: int, amount: int) -> void:
+func remove_money_from_player(id: int, amount: float) -> void:
 	add_money_to_player(id, -amount)
 
-func get_money(id: int) -> int:
+func get_money(id: int) -> float:
 	return money[id]
 
 func get_money_dictionary() -> Dictionary:

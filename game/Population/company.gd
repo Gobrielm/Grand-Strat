@@ -3,33 +3,51 @@ class_name company extends firm
 var income_array: Array[float]
 var last_money_cash: float
 
-var level: int
+var level: int = 1
 var employees: Array[base_pop] = []
-var pops_needed: int
+var pops_needed: int = 1
 
 var econ_ai_id: int
 
-var investments: Array[factory_template] = []
+var downsize_timer: int = 0
+var upsize_timer: int = 0
 
 func _init(p_location: Vector2i, initial_employees: Array[base_pop]) -> void:
 	location = p_location
 	for pop: base_pop in initial_employees:
 		employees.push_back(pop)
-		cash += pop.transfer_wealth()
+		add_cash(pop.transfer_wealth())
 	var country_id: int = get_country_id()
 	econ_ai_id = ai_manager.get_instance().create_new_economy_ai(country_id)
 
 # === Investment ===
 func can_invest() -> bool:
 	#TODO: Placeholder Amount
-	return cash > 1000
+	return get_cash() > 1000
 
 func make_investment() -> void:
 	money_controller.get_instance().add_money_to_player(econ_ai_id, 1000)
 
 func investment_tick() -> void:
-	if can_invest():
-		make_investment()
+	if downsize_timer > 0:
+		downsize_timer -= 1
+	if upsize_timer > 0:
+		upsize_timer -= 1
+	
+	var econ_ai: economy_ai = ai_manager.get_instance().get_ai(econ_ai_id)
+	econ_ai.set_max_factories(get_level())
+	
+	var ave_profit: float = get_average_profitability(6)
+	if ave_profit < 0 and downsize_timer == 0:
+		downsize()
+	elif ave_profit > 0 and upsize_timer == 0 and get_employement_rate() > 0.95:
+		upsize()
+
+func get_average_profitability(months: int) -> float:
+	var average: float = 0.0
+	for i: int in range(min(months, income_array.size())):
+		average += income_array[i]
+	return average / months
 
 # === Levels & Upgrades ===
 func get_level() -> int:
@@ -37,20 +55,33 @@ func get_level() -> int:
 	var employment: int = get_employement()
 	if employment == 0:
 		return 0
-	@warning_ignore("integer_division")
-	return ((employment) / pops_needed)
+	return floor(get_employement_rate() * level)
+
+func get_employement_rate() -> float:
+	return float(get_employement()) / pops_needed
 
 func update_income_array() -> void:
-	var income: float = cash - last_money_cash
+	var income: float = get_cash() - last_money_cash
 	income_array.push_front(income)
 	if income_array.size() == 27: #Last two years
 		income_array.pop_back()
-	last_money_cash = cash
+	last_money_cash = get_cash()
 
 func get_last_month_income() -> float:
 	if income_array.size() == 0:
 		return 0
 	return income_array[0]
+
+func upsize() -> void:
+	level += 1
+	pops_needed = level
+
+func downsize() -> void:
+	level -= 1
+	pops_needed = level
+	if pops_needed == 0:
+		#TODO: Do something
+		print("Should close company")
 
 # === Employment ===
 func get_employement() -> int:
