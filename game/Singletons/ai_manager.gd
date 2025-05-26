@@ -22,7 +22,7 @@ static func get_instance() -> ai_manager:
 	assert(singleton_instance != null, "Train_Manager has not be created, and has been accessed")
 	return singleton_instance
 
-func create_new_economy_ai(country_id: int) -> void:
+func create_new_economy_ai(country_id: int) -> int:
 	var ai_id: int = get_unique_id()
 	money_controller.get_instance().add_peer(ai_id)
 	var new_ai: economy_ai = economy_ai.new(ai_id, country_id)
@@ -30,6 +30,7 @@ func create_new_economy_ai(country_id: int) -> void:
 		country_ais[country_id] = {}
 	country_ais[country_id][ai_id] = true
 	ai_instances[ai_id] = new_ai
+	return ai_id
 
 func destory_economy_ai(ai_id: int) -> void:
 	money_controller.get_instance().delete_peer(ai_id)

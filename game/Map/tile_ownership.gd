@@ -116,4 +116,11 @@ func get_player_id_from_cell(cell: Vector2i) -> int:
 		toReturn = country_id_to_player_id[tile_to_country_id[cell]]
 	mutex.unlock()
 	return toReturn
-	
+
+func get_country_id(cell: Vector2i) -> int:
+	var toReturn: int = -1 #TODO: -1 not accounted for so eventually need to be assert(false)
+	mutex.lock()
+	if tile_to_country_id.has(cell):
+		toReturn = tile_to_country_id[cell]
+	mutex.unlock()
+	return toReturn

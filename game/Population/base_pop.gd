@@ -1,9 +1,10 @@
 class_name base_pop extends Node
 
 static var PEOPLE_PER_POP: int = 1000
+const INITIAL_WEALTH: int = 1000
 
 var education_level: int = 0
-var wealth: float = 0
+var wealth: float = INITIAL_WEALTH
 var home_prov_id: int = -1
 var culture: Object = null #TODO
 var income: float = 0.0
@@ -55,3 +56,13 @@ func get_sol() -> float:
 # === Education === 
 func get_education_level() -> int:
 	return education_level
+
+# === Wealth ===
+func get_wealth() -> float:
+	return wealth
+
+func transfer_wealth() -> float:
+	#Transfers 50% of wealth
+	var toReturn: float = get_wealth() * 0.5
+	wealth -= toReturn
+	return toReturn

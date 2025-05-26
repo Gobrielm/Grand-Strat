@@ -7,7 +7,7 @@ var last_money_cash: float
 
 var level: int
 var employees: Array[base_pop] = []
-var employment_total: int
+var pops_needed: int
 
 var inputs: Dictionary
 var outputs: Dictionary
@@ -20,7 +20,7 @@ func _init(new_location: Vector2i, _player_owner: int, new_inputs: Dictionary, n
 	outputs = new_outputs
 	local_pricer = local_price_controller.new(inputs, outputs)
 	level = 1
-	employment_total = 1000
+	pops_needed = 1
 
 # === Trade ===
 
@@ -104,7 +104,7 @@ func upgrade() -> bool:
 			if cash >= cost:
 				remove_cash(cost)
 				level += 1
-				employment_total = level * 1000
+				pops_needed = level
 				return true
 	return false
 
@@ -114,7 +114,7 @@ func admin_upgrade() -> void:
 		var mag: int = cargo_values.get_tile_magnitude(location, outputs.values()[0])
 		if mag > level:
 			level += 1
-			employment_total = level * 1000
+			pops_needed = level
 
 func update_income_array() -> void:
 	var income: float = cash - last_money_cash
@@ -130,10 +130,10 @@ func get_last_month_income() -> float:
 
 # === Employment ===
 func get_employement() -> int:
-	return employees.size() * base_pop.PEOPLE_PER_POP
+	return employees.size()
 
 func is_hiring() -> bool:
-	return employment_total - get_employement() >= base_pop.PEOPLE_PER_POP and get_last_month_income() * 0.9 > 0
+	return pops_needed - get_employement() >= 0 and get_last_month_income() * 0.9 > 0
 
 func is_firing() -> bool:
 	return get_employement() != 0 and get_last_month_income() < 0
@@ -141,11 +141,11 @@ func is_firing() -> bool:
 func get_wage() -> float:
 	#TODO: Kinda stupid but testing
 	var available_for_wages: float = get_last_month_income() * 0.9
-	var wage: float = available_for_wages / employment_total
+	var wage: float = available_for_wages / pops_needed
 	return wage
 
 func work_here(pop: base_pop) -> void:
-	if employment_total - employment_total >= base_pop.PEOPLE_PER_POP:
+	if is_hiring():
 		employees.insert(randi() % employees.size(), pop) #Randomly insert
 		pop.employ(get_wage())
 
