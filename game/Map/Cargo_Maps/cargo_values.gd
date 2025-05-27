@@ -100,20 +100,20 @@ func get_available_primary_recipes(coords: Vector2i) -> Array[Array]:
 
 func place_resources(_map: TileMapLayer) -> void:
 	map = _map
-	var helper: Node = load("res://Map/Cargo_Maps/cargo_values_helper.gd").new(map)
-	var resource_array: Array = helper.create_resource_array()
-	assert(resource_array != null or resource_array.is_empty(), "Resources generated improperly")
-	helper.queue_free()
-	var threads: Array = []
-	
-	for i: int in get_child_count():
-		var thread: Thread = Thread.new()
-		threads.append(thread)
-		thread.start(autoplace_resource.bind(resource_array[i], i, MAX_RESOURCES[i]))
+	#var helper: Node = load("res://Map/Cargo_Maps/cargo_values_helper.gd").new(map)
+	#var resource_array: Array = helper.create_resource_array()
+	#assert(resource_array != null or resource_array.is_empty(), "Resources generated improperly")
+	#helper.queue_free()
+	#var threads: Array = []
+	#
+	#for i: int in get_child_count():
+		#var thread: Thread = Thread.new()
+		#threads.append(thread)
+		#thread.start(autoplace_resource.bind(resource_array[i], i, MAX_RESOURCES[i]))
 	create_territories()
-	place_population()
-	for thread: Thread in threads:
-		thread.wait_to_finish()
+	#place_population()
+	#for thread: Thread in threads:
+		#thread.wait_to_finish()
 	finished_created_map_resources.emit()
 
 func autoplace_resource(tiles: Dictionary, type: int, max_resouces: int) -> void:
@@ -135,16 +135,19 @@ func place_population() -> void:
 	helper.queue_free()
 
 func create_territories() -> void:
+	refresh_territories()
 	var provinces: TileMapLayer = preload("res://Map/Map_Info/provinces.tscn").instantiate()
-	var tile_info: map_data = map_data.get_instance()
-	assert(tile_info != null)
-	for real_x: int in range(-609, 671):
-		for real_y: int in range(-243, 282):
-			var tile: Vector2i = Vector2i(real_x, real_y)
-			if !tile_info.is_tile_a_province(tile) and !Utils.is_tile_water(tile):
-				var group: Array = create_territory(tile, provinces)
-				var province_id: int = tile_info.create_new_province()
-				tile_info.add_many_tiles_to_province(province_id, group)
+	#var tile_info: map_data = map_data.get_instance()
+	#assert(tile_info != null)
+	#for real_x: int in range(-609, 671):
+		#for real_y: int in range(-243, 282):
+			#var tile: Vector2i = Vector2i(real_x, real_y)
+			#if !tile_info.is_tile_a_province(tile) and !Utils.is_tile_water(tile):
+				#var group: Array = create_territory(tile, provinces)
+				#var province_id: int = tile_info.create_new_province()
+				#tile_info.add_many_tiles_to_province(province_id, group)
+	map.add_child(provinces)
+	#provinces.queue_free()
 
 func create_territory(start: Vector2i, provinces: TileMapLayer) -> Array:
 	var atlas: Vector2i = provinces.get_cell_atlas_coords(start)
@@ -168,6 +171,7 @@ func create_territory(start: Vector2i, provinces: TileMapLayer) -> Array:
 					queue.push_back(tile)
 	return toReturn
 
+#Uses image to re-create provinces tilemaplayer, then remakes image to match tilemaplater
 func refresh_territories() -> void:
 	var im_provinces: Image = load("res://Map/Map_Info/provinces.png").get_image()
 	var provinces: TileMapLayer = preload("res://Map/Map_Info/provinces.tscn").instantiate()
