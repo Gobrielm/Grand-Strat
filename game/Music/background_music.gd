@@ -23,7 +23,7 @@ func click() -> void:
 		play(paused_status)
 		paused_status = 0.0
 
-func get_state() -> bool:
+func get_province() -> bool:
 	return playing
 
 func choose_random_song() -> void:

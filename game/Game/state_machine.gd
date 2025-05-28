@@ -1,4 +1,4 @@
-class_name state_machine extends Node
+class_name province_machine extends Node
 
 static var gui_inputs: bool = false
 static var building_rails: bool = false

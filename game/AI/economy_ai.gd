@@ -1,6 +1,6 @@
 class_name economy_ai extends ai_base
 
-#Set of States
+#Set of provinces
 var world_map: TileMapLayer
 var tile_ownership_obj: tile_ownership
 var cargo_map: TileMapLayer = terminal_map.cargo_map

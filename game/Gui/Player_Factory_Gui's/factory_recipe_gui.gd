@@ -75,11 +75,11 @@ func _ready() -> void:
 	hide()
 
 func _on_close_requested() -> void:
-	state_machine.unpress_gui()
+	province_machine.unpress_gui()
 	hide()
 
 func _on_search_bar_focus_entered() -> void:
-	state_machine.gui_button_pressed()
+	province_machine.gui_button_pressed()
 
 func _on_confirm_pressed() -> void:
 	var selected_recipes: Array = recipes.get_selected_items()
@@ -93,10 +93,10 @@ func request_change_construction_recipe(coords: Vector2i, selected_recipe: Array
 	terminal_map.set_construction_site_recipe(coords, selected_recipe)
 
 func _on_search_bar_focus_exited() -> void:
-	state_machine.unpress_gui()
+	province_machine.unpress_gui()
 
 func _on_focus_exited() -> void:
-	state_machine.unpress_gui()
+	province_machine.unpress_gui()
 	if filter != null:
 		filter.release_focus()
 

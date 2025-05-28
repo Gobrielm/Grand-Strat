@@ -140,7 +140,7 @@ func create_pops_range(i: int, j: int, provs: Array) -> void:
 		var prov: province = provs[index]
 		prov.create_pops()
 
-# === Province Checks ===
+# === province Checks ===
 func get_provinces() -> Array[province]:
 	var toReturn: Array[province] = []
 	toReturn.assign(provinces.values())

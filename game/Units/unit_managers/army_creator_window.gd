@@ -12,31 +12,31 @@ func clear_type_selected() -> void:
 
 func _on_infantry_button_pressed() -> void:
 	type_selected = 0
-	state_machine.start_building_units()
+	province_machine.start_building_units()
 	hide()
 
 
 func _on_calvary_button_pressed() -> void:
 	type_selected = 1
-	state_machine.start_building_units()
+	province_machine.start_building_units()
 	hide()
 
 
 func _on_artillery_button_pressed() -> void:
 	type_selected = 2
-	state_machine.start_building_units()
+	province_machine.start_building_units()
 	hide()
 
 
 func _on_engineer_button_pressed() -> void:
 	type_selected = 3
-	state_machine.start_building_units()
+	province_machine.start_building_units()
 	hide()
 
 
 func _on_officer_button_pressed() -> void:
 	type_selected = 4
-	state_machine.start_building_units()
+	province_machine.start_building_units()
 	hide()
 
 func get_type_selected() -> int:

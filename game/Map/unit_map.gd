@@ -25,22 +25,22 @@ func _ready() -> void:
 	Utils.assign_unit_map(self)
 
 func _input(event: InputEvent) -> void:
-	if event.is_action_pressed("click") and (state_machine.is_controlling_camera() or state_machine.is_selecting_unit()):
+	if event.is_action_pressed("click") and (province_machine.is_controlling_camera() or province_machine.is_selecting_unit()):
 		last_click = map.get_mouse_local_to_map()
 		click_valid = true
-	elif event.is_action_released("click") and (state_machine.is_controlling_camera() or state_machine.is_selecting_unit()):
+	elif event.is_action_released("click") and (province_machine.is_controlling_camera() or province_machine.is_selecting_unit()):
 		select_many_armies(map.get_mouse_local_to_map(), last_click , multiplayer.get_unique_id(), shift_held)
 		click_valid = false
 		remove_selection_box()
 		show_army_info_window()
 	
-	elif event.is_action_pressed("deselect") and state_machine.is_selecting_unit():
+	elif event.is_action_pressed("deselect") and province_machine.is_selecting_unit():
 		request_set_army_route(get_selected_army_ids(), map.get_cell_position())
 		if is_selecting_one_army():
 			map.update_info_window(get_selected_army())
-	elif event.is_action_pressed("merge_armies") and state_machine.is_selecting_unit():
+	elif event.is_action_pressed("merge_armies") and province_machine.is_selecting_unit():
 		request_merge_armies.rpc_id(1, get_selected_army_ids())
-	elif event.is_action_pressed("split_armies") and state_machine.is_selecting_unit():
+	elif event.is_action_pressed("split_armies") and province_machine.is_selecting_unit():
 		request_split_armies.rpc_id(1, get_selected_army_ids())
 
 # === Gui ===
@@ -537,10 +537,10 @@ func select_many_armies(coords1: Vector2, coords2: Vector2, player_id: int, addi
 				$select_unit_sound.play(0.5)
 				
 	if selected_armies.is_empty():
-		state_machine.unclick_unit()
+		province_machine.unclick_unit()
 		map.close_unit_box()
 	else:
-		state_machine.click_unit()
+		province_machine.click_unit()
 		highlight_dest()
 		highlight_name()
 
@@ -550,14 +550,14 @@ func select_army(coords: Vector2i, player_id: int, additive: bool = false) -> vo
 	if is_selecting_one_army() and get_selected_army().get_location() == coords:
 		toAdd = cycle_army_selection(coords)
 		$select_unit_sound.play(0.5)
-		state_machine.click_unit()
+		province_machine.click_unit()
 	elif tile_has_friendly_army(coords, player_id):
 		toAdd = get_top_army(coords)
 		$select_unit_sound.play(0.5)
-		state_machine.click_unit()
+		province_machine.click_unit()
 	else:
 		
-		state_machine.unclick_unit()
+		province_machine.unclick_unit()
 		map.close_unit_box()
 	if !additive:
 		selected_armies.clear()

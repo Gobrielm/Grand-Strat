@@ -165,7 +165,7 @@ func deaccelerate_train(delta: float) -> void:
 	velocity = acceleration_direction * speed
 
 func is_selecting_route() -> bool:
-	return state_machine.is_selecting_route()
+	return province_machine.is_selecting_route()
 
 func check_ticker() -> void:
 	if ticker > 1:

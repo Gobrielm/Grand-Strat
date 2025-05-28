@@ -12,14 +12,14 @@ func _input(event: InputEvent) -> void:
 		deselect_add_stop()
 
 #func is_mouse_hovering() -> bool:
-	#var state = false
+	#var province = false
 	#print(gui_get_hovered_control())
-	#return state
+	#return province
 
 func deselect_add_stop() -> void:
 	$Routes/Add_Stop.button_pressed = false
-	state_machine.stop_selecting_route()
+	province_machine.stop_selecting_route()
 
 func _on_add_stop_pressed() -> void:
-	state_machine.start_selecting_route()
+	province_machine.start_selecting_route()
 	

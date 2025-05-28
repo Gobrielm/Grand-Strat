@@ -52,46 +52,46 @@ func _input(event: InputEvent) -> void:
 	main_map.update_hover()
 	camera.update_coord_label(get_cell_position())
 	if event.is_action_pressed("click"):
-		if state_machine.is_picking_nation():
+		if province_machine.is_picking_nation():
 			pick_nation()
-		elif state_machine.is_building():
+		elif province_machine.is_building():
 			main_map.record_hover_click()
-		elif state_machine.is_building_many_rails():
+		elif province_machine.is_building_many_rails():
 			main_map.record_start_rail()
-		elif state_machine.is_building_units():
+		elif province_machine.is_building_units():
 			main_map.create_unit()
-		elif state_machine.is_building_factory():
+		elif province_machine.is_building_factory():
 			create_factory()
-		elif state_machine.is_building_road_depot():
+		elif province_machine.is_building_road_depot():
 			main_map.place_road_depot()
 	elif event.is_action_released("click"):
-		if state_machine.is_controlling_camera() and terminal_map.is_owned_station(get_cell_position(), unique_id):
+		if province_machine.is_controlling_camera() and terminal_map.is_owned_station(get_cell_position(), unique_id):
 			station_window.open_window(get_cell_position())
-		elif state_machine.is_controlling_camera() and terminal_map.is_station(get_cell_position()):
+		elif province_machine.is_controlling_camera() and terminal_map.is_station(get_cell_position()):
 			viewer_station_window.open_window(get_cell_position())
-		elif state_machine.is_controlling_camera() and terminal_map.is_owned_recipeless_construction_site(get_cell_position()):
+		elif province_machine.is_controlling_camera() and terminal_map.is_owned_recipeless_construction_site(get_cell_position()):
 			factory_recipe_window.open_window(get_cell_position())
-		elif state_machine.is_controlling_camera() and terminal_map.is_owned_construction_site(get_cell_position()):
+		elif province_machine.is_controlling_camera() and terminal_map.is_owned_construction_site(get_cell_position()):
 			factory_construction_window.open_window(get_cell_position())
-		elif state_machine.is_controlling_camera() and terminal_map.is_factory(get_cell_position()):
+		elif province_machine.is_controlling_camera() and terminal_map.is_factory(get_cell_position()):
 			factory_window.open_window(get_cell_position())
-		elif state_machine.is_controlling_camera() and map_data.get_instance().is_owned_depot(get_cell_position(), unique_id):
+		elif province_machine.is_controlling_camera() and map_data.get_instance().is_owned_depot(get_cell_position(), unique_id):
 			depot_window.open_window(get_cell_position())
-		elif state_machine.is_building_many_rails():
+		elif province_machine.is_building_many_rails():
 			main_map.place_rail_to_start()
-		elif state_machine.is_controlling_camera():
+		elif province_machine.is_controlling_camera():
 			main_map.open_tile_window(get_cell_position())
 		main_map.reset_start()
 	elif event.is_action_pressed("deselect"):
 		main_map.clear_all_temps()
-		if !state_machine.is_picking_nation() and !state_machine.is_selecting_unit():
+		if !province_machine.is_picking_nation() and !province_machine.is_selecting_unit():
 			camera.unpress_all_buttons()
-			state_machine.default()
-	elif event.is_action_pressed("debug_place_train") and state_machine.is_controlling_camera():
+			province_machine.default()
+	elif event.is_action_pressed("debug_place_train") and province_machine.is_controlling_camera():
 		main_map.create_train.rpc(get_cell_position())
-	elif event.is_action_pressed("debug_print") and state_machine.is_controlling_camera():
+	elif event.is_action_pressed("debug_print") and province_machine.is_controlling_camera():
 		unit_creator_window.popup()
-	elif event.is_action_pressed("debug_ai_cycle") and state_machine.is_controlling_camera():
+	elif event.is_action_pressed("debug_ai_cycle") and province_machine.is_controlling_camera():
 		ai_manager.get_instance()._on_ai_timer_timeout()
 
 #Factory
@@ -109,11 +109,11 @@ func is_owned(player_id: int, coords: Vector2i) -> bool:
 #Nation_Picker
 func enable_nation_picker() -> void:
 	camera.get_node("CanvasLayer").visible = false
-	state_machine.start_picking_nation()
+	province_machine.start_picking_nation()
 
 func disable_nation_picker() -> void:
 	camera.get_node("CanvasLayer").visible = true
-	state_machine.stop_picking_nation()
+	province_machine.stop_picking_nation()
 
 func pick_nation() -> void:
 	var coords: Vector2i = main_map.get_cell_position()

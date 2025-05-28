@@ -135,21 +135,9 @@ func place_population() -> void:
 	helper.queue_free()
 
 func create_territories() -> void:
-	#refresh_territories()
-	var provinces: TileMapLayer = preload("res://Map/Map_Info/provinces.tscn").instantiate()
-	var tile_info: map_data = map_data.get_instance()
-	assert(tile_info != null)
-	for real_x: int in range(-609, 671):
-		for real_y: int in range(-243, 282):
-			var tile: Vector2i = Vector2i(real_x, real_y)
-			if !tile_info.is_tile_a_province(tile) and !Utils.is_tile_water(tile):
-				var group: Array = create_territory(tile, provinces)
-				var province_id: int = tile_info.create_new_province()
-				tile_info.add_many_tiles_to_province(province_id, group)
-	map.add_child(provinces)
-	use_image_to_create_unique_province_colors()
-	provinces.queue_free()
+	refresh_territories()
 
+#Adds provinces and provinces abd refreshes images
 func create_territory(start: Vector2i, provinces: TileMapLayer) -> Array:
 	var atlas: Vector2i = provinces.get_cell_atlas_coords(start)
 	var visited: Dictionary = {}
@@ -174,9 +162,8 @@ func create_territory(start: Vector2i, provinces: TileMapLayer) -> Array:
 
 #Uses image to re-create provinces tilemaplayer, then remakes image to match tilemaplater
 func refresh_territories() -> void:
-	#TODO: Finish implementing
+	var map_data_obj: map_data = map_data.get_instance()
 	var im_provinces: Image = load("res://Map/Map_Info/provinces.png").get_image()
-	var provinces: TileMapLayer = preload("res://Map/Map_Info/provinces.tscn").instantiate()
 	var colors_to_province_id: Dictionary = {}
 	var province_id_to_color: Dictionary = {}
 	var current_prov_id: int = 0
@@ -195,14 +182,8 @@ func refresh_territories() -> void:
 				colors_to_province_id[color] = current_prov_id
 				province_id_to_color[current_prov_id] = color
 				current_prov_id += 1
-			provinces.add_tile_to_province(tile, colors_to_province_id[color])
-	var scene: PackedScene = PackedScene.new()
-	scene.pack(provinces)
-	var file: String = "res://Map/Map_Info/provinces.tscn"
-	if FileAccess.file_exists(file):
-		var error: int = ResourceSaver.save(scene, file)
-		if error != OK:
-			push_error("An error occurred while saving the scene to disk.")
+			map_data_obj.create_new_if_empty(colors_to_province_id[color])
+			map_data_obj.add_tile_to_province(colors_to_province_id[color], tile)
 
 	var new_image: Image = Image.create(1920, 919, false, Image.FORMAT_RGBA8)
 	for real_x: int in range(-609, 671):
@@ -214,16 +195,17 @@ func refresh_territories() -> void:
 			var tile: Vector2i = Vector2i(real_x, real_y)
 			if Utils.is_tile_water(tile):
 				continue
-			new_image.set_pixel(x, y, provinces.get_color(tile))
+			var prov_id: int = map_data_obj.get_province_id(tile)
+			var color: Color = province_id_to_color[prov_id]
+			new_image.set_pixel(x, y, color)
 			if x != 0 and y != 0:
-				new_image.set_pixel(x - 1, y - 1, provinces.get_color(tile))
+				new_image.set_pixel(x - 1, y - 1, color)
 			if y != 0:
-				new_image.set_pixel(x, y - 1, provinces.get_color(tile))
+				new_image.set_pixel(x, y - 1, color)
 			if x != 0:
-				new_image.set_pixel(x - 1, y, provinces.get_color(tile))
-	file = "res://Map/Map_Info/provinces.png"
+				new_image.set_pixel(x - 1, y, color)
+	var file: String = "res://Map/Map_Info/provinces.png"
 	new_image.save_png(file)
-	provinces.queue_free()
 
 func use_image_to_create_unique_province_colors() -> void:
 	var map_data_obj: map_data = map_data.get_instance()

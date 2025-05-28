@@ -102,10 +102,10 @@ func is_owned(player_id: int, coords: Vector2i) -> bool:
 	return map_node.is_owned(player_id, coords)
 
 func start_building_units() -> void:
-	state_machine.start_building_units()
+	province_machine.start_building_units()
 
 func is_controlling_camera() -> bool:
-	return state_machine.is_controlling_camera()
+	return province_machine.is_controlling_camera()
 
 #Units
 func create_untraversable_tiles() -> void:
@@ -168,7 +168,7 @@ func get_depot_direction(coords: Vector2i) -> int:
 	return rail_placer_obj.get_depot_direction(coords)
 
 func place_road_depot() -> void:
-	if !state_machine.is_hovering_over_gui():
+	if !province_machine.is_hovering_over_gui():
 		rail_placer_obj.place_road_depot(get_cell_position(), unique_id)
 
 #Cargo

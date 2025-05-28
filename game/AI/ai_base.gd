@@ -1,6 +1,6 @@
 class_name ai_base extends Node
 
-#AI States
+#AI provinces
 var id: int
 var country_id: int #Otherwise known as player
 var thread: Thread

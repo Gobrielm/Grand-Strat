@@ -15,13 +15,13 @@ func _input(event: InputEvent) -> void:
 		window.deselect_add_stop()
 
 func start_selecting_route() -> void:
-	state_machine.start_selecting_route()
+	province_machine.start_selecting_route()
 
 func stop_selecting_route() -> void:
-	state_machine.stop_selecting_route()
+	province_machine.stop_selecting_route()
 
 func is_selecting_route() -> bool:
-	return state_machine.is_selecting_route()
+	return province_machine.is_selecting_route()
 
 func did_mouse_click(mouse_pos: Vector2) -> bool:
 	var match_x: bool = mouse_pos.x > position.x - 48 and mouse_pos.x < position.x + 48
