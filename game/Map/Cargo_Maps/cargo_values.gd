@@ -163,7 +163,9 @@ func create_territory(start: Vector2i, provinces: TileMapLayer) -> Array:
 #Uses image to re-create provinces tilemaplayer, then remakes image to match tilemaplater
 func refresh_territories() -> void:
 	var map_data_obj: map_data = map_data.get_instance()
-	var im_provinces: Image = load("res://Map/Map_Info/provinces.png").get_image()
+	var im_provinces: Image = load("res://Map/Map_Info/states.png").get_image()
+	var provinces: TileMapLayer = preload("res://Map/Map_Info/provinces.tscn").instantiate()
+	add_child(provinces)
 	var colors_to_province_id: Dictionary = {}
 	var province_id_to_color: Dictionary = {}
 	var current_prov_id: int = 0
@@ -182,6 +184,7 @@ func refresh_territories() -> void:
 				colors_to_province_id[color] = current_prov_id
 				province_id_to_color[current_prov_id] = color
 				current_prov_id += 1
+			provinces.add_tile_to_province(tile, colors_to_province_id[color])
 			map_data_obj.create_new_if_empty(colors_to_province_id[color])
 			map_data_obj.add_tile_to_province(colors_to_province_id[color], tile)
 
@@ -204,8 +207,8 @@ func refresh_territories() -> void:
 				new_image.set_pixel(x, y - 1, color)
 			if x != 0:
 				new_image.set_pixel(x - 1, y, color)
-	var file: String = "res://Map/Map_Info/provinces.png"
-	new_image.save_png(file)
+	#var file: String = "res://Map/Map_Info/provinces.png"
+	#new_image.save_png(file)
 
 func use_image_to_create_unique_province_colors() -> void:
 	var map_data_obj: map_data = map_data.get_instance()
