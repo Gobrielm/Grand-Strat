@@ -24,8 +24,13 @@ func create_countries() -> void:
 	for cell: Vector2i in provinces_to_add:
 		var prov: province = map_data_inst.get_province(map_data_inst.get_province_id(cell))
 		map_data_inst.add_province_to_country(prov, 1)
-		for tile: Vector2i in prov.tiles:
+		for tile: Vector2i in prov.get_tiles():
 			add_tile_to_country(tile, 1)
+	for prov: province in map_data_inst.get_provinces():
+		if get_player_id_from_cell(prov.get_random_tile()) == -1:
+			map_data_inst.add_province_to_country(prov, 2)
+			for cell: Vector2i in prov.get_tiles():
+				add_tile_to_country(cell, 2)
 
 func add_tile_to_country(tile: Vector2i, country_id: int) -> void:
 	if !country_id_to_tiles_owned.has(country_id):

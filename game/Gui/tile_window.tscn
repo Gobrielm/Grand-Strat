@@ -38,7 +38,7 @@ scale = Vector2(0.5, 0.5)
 icon = ExtResource("3_47p3e")
 flat = true
 
-[node name="Province_control" type="Control" parent="."]
+[node name="Tile_control" type="Control" parent="."]
 visible = false
 layout_mode = 3
 anchors_preset = 8
@@ -53,14 +53,14 @@ offset_bottom = 160.5
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Biome" type="Label" parent="Province_control"]
+[node name="Biome" type="Label" parent="Tile_control"]
 layout_mode = 1
 offset_right = 86.0
 offset_bottom = 23.0
 text = "Grasslands"
 label_settings = SubResource("LabelSettings_47p3e")
 
-[node name="Coords" type="Label" parent="Province_control"]
+[node name="Coords" type="Label" parent="Tile_control"]
 layout_mode = 1
 anchors_preset = -1
 anchor_top = 0.086
@@ -71,7 +71,7 @@ offset_bottom = 22.894
 text = "(3, 5)"
 label_settings = SubResource("LabelSettings_86m3j")
 
-[node name="ItemList" type="ItemList" parent="Province_control"]
+[node name="ItemList" type="ItemList" parent="Tile_control"]
 layout_mode = 1
 anchors_preset = -1
 anchor_left = 0.458
@@ -89,7 +89,7 @@ theme_override_colors/font_color = Color(0, 0, 0, 1)
 theme_override_styles/panel = SubResource("StyleBoxEmpty_jleib")
 allow_search = false
 
-[node name="Label" type="Label" parent="Province_control"]
+[node name="Label" type="Label" parent="Tile_control"]
 layout_mode = 1
 anchors_preset = -1
 anchor_left = 0.458
@@ -103,7 +103,7 @@ offset_bottom = 22.012
 text = "Available Goods:"
 label_settings = SubResource("LabelSettings_pqrux")
 
-[node name="State_control" type="Control" parent="."]
+[node name="Province_control" type="Control" parent="."]
 layout_mode = 3
 anchors_preset = 8
 anchor_left = 0.5
@@ -117,13 +117,13 @@ offset_bottom = 164.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Label" type="Label" parent="State_control"]
+[node name="Label" type="Label" parent="Province_control"]
 layout_mode = 1
 offset_right = 40.0
 offset_bottom = 23.0
 text = "Province ID: "
 
-[node name="Province_ID" type="Label" parent="State_control"]
+[node name="Province_ID" type="Label" parent="Province_control"]
 layout_mode = 0
 offset_left = 96.0
 offset_top = -0.5
@@ -132,7 +132,7 @@ offset_bottom = 48.5
 text = "1
 "
 
-[node name="Label2" type="Label" parent="State_control"]
+[node name="Label2" type="Label" parent="Province_control"]
 layout_mode = 1
 anchors_preset = -1
 anchor_left = 0.002
@@ -145,7 +145,7 @@ offset_right = 97.112
 offset_bottom = 23.032
 text = "Population: "
 
-[node name="Population" type="Label" parent="State_control"]
+[node name="Population" type="Label" parent="Province_control"]
 layout_mode = 0
 offset_left = 95.0
 offset_top = 46.0
@@ -153,7 +153,7 @@ offset_right = 135.0
 offset_bottom = 95.0
 text = "10000"
 
-[node name="Pops" type="Label" parent="State_control"]
+[node name="Pops" type="Label" parent="Province_control"]
 layout_mode = 0
 offset_left = 2.0
 offset_top = 79.0

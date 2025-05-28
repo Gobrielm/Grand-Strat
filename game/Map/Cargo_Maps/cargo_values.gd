@@ -100,20 +100,20 @@ func get_available_primary_recipes(coords: Vector2i) -> Array[Array]:
 
 func place_resources(_map: TileMapLayer) -> void:
 	map = _map
-	#var helper: Node = load("res://Map/Cargo_Maps/cargo_values_helper.gd").new(map)
-	#var resource_array: Array = helper.create_resource_array()
-	#assert(resource_array != null or resource_array.is_empty(), "Resources generated improperly")
-	#helper.queue_free()
-	#var threads: Array = []
-	#
-	#for i: int in get_child_count():
-		#var thread: Thread = Thread.new()
-		#threads.append(thread)
-		#thread.start(autoplace_resource.bind(resource_array[i], i, MAX_RESOURCES[i]))
+	var helper: Node = load("res://Map/Cargo_Maps/cargo_values_helper.gd").new(map)
+	var resource_array: Array = helper.create_resource_array()
+	assert(resource_array != null or resource_array.is_empty(), "Resources generated improperly")
+	helper.queue_free()
+	var threads: Array = []
+	
+	for i: int in get_child_count():
+		var thread: Thread = Thread.new()
+		threads.append(thread)
+		thread.start(autoplace_resource.bind(resource_array[i], i, MAX_RESOURCES[i]))
 	create_territories()
-	#place_population()
-	#for thread: Thread in threads:
-		#thread.wait_to_finish()
+	place_population()
+	for thread: Thread in threads:
+		thread.wait_to_finish()
 	finished_created_map_resources.emit()
 
 func autoplace_resource(tiles: Dictionary, type: int, max_resouces: int) -> void:
@@ -137,7 +137,7 @@ func place_population() -> void:
 func create_territories() -> void:
 	refresh_territories()
 
-#Adds provinces and provinces abd refreshes images
+#Adds provinces and provinces, used for creating territories from multiple colors
 func create_territory(start: Vector2i, provinces: TileMapLayer) -> Array:
 	var atlas: Vector2i = provinces.get_cell_atlas_coords(start)
 	var visited: Dictionary = {}
@@ -163,9 +163,12 @@ func create_territory(start: Vector2i, provinces: TileMapLayer) -> Array:
 #Uses image to re-create provinces tilemaplayer, then remakes image to match tilemaplater
 func refresh_territories() -> void:
 	var map_data_obj: map_data = map_data.get_instance()
-	var im_provinces: Image = load("res://Map/Map_Info/states.png").get_image()
-	var provinces: TileMapLayer = preload("res://Map/Map_Info/provinces.tscn").instantiate()
-	add_child(provinces)
+	#Uses states for now, may change
+	var file: String = "res://Map/Map_Info/states.png"
+	var im_provinces: Image = load(file).get_image()
+	#For Testing
+	#var provinces: TileMapLayer = preload("res://Map/Map_Info/provinces.tscn").instantiate()
+	#add_child(provinces)
 	var colors_to_province_id: Dictionary = {}
 	var province_id_to_color: Dictionary = {}
 	var current_prov_id: int = 0
@@ -184,7 +187,7 @@ func refresh_territories() -> void:
 				colors_to_province_id[color] = current_prov_id
 				province_id_to_color[current_prov_id] = color
 				current_prov_id += 1
-			provinces.add_tile_to_province(tile, colors_to_province_id[color])
+			#provinces.add_tile_to_province(tile, colors_to_province_id[color])
 			map_data_obj.create_new_if_empty(colors_to_province_id[color])
 			map_data_obj.add_tile_to_province(colors_to_province_id[color], tile)
 
@@ -207,8 +210,8 @@ func refresh_territories() -> void:
 				new_image.set_pixel(x, y - 1, color)
 			if x != 0:
 				new_image.set_pixel(x - 1, y, color)
-	#var file: String = "res://Map/Map_Info/provinces.png"
-	#new_image.save_png(file)
+	
+	new_image.save_png(file)
 
 func use_image_to_create_unique_province_colors() -> void:
 	var map_data_obj: map_data = map_data.get_instance()
@@ -223,6 +226,7 @@ func use_image_to_create_unique_province_colors() -> void:
 			@warning_ignore("integer_division")
 			var y: int = (tile.y + 243) * 7 / 4
 			var color: Color = get_color(prov_id)
+			#Could potentially double map a color
 			if colors.has(color) and !prov_id_to_color.has(prov_id):
 				assert(false)
 			prov_id_to_color[prov_id] = color

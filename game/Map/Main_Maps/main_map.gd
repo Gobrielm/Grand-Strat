@@ -122,7 +122,7 @@ func show_army_info_window(army_obj: army) -> void:
 	$army_info_window.show_army(army_obj)
 
 func update_info_window(army_obj: army) -> void:
-	$army_info_window.update_unit(army_obj)
+	$army_info_window.update_army(army_obj)
 
 func create_unit() -> void:
 	unit_map.check_before_create.rpc_id(1, get_cell_position(), unit_creator_window.get_type_selected(), unique_id)
