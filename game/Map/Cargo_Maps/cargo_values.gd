@@ -135,19 +135,20 @@ func place_population() -> void:
 	helper.queue_free()
 
 func create_territories() -> void:
-	refresh_territories()
+	#refresh_territories()
 	var provinces: TileMapLayer = preload("res://Map/Map_Info/provinces.tscn").instantiate()
-	#var tile_info: map_data = map_data.get_instance()
-	#assert(tile_info != null)
-	#for real_x: int in range(-609, 671):
-		#for real_y: int in range(-243, 282):
-			#var tile: Vector2i = Vector2i(real_x, real_y)
-			#if !tile_info.is_tile_a_province(tile) and !Utils.is_tile_water(tile):
-				#var group: Array = create_territory(tile, provinces)
-				#var province_id: int = tile_info.create_new_province()
-				#tile_info.add_many_tiles_to_province(province_id, group)
+	var tile_info: map_data = map_data.get_instance()
+	assert(tile_info != null)
+	for real_x: int in range(-609, 671):
+		for real_y: int in range(-243, 282):
+			var tile: Vector2i = Vector2i(real_x, real_y)
+			if !tile_info.is_tile_a_province(tile) and !Utils.is_tile_water(tile):
+				var group: Array = create_territory(tile, provinces)
+				var province_id: int = tile_info.create_new_province()
+				tile_info.add_many_tiles_to_province(province_id, group)
 	map.add_child(provinces)
-	#provinces.queue_free()
+	use_image_to_create_unique_province_colors()
+	provinces.queue_free()
 
 func create_territory(start: Vector2i, provinces: TileMapLayer) -> Array:
 	var atlas: Vector2i = provinces.get_cell_atlas_coords(start)
@@ -173,10 +174,12 @@ func create_territory(start: Vector2i, provinces: TileMapLayer) -> Array:
 
 #Uses image to re-create provinces tilemaplayer, then remakes image to match tilemaplater
 func refresh_territories() -> void:
+	#TODO: Finish implementing
 	var im_provinces: Image = load("res://Map/Map_Info/provinces.png").get_image()
 	var provinces: TileMapLayer = preload("res://Map/Map_Info/provinces.tscn").instantiate()
-	var coords_to_province_id: Dictionary = {}
 	var colors_to_province_id: Dictionary = {}
+	var province_id_to_color: Dictionary = {}
+	var current_prov_id: int = 0
 	create_colors_to_province_id(colors_to_province_id)
 	for real_x: int in range(-609, 671):
 		for real_y: int in range(-243, 282):
@@ -185,15 +188,13 @@ func refresh_territories() -> void:
 			@warning_ignore("integer_division")
 			var y: int = (real_y + 243) * 7 / 4
 			var tile: Vector2i = Vector2i(real_x, real_y)
-			var color: Color = get_closest_color(im_provinces.get_pixel(x, y))
+			var color: Color = im_provinces.get_pixel(x, y)
 			if Utils.is_tile_water(tile):
 				continue
-
 			if !colors_to_province_id.has(color):
-				provinces.erase_cell(tile)
-				continue
-
-			coords_to_province_id[tile] = colors_to_province_id[color]
+				colors_to_province_id[color] = current_prov_id
+				province_id_to_color[current_prov_id] = color
+				current_prov_id += 1
 			provinces.add_tile_to_province(tile, colors_to_province_id[color])
 	var scene: PackedScene = PackedScene.new()
 	scene.pack(provinces)
@@ -223,6 +224,37 @@ func refresh_territories() -> void:
 	file = "res://Map/Map_Info/provinces.png"
 	new_image.save_png(file)
 	provinces.queue_free()
+
+func use_image_to_create_unique_province_colors() -> void:
+	var map_data_obj: map_data = map_data.get_instance()
+	var new_image: Image = Image.create(1920, 919, false, Image.FORMAT_RGBA8)
+	var colors: Dictionary[Color, bool] = {}
+	var prov_id_to_color: Dictionary[int, Color] = {}
+	for prov: province in map_data_obj.get_provinces():
+		var prov_id: int = prov.province_id
+		for tile: Vector2i in prov.get_tiles():
+			@warning_ignore("integer_division")
+			var x: int = (tile.x + 609) * 3 / 2
+			@warning_ignore("integer_division")
+			var y: int = (tile.y + 243) * 7 / 4
+			var color: Color = get_color(prov_id)
+			if colors.has(color) and !prov_id_to_color.has(prov_id):
+				assert(false)
+			prov_id_to_color[prov_id] = color
+			colors[color] = true
+			new_image.set_pixel(x, y, color)
+			if x != 0 and y != 0:
+				new_image.set_pixel(x - 1, y - 1, color)
+			if y != 0:
+				new_image.set_pixel(x, y - 1, color)
+			if x != 0:
+				new_image.set_pixel(x - 1, y, color)
+	var file: String = "res://Map/Map_Info/provinces.png"
+	new_image.save_png(file)
+
+func get_color(prov_id: int) -> Color:
+	var id: int = (prov_id + 31) * 53
+	return Color((int(id * 1.1) % 255) / 255.0, ((int(id * 1.2) + 100) % 255) / 255.0, ((int(id * 1.3) + 200) % 255) / 255.0)
 
 func get_closest_color(color: Color) -> Color:
 	var red: float = 0.0

@@ -141,6 +141,10 @@ func create_pops_range(i: int, j: int, provs: Array) -> void:
 		prov.create_pops()
 
 # === Province Checks ===
+func get_provinces() -> Array[province]:
+	var toReturn: Array[province] = []
+	toReturn.assign(provinces.values())
+	return toReturn
 
 func is_tile_a_province(tile: Vector2i) -> bool:
 	mutex.lock()

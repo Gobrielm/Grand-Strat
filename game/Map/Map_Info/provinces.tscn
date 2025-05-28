@@ -1,7 +1,7 @@
-[gd_scene load_steps=5 format=4]
+[gd_scene load_steps=5 format=4 uid="uid://c22nffiuxaage"]
 
-[ext_resource type="Texture2D" path="res://Map_Icons/country_tags.png" id="1_tpxka"]
-[ext_resource type="Script" path="res://Map/Map_Info/provinces.gd" id="2_xoyd0"]
+[ext_resource type="Texture2D" uid="uid://c8np01jiqqnap" path="res://Map_Icons/country_tags.png" id="1_tpxka"]
+[ext_resource type="Script" uid="uid://od1ujqlvte4b" path="res://Map/Map_Info/provinces.gd" id="2_xoyd0"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_xoyd0"]
 texture = ExtResource("1_tpxka")
