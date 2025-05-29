@@ -4,7 +4,7 @@ const COST_FOR_UPGRADE: int = 1000
 
 var income_array: Array[float] = []
 
-var level: int
+var level: int = 1
 var employees: Array[base_pop] = []
 var pops_needed: int
 
@@ -18,7 +18,6 @@ func _init(new_location: Vector2i, _player_owner: int, new_inputs: Dictionary, n
 	inputs = new_inputs
 	outputs = new_outputs
 	local_pricer = local_price_controller.new(inputs, outputs)
-	level = 1
 	pops_needed = 1
 
 # === Trade ===

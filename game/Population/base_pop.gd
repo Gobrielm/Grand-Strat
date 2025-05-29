@@ -1,19 +1,22 @@
 class_name base_pop extends Node
 
 static var PEOPLE_PER_POP: int = 1000
+static var total_pops: int = 0
 const INITIAL_WEALTH: int = 1000
 
+var pop_id: int
 var education_level: int = 0
 var wealth: float = INITIAL_WEALTH
 var home_prov_id: int = -1
 var culture: Object = null #TODO
 var income: float = 0.0
-var employed: bool = false
- #TODO, how they own things/businesses
+#TODO, how they own things/businesses
 
 func _init(home_prov: int, p_culture: Variant) -> void:
 	home_prov_id = home_prov
 	culture = p_culture
+	pop_id = total_pops
+	total_pops += 1
 
 # === Employment === 
 func find_employment() -> void:
@@ -22,7 +25,7 @@ func find_employment() -> void:
 	work.work_here(self)
 
 func is_seeking_employement() -> bool:
-	if !employed:
+	if income == 0:
 		return true
 	else:
 		#TODO: Stuff with expected sol
@@ -32,11 +35,9 @@ func pay_wage(wage: float) -> void:
 	wealth += wage
 
 func employ(wage: float) -> void:
-	employed = true
 	income = wage
 
 func fire() -> void:
-	employed = false
 	income = 0.0
 
 # === Living Standards === 

@@ -24,7 +24,7 @@ static var base_prices: Dictionary = {
 	
 	"bricks" = 10, "glass" = 10, "lumber" = 10, "paper" = 10, "tools" = 10, "steel" = 10, "brass" = 10, "dynamite" = 10,
 	"flour" = 10, "fabric" = 10, "liquor" = 10, "bread" = 10, "leather" = 10, "meat" = 10, "clothes" = 10,
-	"wine" = 10, "luxury_clothes" = 10, "cigarettes" = 10, "perserved_fruit" = 10, "porcelain" = 10,
+	"wine" = 10, "luxury_clothes" = 10, "perserved_fruit" = 10, "porcelain" = 10,
 	"furniture" = 10, "wagons" = 10, "boats" = 10, "lanterns" = 10, "trains" = 10,
 	"ammo" = 10, "guns" = 10, "artillery" = 10, "preserved_meat" = 10, "canned_food" = 10, "rations" = 10, "luxury_rations" = 10,
 }
@@ -335,6 +335,7 @@ static func get_cargo_type(cargo_name: String) -> int:
 	if cargo_names_to_types.has(cargo_name):
 		toReturn = cargo_names_to_types[cargo_name]
 	mutex.unlock()
+	assert(toReturn != -1)
 	return toReturn
 
 static func get_cargo_array_at_location(coords: Vector2i) -> Dictionary:
