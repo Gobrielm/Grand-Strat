@@ -61,8 +61,11 @@ func get_expected_income() -> float:
 func get_sol() -> float:
 	return get_income()
 
-func get_desired(type: int) -> float:
-	return base_needs[type] + specialities[type]
+func get_desired(type: int, price: float) -> float:
+	var amount: float = base_needs[type] + specialities[type]
+	if amount * price < wealth:
+		return amount
+	return 0
 
 func buy_good(amount: float, price: float) -> void:
 	wealth -= amount * price

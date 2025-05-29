@@ -60,8 +60,24 @@ func create_pops() -> void:
 	var number_of_city_pops: int = floor(population * 0.2 / base_pop.PEOPLE_PER_POP)
 	for i: int in number_of_rural_pops:
 		pops.push_back(rural_pop.new(province_id))
+	var cities: Array[town] = get_cities()
+	#If no cities, then turn rest of population into rural pops
+	if cities.size() == 0:
+		for i: int in number_of_city_pops:
+			pops.push_back(rural_pop.new(province_id))
+		return
+	var index: int = 0
 	for i: int in number_of_city_pops:
-		pops.push_back(city_pop.new(province_id))
+		var city: town = cities[index]
+		city.add_pop(city_pop.new(province_id))
+		index = (index + 1) % cities.size()
+
+func get_cities() -> Array[town]:
+	var toReturn: Array[town] = []
+	for term: terminal in terminal_tiles.values():
+		if term is town:
+			toReturn.append(term)
+	return toReturn
 
 func count_pops() -> int:
 	return pops.size()
