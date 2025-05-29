@@ -27,7 +27,7 @@ func create_countries() -> void:
 		for tile: Vector2i in prov.get_tiles():
 			add_tile_to_country(tile, 1)
 	for prov: province in map_data_inst.get_provinces():
-		if get_player_id_from_cell(prov.get_random_tile()) == -1:
+		if prov.country_id == -1:
 			map_data_inst.add_province_to_country(prov, 2)
 			for cell: Vector2i in prov.get_tiles():
 				add_tile_to_country(cell, 2)
@@ -38,7 +38,7 @@ func add_tile_to_country(tile: Vector2i, country_id: int) -> void:
 	country_id_to_tiles_owned[country_id].append(tile)
 	tile_to_country_id[tile] = country_id
 	@warning_ignore("integer_division")
-	set_tile.rpc(tile, Vector2i(country_id / 8, country_id % 8))
+	set_tile.rpc(tile, Vector2i(country_id % 8, country_id / 8))
 
 @rpc("authority", "call_local", "reliable")
 func set_tile(tile: Vector2i, atlas: Vector2i) -> void:

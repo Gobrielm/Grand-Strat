@@ -39,6 +39,7 @@ func destory_economy_ai(ai_id: int) -> void:
 	ai_instances.erase(ai_id)
 
 func get_unique_id() -> int:
+	#Ids -1 -> -10 are saved for specific purposes
 	var toReturn: int = (randi() % 100000000) * -1
 	while ai_instances.has(toReturn):
 		toReturn = (randi() % 100000000) * -1

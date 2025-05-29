@@ -43,9 +43,14 @@ func initialize_game() -> void:
 		terminal_map.assign_cargo_map(cargo_map)
 		money_controller.new(multiplayer.get_peers())
 		main_map.on_singleton_creation()
-		#cargo_map.place_resources(main_map)
-		#tile_ownership_obj.create_countries()
-		#map_data.get_instance().create_pops()
+		#First provences and population
+		Utils.cargo_values.create_provinces_and_pop()
+		#Then countries
+		tile_ownership_obj.create_countries()
+		#Then resources and industries that need both of those
+		cargo_map.place_resources(main_map)
+		#Then create pops
+		map_data.get_instance().create_pops()
 	enable_nation_picker()
 
 func _input(event: InputEvent) -> void:

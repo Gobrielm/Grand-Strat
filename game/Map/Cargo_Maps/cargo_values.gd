@@ -110,11 +110,13 @@ func place_resources(_map: TileMapLayer) -> void:
 		var thread: Thread = Thread.new()
 		threads.append(thread)
 		thread.start(autoplace_resource.bind(resource_array[i], i, MAX_RESOURCES[i]))
-	create_territories()
-	place_population()
 	for thread: Thread in threads:
 		thread.wait_to_finish()
 	finished_created_map_resources.emit()
+
+func create_provinces_and_pop() -> void:
+	create_territories()
+	place_population()
 
 func autoplace_resource(tiles: Dictionary, type: int, max_resouces: int) -> void:
 	var array: Array = tiles.keys()

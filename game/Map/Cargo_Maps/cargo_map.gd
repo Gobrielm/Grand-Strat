@@ -13,7 +13,9 @@ func create_town(coords: Vector2i, prov_id: int) -> void:
 	if map_dat.get_population(prov_id) < TOWN_THRESHOLD:
 		return
 	var mult: int = map_dat.get_population_as_level(prov_id)
-	var new_town: terminal = town.new(coords, tile_ownership.get_instance().get_player_id_from_cell(coords), mult)
+	var country_id: int = tile_ownership.get_instance().get_country_id(coords)
+	#TODO: Use country id to get unique ai to manage
+	var new_town: terminal = town.new(coords, -1, mult)
 	Utils.world_map.make_cell_invisible(coords)
 	set_tile.rpc(coords, Vector2i(0, 1))
 	add_terminal_to_province(new_town)
@@ -68,8 +70,8 @@ func place_random_industry(tile: Vector2i, mult: int) -> bool:
 	var best_resource: int = cargo_values.get_best_resource(tile)
 	if best_resource == -1:
 		return false
-	#TODO: Gives it to player, maybe give to company
-	create_factory(tile_ownership.get_instance().get_player_id_from_cell(tile), tile, get_primary_recipe_for_type(best_resource), mult)
+	#TODO: Give it to country company
+	create_factory(-1, tile, get_primary_recipe_for_type(best_resource), mult)
 	return true
 
 func get_primary_recipe_for_type(type: int) -> Array:
