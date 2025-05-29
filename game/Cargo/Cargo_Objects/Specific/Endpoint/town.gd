@@ -1,109 +1,76 @@
-class_name town extends ai_factory
+class_name town extends broker
 
 var internal_factories: Dictionary[int, Array] = {} # Owner id -> Array[factory_templates]
 var city_pops: Dictionary[int, city_pop] = {} #Pop id -> pop
-var cash: float = 0.0 #Cash available to buy things
+var market: town_market
 
 func _init(new_location: Vector2i) -> void:
-	super._init(new_location, 0, {}, {}) #Inits with 0 pops, and player_id = 0
+	super._init(new_location, 0) #Inits with 0 pops, and player_id = 0
+	market = town_market.new()
 
-func add_cash(amount: float) -> void:
-	money_controller.get_instance().add_money_to_player(player_owner, amount)
+# === Trade ===
 
-func remove_cash(amount: float) -> void:
-	money_controller.get_instance().remove_money_from_player(player_owner, amount)
+func does_accept(type: int) -> bool:
+	return storage[type] != max_amount
 
-func get_cash() -> float:
-	return money_controller.get_instance().get_money(player_owner)
+func get_local_price(type: int) -> float:
+	return market.get_local_price(type)
 
-func add_pop_to_inputs(new_inputs: Dictionary[int, float], pop: city_pop) -> void:
-	if pop.get_income() > 0 or pop.get_wealth() > 0:
-		#Essentials
-		new_inputs[terminal_map.get_cargo_type("grain")] += 1
-		new_inputs[terminal_map.get_cargo_type("wood")] += 0.5
-		new_inputs[terminal_map.get_cargo_type("bread")] += 0.3
-		new_inputs[terminal_map.get_cargo_type("clothes")] += 0.3
-		new_inputs[terminal_map.get_cargo_type("furniture")] += 0.3
-		new_inputs[terminal_map.get_cargo_type("meat")] += 0.3
-		new_inputs[terminal_map.get_cargo_type("liquor")] += 0.3
-		new_inputs[terminal_map.get_cargo_type("tobacco")] += 0.1
-	if pop.get_income() > 10:
-		#Specialty
-		new_inputs[terminal_map.get_cargo_type("wagons")] += 0.1
-		new_inputs[terminal_map.get_cargo_type("paper")] += 0.3
-		new_inputs[terminal_map.get_cargo_type("lanterns")] += 0.3
-	
-	if pop.get_income() > 20 and pop.get_wealth() > 200:
-		#Luxuries
-		new_inputs[terminal_map.get_cargo_type("wine")] += 0.5
-		new_inputs[terminal_map.get_cargo_type("luxury_clothes")] += 0.3
-		new_inputs[terminal_map.get_cargo_type("coffee")] += 1
-		new_inputs[terminal_map.get_cargo_type("tea")] += 1
-		new_inputs[terminal_map.get_cargo_type("porcelain")] += 0.3
-		new_inputs[terminal_map.get_cargo_type("gold")] += 0.5
-	
-	#TODO: Merchants will buy extra goods with the goal of selling to other stations/ports
+func is_price_acceptable(type: int, price: float) -> bool:
+	return market.is_price_acceptable(type, price)
 
-func add_factory_to_inputs(new_inputs: Dictionary[int, float], fact: factory_template) -> void:
-	for type: int in fact.inputs:
-		pass
-		#new_inputs[type] += fact.get_desired_cargo_to_load(type)
+func get_desired_cargo_to_load(type: int, price: float) -> int:
+	return market.get_desired_cargo_to_load(type, price)
 
-func check_input(type: int) -> bool:
-	return inputs[type] <= storage[type]
+func buy_cargo(type: int, amount: int, price: float) -> void:
+	market.buy_cargo(type, amount, price)
 
-func remove_input(type: int) -> void:
-	remove_cargo(type, inputs[type])
+#Returns with the amount of cargo sold
+func sell_cargo(type: int, amount: int, price: float) -> int:
+	return market.sell_cargo(type, amount, price)
 
 func get_fulfillment(type: int) -> float:
-	return local_pricer.get_change(type) / inputs[type]
+	return market.get_fulfillment(type)
 
-func get_town_wants() -> Array:
-	return inputs.keys()
-
-func withdraw() -> void:
-	for type: int in inputs:
-		if check_input(type):
-			#TODO: Do something if type is available to be used
-			remove_input(type)
-
-func add_pop_money() -> void:
-	add_cash(round(level * 100.0))
-
-#Used to get goods into the town
-func update_town_inputs() -> void:
-	var pops: Array[city_pop] = get_pops()
-	set_max_storage(pops.size())
-	var new_inputs: Dictionary[int, float] = create_blank_inputs() #Using float for amount for accumulation, but will round before assignment
-	for pop: city_pop in pops:
-		add_pop_to_inputs(new_inputs, pop)
-	for facts: Array in internal_factories.values():
-		for industry: factory_template in facts:
-			add_factory_to_inputs(new_inputs, industry)
-	
-	for type: int in new_inputs:
-		inputs[type] = round(new_inputs[type])
-		if new_inputs[type] == 0:
-			inputs.erase(type)
-
-func create_blank_inputs() -> Dictionary[int, float]:
+func get_fulfillment_dict() -> Dictionary[int, float]:
 	var toReturn: Dictionary[int, float] = {}
-	for type: int in terminal_map.get_number_of_goods():
-		toReturn[type] = 0.0
+	for type: int in market.supply:
+		toReturn[type] = get_fulfillment(type)
 	return toReturn
 
-func get_pops() -> Array[city_pop]:
-	var toReturn: Array[city_pop]
+# === Pops ===
+
+func get_pops() -> Array[base_pop]:
+	var toReturn: Array[base_pop]
 	toReturn.assign(city_pops.values())
 	return toReturn
 
+func sell_to_pops() -> void:
+	for type: int in market.supply:
+		sell_type(type)
+
+func sell_type(type: int) -> void:
+	var amount_sold: float = 0.0
+	for pop: base_pop in get_pops():
+		var amount: float = pop.get_desired(type) #Float for each pop
+		amount = min(amount, market.get_cargo_amount(type))
+		amount_sold += amount
+		pop.buy_good(amount, market.get_local_price(type))
+		market.add_cash(amount * market.get_local_price(type))
+	market.report_attempt_to_sell(type, round(amount_sold))
+	market.remove_cargo(type, round(amount_sold))
+
+# === Trading to brokers ===
+
+func sell_to_other_brokers() -> void:
+	for type: int in market.supply:
+		distribute_from_order(trade_order.new(type, market.get_cargo_amount(type), false, market.get_local_price(type)))
+
+# === Processes ===
+
 func day_tick() -> void:
-	withdraw()
-	if trade_orders.size() != 0:
-		distribute_cargo()
+	sell_to_pops()
+	sell_to_other_brokers()
 
 func month_tick() -> void:
-	update_town_inputs()
-	change_orders()
-	add_pop_money()
-	super.month_tick()
+	market.month_tick()

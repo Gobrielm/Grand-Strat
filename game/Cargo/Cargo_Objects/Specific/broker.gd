@@ -99,9 +99,9 @@ func distribute_to_order(_broker: broker, order: trade_order) -> void:
 		return
 	var desired: int = _broker.get_desired_cargo_to_load(type, price)
 	#Don't report attemps if stations are involved.
-	if !_broker is station:
+	if _broker.local_pricer != null:
 		_broker.local_pricer.report_attempt(type, desired)
-	if !self is station:
+	if local_pricer != null:
 		local_pricer.report_attempt(type, -order.get_amount())
 	var amount: int = min(desired, order.get_amount())
 	if amount > 0:

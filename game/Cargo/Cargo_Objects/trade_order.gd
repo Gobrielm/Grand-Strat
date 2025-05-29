@@ -6,11 +6,11 @@ var amount: int
 var buy: bool
 var max_price: float
 
-func _init(p_type: int, p_amount: int, p_buy: bool, p_max_price: float) -> void:
+func _init(p_type: int, p_amount: int, p_buy: bool, p_limit_price: float) -> void:
 	type = p_type
 	amount = p_amount
 	buy = p_buy
-	max_price = p_max_price
+	max_price = p_limit_price
 
 func create_buy_order(p_type: int, p_amount: int, p_max_price: float) -> void:
 	_init(p_type, p_amount, true, p_max_price)

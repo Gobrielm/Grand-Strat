@@ -296,29 +296,29 @@ func info_of_closest_target(coords: Vector2i, target: Callable, secondary_target
 func is_cargo_primary(type: int) -> bool:
 	return terminal_map.amount_of_primary_goods > type
 
+#Gets the type of the most expensive good in the market
 func get_most_needed_cargo() -> int:
-	var cargo_fulfillment: Dictionary = get_town_fulfillment()
-	var min_fulfilled: float = 100.0
+	#TODO: Change to potentially ignore or weight against luxuries, want to build staples first
+	var global_prices: Dictionary[int, float] = get_global_prices()
+	var price: float = 0
 	var type_to_return: int = -1
-	for type: int in cargo_fulfillment:
-		if cargo_fulfillment[type] < min_fulfilled:
-			min_fulfilled = cargo_fulfillment[type]
-			type_to_return = type
-		#Grain
-		elif type == 12 and cargo_fulfillment[type] * 0.8 < min_fulfilled:
-			min_fulfilled = cargo_fulfillment[type]
+	for type: int in global_prices:
+		if global_prices[type] > price:
+			price = global_prices[type]
 			type_to_return = type
 	return type_to_return
 
-func get_town_fulfillment() -> Dictionary:
+#Returns the percentage of base price, ie 0.5 as 50% the price of base
+func get_global_prices() -> Dictionary[int, float]:
 	var town_tiles: Array = get_town_tiles()
 	var total: Dictionary = {}
 	var towns: float = town_tiles.size()
 	for town_tile: Vector2i in town_tiles:
-		for type: int in terminal_map.get_town_wants(town_tile):
+		var town_fulfillment: Dictionary[int, float] = terminal_map.get_town_fulfillment(town_tile)
+		for type: int in town_fulfillment:
 			if !total.has(type):
 				total[type] = 0.0
-			total[type] += terminal_map.get_town_fulfillment(town_tile, type)
+			total[type] += town_fulfillment[type]
 	for type: int in total:
 		total[type] = total[type] / towns
 	return total

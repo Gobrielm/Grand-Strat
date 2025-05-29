@@ -12,7 +12,7 @@ static var cargo_types: Array = [
 	
 	"bricks", "glass", "lumber", "paper", "tools", "steel", "brass", "dynamite",
 	"flour", "fabric", "liquor", "bread", "leather", "meat", "clothes",
-	"wine", "luxury_clothes", "cigarettes", "perserved_fruit", "porcelain",
+	"wine", "luxury_clothes", "perserved_fruit", "porcelain",
 	"furniture", "wagons", "boats", "lanterns", "trains",
 	"ammo", "guns", "artillery", "preserved_meat", "canned_food", "rations", "luxury_rations",
 ]
@@ -356,20 +356,11 @@ static func get_available_primary_recipes(coords: Vector2i) -> Array:
 static func is_town(coords: Vector2i) -> bool:
 	return get_terminal(coords) is town
 
-static func get_town_fulfillment(coords: Vector2i, type: int) -> float:
-	var toReturn: float = 0.0
-	var term: terminal = get_terminal(coords)
+static func get_town_fulfillment(coords: Vector2i) -> Dictionary[int, float]:
+	var toReturn: Dictionary[int, float] = {}
+	var term: town = get_terminal(coords)
 	mutex.lock()
 	if is_town(coords):
-		toReturn = term.get_fulfillment(type)
-	mutex.unlock()
-	return toReturn
-
-static func get_town_wants(coords: Vector2i) -> Array:
-	var toReturn: Array = []
-	var term: terminal = get_terminal(coords)
-	mutex.lock()
-	if is_town(coords):
-		toReturn = term.get_town_wants()
+		toReturn = term.get_fulfillment_dict()
 	mutex.unlock()
 	return toReturn

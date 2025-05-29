@@ -2,6 +2,14 @@ class_name base_pop extends Node
 
 static var PEOPLE_PER_POP: int = 1000
 static var total_pops: int = 0
+static var base_needs: Dictionary[int, float] = { #Necessities for every pop
+	terminal_map.get_cargo_type("grain"): 1, terminal_map.get_cargo_type("wood"): 0.3,
+	terminal_map.get_cargo_type("salt"): 0.1, terminal_map.get_cargo_type("fish"): 0.2,
+	terminal_map.get_cargo_type("fruit"): 0.2, terminal_map.get_cargo_type("meat"): 0.2,
+	terminal_map.get_cargo_type("bread"): 0.3, terminal_map.get_cargo_type("clothes"): 0.3,
+	terminal_map.get_cargo_type("furniture"): 0.3
+}
+static var specialities: Dictionary[int, float] = {} #Specialities, different for each type of pop
 const INITIAL_WEALTH: int = 1000
 
 var pop_id: int
@@ -10,7 +18,6 @@ var wealth: float = INITIAL_WEALTH
 var home_prov_id: int = -1
 var culture: Object = null #TODO
 var income: float = 0.0
-#TODO, how they own things/businesses
 
 func _init(home_prov: int, p_culture: Variant) -> void:
 	home_prov_id = home_prov
@@ -53,6 +60,15 @@ func get_expected_income() -> float:
 
 func get_sol() -> float:
 	return get_income()
+
+func get_desired(type: int) -> float:
+	return base_needs[type] + specialities[type]
+
+func buy_good(amount: float, price: float) -> void:
+	wealth -= amount * price
+	if wealth < 0:
+		#TODO, uh-oh
+		assert(false)
 
 # === Education === 
 func get_education_level() -> int:

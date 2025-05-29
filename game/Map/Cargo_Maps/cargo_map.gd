@@ -15,7 +15,7 @@ func create_town(coords: Vector2i, prov_id: int) -> void:
 	var mult: int = map_dat.get_population_as_level(prov_id)
 	var country_id: int = tile_ownership.get_instance().get_country_id(coords)
 	#TODO: Use country id to get unique ai to manage
-	var new_town: terminal = town.new(coords, -1, mult)
+	var new_town: terminal = town.new(coords)
 	Utils.world_map.make_cell_invisible(coords)
 	set_tile.rpc(coords, Vector2i(0, 1))
 	add_terminal_to_province(new_town)
