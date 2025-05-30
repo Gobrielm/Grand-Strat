@@ -6,6 +6,8 @@ var map_node: Node
 var clock: clock_singleton = clock_singleton.get_instance()
 var ticks: float = 0.0
 var game_speed: int = 1
+var day_thread: Thread = Thread.new()
+var month_thread: Thread = Thread.new()
 
 @export var SECONDS_IN_DAY: int = 1
 
@@ -27,13 +29,17 @@ func get_game_speed() -> int:
 	return clock_singleton.get_instance().get_game_speed()
 
 func day_tick() -> void:
-	terminal_map._on_day_tick_timeout()
+	if day_thread.is_started():
+		day_thread.wait_to_finish()
+	day_thread.start(terminal_map._on_day_tick_timeout.bind())
 	clock.iterate_day()
 	if clock.is_next_month():
 		_on_month_tick_timeout()
 
 func _on_month_tick_timeout() -> void:
-	terminal_map._on_month_tick_timeout()
+	if month_thread.is_started():
+		month_thread.wait_to_finish()
+	month_thread.start(terminal_map._on_month_tick_timeout.bind())
 	Utils.unit_map._on_month_tick_timeout()
 
 func _process(delta: float) -> void:

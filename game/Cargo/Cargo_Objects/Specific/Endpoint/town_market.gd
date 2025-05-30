@@ -5,6 +5,7 @@ var desired: Dictionary[int, float] = {} #Maps types -> Amount that was wanted l
 var supply: Array[int] = []
 var demand: Array[int] = []
 var prices: Array[float] = []
+var mutex: Mutex = Mutex.new()
 
 func _init() -> void:
 	#Neither parameter matters
@@ -18,34 +19,66 @@ func _init() -> void:
 func update_size(p_size: int) -> void:
 	change_max_storage(p_size)
 
+func get_supply() -> Array[int]:
+	var toReturn: Array[int]
+	mutex.lock()
+	toReturn = supply.duplicate()
+	mutex.unlock()
+	return toReturn
+
+func get_cargo_amount(type: int) -> int:
+	var toReturn: int = 0
+	mutex.lock()
+	toReturn = storage[type]
+	mutex.unlock()
+	return toReturn
+
 # === Cash Transactions ===
 func add_cash(amount: float) -> void:
+	mutex.lock()
 	cash += amount
+	mutex.unlock()
 
 func remove_cash(amount: float) -> void:
+	mutex.lock()
 	cash -= amount
+	mutex.unlock()
 
 func get_cash() -> float:
-	return cash
+	var toReturn: float = 0.0
+	mutex.lock()
+	toReturn = cash
+	mutex.unlock()
+	return toReturn
 
 # === Trading ===
 func get_fulfillment(type: int) -> float:
+	mutex.lock()
 	if supply[type] == 0:
+		mutex.unlock()
 		return 5
-	return float(demand[type]) / supply[type]
+	var toReturn: float = float(demand[type]) / supply[type]
+	mutex.unlock()
+	return toReturn
 
 #From perspecitive of market
 func report_attempt_to_sell(type: int, amount: int) -> void:
+	mutex.lock()
 	demand[type] += amount
+	mutex.unlock()
 
 func get_desired_cargo_to_load(type: int, price_per: float) -> int:
-	if is_price_acceptable(type, price_per):
+	if is_price_acceptable(type, price_per) and desired.has(type):
 		var amount_could_get: int = min(max_amount - get_cargo_amount(type), get_amount_can_buy(price_per))
 		return min(desired[type], amount_could_get)
 	return 0
 
 func get_local_price(type: int) -> float:
-	return prices[type]
+	var toReturn: float = 0.0
+	mutex.lock()
+	toReturn = prices[type]
+	mutex.unlock()
+	return toReturn
 
 #Assuming they are buying
 func is_price_acceptable(type: int, price_per: float) -> bool:
@@ -53,7 +86,9 @@ func is_price_acceptable(type: int, price_per: float) -> bool:
 
 func buy_cargo(type: int, amount: int, price: float) -> void:
 	add_cargo(type, amount)
+	mutex.lock()
 	supply[type] += amount
+	mutex.unlock()
 	remove_cash(round(amount * price))
 
 #Returns with the amount of cargo sold
@@ -69,9 +104,11 @@ func adjust_prices() -> void:
 		var percentage: float = float(demand[type]) / supply[type]
 		percentage = min(percentage, 1.5)
 		percentage = max(percentage, 0.5)
+		mutex.lock()
 		prices[type] = base_prices[cargo_name] * percentage
 		supply[type] = 0
 		demand[type] = 0
+		mutex.unlock()
 
 func month_tick() -> void:
 	adjust_prices()

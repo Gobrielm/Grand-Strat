@@ -4,6 +4,9 @@ var internal_factories: Dictionary[int, Array] = {} # Owner id -> Array[factory_
 var city_pops: Dictionary[int, city_pop] = {} #Pop id -> pop
 var market: town_market
 
+# Multi-threading
+var mutex: Mutex = Mutex.new()
+
 func _init(new_location: Vector2i) -> void:
 	super._init(new_location, 0) #Inits with 0 pops, and player_id = 0
 	market = town_market.new()
@@ -43,6 +46,7 @@ func add_factory(fact: factory_template) -> void:
 	if !internal_factories.has(fact.get_player_owner()):
 		internal_factories[fact.get_player_owner()] = []
 	internal_factories[fact.get_player_owner()].append(internal_factories)
+	fact.add_connected_terminal(self)
 
 # === Pops ===
 func add_pop(pop: base_pop) -> void:
@@ -54,7 +58,7 @@ func get_pops() -> Array[base_pop]:
 	return toReturn
 
 func sell_to_pops() -> void:
-	for type: int in market.supply:
+	for type: int in market.get_supply():
 		sell_type(type)
 
 func sell_type(type: int) -> void:
@@ -72,8 +76,10 @@ func sell_type(type: int) -> void:
 # === Trading to brokers ===
 
 func sell_to_other_brokers() -> void:
-	for type: int in market.supply:
-		distribute_from_order(trade_order.new(type, market.get_cargo_amount(type), false, market.get_local_price(type)))
+	var supply: Array[int] = market.get_supply()
+	for type: int in supply:
+		var order: trade_order = trade_order.new(type, market.get_cargo_amount(type), false, market.get_local_price(type))
+		distribute_from_order(order)
 
 func distribute_from_order(order: trade_order) -> void:
 	#Distribute to local factories
@@ -96,8 +102,8 @@ func report_attempt(type: int, amount: int) -> void:
 # === Processes ===
 
 func day_tick() -> void:
-	sell_to_pops()
 	sell_to_other_brokers()
 
 func month_tick() -> void:
+	sell_to_pops()
 	market.month_tick()
