@@ -4,6 +4,8 @@ class_name terminal_map extends Node
 
 static var amount_of_primary_goods: int
 static var mutex: Mutex = Mutex.new()
+static var object_mutexs: Dictionary[Vector2i, Mutex] = {}
+static var day_tick_priority: bool = false
 static var cargo_map_terminals: Dictionary = {} #Maps coords -> hold
 static var cargo_types: Array = [
 	"clay", "sand", "sulfur", "lead", "iron", "coal", "copper", "zinc", "wood", "salt", 
@@ -40,17 +42,29 @@ static func _static_init() -> void:
 
 static func _on_day_tick_timeout() -> void:
 	mutex.lock()
-	for obj: terminal in cargo_map_terminals.values():
+	day_tick_priority = true
+	mutex.unlock()
+	for coords: Vector2i in cargo_map_terminals:
+		var obj: terminal = cargo_map_terminals[coords]
+		var obj_mutex: Mutex = object_mutexs[coords]
+		obj_mutex.lock()
 		if obj.has_method("day_tick"):
 			obj.day_tick()
+		obj_mutex.unlock()
+	mutex.lock()
+	day_tick_priority = false
 	mutex.unlock()
 
 static func _on_month_tick_timeout() -> void:
-	mutex.lock()
-	for obj: terminal in cargo_map_terminals.values():
+	for coords: Vector2i in cargo_map_terminals:
+		while day_tick_priority:
+			OS.delay_msec(1)
+		var obj: terminal = cargo_map_terminals[coords]
+		var obj_mutex: Mutex = object_mutexs[coords]
+		obj_mutex.lock()
 		if obj.has_method("month_tick"):
 			obj.month_tick()
-	mutex.unlock()
+		obj_mutex.unlock()
 
 static func create(_map: TileMapLayer) -> void:
 	map = _map
@@ -58,6 +72,7 @@ static func create(_map: TileMapLayer) -> void:
 static func clear() -> void:
 	mutex.lock()
 	cargo_map_terminals.clear()
+	object_mutexs.clear()
 	mutex.unlock()
 
 static func create_amount_of_primary_goods() -> void:
@@ -95,6 +110,7 @@ static func create_road_depot(coords: Vector2i, player_id: int) -> void:
 static func create_terminal(p_terminal: terminal) -> void:
 	var coords: Vector2i = p_terminal.get_location()
 	mutex.lock()
+	object_mutexs[coords] = Mutex.new()
 	cargo_map_terminals[coords] = p_terminal
 	add_connected_terminals(p_terminal)
 	mutex.unlock()

@@ -4,9 +4,6 @@ var internal_factories: Dictionary[int, Array] = {} # Owner id -> Array[factory_
 var city_pops: Dictionary[int, city_pop] = {} #Pop id -> pop
 var market: town_market
 
-# Multi-threading
-var mutex: Mutex = Mutex.new()
-
 func _init(new_location: Vector2i) -> void:
 	super._init(new_location, 0) #Inits with 0 pops, and player_id = 0
 	market = town_market.new()
