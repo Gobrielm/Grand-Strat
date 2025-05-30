@@ -3,7 +3,6 @@ class_name ai_factory extends player_factory
 const CASH_NEEDED_MULTIPLIER: int = 5
 const MAX_AMOUNT_WANTED: float = 0.75
 
-
 func change_orders() -> void:
 	#TODO: This is assigning orders of random goods
 	change_buy_orders()

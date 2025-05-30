@@ -12,10 +12,7 @@ func create_town(coords: Vector2i, prov_id: int) -> void:
 	var map_dat: map_data = map_data.get_instance()
 	if map_dat.get_population(prov_id) < TOWN_THRESHOLD:
 		return
-	var mult: int = map_dat.get_population_as_level(prov_id)
-	var country_id: int = tile_ownership.get_instance().get_country_id(coords)
-	#TODO: Use country id to get unique ai to manage
-	var new_town: terminal = town.new(coords)
+	var new_town: town = town.new(coords)
 	Utils.world_map.make_cell_invisible(coords)
 	set_tile.rpc(coords, Vector2i(0, 1))
 	add_terminal_to_province(new_town)
@@ -70,8 +67,7 @@ func place_random_industry(tile: Vector2i, mult: int) -> bool:
 	var best_resource: int = cargo_values.get_best_resource(tile)
 	if best_resource == -1:
 		return false
-	#TODO: Give it to country company
-	create_factory(-1, tile, get_primary_recipe_for_type(best_resource), mult)
+	create_factory(0, tile, get_primary_recipe_for_type(best_resource), mult)
 	return true
 
 func get_primary_recipe_for_type(type: int) -> Array:
@@ -85,8 +81,10 @@ func create_factory(p_player_id: int, coords: Vector2i, obj_recipe: Array, mult:
 	var new_factory: factory
 	if p_player_id > 0:
 		new_factory =  player_factory.new(coords, p_player_id, obj_recipe[0], obj_recipe[1])
-	else:
+	elif p_player_id < 0:
 		new_factory =  ai_factory.new(coords, p_player_id, obj_recipe[0], obj_recipe[1])
+	else:
+		new_factory = private_ai_factory.new(coords, obj_recipe[0], obj_recipe[1])
 	for i: int in range(1, mult):
 		new_factory.admin_upgrade()
 	set_tile.rpc(coords, get_atlas_cell(obj_recipe))

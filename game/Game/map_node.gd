@@ -49,7 +49,7 @@ func initialize_game() -> void:
 		tile_ownership_obj.create_countries()
 		#Then resources and industries that need both of those
 		cargo_map.place_resources(main_map)
-		#Then create pops
+		#Then create pops which needs towns
 		map_data.get_instance().create_pops()
 	enable_nation_picker()
 

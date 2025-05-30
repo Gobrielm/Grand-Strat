@@ -36,6 +36,7 @@ static func _static_init() -> void:
 	create_cargo_types()
 	create_base_prices()
 	create_amount_of_primary_goods()
+	base_pop.create_base_needs()
 
 static func _on_day_tick_timeout() -> void:
 	mutex.lock()
