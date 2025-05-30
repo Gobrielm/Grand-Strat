@@ -1,4 +1,4 @@
-class_name terminal extends Node
+class_name terminal extends RefCounted
 
 var location: Vector2i
 var player_owner: int

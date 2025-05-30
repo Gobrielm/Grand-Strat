@@ -1,4 +1,4 @@
-class_name army extends Node
+class_name army extends RefCounted
 
 static var armies_created: int = 0
 
@@ -168,6 +168,11 @@ func get_speed() -> float:
 		if slowest_speed > unit.get_speed() or slowest_speed == -1:
 			slowest_speed = unit.get_speed()
 	return slowest_speed
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE:
+		if units and is_instance_valid(units):
+			units.queue_free()
 
 func _to_string() -> String:
 	var toReturn: String = "["

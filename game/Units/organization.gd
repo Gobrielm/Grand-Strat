@@ -1,4 +1,4 @@
-class_name organization extends Node
+class_name organization extends RefCounted
 
 var supply_needed: Dictionary[int, int] #Cargo type -> amount
 var current_supply: fixed_hold

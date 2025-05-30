@@ -100,10 +100,9 @@ func get_available_primary_recipes(coords: Vector2i) -> Array[Array]:
 
 func place_resources(_map: TileMapLayer) -> void:
 	map = _map
-	var helper: Node = load("res://Map/Cargo_Maps/cargo_values_helper.gd").new(map)
+	var helper: RefCounted = load("res://Map/Cargo_Maps/cargo_values_helper.gd").new(map)
 	var resource_array: Array = helper.create_resource_array()
 	assert(resource_array != null or resource_array.is_empty(), "Resources generated improperly")
-	helper.queue_free()
 	var threads: Array = []
 	
 	for i: int in get_child_count():
@@ -132,9 +131,8 @@ func autoplace_resource(tiles: Dictionary, type: int, max_resouces: int) -> void
 			return
 
 func place_population() -> void:
-	var helper: Node = load("res://Map/Cargo_Maps/population_helper.gd").new()
+	var helper: RefCounted = load("res://Map/Cargo_Maps/population_helper.gd").new()
 	helper.create_population_map()
-	helper.queue_free()
 
 func create_territories() -> void:
 	refresh_territories()

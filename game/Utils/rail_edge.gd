@@ -1,4 +1,4 @@
-class_name rail_edge extends Node
+class_name rail_edge extends RefCounted
 
 var node1: rail_node
 var node2: rail_node

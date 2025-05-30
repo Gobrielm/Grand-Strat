@@ -44,6 +44,7 @@ func get_orders_magnitude() -> int:
 
 func remove_order(type: int) -> void:
 	if trade_orders.has(type):
+		trade_orders[type].queue_free()
 		local_pricer.remove_cargo_type(type)
 		remove_accept(type)
 		trade_orders.erase(type)

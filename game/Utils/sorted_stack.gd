@@ -1,4 +1,4 @@
-class_name sorted_stack extends Node
+class_name sorted_stack extends RefCounted
 
 var backing_array: Array[weighted_value]
 

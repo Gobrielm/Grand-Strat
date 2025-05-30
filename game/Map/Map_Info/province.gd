@@ -1,4 +1,4 @@
-class_name province extends Node
+class_name province extends RefCounted
 
 var province_id: int
 var population: int

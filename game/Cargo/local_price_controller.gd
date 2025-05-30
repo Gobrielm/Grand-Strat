@@ -1,4 +1,4 @@
-class_name local_price_controller extends Node
+class_name local_price_controller extends RefCounted
 
 const MAX_DIFF: float = 1.5
 

@@ -1,4 +1,4 @@
-extends Node
+extends RefCounted
 
 var unit_array: Array = []
 

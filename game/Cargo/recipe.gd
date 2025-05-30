@@ -1,4 +1,4 @@
-class_name recipe extends Node
+class_name recipe extends RefCounted
 
 var inputs: Dictionary = {}
 

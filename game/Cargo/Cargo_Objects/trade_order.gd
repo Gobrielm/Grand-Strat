@@ -1,4 +1,4 @@
-class_name trade_order extends Node
+class_name trade_order extends RefCounted
 
 var type: int
 var amount: int

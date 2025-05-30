@@ -1,4 +1,4 @@
-class_name state extends Node
+class_name state extends RefCounted
 
 var provinces: Array[int] = []
 var state_id: int

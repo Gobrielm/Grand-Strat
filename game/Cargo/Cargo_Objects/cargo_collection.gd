@@ -1,4 +1,4 @@
-class_name cargo_collection extends Node
+class_name cargo_collection extends RefCounted
 
 var type: int
 var origination: Vector2i

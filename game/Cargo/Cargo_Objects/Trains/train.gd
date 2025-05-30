@@ -132,7 +132,7 @@ func decide_stop_action() -> bool:
 	var map_data_obj: map_data = map_data.get_instance()
 	
 	if map_data_obj.is_depot(location):
-		var depot: Node = map_data_obj.get_depot(location)
+		var depot: RefCounted = map_data_obj.get_depot(location)
 		depot.add_train(self)
 		go_into_depot.rpc()
 		return true

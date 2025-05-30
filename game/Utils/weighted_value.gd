@@ -1,4 +1,4 @@
-class_name weighted_value extends Node
+class_name weighted_value extends RefCounted
 
 var val: Variant
 

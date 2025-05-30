@@ -72,6 +72,7 @@ func get_orders() -> Dictionary:
 
 func remove_order(type: int) -> void:
 	if trade_orders.has(type):
+		trade_orders[type].queue_free()
 		trade_orders.erase(type)
 
 func add_connected_terminal(new_terminal: terminal) -> void:

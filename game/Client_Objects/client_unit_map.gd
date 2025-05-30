@@ -1,6 +1,6 @@
 extends TileMapLayer
 
-var unit_creator: Node
+var unit_creator: RefCounted
 var map: TileMapLayer
 var selected_armies: Array[army]
 var last_click: Vector2

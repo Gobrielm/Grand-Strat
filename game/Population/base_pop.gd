@@ -1,4 +1,4 @@
-class_name base_pop extends Node
+class_name base_pop extends RefCounted
 
 static var PEOPLE_PER_POP: int = 1000
 static var total_pops: int = 0

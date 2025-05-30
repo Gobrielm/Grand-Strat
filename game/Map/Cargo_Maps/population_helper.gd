@@ -1,4 +1,4 @@
-extends Node
+extends RefCounted
 
 var im_population: Image = preload("res://Map/Map_Images/population.png").get_image()
 var population: TileMapLayer

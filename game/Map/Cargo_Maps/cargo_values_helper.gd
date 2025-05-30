@@ -1,4 +1,4 @@
-extends Node
+extends RefCounted
 
 var map: TileMapLayer
 var mutex: Mutex = Mutex.new()

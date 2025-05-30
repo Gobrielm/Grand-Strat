@@ -1,4 +1,4 @@
-class_name disjoint_set extends Node
+class_name disjoint_set extends RefCounted
 
 var backing_dict: Dictionary[int, int] #ids -> parent/size
 

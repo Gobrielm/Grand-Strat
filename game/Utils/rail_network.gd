@@ -1,4 +1,4 @@
-class_name rail_network extends Node
+class_name rail_network extends RefCounted
 
 var network_id: int
 var network: Dictionary[Vector2i, rail_node]
@@ -89,7 +89,7 @@ func get_member_from_network() -> int:
 func network_has_node(node_coords: Vector2i) -> bool:
 	return network.has(node_coords)
 
-class rail_info:
+class rail_info extends RefCounted:
 	func _init(p_source: Vector2i, p_dist: int, p_output_dir: int) -> void:
 		source = p_source
 		dist = p_dist

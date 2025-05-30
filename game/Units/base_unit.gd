@@ -1,4 +1,4 @@
-class_name base_unit extends Node
+class_name base_unit extends RefCounted
 
 func _init() -> void:
 	pass

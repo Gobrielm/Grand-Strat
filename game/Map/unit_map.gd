@@ -2,8 +2,8 @@ extends TileMapLayer
 
 # === Variables ===
 var map: TileMapLayer
-var unit_creator: Node
-var battle_script: Node
+var unit_creator: RefCounted
+var battle_script: RefCounted
 var selected_armies: Array[army] = []
 var last_click: Vector2
 var click_valid: bool = false
@@ -667,6 +667,7 @@ func clean_up_killed_units() -> void:
 @rpc("authority", "call_local", "unreliable")
 func kill_army(army_id: int, coords: Vector2i) -> void:
 	var node: Control = get_control_node(army_id)
+	army_data[army_id].queue_free()
 	army_data.erase(army_id)
 	check_and_clean_army(army_id, coords)
 	check_and_clean_attacking_army(army_id, coords)

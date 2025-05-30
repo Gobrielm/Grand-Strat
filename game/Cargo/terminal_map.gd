@@ -69,16 +69,18 @@ func _on_month_tick_timeout() -> void:
 		thread.wait_to_finish()
 	month_threads.clear()
 	var total_size: int = cargo_map_terminals.size()
-	for i: int in range(0, 4):
+	var threads: int = 6
+	for i: int in range(0, threads):
 		var temp_thread: Thread = Thread.new()
-		temp_thread.start(_on_month_tick_timeout_helper.bind(cargo_map_terminals.keys(), total_size * float(i) / 4, total_size * float(i + 1) / 4))
+		temp_thread.start(_on_month_tick_timeout_helper.bind(cargo_map_terminals.keys(), total_size * float(i) / threads, total_size * float(i + 1) / threads))
 		month_threads.push_back(temp_thread)
 
 func _on_month_tick_timeout_helper(keys: Array, from: int, to: int) -> void:
 	for i: int in range(from, to):
 		var coords: Vector2i = keys[i]
+		#If index is near the day_tick then give up priority
 		while day_tick_priority:
-			OS.delay_msec(1)
+			OS.delay_msec(2)
 		var obj: terminal = cargo_map_terminals[coords]
 		var obj_mutex: Mutex = object_mutexs[coords]
 		obj_mutex.lock()

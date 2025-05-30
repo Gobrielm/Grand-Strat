@@ -1,4 +1,4 @@
-class_name rail_node extends Node
+class_name rail_node extends RefCounted
 
 var coords: Vector2i
 var weight: float

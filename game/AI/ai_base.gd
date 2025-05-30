@@ -1,4 +1,4 @@
-class_name ai_base extends Node
+class_name ai_base extends RefCounted
 
 #AI provinces
 var id: int

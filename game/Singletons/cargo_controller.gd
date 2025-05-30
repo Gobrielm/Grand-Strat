@@ -36,9 +36,15 @@ func day_tick() -> void:
 	if clock.is_next_month():
 		_on_month_tick_timeout()
 
+var start: float = 0.0
+var end: float = 0.0
+
 func _on_month_tick_timeout() -> void:
 	if month_thread.is_started():
 		month_thread.wait_to_finish()
+		end = Time.get_ticks_msec()
+		print(str((end - start) / 1000) + " Seconds passed for one month cycle")
+	start = Time.get_ticks_msec()
 	month_thread.start(terminal_map.get_instance()._on_month_tick_timeout.bind())
 	Utils.unit_map._on_month_tick_timeout()
 

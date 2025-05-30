@@ -1,4 +1,4 @@
-class_name priority_queue extends Node
+class_name priority_queue extends RefCounted
 
 #Prioritizes higher weight first
 
