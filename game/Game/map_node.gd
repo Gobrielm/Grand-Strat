@@ -40,7 +40,7 @@ func initialize_game() -> void:
 		#Singleton Creation
 		train_manager.new()
 		ai_manager.new()
-		terminal_map.assign_cargo_map(cargo_map)
+		terminal_map.get_instance().assign_cargo_map(cargo_map)
 		money_controller.new(multiplayer.get_peers())
 		main_map.on_singleton_creation()
 		#First provences and population
@@ -70,15 +70,15 @@ func _input(event: InputEvent) -> void:
 		elif province_machine.is_building_road_depot():
 			main_map.place_road_depot()
 	elif event.is_action_released("click"):
-		if province_machine.is_controlling_camera() and terminal_map.is_owned_station(get_cell_position(), unique_id):
+		if province_machine.is_controlling_camera() and terminal_map.get_instance().is_owned_station(get_cell_position(), unique_id):
 			station_window.open_window(get_cell_position())
-		elif province_machine.is_controlling_camera() and terminal_map.is_station(get_cell_position()):
+		elif province_machine.is_controlling_camera() and terminal_map.get_instance().is_station(get_cell_position()):
 			viewer_station_window.open_window(get_cell_position())
-		elif province_machine.is_controlling_camera() and terminal_map.is_owned_recipeless_construction_site(get_cell_position()):
+		elif province_machine.is_controlling_camera() and terminal_map.get_instance().is_owned_recipeless_construction_site(get_cell_position()):
 			factory_recipe_window.open_window(get_cell_position())
-		elif province_machine.is_controlling_camera() and terminal_map.is_owned_construction_site(get_cell_position()):
+		elif province_machine.is_controlling_camera() and terminal_map.get_instance().is_owned_construction_site(get_cell_position()):
 			factory_construction_window.open_window(get_cell_position())
-		elif province_machine.is_controlling_camera() and terminal_map.is_factory(get_cell_position()):
+		elif province_machine.is_controlling_camera() and terminal_map.get_instance().is_factory(get_cell_position()):
 			factory_window.open_window(get_cell_position())
 		elif province_machine.is_controlling_camera() and map_data.get_instance().is_owned_depot(get_cell_position(), unique_id):
 			depot_window.open_window(get_cell_position())

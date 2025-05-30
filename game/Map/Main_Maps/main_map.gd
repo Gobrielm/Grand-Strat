@@ -57,7 +57,7 @@ func initialize_game() -> void:
 		add_child(unit_map)
 		var cargo_cntrlr: cargo_controller = load("res://Singletons/cargo_controller.tscn").instantiate()
 		add_child(cargo_cntrlr)
-		terminal_map.create(self)
+		terminal_map.new(self)
 		recipe.create_set_recipes()
 		rail_placer_obj.init_all_rails()
 		$player_camera/CanvasLayer/Desync_Label.visible = true
@@ -84,7 +84,7 @@ func start_test() -> void:
 	if Utils.is_ready() and is_testing():
 		await get_tree().process_frame
 		clear()
-		terminal_map.clear()
+		terminal_map.get_instance().clear()
 		create_testing_map()
 		testing.test()
 	elif is_testing():
@@ -179,7 +179,7 @@ func get_depot_or_terminal(coords: Vector2i) -> terminal:
 	var new_depot: terminal = map_data.get_instance().get_depot(coords)
 	if new_depot != null:
 		return new_depot
-	return terminal_map.get_terminal(coords)
+	return terminal_map.get_instance().get_terminal(coords)
 
 #Trains
 @rpc("any_peer", "reliable", "call_local")
@@ -448,7 +448,7 @@ func make_cell_visible(coords: Vector2i) -> void:
 
 #Money Stuff
 func get_cash_of_firm(coords: Vector2i) -> int:
-	return terminal_map.get_cash_of_firm(coords)
+	return terminal_map.get_instance().get_cash_of_firm(coords)
 
 func get_money(id: int) -> float:
 	return money_controller.get_instance().get_money(id)

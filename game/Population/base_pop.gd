@@ -15,11 +15,11 @@ var income: float = 0.0
 
 static func create_base_needs() -> void:
 	base_needs = {
-		terminal_map.get_cargo_type("grain"): 1, terminal_map.get_cargo_type("wood"): 0.3,
-		terminal_map.get_cargo_type("salt"): 0.1, terminal_map.get_cargo_type("fish"): 0.2,
-		terminal_map.get_cargo_type("fruit"): 0.2, terminal_map.get_cargo_type("meat"): 0.2,
-		terminal_map.get_cargo_type("bread"): 0.3, terminal_map.get_cargo_type("clothes"): 0.3,
-		terminal_map.get_cargo_type("furniture"): 0.3
+		terminal_map.get_instance().get_cargo_type("grain"): 1, terminal_map.get_instance().get_cargo_type("wood"): 0.3,
+		terminal_map.get_instance().get_cargo_type("salt"): 0.1, terminal_map.get_instance().get_cargo_type("fish"): 0.2,
+		terminal_map.get_instance().get_cargo_type("fruit"): 0.2, terminal_map.get_instance().get_cargo_type("meat"): 0.2,
+		terminal_map.get_instance().get_cargo_type("bread"): 0.3, terminal_map.get_instance().get_cargo_type("clothes"): 0.3,
+		terminal_map.get_instance().get_cargo_type("furniture"): 0.3
 	}
 
 func _init(home_prov: int, p_culture: Variant) -> void:

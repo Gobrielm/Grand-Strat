@@ -1,13 +1,27 @@
 class_name terminal_map extends Node
 #Represents Singleton
-#TODO: Fully convert into singleton
 
-static var amount_of_primary_goods: int
-static var mutex: Mutex = Mutex.new()
-static var object_mutexs: Dictionary[Vector2i, Mutex] = {}
-static var day_tick_priority: bool = false
-static var cargo_map_terminals: Dictionary = {} #Maps coords -> hold
-static var cargo_types: Array = [
+static var singleton_instance: terminal_map
+	
+func _init(_map: TileMapLayer) -> void:
+	assert(singleton_instance == null, "Cannot create multiple instances of singleton!")
+	singleton_instance = self
+	map = _map
+	create_cargo_types()
+	create_base_prices()
+	create_amount_of_primary_goods()
+
+static func get_instance() -> terminal_map:
+	assert(singleton_instance != null, "Terminal_map has not be created, and has been accessed")
+	return singleton_instance
+
+var amount_of_primary_goods: int
+var mutex: Mutex = Mutex.new()
+var object_mutexs: Dictionary[Vector2i, Mutex] = {}
+var month_threads: Array[Thread] = []
+var day_tick_priority: bool = false
+var cargo_map_terminals: Dictionary = {} #Maps coords -> hold
+var cargo_types: Array = [
 	"clay", "sand", "sulfur", "lead", "iron", "coal", "copper", "zinc", "wood", "salt", 
 	"grain", "livestock", "fish", "fruit", "cotton", "silk", "spices", "coffee", "tea", "tobacco", 
 	"gold",
@@ -18,8 +32,8 @@ static var cargo_types: Array = [
 	"furniture", "wagons", "boats", "lanterns", "trains",
 	"ammo", "guns", "artillery", "preserved_meat", "canned_food", "rations", "luxury_rations",
 ]
-static var cargo_names_to_types: Dictionary = {}
-static var base_prices: Dictionary = {
+var cargo_names_to_types: Dictionary = {}
+var base_prices: Dictionary = {
 	"clay" = 10, "sand" = 10, "sulfur" = 10, "lead" = 10, "iron" = 10, "coal" = 10, "copper" = 10, "zinc" = 10,
 	"wood" = 10, "salt" = 10, "grain" = 10, "livestock" = 10, "fish" = 10, "fruit" = 10, "cotton" = 10,
 	"silk" = 10, "spices" = 10, "coffee" = 10, "tea" = 10, "tobacco" = 10, "gold" = 10,
@@ -31,16 +45,10 @@ static var base_prices: Dictionary = {
 	"ammo" = 10, "guns" = 10, "artillery" = 10, "preserved_meat" = 10, "canned_food" = 10, "rations" = 10, "luxury_rations" = 10,
 }
 
-static var map: TileMapLayer
-static var cargo_map: TileMapLayer
+var map: TileMapLayer
+var cargo_map: TileMapLayer
 
-static func _static_init() -> void:
-	create_cargo_types()
-	create_base_prices()
-	create_amount_of_primary_goods()
-	base_pop.create_base_needs()
-
-static func _on_day_tick_timeout() -> void:
+func _on_day_tick_timeout() -> void:
 	mutex.lock()
 	day_tick_priority = true
 	mutex.unlock()
@@ -55,8 +63,19 @@ static func _on_day_tick_timeout() -> void:
 	day_tick_priority = false
 	mutex.unlock()
 
-static func _on_month_tick_timeout() -> void:
-	for coords: Vector2i in cargo_map_terminals:
+func _on_month_tick_timeout() -> void:
+	for thread: Thread in month_threads:
+		thread.wait_to_finish()
+	month_threads.clear()
+	var total_size: int = cargo_map_terminals.size()
+	for i: int in range(0, 4):
+		var temp_thread: Thread = Thread.new()
+		temp_thread.start(_on_month_tick_timeout_helper.bind(cargo_map_terminals.keys(), total_size * float(i) / 4, total_size * float(i + 1) / 4))
+		month_threads.push_back(temp_thread)
+
+func _on_month_tick_timeout_helper(keys: Array, from: int, to: int) -> void:
+	for i: int in range(from, to):
+		var coords: Vector2i = keys[i]
 		while day_tick_priority:
 			OS.delay_msec(1)
 		var obj: terminal = cargo_map_terminals[coords]
@@ -66,16 +85,13 @@ static func _on_month_tick_timeout() -> void:
 			obj.month_tick()
 		obj_mutex.unlock()
 
-static func create(_map: TileMapLayer) -> void:
-	map = _map
-
-static func clear() -> void:
+func clear() -> void:
 	mutex.lock()
 	cargo_map_terminals.clear()
 	object_mutexs.clear()
 	mutex.unlock()
 
-static func create_amount_of_primary_goods() -> void:
+func create_amount_of_primary_goods() -> void:
 	mutex.lock()
 	for i: int in cargo_types.size():
 		var cargo_name: String = cargo_types[i]
@@ -83,20 +99,20 @@ static func create_amount_of_primary_goods() -> void:
 			amount_of_primary_goods = i + 1
 	mutex.unlock()
 
-static func get_available_resources(coords: Vector2i) -> Dictionary:
+func get_available_resources(coords: Vector2i) -> Dictionary:
 	mutex.lock()
 	var toReturn: Dictionary = cargo_map.cargo_values.get_available_resources(coords)
 	mutex.unlock()
 	return toReturn
 
-static func assign_cargo_map(_cargo_map: TileMapLayer) -> void:
+func assign_cargo_map(_cargo_map: TileMapLayer) -> void:
 	cargo_map = _cargo_map
 
-static func create_station(coords: Vector2i, new_owner: int) -> void:
+func create_station(coords: Vector2i, new_owner: int) -> void:
 	var new_station: station = station.new(coords, new_owner)
 	create_terminal(new_station)
 
-static func create_road_depot(coords: Vector2i, player_id: int) -> void:
+func create_road_depot(coords: Vector2i, player_id: int) -> void:
 	mutex.lock()
 	var check: bool = cargo_map_terminals.has(coords)
 	mutex.unlock()
@@ -107,7 +123,7 @@ static func create_road_depot(coords: Vector2i, player_id: int) -> void:
 		create_terminal(cargo_map_terminals[coords])
 	
 
-static func create_terminal(p_terminal: terminal) -> void:
+func create_terminal(p_terminal: terminal) -> void:
 	var coords: Vector2i = p_terminal.get_location()
 	mutex.lock()
 	object_mutexs[coords] = Mutex.new()
@@ -115,7 +131,7 @@ static func create_terminal(p_terminal: terminal) -> void:
 	add_connected_terminals(p_terminal)
 	mutex.unlock()
 
-static func add_connected_terminals(p_terminal: terminal) -> void:
+func add_connected_terminals(p_terminal: terminal) -> void:
 	var connected_terms: Array[Vector2i] = map.thread_get_surrounding_cells(p_terminal.location)
 	for tile: Vector2i in connected_terms:
 		var o_terminal: terminal = get_terminal(tile)
@@ -126,19 +142,19 @@ static func add_connected_terminals(p_terminal: terminal) -> void:
 		if o_terminal.has_method("add_connected_terminal"):
 			o_terminal.add_connected_terminal(p_terminal)
 
-static func is_hold(coords: Vector2i) -> bool:
+func is_hold(coords: Vector2i) -> bool:
 	mutex.lock()
 	var toReturn: bool = cargo_map_terminals.has(coords) and cargo_map_terminals[coords] is hold
 	mutex.unlock()
 	return toReturn
 
-static func is_tile_taken(coords: Vector2i) -> bool:
+func is_tile_taken(coords: Vector2i) -> bool:
 	mutex.lock()
 	var toReturn: bool = cargo_map_terminals.has(coords) or !map.is_tile_traversable(coords)
 	mutex.unlock()
 	return toReturn
 
-static func get_hold(coords: Vector2i) -> Dictionary:
+func get_hold(coords: Vector2i) -> Dictionary:
 	if is_hold(coords):
 		mutex.lock()
 		var toReturn: Dictionary = cargo_map_terminals[coords].get_current_hold()
@@ -146,13 +162,13 @@ static func get_hold(coords: Vector2i) -> Dictionary:
 		return toReturn
 	return {}
 
-static func is_owned_recipeless_construction_site(coords: Vector2i) -> bool:
+func is_owned_recipeless_construction_site(coords: Vector2i) -> bool:
 	mutex.lock()
 	var toReturn: bool = cargo_map_terminals.has(coords) and cargo_map_terminals[coords] is construction_site and !cargo_map_terminals[coords].has_recipe()
 	mutex.unlock()
 	return toReturn
 
-static func is_building(coords: Vector2i) -> bool:
+func is_building(coords: Vector2i) -> bool:
 	var toReturn: bool = false
 	mutex.lock()
 	if cargo_map_terminals.has(coords):
@@ -161,25 +177,25 @@ static func is_building(coords: Vector2i) -> bool:
 	mutex.unlock()
 	return toReturn
 
-static func is_owned_building(coords: Vector2i, id: int) -> bool:
+func is_owned_building(coords: Vector2i, id: int) -> bool:
 	var temp: terminal = get_terminal(coords)
 	if temp != null and temp.player_owner == id:
 		return true
 	return false
 
-static func is_owned_construction_site(coords: Vector2i) -> bool:
+func is_owned_construction_site(coords: Vector2i) -> bool:
 	mutex.lock()
 	var toReturn: bool = cargo_map_terminals.has(coords) and cargo_map_terminals[coords] is construction_site
 	mutex.unlock()
 	return toReturn
 
-static func set_construction_site_recipe(coords: Vector2i, selected_recipe: Array) -> void:
+func set_construction_site_recipe(coords: Vector2i, selected_recipe: Array) -> void:
 	if is_owned_recipeless_construction_site(coords):
 		mutex.lock()
 		cargo_map_terminals[coords].set_recipe(selected_recipe)
 		mutex.unlock()
 
-static func get_construction_site_recipe(coords: Vector2i) -> Array:
+func get_construction_site_recipe(coords: Vector2i) -> Array:
 	var toReturn: Array = [{}, {}]
 	if is_owned_construction_site(coords):
 		mutex.lock()
@@ -187,13 +203,13 @@ static func get_construction_site_recipe(coords: Vector2i) -> Array:
 		mutex.unlock()
 	return toReturn
 
-static func destory_recipe(coords: Vector2i) -> void:
+func destory_recipe(coords: Vector2i) -> void:
 	if is_owned_construction_site(coords):
 		mutex.lock()
 		cargo_map_terminals[coords].destroy_recipe()
 		mutex.unlock()
 
-static func get_construction_materials(coords: Vector2i) -> Dictionary:
+func get_construction_materials(coords: Vector2i) -> Dictionary:
 	var toReturn: Dictionary = {}
 	if is_owned_construction_site(coords):
 		mutex.lock()
@@ -201,7 +217,7 @@ static func get_construction_materials(coords: Vector2i) -> Dictionary:
 		mutex.unlock()
 	return toReturn
 
-static func is_factory(coords: Vector2i) -> bool:
+func is_factory(coords: Vector2i) -> bool:
 	var toReturn: bool = false
 	mutex.lock()
 	if cargo_map_terminals.has(coords):
@@ -209,7 +225,7 @@ static func is_factory(coords: Vector2i) -> bool:
 	mutex.unlock()
 	return toReturn
 
-static func get_cash_of_firm(coords: Vector2i) -> int:
+func get_cash_of_firm(coords: Vector2i) -> int:
 	var toReturn: int = 0
 	mutex.lock()
 	if cargo_map_terminals.has(coords):
@@ -219,7 +235,7 @@ static func get_cash_of_firm(coords: Vector2i) -> int:
 	mutex.unlock()
 	return toReturn
 
-static func transform_construction_site_to_factory(coords: Vector2i) -> void:
+func transform_construction_site_to_factory(coords: Vector2i) -> void:
 	mutex.lock()
 	var old_site: construction_site = cargo_map_terminals[coords]
 	var obj_recipe: Array = old_site.get_recipe()
@@ -227,12 +243,12 @@ static func transform_construction_site_to_factory(coords: Vector2i) -> void:
 	mutex.unlock()
 	cargo_map.transform_construction_site_to_factory(coords)
 
-static func create_factory(p_location: Vector2i, p_player_owner: int, p_inputs: Dictionary, p_outputs: Dictionary) -> factory:
+func create_factory(p_location: Vector2i, p_player_owner: int, p_inputs: Dictionary, p_outputs: Dictionary) -> factory:
 	if p_player_owner > 0:
 		return player_factory.new(p_location, p_player_owner, p_inputs, p_outputs)
 	return ai_factory.new(p_location, p_player_owner, p_inputs, p_outputs)
 
-static func get_local_prices(coords: Vector2i) -> Dictionary:
+func get_local_prices(coords: Vector2i) -> Dictionary:
 	var toReturn: Dictionary = {}
 	mutex.lock()
 	if cargo_map_terminals.has(coords):
@@ -242,7 +258,7 @@ static func get_local_prices(coords: Vector2i) -> Dictionary:
 	mutex.unlock()
 	return toReturn
 
-static func get_terminal(coords: Vector2i) -> terminal:
+func get_terminal(coords: Vector2i) -> terminal:
 	var toReturn: terminal = null
 	mutex.lock()
 	if cargo_map_terminals.has(coords):
@@ -250,7 +266,7 @@ static func get_terminal(coords: Vector2i) -> terminal:
 	mutex.unlock()
 	return toReturn
 
-static func get_broker(coords: Vector2i) -> broker:
+func get_broker(coords: Vector2i) -> broker:
 	var toReturn: terminal = null
 	mutex.lock()
 	if is_broker(coords):
@@ -258,26 +274,26 @@ static func get_broker(coords: Vector2i) -> broker:
 	mutex.unlock()
 	return toReturn
 
-static func is_station(coords: Vector2i) -> bool:
+func is_station(coords: Vector2i) -> bool:
 	return get_terminal(coords) is station
 
-static func is_owned_station(coords: Vector2i, player_id: int) -> bool:
+func is_owned_station(coords: Vector2i, player_id: int) -> bool:
 	var temp: station = get_station(coords)
 	return temp != null and temp.get_player_owner() == player_id
 
-static func is_ai_station(coords: Vector2i) -> bool:
+func is_ai_station(coords: Vector2i) -> bool:
 	return get_terminal(coords) is ai_station
 
-static func is_owned_ai_station(coords: Vector2i, id: int) -> bool:
+func is_owned_ai_station(coords: Vector2i, id: int) -> bool:
 	var temp: ai_station = get_ai_station(coords)
 	if temp != null:
 		return get_ai_station(coords).player_owner == id
 	return false
 
-static func is_broker(coords: Vector2i) -> bool:
+func is_broker(coords: Vector2i) -> bool:
 	return get_terminal(coords) is broker
 
-static func get_station(coords: Vector2i) -> station:
+func get_station(coords: Vector2i) -> station:
 	var toReturn: terminal = null
 	if is_station(coords):
 		mutex.lock()
@@ -285,7 +301,7 @@ static func get_station(coords: Vector2i) -> station:
 		mutex.unlock()
 	return toReturn
 
-static func create_ai_station(coords: Vector2i, orientation: int, p_owner: int) -> void:
+func create_ai_station(coords: Vector2i, orientation: int, p_owner: int) -> void:
 	mutex.lock()
 	if !cargo_map_terminals.has(coords):
 		cargo_map_terminals[coords] = ai_station.new(coords, p_owner)
@@ -293,7 +309,7 @@ static func create_ai_station(coords: Vector2i, orientation: int, p_owner: int) 
 		rail_placer.get_instance().place_station.rpc(coords, (orientation + 3) % 6)
 	mutex.unlock()
 
-static func get_ai_station(coords: Vector2i) -> ai_station:
+func get_ai_station(coords: Vector2i) -> ai_station:
 	var toReturn: terminal = null
 	if is_ai_station(coords):
 		mutex.lock()
@@ -301,7 +317,7 @@ static func get_ai_station(coords: Vector2i) -> ai_station:
 		mutex.unlock()
 	return toReturn
 
-static func get_station_orders(coords: Vector2i) -> Dictionary:
+func get_station_orders(coords: Vector2i) -> Dictionary:
 	var toReturn: Dictionary = {}
 	if is_station(coords):
 		mutex.lock()
@@ -311,42 +327,42 @@ static func get_station_orders(coords: Vector2i) -> Dictionary:
 			toReturn[type] = (orders[type] as trade_order).convert_to_array()
 	return toReturn
 
-static func edit_order_station(coords: Vector2i, type: int, amount: int, buy: bool, max_price: float) -> void:
+func edit_order_station(coords: Vector2i, type: int, amount: int, buy: bool, max_price: float) -> void:
 	if is_station(coords):
 		mutex.lock()
 		cargo_map_terminals[coords].edit_order(type, amount, buy, max_price)
 		mutex.unlock()
 
-static func remove_order_station(coords: Vector2i, type: int) -> void:
+func remove_order_station(coords: Vector2i, type: int) -> void:
 	if is_station(coords):
 		mutex.lock()
 		cargo_map_terminals[coords].remove_order(type)
 		mutex.unlock()
 
-static func create_cargo_types() -> void:
+func create_cargo_types() -> void:
 	for type: int in cargo_types.size():
 		cargo_names_to_types[cargo_types[type]] = type
 
-static func create_base_prices() -> void:
+func create_base_prices() -> void:
 	var new_base_prices: Dictionary = {}
 	for good_name: String in base_prices:
 		new_base_prices[cargo_names_to_types[good_name]] = base_prices[good_name]
 	local_price_controller.set_base_prices(new_base_prices)
 	assert(base_prices.size() == cargo_types.size())
 
-static func get_number_of_goods() -> int:
+func get_number_of_goods() -> int:
 	mutex.lock()
 	var toReturn: int = cargo_types.size()
 	mutex.unlock()
 	return toReturn
 
-static func get_cargo_name(index: int) -> String:
+func get_cargo_name(index: int) -> String:
 	mutex.lock()
 	var toReturn: String = cargo_types[index]
 	mutex.unlock()
 	return toReturn
 
-static func get_cargo_type(cargo_name: String) -> int:
+func get_cargo_type(cargo_name: String) -> int:
 	var toReturn: int = -1
 	mutex.lock()
 	if cargo_names_to_types.has(cargo_name):
@@ -355,25 +371,25 @@ static func get_cargo_type(cargo_name: String) -> int:
 	assert(toReturn != -1)
 	return toReturn
 
-static func get_cargo_array_at_location(coords: Vector2i) -> Dictionary:
+func get_cargo_array_at_location(coords: Vector2i) -> Dictionary:
 	return get_terminal(coords).get_current_hold()
 
-static func get_cargo_array() -> Array:
+func get_cargo_array() -> Array:
 	mutex.lock()
 	var toReturn: Array = cargo_types.duplicate()
 	mutex.unlock()
 	return toReturn
 
-static func is_cargo_primary(cargo_type: int) -> bool:
+func is_cargo_primary(cargo_type: int) -> bool:
 	return cargo_type < amount_of_primary_goods
 
-static func get_available_primary_recipes(coords: Vector2i) -> Array:
+func get_available_primary_recipes(coords: Vector2i) -> Array:
 	return cargo_map.get_available_primary_recipes(coords)
 
-static func is_town(coords: Vector2i) -> bool:
+func is_town(coords: Vector2i) -> bool:
 	return get_terminal(coords) is town
 
-static func get_town_fulfillment(coords: Vector2i) -> Dictionary[int, float]:
+func get_town_fulfillment(coords: Vector2i) -> Dictionary[int, float]:
 	var toReturn: Dictionary[int, float] = {}
 	var term: town = get_terminal(coords)
 	mutex.lock()

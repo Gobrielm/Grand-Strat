@@ -37,7 +37,7 @@ func refresh_window() -> void:
 
 @rpc("any_peer", "call_local", "unreliable")
 func request_current_cargo(coords: Vector2i) -> void:
-	var dict: Dictionary = terminal_map.get_cargo_array_at_location(coords)
+	var dict: Dictionary = terminal_map.get_instance().get_cargo_array_at_location(coords)
 	update_current_cargo.rpc_id(multiplayer.get_remote_sender_id(), dict)
 
 @rpc("any_peer", "call_local", "unreliable")
@@ -47,17 +47,17 @@ func request_current_name(coords: Vector2i) -> void:
 
 @rpc("any_peer", "call_local", "unreliable")
 func request_current_prices(coords: Vector2i) -> void:
-	var dict: Dictionary = terminal_map.get_local_prices(coords)
+	var dict: Dictionary = terminal_map.get_instance().get_local_prices(coords)
 	update_current_prices.rpc_id(multiplayer.get_remote_sender_id(), dict)
 
 @rpc("any_peer", "call_local", "unreliable")
 func request_current_cash(coords: Vector2i) -> void:
-	var _current_cash: int = terminal_map.get_cash_of_firm(coords)
+	var _current_cash: int = terminal_map.get_instance().get_cash_of_firm(coords)
 	update_current_cash.rpc_id(multiplayer.get_remote_sender_id(), _current_cash)
 
 @rpc("any_peer", "call_local", "unreliable")
 func request_current_level(coords: Vector2i) -> void:
-	var _current_level: int = (terminal_map.get_broker(coords) as factory_template).get_level()
+	var _current_level: int = (terminal_map.get_instance().get_broker(coords) as factory_template).get_level()
 	update_current_level.rpc_id(multiplayer.get_remote_sender_id(), _current_level)
 
 @rpc("authority", "call_local", "unreliable")
@@ -87,7 +87,7 @@ func update_current_level(new_level: int) -> void:
 
 func factory_window() -> void:
 	var cargo_list: ItemList = $Cargo_Node/Cargo_List
-	var names: Array = terminal_map.get_cargo_array()
+	var names: Array = terminal_map.get_instance().get_cargo_array()
 	var selected_name: String = get_selected_name()
 	
 	for i: int in cargo_list.item_count:
@@ -102,7 +102,7 @@ func factory_window() -> void:
 func display_current_prices() -> void:
 	var price_list: ItemList = $Price_Node/Price_List
 	price_list.clear()
-	var names: Array = terminal_map.get_cargo_array()
+	var names: Array = terminal_map.get_instance().get_cargo_array()
 	for type: int in current_prices:
 		price_list.add_item(names[type] + ": " + str(current_prices[type]))
 

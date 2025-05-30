@@ -86,7 +86,7 @@ func distribute_from_order(order: trade_order) -> void:
 				distribute_to_order(fact, order)
 	#Distribute to stations, ports, or other brokers
 	for coords: Vector2i in connected_terminals:
-		var broker_obj: broker = terminal_map.get_broker(coords)
+		var broker_obj: broker = terminal_map.get_instance().get_broker(coords)
 		if broker_obj.does_accept(order.get_type()):
 			distribute_to_order(broker_obj, order)
 

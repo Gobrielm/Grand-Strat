@@ -17,7 +17,7 @@ func distribute_cargo() -> void:
 
 #func distribute_type(type: int) -> void:
 	#for tile: Vector2i in supplied_tiles:
-		#var broker_obj: broker = terminal_map.get_broker(tile)
+		#var broker_obj: broker = terminal_map.get_instance().get_broker(tile)
 		#if broker_obj != null and broker_obj.does_accept(type):
 			##Only sends stuff inside country
 			#if tile_ownership.get_instance().is_owned(player_owner, broker_obj.get_location()):

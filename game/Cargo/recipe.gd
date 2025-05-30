@@ -46,9 +46,9 @@ static func add_set_recipe(readable_recipe: Array) -> void:
 	var input: Dictionary = {}
 	var output: Dictionary = {}
 	for i: String in readable_recipe[0]:
-		input[terminal_map.get_cargo_type(i)] = readable_recipe[0][i]
+		input[terminal_map.get_instance().get_cargo_type(i)] = readable_recipe[0][i]
 	for i: String in readable_recipe[1]:
-		output[terminal_map.get_cargo_type(i)] = readable_recipe[1][i]
+		output[terminal_map.get_instance().get_cargo_type(i)] = readable_recipe[1][i]
 	set_recipes.append([input, output])
 
 static func get_set_recipes() -> Array:

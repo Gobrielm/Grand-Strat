@@ -39,7 +39,7 @@ func build_station(coords: Vector2i, orientation: int) -> void:
 	map.set_cell_rail_placer_server(coords, orientation, 2, 1)
 
 func build_ai_station(coords: Vector2i, orientation: int) -> void:
-	terminal_map.create_ai_station(coords, orientation, -1)
+	terminal_map.get_instance().create_ai_station(coords, orientation, -1)
 
 func build_many_rails(start: Vector2i, end: Vector2i) -> void:
 	map.place_to_end_rail(start, end)
@@ -180,10 +180,10 @@ func ai_station_and_ai_train_test() -> void:
 	
 	build_town(town1)
 	
-	var station1: ai_station = terminal_map.get_ai_station(stat1)
-	var station2: ai_station = terminal_map.get_ai_station(stat2)
-	var station3: ai_station = terminal_map.get_ai_station(stat3)
-	var station4: ai_station = terminal_map.get_ai_station(stat4)
+	var station1: ai_station = terminal_map.get_instance().get_ai_station(stat1)
+	var station2: ai_station = terminal_map.get_instance().get_ai_station(stat2)
+	var station3: ai_station = terminal_map.get_instance().get_ai_station(stat3)
+	var station4: ai_station = terminal_map.get_instance().get_ai_station(stat4)
 	
 	var stations: Array[ai_station] = [station1, station2, station3, station4]
 	for i: int in stations.size():

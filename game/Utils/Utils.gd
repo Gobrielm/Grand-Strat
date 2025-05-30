@@ -28,11 +28,11 @@ static func is_tile_water(coords: Vector2i) -> bool:
 	return world_map.is_water(coords)
 
 static func is_tile_open(coords: Vector2i, id: int) -> bool:
-	var val: bool = !terminal_map.is_tile_taken(coords) and rail_placer.get_instance().get_track_connection_count(coords) == 0 and tile_ownership.get_instance().is_owned(id, coords)
+	var val: bool = !terminal_map.get_instance().is_tile_taken(coords) and rail_placer.get_instance().get_track_connection_count(coords) == 0 and tile_ownership.get_instance().is_owned(id, coords)
 	return val
 
 static func just_has_rails(coords: Vector2i, id: int) -> bool:
-		return !terminal_map.is_tile_taken(coords) and tile_ownership.get_instance().is_owned(id, coords)
+		return !terminal_map.get_instance().is_tile_taken(coords) and tile_ownership.get_instance().is_owned(id, coords)
 
 static func click_music() -> void:
 	background_music.click()

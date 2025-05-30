@@ -46,17 +46,17 @@ func request_current_name(coords: Vector2i) -> void:
 
 @rpc("any_peer", "call_local", "unreliable")
 func request_station_cargo(coords: Vector2i) -> void:
-	var good_dict: Dictionary = terminal_map.get_cargo_array_at_location(coords)
+	var good_dict: Dictionary = terminal_map.get_instance().get_cargo_array_at_location(coords)
 	update_current_cargo.rpc_id(multiplayer.get_remote_sender_id(), good_dict)
 
 @rpc("any_peer", "call_local", "unreliable")
 func request_current_cash(coords: Vector2i) -> void:
-	var _current_cash: int = terminal_map.get_cash_of_firm(coords)
+	var _current_cash: int = terminal_map.get_instance().get_cash_of_firm(coords)
 	update_current_cash.rpc_id(multiplayer.get_remote_sender_id(), _current_cash)
 
 @rpc("any_peer", "call_local", "unreliable")
 func request_current_orders(coords: Vector2i) -> void:
-	var current_orders: Dictionary = terminal_map.get_station_orders(coords)
+	var current_orders: Dictionary = terminal_map.get_instance().get_station_orders(coords)
 	update_current_orders.rpc_id(multiplayer.get_remote_sender_id(), current_orders)
 
 @rpc("authority", "call_local", "unreliable")
@@ -83,7 +83,7 @@ func station_window() -> void:
 		cargo_list.remove_item(0)
 	for cargo: int in current_cargo.size():
 		if current_cargo[cargo] != 0:
-			var cargo_name: String = terminal_map.get_cargo_name(cargo)
+			var cargo_name: String = terminal_map.get_instance().get_cargo_name(cargo)
 			cargo_list.add_item(cargo_name + ", " + str(current_cargo[cargo]))
 			if cargo_name == selected_name:
 				cargo_list.select(cargo)

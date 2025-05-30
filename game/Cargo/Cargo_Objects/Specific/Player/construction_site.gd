@@ -25,11 +25,11 @@ func has_recipe() -> bool:
 
 #Construction_materials
 func create_construction_materials() -> void:
-	create_construction_material(terminal_map.get_cargo_type("lumber"), 100)
-	create_construction_material(terminal_map.get_cargo_type("steel"), 20)
-	create_construction_material(terminal_map.get_cargo_type("iron"), 50)
-	create_construction_material(terminal_map.get_cargo_type("glass"), 50)
-	create_construction_material(terminal_map.get_cargo_type("tools"), 25)
+	create_construction_material(terminal_map.get_instance().get_cargo_type("lumber"), 100)
+	create_construction_material(terminal_map.get_instance().get_cargo_type("steel"), 20)
+	create_construction_material(terminal_map.get_instance().get_cargo_type("iron"), 50)
+	create_construction_material(terminal_map.get_instance().get_cargo_type("glass"), 50)
+	create_construction_material(terminal_map.get_instance().get_cargo_type("tools"), 25)
 
 func create_construction_material(type: int, amount: int) -> void:
 	add_accept(type)

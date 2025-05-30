@@ -9,7 +9,7 @@ var prices: Array[float] = []
 func _init() -> void:
 	#Neither parameter matters
 	super._init(Vector2i(0, 0), 0)
-	var base_prices: Dictionary = terminal_map.base_prices
+	var base_prices: Dictionary = terminal_map.get_instance().base_prices
 	for base_price: float in base_prices.values():
 		supply.append(0)
 		demand.append(0)
@@ -71,9 +71,9 @@ func sell_cargo(type: int, amount: int, price: float) -> int:
 	return amount
 
 func adjust_prices() -> void:
-	var base_prices: Dictionary = terminal_map.base_prices
+	var base_prices: Dictionary = terminal_map.get_instance().base_prices
 	for cargo_name: String in base_prices:
-		var type: int = terminal_map.get_cargo_type(cargo_name)
+		var type: int = terminal_map.get_instance().get_cargo_type(cargo_name)
 		var percentage: float = float(demand[type]) / supply[type]
 		percentage = min(percentage, 1.5)
 		percentage = max(percentage, 0.5)

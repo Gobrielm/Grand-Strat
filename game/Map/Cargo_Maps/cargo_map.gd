@@ -16,7 +16,7 @@ func create_town(coords: Vector2i, prov_id: int) -> void:
 	Utils.world_map.make_cell_invisible(coords)
 	set_tile.rpc(coords, Vector2i(0, 1))
 	add_terminal_to_province(new_town)
-	terminal_map.create_terminal(new_town)
+	terminal_map.get_instance().create_terminal(new_town)
 
 func add_terminal_to_province(term: terminal) -> void:
 	var map_dat: map_data = map_data.get_instance()
@@ -30,7 +30,7 @@ func remove_terminal_from_province(coords: Vector2i) -> void:
 
 func transform_construction_site_to_factory(coords: Vector2i) -> void:
 	set_tile.rpc(coords, Vector2i(4, 1))
-	add_terminal_to_province(terminal_map.get_terminal(coords))
+	add_terminal_to_province(terminal_map.get_instance().get_terminal(coords))
 
 func place_random_industries() -> void:
 	var map_data_singleton: map_data = map_data.get_instance()
@@ -89,7 +89,7 @@ func create_factory(p_player_id: int, coords: Vector2i, obj_recipe: Array, mult:
 		new_factory.admin_upgrade()
 	set_tile.rpc(coords, get_atlas_cell(obj_recipe))
 	add_terminal_to_province(new_factory)
-	terminal_map.create_terminal(new_factory)
+	terminal_map.get_instance().create_terminal(new_factory)
 
 func place_test_industry() -> void:
 	var output: Dictionary = {}
@@ -110,7 +110,7 @@ func create_construction_site(_player_id: int, coords: Vector2i) -> void:
 	var new_factory: construction_site = construction_site.new(coords, _player_id)
 	set_tile.rpc(coords, Vector2i(3, 1))
 	add_terminal_to_province(new_factory)
-	terminal_map.create_terminal(new_factory)
+	terminal_map.get_instance().create_terminal(new_factory)
 
 func get_available_primary_recipes(coords: Vector2i) -> Array:
 	return cargo_values.get_available_primary_recipes(coords)

@@ -103,7 +103,7 @@ func encode_depot(coords: Vector2i, player_id: int) -> void:
 func place_station(coords: Vector2i, p_orientation: int, player_id: int) -> void:
 	create_map_tile.rpc(coords, (p_orientation + 3) % 6, 2)
 	encode_station.rpc(coords, player_id)
-	terminal_map.create_station(coords, player_id)
+	terminal_map.get_instance().create_station(coords, player_id)
 
 @rpc("authority", "call_local", "unreliable")
 func encode_station(coords: Vector2i, new_owner: int) -> void:
@@ -142,7 +142,7 @@ func place_road_depot(coords: Vector2i, player_id: int) -> void:
 			return
 	var rail_layer: TileMapLayer = get_rail_layer(0)
 	rail_layer.set_cell(coords, 0, Vector2i(0, 3))
-	terminal_map.create_road_depot(coords, player_id)
+	terminal_map.get_instance().create_road_depot(coords, player_id)
 
 func is_already_built(coords: Vector2i, new_orientation: int) -> bool:
 	var rail_layer: TileMapLayer = get_rail_layer(new_orientation)

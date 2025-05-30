@@ -14,7 +14,7 @@ func get_local_price(type: int) -> float:
 	var amount_total: int = 0
 	var market_price: float = 0.0 #Starts as domestic output becomes price
 	for tile: Vector2i in connected_terminals:
-		var brok: broker = terminal_map.get_broker(tile)
+		var brok: broker = terminal_map.get_instance().get_broker(tile)
 		if brok == null:
 			continue
 		var order: trade_order = brok.get_order(type)
@@ -111,12 +111,12 @@ func remove_connected_terminal(new_terminal: terminal) -> void:
 func update_accepts_from_trains() -> void:
 	reset_accepts_train()
 	for coords: Vector2i in connected_terminals:
-		var obj: terminal = terminal_map.get_terminal(coords)
+		var obj: terminal = terminal_map.get_instance().get_terminal(coords)
 		if obj is fixed_hold:
 			add_accepts(obj)
 
 func add_accepts(obj: terminal) -> void:
-	for index: int in terminal_map.get_number_of_goods():
+	for index: int in terminal_map.get_instance().get_number_of_goods():
 		if obj.does_accept(index):
 			add_accept(index)
 

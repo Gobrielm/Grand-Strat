@@ -8,7 +8,7 @@ var max_amount: int = DEFAULT_MAX_STORAGE #Max Amount of cargo the hold can hold
 func _init(new_location: Vector2i, _player_owner: int, p_max_amount: int = max_amount) -> void:
 	super._init(new_location, _player_owner)
 	max_amount = p_max_amount
-	for i: int in terminal_map.get_number_of_goods():
+	for i: int in terminal_map.get_instance().get_number_of_goods():
 		storage[i] = 0
 
 #Return amount added

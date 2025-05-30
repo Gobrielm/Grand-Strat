@@ -25,13 +25,13 @@ func _on_close_requested() -> void:
 
 @rpc("any_peer", "call_local", "unreliable")
 func request_recipe(coords: Vector2i) -> void:
-	var recipe_item: Array = terminal_map.get_construction_site_recipe(coords)
+	var recipe_item: Array = terminal_map.get_instance().get_construction_site_recipe(coords)
 	add_recipe.rpc_id(multiplayer.get_remote_sender_id(), recipe_item)
 
 @rpc("any_peer", "call_local", "unreliable")
 func request_construction_materials(coords: Vector2i) -> void:
-	var new_needed_materials: Dictionary = terminal_map.get_construction_materials(coords)
-	var new_current_materials: Dictionary = terminal_map.get_hold(coords)
+	var new_needed_materials: Dictionary = terminal_map.get_instance().get_construction_materials(coords)
+	var new_current_materials: Dictionary = terminal_map.get_instance().get_hold(coords)
 	set_construction_materials.rpc_id(multiplayer.get_remote_sender_id(), new_current_materials, new_needed_materials)
 
 @rpc("authority", "call_local", "unreliable")
@@ -44,17 +44,17 @@ func set_construction_materials(new_current_materials: Dictionary, new_needed_ma
 	current_materials = new_current_materials
 	needed_materials = new_needed_materials
 	for type: int in needed_materials:
-		material_list.add_item(terminal_map.get_cargo_name(type) + " " + str(current_materials[type]) + "/" + str(needed_materials[type]))
+		material_list.add_item(terminal_map.get_instance().get_cargo_name(type) + " " + str(current_materials[type]) + "/" + str(needed_materials[type]))
 
 func get_name_for_recipe(inputs: Dictionary, outputs: Dictionary) -> String:
 	var toReturn: String = ""
 	for type: int in inputs:
-		toReturn += terminal_map.get_cargo_name(type) + " "
+		toReturn += terminal_map.get_instance().get_cargo_name(type) + " "
 		toReturn += str(inputs[type]) + "+ "
 	toReturn = toReturn.left(toReturn.length() - 2)
 	toReturn += " = "
 	for type: int in outputs:
-		toReturn += terminal_map.get_cargo_name(type) + " "
+		toReturn += terminal_map.get_instance().get_cargo_name(type) + " "
 		toReturn += str(outputs[type]) + "+ "
 	toReturn = toReturn.left(toReturn.length() - 2)
 	return toReturn
@@ -65,4 +65,4 @@ func _on_wipe_recipe_pressed() -> void:
 
 @rpc("any_peer", "call_local", "reliable")
 func request_destory_recipe(coords: Vector2i) -> void:
-	terminal_map.destory_recipe(coords)
+	terminal_map.get_instance().destory_recipe(coords)

@@ -45,20 +45,20 @@ func _on_add_order_pressed() -> void:
 func _on_order_window_placed_order(type: int, amount: int, buy: bool, price: float) -> void:
 	var location: Vector2i = station_window.get_location()
 	#Check to see if order exists first
-	for cargo_type: int in terminal_map.get_station_orders(location):
+	for cargo_type: int in terminal_map.get_instance().get_station_orders(location):
 		if cargo_type == type:
 			edit_order(cargo_type, type, amount, buy)
-			terminal_map.edit_order_station(location, type, amount, buy, price)
+			terminal_map.get_instance().edit_order_station(location, type, amount, buy, price)
 			return
 	create_order_locally(type, amount, buy)
-	terminal_map.edit_order_station(location, type, amount, buy, price)
+	terminal_map.get_instance().edit_order_station(location, type, amount, buy, price)
 
 func edit_order(index: int, type: int, amount: int, buy: bool) -> void:
 	set_order_icon(index, buy)
-	$Cargo_List.set_item_text(index, terminal_map.get_cargo_name(type) + ": " + str(amount))
+	$Cargo_List.set_item_text(index, terminal_map.get_instance().get_cargo_name(type) + ": " + str(amount))
 
 func create_order_locally(type: int, amount: int, buy: bool) -> void:
-	$Cargo_List.add_item(terminal_map.get_cargo_name(type) + ": " + str(amount))
+	$Cargo_List.add_item(terminal_map.get_instance().get_cargo_name(type) + ": " + str(amount))
 	set_order_icon($Cargo_List.item_count - 1, buy)
 
 func set_order_icon(index: int, buy: bool) -> void:
@@ -76,8 +76,8 @@ func remove_order(index: int) -> void:
 		text = text.left(text.length() - 1)
 	
 	var location: Vector2i = station_window.get_location()
-	var type: int = terminal_map.get_cargo_type(text)
-	terminal_map.remove_order_station(location, type)
+	var type: int = terminal_map.get_instance().get_cargo_type(text)
+	terminal_map.get_instance().remove_order_station(location, type)
 	$Cargo_List.remove_item(index)
 
 func get_selected_type() -> int:
@@ -90,4 +90,4 @@ func get_selected_type() -> int:
 		if !arg.is_valid_int() and !arg == ":" and !arg == " ":
 			break
 		text = text.left(text.length() - 1)
-	return terminal_map.get_cargo_type(text)
+	return terminal_map.get_instance().get_cargo_type(text)

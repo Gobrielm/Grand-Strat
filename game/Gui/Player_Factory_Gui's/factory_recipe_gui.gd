@@ -25,7 +25,7 @@ func _on_search_bar_text_changed(_new_text: String) -> void:
 
 @rpc("any_peer", "call_local", "unreliable")
 func request_populate_recipes(coords: Vector2i) -> void:
-	var extra_recipes: Array = terminal_map.get_available_primary_recipes(coords)
+	var extra_recipes: Array = terminal_map.get_instance().get_available_primary_recipes(coords)
 	populate_recipes.rpc_id(multiplayer.get_remote_sender_id(), extra_recipes)
 
 @rpc("authority", "call_local", "unreliable")
@@ -43,7 +43,7 @@ func populate_recipes(recipes_array: Array) -> void:
 func populate_recipes_by_inputs(inputs: Dictionary, outputs: Dictionary) -> void:
 	var filter_text: String = filter.text
 	for type: int in inputs:
-		var cargo_name: String = terminal_map.get_cargo_name(type)
+		var cargo_name: String = terminal_map.get_instance().get_cargo_name(type)
 		if cargo_name.begins_with(filter_text):
 			var recipe_str: String = get_name_for_recipe(inputs, outputs)
 			recipes.add_item(recipe_str)
@@ -52,7 +52,7 @@ func populate_recipes_by_inputs(inputs: Dictionary, outputs: Dictionary) -> void
 func populate_recipes_by_outputs(inputs: Dictionary, outputs: Dictionary) -> void:
 	var filter_text: String = filter.text
 	for type: int in outputs:
-		var cargo_name: String = terminal_map.get_cargo_name(type)
+		var cargo_name: String = terminal_map.get_instance().get_cargo_name(type)
 		if cargo_name.begins_with(filter_text):
 			var recipe_str: String = get_name_for_recipe(inputs, outputs)
 			recipes.add_item(recipe_str)
@@ -61,12 +61,12 @@ func populate_recipes_by_outputs(inputs: Dictionary, outputs: Dictionary) -> voi
 func get_name_for_recipe(inputs: Dictionary, outputs: Dictionary) -> String:
 	var toReturn: String = ""
 	for type: int in inputs:
-		toReturn += terminal_map.get_cargo_name(type) + " "
+		toReturn += terminal_map.get_instance().get_cargo_name(type) + " "
 		toReturn += str(inputs[type]) + "+ "
 	toReturn = toReturn.left(toReturn.length() - 2)
 	toReturn += " = "
 	for type: int in outputs:
-		toReturn += terminal_map.get_cargo_name(type) + " "
+		toReturn += terminal_map.get_instance().get_cargo_name(type) + " "
 		toReturn += str(outputs[type]) + "+ "
 	toReturn = toReturn.left(toReturn.length() - 2)
 	return toReturn
@@ -90,7 +90,7 @@ func _on_confirm_pressed() -> void:
 
 @rpc("any_peer", "call_local", "reliable")
 func request_change_construction_recipe(coords: Vector2i, selected_recipe: Array) -> void:
-	terminal_map.set_construction_site_recipe(coords, selected_recipe)
+	terminal_map.get_instance().set_construction_site_recipe(coords, selected_recipe)
 
 func _on_search_bar_focus_exited() -> void:
 	province_machine.unpress_gui()

@@ -12,7 +12,7 @@ func _init(p_location: Vector2i, p_owner: int) -> void:
 	super._init(p_location, p_owner)
 
 func add_station(p_stop: Vector2i) -> void:
-	assert(terminal_map.get_ai_station(p_stop) != null)
+	assert(terminal_map.get_instance().get_ai_station(p_stop) != null)
 	stations_in_network[p_stop] = true
 
 func month_tick() -> void:
@@ -21,7 +21,7 @@ func month_tick() -> void:
 func fetch_local_goods_needed() -> Array[trade_order]:
 	var toReturn: Array[trade_order] = []
 	for tile: Vector2i in connected_terminals:
-		var broker_obj: broker = terminal_map.get_broker(tile)
+		var broker_obj: broker = terminal_map.get_instance().get_broker(tile)
 		if broker_obj != null:
 			for order: trade_order in broker_obj.get_orders().values():
 				if order.is_buy_order():
@@ -32,7 +32,7 @@ func fetch_local_goods_needed() -> Array[trade_order]:
 func get_local_goods_available() -> Dictionary[int, bool]:
 	var toReturn: Dictionary[int, bool] = {}
 	for tile: Vector2i in connected_terminals:
-		var broker_obj: broker = terminal_map.get_broker(tile)
+		var broker_obj: broker = terminal_map.get_instance().get_broker(tile)
 		for order: trade_order in broker_obj.get_orders().values():
 			if order.is_sell_order():
 				toReturn[order.type] = true
@@ -52,7 +52,7 @@ func update_buy_orders() -> void:
 	
 	
 	for tile: Vector2i in stations_in_network:
-		var ai_station_obj: ai_station = terminal_map.get_ai_station(tile)
+		var ai_station_obj: ai_station = terminal_map.get_instance().get_ai_station(tile)
 		update_buy_orders_for_station(ai_station_obj, available_goods)
 	
 	#Cleans up any order still with 0 that weren't re-newed
@@ -95,7 +95,7 @@ func create_consolidated_market_for_desired_goods() -> Dictionary[int, trade_ord
 	var market_price: Dictionary[int, float] = {} # Represents either the max for buying or min for selling
 	var toReturn : Dictionary[int, trade_order] = {}
 	for tile: Vector2i in connected_terminals:
-		var broker_obj: broker = terminal_map.get_broker(tile)
+		var broker_obj: broker = terminal_map.get_instance().get_broker(tile)
 		if broker_obj != null:
 			for order: trade_order in broker_obj.get_orders().values():
 				if order.is_buy_order():

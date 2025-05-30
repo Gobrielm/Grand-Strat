@@ -31,7 +31,7 @@ func get_game_speed() -> int:
 func day_tick() -> void:
 	if day_thread.is_started():
 		day_thread.wait_to_finish()
-	day_thread.start(terminal_map._on_day_tick_timeout.bind())
+	day_thread.start(terminal_map.get_instance()._on_day_tick_timeout.bind())
 	clock.iterate_day()
 	if clock.is_next_month():
 		_on_month_tick_timeout()
@@ -39,7 +39,7 @@ func day_tick() -> void:
 func _on_month_tick_timeout() -> void:
 	if month_thread.is_started():
 		month_thread.wait_to_finish()
-	month_thread.start(terminal_map._on_month_tick_timeout.bind())
+	month_thread.start(terminal_map.get_instance()._on_month_tick_timeout.bind())
 	Utils.unit_map._on_month_tick_timeout()
 
 func _process(delta: float) -> void:
