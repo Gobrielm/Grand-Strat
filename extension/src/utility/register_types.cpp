@@ -5,6 +5,7 @@
 #include <godot_cpp/godot.hpp>
 
 #include "../classes/base_pop.hpp"
+#include "../classes/trade_order.hpp"
 #include "../classes/terminal.hpp"
 #include "../classes/firm.hpp"
 #include "../classes/hold.hpp"
@@ -19,6 +20,7 @@ void initialize_gdextension_types(ModuleInitializationLevel p_level)
 		return;
 	}
 	GDREGISTER_CLASS(BasePop);
+	GDREGISTER_CLASS(TradeOrder);
 	GDREGISTER_CLASS(Terminal);
 	GDREGISTER_CLASS(Firm);
 	GDREGISTER_CLASS(Hold);
