@@ -1,7 +1,7 @@
 class_name town extends broker
 
 var internal_factories: Dictionary[int, Array] = {} # Owner id -> Array[factory_templates]
-var city_pops: Dictionary[int, city_pop] = {} #Pop id -> pop
+var city_pops: Dictionary[int, BasePop] = {} #Pop id -> pop
 var market: town_market
 
 func _init(new_location: Vector2i) -> void:
@@ -46,11 +46,11 @@ func add_factory(fact: factory_template) -> void:
 	fact.add_connected_terminal(self)
 
 # === Pops ===
-func add_pop(pop: base_pop) -> void:
+func add_pop(pop: BasePop) -> void:
 	city_pops[pop.pop_id] = pop
 
-func get_pops() -> Array[base_pop]:
-	var toReturn: Array[base_pop]
+func get_pops() -> Array[BasePop]:
+	var toReturn: Array[BasePop]
 	toReturn.assign(city_pops.values())
 	return toReturn
 
@@ -60,7 +60,7 @@ func sell_to_pops() -> void:
 
 func sell_type(type: int) -> void:
 	var amount_sold: float = 0.0
-	for pop: base_pop in get_pops():
+	for pop: BasePop in get_pops():
 		var price: float = market.get_local_price(type)
 		var amount: float = pop.get_desired(type, price) #Float for each pop
 		amount = min(amount, market.get_cargo_amount(type))

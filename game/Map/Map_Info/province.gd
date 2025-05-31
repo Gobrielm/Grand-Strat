@@ -5,7 +5,7 @@ var population: int
 var tiles: Array
 var terminal_tiles: Dictionary[Vector2i, terminal]
 var country_id: int = -1
-var pops: Array[base_pop] = []
+var pops: Array[BasePop] = []
 
 func _init(_province_id: int) -> void:
 	province_id = _province_id
@@ -69,7 +69,7 @@ func create_pops() -> void:
 	var index: int = 0
 	for i: int in number_of_city_pops:
 		var city: town = cities[index]
-		city.add_pop(city_pop.new(province_id))
+		city.add_pop(BasePop.create(province_id, 0))
 		index = (index + 1) % cities.size()
 
 func get_cities() -> Array[town]:
@@ -82,7 +82,7 @@ func get_cities() -> Array[town]:
 func count_pops() -> int:
 	return pops.size()
 
-func find_employment(pop: base_pop) -> factory_template:
+func find_employment(pop: BasePop) -> factory_template:
 	if pop is city_pop:
 		pass
 		#TODO: Add buildings to cities
@@ -92,7 +92,7 @@ func find_employment(pop: base_pop) -> factory_template:
 				return term
 	return null
 
-func will_work_here(pop: base_pop, industry: factory_template) -> bool:
+func will_work_here(pop: BasePop, industry: factory_template) -> bool:
 	if !industry.is_hiring():
 		return false
 	var income: float = industry.get_wage()

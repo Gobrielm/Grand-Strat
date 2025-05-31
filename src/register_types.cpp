@@ -4,7 +4,7 @@
 #include <godot_cpp/core/defs.hpp>
 #include <godot_cpp/godot.hpp>
 
-#include "terminal.hpp"
+#include "base_pop.hpp"
 
 using namespace godot;
 
@@ -14,7 +14,7 @@ void initialize_gdextension_types(ModuleInitializationLevel p_level)
 		return;
 	}
 	//GDREGISTER_CLASS(YourClass);
-	GDREGISTER_CLASS(Terminal);
+	GDREGISTER_CLASS(BasePop);
 }
 
 void uninitialize_gdextension_types(ModuleInitializationLevel p_level) {
