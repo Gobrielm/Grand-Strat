@@ -4,9 +4,9 @@
 #include <godot_cpp/core/defs.hpp>
 #include <godot_cpp/godot.hpp>
 
-#include "base_pop.hpp"
-#include "terminal.hpp"
-#include "firm.hpp"
+#include "../classes/base_pop.hpp"
+#include "../classes/terminal.hpp"
+#include "../classes/firm.hpp"
 
 using namespace godot;
 
