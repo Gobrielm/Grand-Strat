@@ -56,8 +56,8 @@ func get_terminals() -> Array[terminal]:
 # === Pops ===
 
 func create_pops() -> void:
-	var number_of_rural_pops: int = floor(population * 0.8 / base_pop.PEOPLE_PER_POP)
-	var number_of_city_pops: int = floor(population * 0.2 / base_pop.PEOPLE_PER_POP)
+	var number_of_rural_pops: int = floor(population * 0.8 / BasePop.get_people_per_pop())
+	var number_of_city_pops: int = floor(population * 0.2 / BasePop.get_people_per_pop())
 	for i: int in number_of_rural_pops:
 		pops.push_back(rural_pop.new(province_id))
 	var cities: Array[town] = get_cities()

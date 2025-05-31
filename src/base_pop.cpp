@@ -5,6 +5,7 @@ void BasePop::_bind_methods() {
     ClassDB::bind_static_method(BasePop::get_class_static(), D_METHOD("create", "p_home_prov_id", "p_culture"), &BasePop::create);
     ClassDB::bind_method(D_METHOD("initialize", "p_home_prov_id", "p_culture"), &BasePop::initialize);
     ClassDB::bind_static_method(BasePop::get_class_static(), D_METHOD("create_base_needs", "d"), &BasePop::create_base_needs);
+    ClassDB::bind_static_method(BasePop::get_class_static(), D_METHOD("get_people_per_pop"), &BasePop::get_people_per_pop);
 
 
     ClassDB::bind_method(D_METHOD("get_pop_id"), &BasePop::get_pop_id);
@@ -59,6 +60,10 @@ void BasePop::create_base_needs(Dictionary d) { //d<int, float>
         int type = keys[i];
         base_needs[type] = (d)[type];
     }
+}
+
+int BasePop::get_people_per_pop() {
+    return PEOPLE_PER_POP;
 }
 
 int BasePop::get_pop_id() const {

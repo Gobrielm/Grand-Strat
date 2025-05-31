@@ -27,7 +27,9 @@ class BasePop : public RefCounted {
     
 
     public:
+
     static void create_base_needs(Dictionary d);
+    static int get_people_per_pop();
     int get_pop_id() const;
     int get_home_prov_id() const;
     // void find_employment() const;

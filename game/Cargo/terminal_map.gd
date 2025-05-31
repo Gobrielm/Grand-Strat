@@ -10,7 +10,11 @@ func _init(_map: TileMapLayer) -> void:
 	create_cargo_types()
 	create_base_prices()
 	create_amount_of_primary_goods()
-	base_pop.create_base_needs()
+	BasePop.create_base_needs({
+		get_cargo_type("grain"): 1, get_cargo_type("wood"): 0.3, get_cargo_type("salt"): 0.1, 
+		get_cargo_type("fish"): 0.2, get_cargo_type("fruit"): 0.2, get_cargo_type("meat"): 0.2,
+		get_cargo_type("bread"): 0.3, get_cargo_type("clothes"): 0.3, get_cargo_type("furniture"): 0.3
+	})
 
 static func get_instance() -> terminal_map:
 	assert(singleton_instance != null, "Terminal_map has not be created, and has been accessed")

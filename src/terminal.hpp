@@ -1,32 +1,30 @@
 #pragma once
 
-#include <godot_cpp/classes/object.hpp>
+#include <godot_cpp/classes/ref_counted.hpp>
 
 using namespace godot;
 
-class Terminal : public Object {
-    GDCLASS(Terminal, Object);
+class Terminal : public RefCounted {
+    GDCLASS(Terminal, RefCounted);
     Vector2i location;
     int player_owner;
     
     protected:
     static void _bind_methods();
-    String _to_string() const;
     
 
     public:
-    
-
     void set_location(const Vector2i p_location);
     Vector2i get_location() const;
     int get_player_owner() const;
     static Terminal* create(const Vector2i p_location, const int p_owner);
     
-    void initialize(const Vector2i p_location = Vector2i(), const int p_owner = 0);
+    virtual void initialize(const Vector2i p_location = Vector2i(0, 0), const int p_owner = 0);
 
-    _FORCE_INLINE_ Terminal() {}
-    _FORCE_INLINE_ Terminal(const Vector2i p_location, const int p_owner) {
+    Terminal() {}
+    Terminal(const Vector2i p_location, const int p_owner) {
         location = p_location;
         player_owner = p_owner;
     }
+    ~Terminal() {}
 };
