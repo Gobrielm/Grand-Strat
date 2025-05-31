@@ -7,7 +7,6 @@ using namespace godot;
 
 class Firm : public Terminal {
     GDCLASS(Firm, Terminal);
-    float cash;
 
     protected:
     static void _bind_methods();
@@ -23,6 +22,6 @@ class Firm : public Terminal {
     static Terminal* create(const Vector2i p_location, const int p_owner);
     void initialize(const Vector2i p_location = Vector2i(), const int p_owner = 0);
 
-    Firm(): Terminal(), cash(0) {}
-    Firm(const Vector2i p_location, const int p_owner): Terminal(p_location, p_owner), cash(0) {}	
+    Firm(): Terminal() {}
+    Firm(const Vector2i p_location, const int p_owner): Terminal(p_location, p_owner) {}	
 };

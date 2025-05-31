@@ -7,6 +7,7 @@
 #include "../classes/base_pop.hpp"
 #include "../classes/terminal.hpp"
 #include "../classes/firm.hpp"
+#include "../singletons/money_controller.hpp"
 
 using namespace godot;
 
@@ -18,6 +19,8 @@ void initialize_gdextension_types(ModuleInitializationLevel p_level)
 	GDREGISTER_CLASS(BasePop);
 	GDREGISTER_CLASS(Terminal);
 	GDREGISTER_CLASS(Firm);
+
+	GDREGISTER_CLASS(MoneyController);
 }
 
 

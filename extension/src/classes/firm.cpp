@@ -1,6 +1,7 @@
 #include "firm.hpp"
 
 #include <godot_cpp/core/class_db.hpp>
+#include "../singletons/money_controller.hpp"
 
 void Firm::_bind_methods() {
     ClassDB::bind_method(D_METHOD("get_amount_can_buy", "amount_per"), &Firm::get_amount_can_buy);
@@ -13,24 +14,22 @@ void Firm::_bind_methods() {
 
     ClassDB::bind_method(D_METHOD("initialize", "location", "owner"), &Firm::initialize);
     
-    ClassDB::add_property(get_class_static(),  PropertyInfo(Variant::INT, "cash"), "", "get_cash");
-    
 }
 
 int Firm::get_amount_can_buy(const float amount_per) const {
-    return floor(cash / amount_per);
+    return floor(get_cash() / amount_per);
 }
 
 void Firm::add_cash(float amount) {
-    cash += amount;
+    MoneyController::get_instance()->add_money_to_player(get_player_owner(), amount);
 }
 
 void Firm::remove_cash(float amount) {
-    cash -= amount;
+    add_cash(-amount);
 }
 
 float Firm::get_cash() const {
-    return cash;
+    return MoneyController::get_instance()->get_money(get_player_owner());
 }
 
 float Firm::transfer_cash(float amount) {
