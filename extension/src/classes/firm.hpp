@@ -20,7 +20,7 @@ class Firm : public Terminal {
     float transfer_cash(float amount);
     
     static Terminal* create(const Vector2i p_location, const int p_owner);
-    void initialize(const Vector2i p_location = Vector2i(), const int p_owner = 0);
+    virtual void initialize(const Vector2i p_location = Vector2i(), const int p_owner = 0);
 
     Firm(): Terminal() {}
     Firm(const Vector2i p_location, const int p_owner): Terminal(p_location, p_owner) {}	

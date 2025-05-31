@@ -5,6 +5,9 @@
 using namespace godot;
 
 void MoneyController::_bind_methods() {
+    ClassDB::bind_static_method(MoneyController::get_class_static(), D_METHOD("create", "peers"), &MoneyController::create);
+    ClassDB::bind_static_method(MoneyController::get_class_static(), D_METHOD("get_instance"), &MoneyController::get_instance);
+
     ClassDB::bind_method(D_METHOD("add_peer", "new_id"), &MoneyController::add_peer);
     ClassDB::bind_method(D_METHOD("delete_peer", "id"), &MoneyController::delete_peer);
     ClassDB::bind_method(D_METHOD("add_money_to_player", "id", "amount"), &MoneyController::add_money_to_player);
@@ -15,19 +18,17 @@ void MoneyController::_bind_methods() {
 }
 
 MoneyController::MoneyController() {
-    // Default constructor, no peer init here
+    money = std::unordered_map<int, float>();
 }
 
 void MoneyController::create(const Array& peers) {
     ERR_FAIL_COND_MSG(singleton_instance != nullptr, "Cannot create multiple instances of singleton!");
-    singleton_instance = this;
+    MoneyController x;
+    x.money[1] = INITIAL_AMOUNT_OF_MONEY; // Adds 1 for server
 
-    Array local_peers = peers.duplicate();
-    local_peers.append(1); // Adds 1 for server
-
-    for (int i = 0; i < local_peers.size(); i++) {
-        int peer = local_peers[i];
-        money[peer] = INITIAL_AMOUNT_OF_MONEY;
+    for (int i = 0; i < peers.size(); i++) {
+        int peer = peers[i];
+        x.money[peer] = INITIAL_AMOUNT_OF_MONEY;
     }
 }
 
@@ -60,7 +61,7 @@ float MoneyController::get_money(int id) const {
 
 Dictionary MoneyController::get_money_dictionary() const {
     Dictionary d;
-    for (const auto p: money) {
+    for (const auto &p: money) {
         d[p.first] = p.second;
     }
     return d;
@@ -69,3 +70,7 @@ Dictionary MoneyController::get_money_dictionary() const {
 bool MoneyController::player_has_enough_money(int id, int amount) const {
     return get_money(id) >= amount;
 }
+
+
+MoneyController* MoneyController::singleton_instance = nullptr;
+const int MoneyController::INITIAL_AMOUNT_OF_MONEY = 100000;

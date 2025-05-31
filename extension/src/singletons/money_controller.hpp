@@ -1,27 +1,27 @@
 #pragma once
 
 #include <unordered_map>
-#include <godot_cpp/classes/node.hpp>
+#include <godot_cpp/classes/ref_counted.hpp>
 #include <godot_cpp/variant/dictionary.hpp>
 #include <godot_cpp/variant/array.hpp>
 
 using namespace godot;
 
-class MoneyController : public Node {
-    GDCLASS(MoneyController, Node);
+class MoneyController : public RefCounted {
+    GDCLASS(MoneyController, RefCounted);
 
 private:
     std::unordered_map<int, float> money;
-    static inline MoneyController* singleton_instance = nullptr;
-    static constexpr int INITIAL_AMOUNT_OF_MONEY = 100000;
+    static MoneyController* singleton_instance;
+    static const int INITIAL_AMOUNT_OF_MONEY;
 
 protected:
     static void _bind_methods();
 
 public:
     MoneyController();
-    void create(const Array& peers);
     
+    static void create(const Array& peers);
     static MoneyController* get_instance();
 
     void add_peer(int new_id);
