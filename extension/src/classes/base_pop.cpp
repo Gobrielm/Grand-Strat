@@ -40,6 +40,7 @@ const int BasePop::INITIAL_WEALTH = 1000;
 std::unordered_map<int, float> BasePop::base_needs;
 std::unordered_map<int, float> BasePop::specialities;
 
+BasePop::~BasePop() {}
 
 String BasePop::_to_string() const {
     return "BasePop";
@@ -73,6 +74,10 @@ int BasePop::get_pop_id() const {
 int BasePop::get_home_prov_id() const {
     return home_prov_id;
 }
+
+// void BasePop::find_employment() const {
+
+// }
 
 bool BasePop::is_seeking_employment() const {
     if (income == 0) {

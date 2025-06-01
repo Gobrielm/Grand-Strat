@@ -23,7 +23,6 @@ class Broker : public FixedHold {
     GDCLASS(Broker, FixedHold);
     std::unordered_map<int, TradeOrder*> trade_orders;
     std::unordered_map<Vector2i, Broker*> connected_brokers;
-    LocalPriceController* local_pricer = nullptr;
     float change_in_cash = 0.0f;
 
 
@@ -31,6 +30,8 @@ class Broker : public FixedHold {
     static void _bind_methods();
 
     public:
+    LocalPriceController* local_pricer = nullptr;
+
     static Terminal* create(const Vector2i new_location, const int player_owner, const int p_max_amount = DEFAULT_MAX_STORAGE);
 
     Broker();

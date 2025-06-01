@@ -15,6 +15,8 @@ void MoneyController::_bind_methods() {
     ClassDB::bind_method(D_METHOD("get_money", "id"), &MoneyController::get_money);
     ClassDB::bind_method(D_METHOD("get_money_dictionary"), &MoneyController::get_money_dictionary);
     ClassDB::bind_method(D_METHOD("player_has_enough_money", "id", "amount"), &MoneyController::player_has_enough_money);
+
+    ADD_SIGNAL(MethodInfo("Update_Money_Gui", PropertyInfo(Variant::INT, "player_id"), PropertyInfo(Variant::INT, "current_cash")));
 }
 
 MoneyController::MoneyController() {
@@ -49,6 +51,7 @@ void MoneyController::delete_peer(int id) {
 
 void MoneyController::add_money_to_player(int id, float amount) {
     money[id] += amount;
+    emit_signal("Update_Money_Gui", id, money[id]);
 }
 
 void MoneyController::remove_money_from_player(int id, float amount) {

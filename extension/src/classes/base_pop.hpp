@@ -1,12 +1,12 @@
 #pragma once
 
-#include <godot_cpp/classes/ref_counted.hpp>
+#include <godot_cpp/classes/object.hpp>
 #include <unordered_map>
 
 using namespace godot;
 
-class BasePop : public RefCounted {
-    GDCLASS(BasePop, RefCounted);
+class BasePop : public Object {
+    GDCLASS(BasePop, Object);
 
     static const int PEOPLE_PER_POP;
     static int total_pops;
@@ -51,6 +51,7 @@ class BasePop : public RefCounted {
     static BasePop* create(int p_home_prov_id = -1, Variant p_culture = 0);
 
     void initialize(int p_home_prov_id = -1, Variant p_culture = 0);
+    
 
     _FORCE_INLINE_ BasePop(): BasePop(-1, 0) {}
     _FORCE_INLINE_ BasePop(int p_home_prov_id, Variant p_culture) {
@@ -61,4 +62,5 @@ class BasePop : public RefCounted {
         income = 0.0;
         education_level = 0;
     }
+    ~BasePop();
 };
