@@ -2,13 +2,14 @@
 
 #include "hold.hpp"
 #include <vector>
-#include <unordered_set>
+#include <unordered_map>
 
 class TownMarket : public Hold {
     int cash;
     std::vector<int> supply;
     std::vector<int> demand;
     std::vector<float> prices;
+    std::unordered_map<int, int> last_month_demand;
 
 public:
     TownMarket();
@@ -22,6 +23,7 @@ public:
     void report_attempt_to_sell(int type, int amount);
     float get_local_price(int type);
     bool is_price_acceptable(int type, float price);
+    int get_desired_cargo(int type, float price);
     void buy_cargo(int type, int amount, float price);
     int sell_cargo(int type, int amount, float price);
     void adjust_prices();

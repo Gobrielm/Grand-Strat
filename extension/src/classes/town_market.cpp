@@ -51,6 +51,14 @@ bool TownMarket::is_price_acceptable(int type, float price) {
     return get_local_price(type) >= price;
 }
 
+int TownMarket::get_desired_cargo(int type, float price) {
+    if (is_price_acceptable(type, price) && last_month_demand.count(type)) {
+		int amount_could_get = std::min(get_max_storage() - get_cargo_amount(type), get_amount_can_buy(price));
+		return std::min(last_month_demand[type], amount_could_get);
+    }
+	return 0;
+}
+
 void TownMarket::buy_cargo(int type, int amount, float price) {
     add_cargo(type, amount);
 	supply[type] += amount;
@@ -65,6 +73,7 @@ int TownMarket::sell_cargo(int type, int amount, float price) {
 
 void TownMarket::adjust_prices() {
     const auto m = LocalPriceController::get_base_prices();
+    last_month_demand.clear();
 	for (const auto& [type, base_price]: m) {
 
         float percent_diff = float(demand[type] - supply[type]) / demand[type]; //+>1 if demand > supply
@@ -75,6 +84,7 @@ void TownMarket::adjust_prices() {
 		diff_from_base = std::max(diff_from_base, 0.5f);
 		prices[type] = base_price * diff_from_base;
 		supply[type] = 0;
+        last_month_demand[type] = demand[type];
 		demand[type] = 0;
     }
 }

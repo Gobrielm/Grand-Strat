@@ -1,0 +1,65 @@
+#pragma once
+
+#include <unordered_map>
+#include <vector>
+
+#include "broker.hpp"
+#include "factory_template.hpp"
+#include "town_market.hpp"
+#include "base_pop.hpp"
+
+using namespace godot;
+
+class Town : public Broker {
+    GDCLASS(Town, Broker)
+
+private:
+
+    std::unordered_map<int, std::vector<FactoryTemplate*>> internal_factories;
+    std::unordered_map<int, BasePop*> city_pops;
+    TownMarket* market;
+
+
+protected:
+    static void _bind_methods();
+
+public:
+    Town();
+    ~Town();
+    Town(Vector2i new_location);
+
+    static Terminal* create(Vector2i new_location);
+
+    virtual void initialize(Vector2i new_location);
+
+
+
+    // Trade
+    bool does_accept(int type) const;
+    float get_local_price(int type) const;
+    bool is_price_acceptable(int type, float price) const;
+
+    int get_desired_cargo(int type, float price) const;
+    void buy_cargo(int type, int amount, float price);
+    int sell_cargo(int type, int amount, float price);
+
+    // Production
+    float get_fulfillment(int type) const;
+    Dictionary get_fulfillment_dict() const;
+    void add_factory(FactoryTemplate* fact);
+
+    //Pop stuff
+    void add_pop(BasePop* pop);
+    void sell_to_pops();
+    void sell_type(int type);
+
+    //Selling to brokers
+    void sell_to_other_brokers();
+    void distribute_from_order(const TradeOrder* order);
+    void report_attempt(int type, int amount);
+
+
+    // Process Hooks
+    virtual void day_tick();
+    virtual void month_tick();
+};

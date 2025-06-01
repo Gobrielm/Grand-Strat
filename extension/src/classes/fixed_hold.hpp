@@ -29,7 +29,7 @@ public:
     Dictionary get_accepts() const;
     void add_accept(int type);
     void remove_accept(int type);
-    bool does_accept(int type) const;
+    virtual bool does_accept(int type) const;
 };
 
 }

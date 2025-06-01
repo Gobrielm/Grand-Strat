@@ -42,7 +42,7 @@ func get_fulfillment_dict() -> Dictionary[int, float]:
 func add_factory(fact: factory_template) -> void:
 	if !internal_factories.has(fact.get_player_owner()):
 		internal_factories[fact.get_player_owner()] = []
-	internal_factories[fact.get_player_owner()].append(internal_factories)
+	internal_factories[fact.get_player_owner()].append(fact)
 	fact.add_connected_terminal(self)
 
 # === Pops ===

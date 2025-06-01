@@ -122,7 +122,7 @@ std::unordered_map<int, TradeOrder*> Broker::get_orders() {
 
 void Broker::remove_order(int type) {
     if (trade_orders.count(type)) {
-        delete trade_orders[type];
+        memdelete(trade_orders[type]);
         trade_orders.erase(type);
     }
 }
