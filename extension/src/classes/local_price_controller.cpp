@@ -18,6 +18,10 @@ LocalPriceController::LocalPriceController(const std::unordered_map<int, int>& i
         add_cargo_type(type);
 }
 
+std::unordered_map<int, float>& LocalPriceController::get_base_prices() {
+    return base_prices;
+}
+
 //Only one from outside c++
 void LocalPriceController::set_base_prices(const Dictionary& p_base_prices) {
     Array keys = p_base_prices.keys();
