@@ -5,27 +5,7 @@
 using namespace godot;
 
 void LocalPriceController::_bind_methods() {
-    ClassDB::bind_static_method(LocalPriceController::get_class_static(), D_METHOD("create", "inputs", "outputs"), &LocalPriceController::create);
-    ClassDB::bind_method(D_METHOD("set_base_prices", "base"), &LocalPriceController::set_base_prices);
-
-    ClassDB::bind_method(D_METHOD("add_cargo_type", "type", "starting_price"), &LocalPriceController::add_cargo_type, DEFVAL(-1.0f));
-    ClassDB::bind_method(D_METHOD("remove_cargo_type", "type"), &LocalPriceController::remove_cargo_type);
-    ClassDB::bind_method(D_METHOD("add_cargo_from_factory", "outputs"), &LocalPriceController::add_cargo_from_factory);
-
-    ClassDB::bind_method(D_METHOD("get_change", "type"), &LocalPriceController::get_change);
-    ClassDB::bind_method(D_METHOD("reset_change", "type"), &LocalPriceController::reset_change);
-    ClassDB::bind_method(D_METHOD("report_change", "type", "amount"), &LocalPriceController::report_change);
-
-    ClassDB::bind_method(D_METHOD("report_attempt", "type", "amount"), &LocalPriceController::report_attempt);
-    ClassDB::bind_method(D_METHOD("reset_attempts", "type"), &LocalPriceController::reset_attempts);
-    ClassDB::bind_method(D_METHOD("get_attempts", "type"), &LocalPriceController::get_attempts);
-
-    ClassDB::bind_method(D_METHOD("get_local_price", "type"), &LocalPriceController::get_local_price);
-    ClassDB::bind_method(D_METHOD("get_base_price", "type"), &LocalPriceController::get_base_price);
-    ClassDB::bind_method(D_METHOD("get_percent_difference", "type"), &LocalPriceController::get_percent_difference);
-
-    ClassDB::bind_method(D_METHOD("vary_input_price", "demand", "type"), &LocalPriceController::vary_input_price);
-    ClassDB::bind_method(D_METHOD("vary_output_price", "supply", "type"), &LocalPriceController::vary_output_price);
+    ClassDB::bind_static_method(get_class_static(), D_METHOD("set_base_prices", "base"), &LocalPriceController::set_base_prices);
 }
 
 
@@ -38,12 +18,8 @@ LocalPriceController::LocalPriceController(const std::unordered_map<int, int>& i
         add_cargo_type(type);
 }
 
-static LocalPriceController* create(const std::unordered_map<int, int>& inputs, const std::unordered_map<int, int>& outputs) {
-    return memnew(LocalPriceController(inputs, outputs));
-}
-
 //Only one from outside c++
-void set_base_prices(const Dictionary& p_base_prices) {
+void LocalPriceController::set_base_prices(const Dictionary& p_base_prices) {
     Array keys = p_base_prices.keys();
     for (int i = 0; i < keys.size(); i++) {
         int type = keys[i];
@@ -188,5 +164,13 @@ void LocalPriceController::equalize_good_price(int type) {
         bump_up_good_price(type, 1.0f, 1);
 }
 
+Dictionary LocalPriceController::get_local_prices() {
+    Dictionary d;
+    for (const auto &p : local_prices) {
+        d[p.first] = p.second;
+    }
+    return d;
+}
+
 const float LocalPriceController::MAX_DIFF = 1.5f;
-std::unordered_map<int, float> base_prices;
+std::unordered_map<int, float> LocalPriceController::base_prices = std::unordered_map<int, float>();

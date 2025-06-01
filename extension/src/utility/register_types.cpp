@@ -6,11 +6,14 @@
 
 #include "../classes/base_pop.hpp"
 #include "../classes/trade_order.hpp"
+#include "../classes/local_price_controller.hpp"
 #include "../classes/terminal.hpp"
 #include "../classes/firm.hpp"
 #include "../classes/hold.hpp"
 #include "../classes/fixed_hold.hpp"
+#include "../classes/broker.hpp"
 #include "../singletons/money_controller.hpp"
+
 
 using namespace godot;
 
@@ -25,8 +28,10 @@ void initialize_gdextension_types(ModuleInitializationLevel p_level)
 	GDREGISTER_CLASS(Firm);
 	GDREGISTER_CLASS(Hold);
 	GDREGISTER_CLASS(FixedHold);
+	GDREGISTER_CLASS(Broker);
 
 	GDREGISTER_CLASS(MoneyController);
+	GDREGISTER_CLASS(LocalPriceController);
 }
 
 

@@ -1,0 +1,70 @@
+#pragma once
+
+#include "fixed_hold.hpp"
+#include "trade_order.hpp"
+#include "terminal.hpp"
+#include "local_price_controller.hpp"
+#include <unordered_map>
+#include <unordered_set>
+#include <memory>
+
+namespace std {
+    template <>
+    struct hash<godot::Vector2i> {
+        size_t operator()(const godot::Vector2i& v) const {
+            // A simple hash combining x and y
+            return std::hash<int>()(v.x) ^ (std::hash<int>()(v.y) << 1);
+        }
+    };
+}
+
+
+class Broker : public FixedHold {
+    GDCLASS(Broker, FixedHold);
+    std::unordered_map<int, TradeOrder*> trade_orders;
+    std::unordered_map<Vector2i, Broker*> connected_brokers;
+    LocalPriceController* local_pricer = nullptr;
+    float change_in_cash = 0.0f;
+
+
+    protected:
+    static void _bind_methods();
+
+    public:
+    static Terminal* create(const Vector2i new_location, const int player_owner, const int p_max_amount = DEFAULT_MAX_STORAGE);
+
+    Broker();
+    Broker(const Vector2i new_location, const int player_owner, const int p_max_amount);
+    ~Broker();
+    virtual void initialize(const Vector2i new_location, const int player_owner, const int p_max_amount = DEFAULT_MAX_STORAGE);
+
+    bool can_afford(int price) const;
+    Dictionary get_local_prices() const;
+    float get_local_price(int type) const;
+
+    int get_desired_cargo(int type, float pricePer) const;
+    int get_desired_cargo_from_train(int type) const;
+
+    bool is_price_acceptable(int type, float pricePer) const;
+
+    void buy_cargo(int type, int amount, float price);
+    int sell_cargo(int type, int amount, float price);
+
+    void place_order(int type, int amount, bool buy, float maxPrice);
+    void edit_order(int type, int amount, bool buy, float maxPrice);
+
+    TradeOrder* get_order(int type) const;
+    std::unordered_map<int, TradeOrder*> get_orders();
+    void remove_order(int type);
+
+    void add_connected_broker(Broker* broker);
+    void remove_connected_broker(const Broker* broker);
+
+    virtual void distribute_cargo(); // abstract
+    void distribute_from_order(const TradeOrder* order);
+    void distribute_to_order(Broker* otherBroker, const TradeOrder* order);
+
+    void report_attempt(int type, int amount);
+
+
+};

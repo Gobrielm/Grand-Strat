@@ -7,7 +7,7 @@ using namespace godot;
 
 class LocalPriceController: public RefCounted {
     GDCLASS(LocalPriceController, RefCounted);
-
+    
     static const float MAX_DIFF;
     static std::unordered_map<int, float> base_prices;
 
@@ -30,8 +30,6 @@ class LocalPriceController: public RefCounted {
     LocalPriceController();
     LocalPriceController(const std::unordered_map<int, int>& inputs, const std::unordered_map<int, int>& outputs);
 
-    static LocalPriceController* create(const std::unordered_map<int, int>& inputs, const std::unordered_map<int, int>& outputs);
-
     static void set_base_prices(const Dictionary& p_base_prices);
 
     void add_cargo_type(int type, float starting_price = -1.0f);
@@ -51,4 +49,6 @@ class LocalPriceController: public RefCounted {
 
     void vary_input_price(int demand, int type);
     void vary_output_price(int supply, int type);
+
+    Dictionary get_local_prices();
 };

@@ -1,12 +1,12 @@
 #pragma once
 
-#include <godot_cpp/classes/ref_counted.hpp>
+#include <godot_cpp/classes/object.hpp>
 #include <godot_cpp/variant/array.hpp>
 
 namespace godot {
 
-class TradeOrder : public RefCounted {
-    GDCLASS(TradeOrder, RefCounted);
+class TradeOrder : public Object {
+    GDCLASS(TradeOrder, Object);
 
 private:
     int type = 0;
@@ -22,6 +22,7 @@ protected:
 public:
     TradeOrder();
     TradeOrder(int p_type, int p_amount, bool p_buy, double p_limit_price);
+    ~TradeOrder();
 
     static TradeOrder* create(int p_type, int p_amount, bool p_buy, double p_limit_price);
 
@@ -40,9 +41,9 @@ public:
     void set_max_price(double p_max_price);
 
     Array convert_to_array() const;
-    bool price_is_acceptable(double price) const;
+    bool is_price_acceptable(double price) const;
 
-    static Ref<TradeOrder> construct_from_array(const Array& array);
+    static TradeOrder* construct_from_array(const Array& array);
 };
 
 }

@@ -16,14 +16,14 @@ protected:
 public:
     static Terminal* create(const Vector2i new_location, const int player_owner, const int p_max_amount = DEFAULT_MAX_STORAGE);
 
-    FixedHold(): Hold() {};
+    FixedHold();
     FixedHold(const Vector2i new_location, const int player_owner, const int p_max_amount);
     virtual void initialize(const Vector2i new_location, const int player_owner, const int p_max_amount = DEFAULT_MAX_STORAGE);
 
-    virtual int add_cargo(int type, int amount);
+    int add_cargo(int type, int amount);
     int add_cargo_ignore_accepts(int type, int amount);
-    virtual int transfer_cargo(int type, int amount);
-    int get_desired_cargo(int type) const;
+    int transfer_cargo(int type, int amount);
+    virtual int get_desired_cargo(int type) const;
 
     void reset_accepts();
     Dictionary get_accepts() const;

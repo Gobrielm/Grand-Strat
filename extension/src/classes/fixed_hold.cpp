@@ -22,6 +22,8 @@ Terminal* FixedHold::create(const Vector2i new_location, const int player_owner,
     return memnew(FixedHold(new_location, player_owner, p_max_amount));
 }
 
+FixedHold::FixedHold(): Hold() {}
+
 FixedHold::FixedHold(const Vector2i new_location, const int player_owner, const int p_max_amount): Hold(new_location, player_owner, p_max_amount) {
     accepts = std::unordered_set<int>();
 }

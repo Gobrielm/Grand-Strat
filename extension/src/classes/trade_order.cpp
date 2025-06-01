@@ -20,7 +20,7 @@ void TradeOrder::_bind_methods() {
     ClassDB::bind_method(D_METHOD("set_max_price", "p_max_price"), &TradeOrder::set_max_price);
 
     ClassDB::bind_method(D_METHOD("convert_to_array"), &TradeOrder::convert_to_array);
-    ClassDB::bind_method(D_METHOD("price_is_acceptable", "price"), &TradeOrder::price_is_acceptable);
+    ClassDB::bind_method(D_METHOD("is_price_acceptable", "price"), &TradeOrder::is_price_acceptable);
 
     ClassDB::bind_static_method("TradeOrder", D_METHOD("construct_from_array", "array"), &TradeOrder::construct_from_array);
 }
@@ -30,6 +30,8 @@ TradeOrder::TradeOrder() {}
 TradeOrder::TradeOrder(int p_type, int p_amount, bool p_buy, double p_limit_price) {
     initialize(p_type, p_amount, p_buy, p_limit_price);
 }
+
+TradeOrder::~TradeOrder() {}
 
 TradeOrder* TradeOrder::create(int p_type, int p_amount, bool p_buy, double p_limit_price) {
     return memnew(TradeOrder(p_type, p_amount, p_buy, p_limit_price));
@@ -91,14 +93,10 @@ Array TradeOrder::convert_to_array() const {
     return arr;
 }
 
-bool TradeOrder::price_is_acceptable(double price) const {
+bool TradeOrder::is_price_acceptable(double price) const {
     return buy ? price < max_price : price > max_price;
 }
 
-Ref<TradeOrder> TradeOrder::construct_from_array(const Array& array) {
-    ERR_FAIL_COND_V(array.size() != 4, Ref<TradeOrder>());
-    Ref<TradeOrder> order;
-    order.instantiate();
-    order->initialize(array[0], array[1], array[2], array[3]);
-    return order;
+TradeOrder* TradeOrder::construct_from_array(const Array& array) {
+    return memnew(TradeOrder(array[0], array[1], array[2], array[3]));
 }
