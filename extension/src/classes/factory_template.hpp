@@ -23,13 +23,13 @@ private:
     std::list<int> income_list;
     std::vector<BasePop*> employees;
 
-    std::unordered_map<int, int> inputs;
-    std::unordered_map<int, int> outputs;
-
 protected:
     static void _bind_methods();
 
 public:
+    std::unordered_map<int, int> inputs;
+    std::unordered_map<int, int> outputs;
+
     FactoryTemplate();
     ~FactoryTemplate();
     FactoryTemplate(Vector2i new_location, int player_owner, Dictionary new_inputs, Dictionary new_outputs);
@@ -37,6 +37,8 @@ public:
     static Terminal* create(Vector2i new_location, int player_owner, Dictionary new_inputs, Dictionary new_outputs);
 
     virtual void initialize(Vector2i new_location, int player_owner, Dictionary new_inputs, Dictionary new_outputs);
+
+
 
     // Trade
     float get_min_price(int type) const;

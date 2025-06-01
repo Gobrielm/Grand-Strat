@@ -13,6 +13,8 @@
 #include "../classes/fixed_hold.hpp"
 #include "../classes/broker.hpp"
 #include "../classes/factory_template.hpp"
+#include "../classes/factory.hpp"
+#include "../classes/ai_factory.hpp"
 #include "../singletons/money_controller.hpp"
 
 
@@ -31,6 +33,8 @@ void initialize_gdextension_types(ModuleInitializationLevel p_level)
 	GDREGISTER_CLASS(FixedHold);
 	GDREGISTER_CLASS(Broker);
 	GDREGISTER_CLASS(FactoryTemplate);
+	GDREGISTER_CLASS(Factory);
+	GDREGISTER_CLASS(AiFactory);
 
 	GDREGISTER_CLASS(MoneyController);
 	GDREGISTER_CLASS(LocalPriceController);
