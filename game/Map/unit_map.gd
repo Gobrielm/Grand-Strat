@@ -234,7 +234,7 @@ func check_before_create(coords: Vector2i, type: int, player_id: int) -> void:
 		return
 	var unit_class: GDScript = get_unit_class(type)
 	var cost: int = unit_class.get_cost()
-	var money_cntrl: money_controller = money_controller.get_instance()
+	var money_cntrl: MoneyController = MoneyController.get_instance()
 	
 	if money_cntrl.player_has_enough_money(player_id, cost):
 		money_cntrl.remove_money_from_player(player_id, cost)
@@ -724,7 +724,7 @@ func manpower_and_morale_tick(army_obj: army) -> void:
 	for unit: base_unit in army_obj.get_units():
 		var amount: int = round(float(unit.get_max_manpower()) / 80.0 + 12)
 		var max_cost: int = round(amount * 0.3)
-		var money_cntrl: money_controller = money_controller.get_instance()
+		var money_cntrl: MoneyController = MoneyController.get_instance()
 		if money_cntrl.player_has_enough_money(player_id, max_cost):
 			@warning_ignore("narrowing_conversion")
 			var manpower_used: int = ceil(unit.add_manpower(amount / 2.0))

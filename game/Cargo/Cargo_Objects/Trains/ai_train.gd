@@ -76,7 +76,7 @@ func load_tick() -> void:
 			if cargo_to_load[type] <= 0:
 				cargo_to_load.erase(type)
 			amount_loaded += amount
-			money_controller.get_instance().remove_money_from_player(player_owner, round(amount * price))
+			MoneyController.get_instance().remove_money_from_player(player_owner, round(amount * price))
 			station_obj.sell_cargo(type, amount, price)
 			if amount_loaded == LOAD_TICK_AMOUNT:
 				break

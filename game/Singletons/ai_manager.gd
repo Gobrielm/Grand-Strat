@@ -24,7 +24,7 @@ static func get_instance() -> ai_manager:
 
 func create_new_economy_ai(country_id: int) -> int:
 	var ai_id: int = get_unique_id()
-	money_controller.get_instance().add_peer(ai_id)
+	MoneyController.get_instance().add_peer(ai_id)
 	var new_ai: economy_ai = economy_ai.new(ai_id, country_id)
 	if !country_ais.has(country_id):
 		country_ais[country_id] = {}
@@ -33,7 +33,7 @@ func create_new_economy_ai(country_id: int) -> int:
 	return ai_id
 
 func destory_economy_ai(ai_id: int) -> void:
-	money_controller.get_instance().delete_peer(ai_id)
+	MoneyController.get_instance().delete_peer(ai_id)
 	var country_id: int = ai_instances[ai_id].country_id
 	country_ais[country_id].erase(ai_id)
 	ai_instances.erase(ai_id)

@@ -41,7 +41,8 @@ func initialize_game() -> void:
 		train_manager.new()
 		ai_manager.new()
 		terminal_map.get_instance().assign_cargo_map(cargo_map)
-		money_controller.new(multiplayer.get_peers())
+		MoneyController.create(multiplayer.get_peers())
+		MoneyController.get_instance().connect("Update_Money_Gui", main_map.update_money_label.rpc)
 		main_map.on_singleton_creation()
 		#First provences and population
 		Utils.cargo_values.create_provinces_and_pop()

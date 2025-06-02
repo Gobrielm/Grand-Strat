@@ -1,5 +1,5 @@
-class_name money_controller extends Node
-
+#class_name money_controller extends Node
+extends Node
 var money: Dictionary = {}
 
 const INTIAL_AMOUNT_OF_MONEY: int = 100000

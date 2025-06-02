@@ -18,6 +18,7 @@
 #include "../classes/construction_site.hpp"
 #include "../classes/factory.hpp"
 #include "../classes/ai_factory.hpp"
+#include "../classes/private_ai_factory.hpp"
 #include "../singletons/money_controller.hpp"
 
 
@@ -41,6 +42,7 @@ void initialize_gdextension_types(ModuleInitializationLevel p_level)
 	GDREGISTER_CLASS(ConstructionSite);
 	GDREGISTER_CLASS(Factory);
 	GDREGISTER_CLASS(AiFactory);
+	GDREGISTER_CLASS(PrivateAiFactory);
 
 	GDREGISTER_CLASS(MoneyController);
 	GDREGISTER_CLASS(LocalPriceController);

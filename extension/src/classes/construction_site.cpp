@@ -9,11 +9,10 @@ void ConstructionSite::_bind_methods() {
     ClassDB::bind_method(D_METHOD("set_recipe", "recipe"), &ConstructionSite::set_recipe);
     ClassDB::bind_method(D_METHOD("get_recipe"), &ConstructionSite::get_recipe);
     ClassDB::bind_method(D_METHOD("has_recipe"), &ConstructionSite::has_recipe);
+    ClassDB::bind_method(D_METHOD("destroy_recipe"), &ConstructionSite::destroy_recipe);
     ClassDB::bind_method(D_METHOD("get_construction_materials"), &ConstructionSite::get_construction_materials);
     ClassDB::bind_method(D_METHOD("create_construction_materials", "dictionary"), &ConstructionSite::create_construction_materials);
     
-
-    ADD_SIGNAL(MethodInfo("Request_construction_materials", PropertyInfo(Variant::OBJECT, "site")));
     ADD_SIGNAL(MethodInfo("Done_Building", PropertyInfo(Variant::OBJECT, "site")));
 }
 
@@ -38,13 +37,7 @@ void ConstructionSite::initialize(Vector2i new_location, int player_owner) {
 //Recipe
 void ConstructionSite::set_recipe(const Array recipe) {
     FactoryTemplate::initialize(get_location(), get_player_owner(), recipe[0], recipe[1]);
-    emit_signal("Request_construction_materials", this);
 	//create_construction_materials();
-}
-
-void ConstructionSite::destroy_recipe() {
-    inputs = {};
-	outputs = {};
 }
 
 Array ConstructionSite::get_recipe() const {
@@ -64,6 +57,11 @@ Array ConstructionSite::get_recipe() const {
 
 bool ConstructionSite::has_recipe() const {
     return inputs.size() != 0 && outputs.size() != 0;
+}
+
+void ConstructionSite::destroy_recipe() {
+    inputs.clear();
+    outputs.clear();
 }
 
 //Materials

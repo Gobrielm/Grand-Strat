@@ -451,7 +451,7 @@ func get_cash_of_firm(coords: Vector2i) -> int:
 	return terminal_map.get_instance().get_cash_of_firm(coords)
 
 func get_money(id: int) -> float:
-	return money_controller.get_instance().get_money(id)
+	return MoneyController.get_instance().get_money(id)
 
 @rpc("authority", "unreliable", "call_local")
 func update_money_label(amount: int) -> void:

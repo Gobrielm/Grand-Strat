@@ -1,10 +1,10 @@
-class_name vehicle_depot extends terminal
+class_name vehicle_depot extends Terminal
 var trains: Array = []
 
 const train_scene: PackedScene = preload("res://Cargo/Cargo_Objects/Trains/train.tscn")
 
 func _init(new_location: Vector2i, _owner: int) -> void:
-	super._init(new_location, _owner)
+	super.initialize(new_location, _owner)
 
 func get_depot_name() -> String:
 	return "Depot"

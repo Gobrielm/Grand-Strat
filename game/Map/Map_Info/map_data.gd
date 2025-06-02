@@ -4,7 +4,7 @@ class_name map_data extends Node
 
 var map: TileMapLayer
 
-var depots: Dictionary[Vector2i, terminal] = {}
+var depots: Dictionary[Vector2i, Terminal] = {}
 
 var holds: Dictionary = {}
 
@@ -28,7 +28,7 @@ static func get_instance() -> map_data:
 
 # === Terminal Checks ===
 
-func add_depot(coords: Vector2i, depot: terminal) -> void:
+func add_depot(coords: Vector2i, depot: Terminal) -> void:
 	mutex.lock()
 	depots[coords] = depot
 	mutex.unlock()
@@ -37,7 +37,7 @@ func add_depot(coords: Vector2i, depot: terminal) -> void:
 func client_add_depot(coords: Vector2i, p_owner: int) -> void:
 	depots[coords] = vehicle_depot.new(coords, p_owner)
 
-func get_depot(coords: Vector2i) -> terminal:
+func get_depot(coords: Vector2i) -> Terminal:
 	if is_depot(coords):
 		return depots[coords]
 	return null

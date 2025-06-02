@@ -12,13 +12,13 @@ func create_town(coords: Vector2i, prov_id: int) -> void:
 	var map_dat: map_data = map_data.get_instance()
 	if map_dat.get_population(prov_id) < TOWN_THRESHOLD:
 		return
-	var new_town: town = town.new(coords)
+	var new_town: Town = Town.create(coords)
 	Utils.world_map.make_cell_invisible(coords)
 	set_tile.rpc(coords, Vector2i(0, 1))
 	add_terminal_to_province(new_town)
 	terminal_map.get_instance().create_terminal(new_town)
 
-func add_terminal_to_province(term: terminal) -> void:
+func add_terminal_to_province(term: Terminal) -> void:
 	var map_dat: map_data = map_data.get_instance()
 	var prov: province = map_dat.get_province(map_dat.get_province_id(term.location))
 	prov.add_terminal(term.location, term)

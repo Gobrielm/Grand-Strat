@@ -85,11 +85,11 @@ func get_desired_cargo_to_load(type: int, price_per: float) -> int:
 	return min(cargo_hold.max_amount - cargo_hold.get_cargo_amount(type), get_amount_can_buy(price_per))
 
 func get_amount_can_buy(price_per: float) -> int:
-	return floor(money_controller.get_instance().get_money(player_owner) / price_per)
+	return floor(MoneyController.get_instance().get_money(player_owner) / price_per)
 
 func sell_cargo(type: int, amount: int, price_per: float) -> void:
 	cargo_hold.remove_cargo(type, amount)
-	money_controller.get_instance().add_money_to_player(id, round(amount * price_per))
+	MoneyController.get_instance().add_money_to_player(id, round(amount * price_per))
 
 func checkpoint_reached() -> void:
 	var route_local_pos: Vector2 = map.map_to_local(route[0])
@@ -268,14 +268,14 @@ func interact_stations() -> void:
 		load_train()
 
 func unload_train() -> void:
-	var obj: station = terminal_map.get_instance().get_station(location)
+	var obj: Station = terminal_map.get_instance().get_station(location)
 	if obj != null and ticker > 1:
 		unload_tick(obj)
 		prep_update_cargo_gui()
 		if cargo_hold.is_empty():
 			done_unloading()
 
-func unload_tick(obj: station) -> void:
+func unload_tick(obj: Station) -> void:
 	var amount_unloaded: int = 0
 	var accepts: Dictionary = obj.get_accepts()
 	for type: int in accepts:
@@ -305,7 +305,7 @@ func load_train() -> void:
 
 func load_tick() -> void:
 	var amount_loaded: int = 0
-	var obj: station = terminal_map.get_instance().get_station(location)
+	var obj: Station = terminal_map.get_instance().get_station(location)
 	var current_hold: Dictionary = obj.get_current_hold()
 	if hold_is_empty(current_hold):
 		done_loading()
@@ -315,7 +315,7 @@ func load_tick() -> void:
 			var amount: int = min(get_desired_cargo_to_load(type, price), LOAD_TICK_AMOUNT - amount_loaded)
 			amount = min(amount, current_hold[type])
 			cargo_hold.add_cargo(type, amount)
-			money_controller.get_instance().remove_money_from_player(id, round(amount * price))
+			MoneyController.get_instance().remove_money_from_player(id, round(amount * price))
 			
 			amount_loaded += amount
 			obj.sell_cargo(type, amount, price)

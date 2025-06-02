@@ -1,10 +1,10 @@
-class_name company extends firm
+class_name company extends Firm
 
 var income_array: Array[float]
 var last_money_cash: float
 
 var level: int = 1
-var employees: Array[base_pop] = []
+var employees: Array[BasePop] = []
 var pops_needed: int = 1
 
 var econ_ai_id: int
@@ -12,9 +12,9 @@ var econ_ai_id: int
 var downsize_timer: int = 0
 var upsize_timer: int = 0
 
-func _init(p_location: Vector2i, initial_employees: Array[base_pop]) -> void:
+func _init(p_location: Vector2i, initial_employees: Array[BasePop]) -> void:
 	location = p_location
-	for pop: base_pop in initial_employees:
+	for pop: BasePop in initial_employees:
 		employees.push_back(pop)
 		add_cash(pop.transfer_wealth())
 	var country_id: int = get_country_id()
@@ -26,7 +26,7 @@ func can_invest() -> bool:
 	return get_cash() > 1000
 
 func make_investment() -> void:
-	money_controller.get_instance().add_money_to_player(econ_ai_id, 1000)
+	MoneyController.get_instance().add_money_to_player(econ_ai_id, 1000)
 
 func investment_tick() -> void:
 	if downsize_timer > 0:
@@ -99,14 +99,14 @@ func get_wage() -> float:
 	var wage: float = available_for_wages / pops_needed
 	return wage
 
-func work_here(pop: base_pop) -> void:
+func work_here(pop: BasePop) -> void:
 	if is_hiring():
 		employees.insert(randi() % employees.size(), pop) #Randomly insert
 		pop.employ(get_wage())
 
 func pay_employees() -> void:
 	var wage: float = get_wage()
-	for employee: base_pop in employees:
+	for employee: BasePop in employees:
 		employee.pay_wage(transfer_cash(wage))
 
 func fire_employees() -> void:
@@ -114,7 +114,7 @@ func fire_employees() -> void:
 	var to_fire: int = max(employees.size() * 0.1, 100)
 	while true:
 		var rand_index: int = randi() % employees.size()
-		var pop: base_pop = employees.pop_at(rand_index)
+		var pop: BasePop = employees.pop_at(rand_index)
 		pop.fire()
 		fired += 1
 		if fired >= to_fire:
