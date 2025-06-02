@@ -54,7 +54,7 @@ var map: TileMapLayer
 var cargo_map: TileMapLayer
 
 func _on_day_tick_timeout() -> void:
-	mutex.lock()
+	mutex.lock() #ISSUES HERE WITH EITHER TOWN, OR PRIVATE_AI_FACTORY
 	day_tick_priority = true
 	mutex.unlock()
 	for coords: Vector2i in cargo_map_terminals:
