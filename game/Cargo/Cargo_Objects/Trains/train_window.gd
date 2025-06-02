@@ -18,8 +18,8 @@ func _input(event: InputEvent) -> void:
 
 func deselect_add_stop() -> void:
 	$Routes/Add_Stop.button_pressed = false
-	province_machine.stop_selecting_route()
+	state_machine.stop_selecting_route()
 
 func _on_add_stop_pressed() -> void:
-	province_machine.start_selecting_route()
+	state_machine.start_selecting_route()
 	

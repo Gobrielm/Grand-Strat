@@ -14,6 +14,7 @@ void Hold::_bind_methods() {
     ClassDB::bind_method(D_METHOD("transfer_cargo", "type", "amount"), &Hold::transfer_cargo);
     ClassDB::bind_method(D_METHOD("get_amount_to_add", "type", "amount"), &Hold::get_amount_to_add);
     ClassDB::bind_method(D_METHOD("get_current_hold"), &Hold::get_current_hold);
+    ClassDB::bind_method(D_METHOD("set_current_hold", "hold"), &Hold::set_current_hold);
     ClassDB::bind_method(D_METHOD("get_current_hold_total"), &Hold::get_current_hold_total);
     ClassDB::bind_method(D_METHOD("is_full"), &Hold::is_full);
     ClassDB::bind_method(D_METHOD("is_empty"), &Hold::is_empty);
@@ -77,6 +78,14 @@ Dictionary Hold::get_current_hold() const {
         d[pair.first] = pair.second;
     }
     return d;
+}
+
+void Hold::set_current_hold(Dictionary hold) {
+    Array keys = hold.keys();
+    for (int i = 0; i < keys.size(); i++) {
+        int type = keys[i];
+        storage[type] = hold[type];
+    }
 }
 
 int Hold::get_current_hold_total() const {

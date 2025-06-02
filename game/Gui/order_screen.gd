@@ -24,14 +24,14 @@ func get_selected_item() -> int:
 func update_orders(new_current_orders: Dictionary) -> void:
 	current_orders = {}
 	for type: int in new_current_orders:
-		current_orders[type] = trade_order.construct_from_array(new_current_orders[type])
+		current_orders[type] = TradeOrder.construct_from_array(new_current_orders[type])
 	update_order_screen()
 
 func update_order_screen() -> void:
 	var type_selected: int = get_selected_type()
 	clear_orders()
 	for type: int in current_orders:
-		var order: trade_order = current_orders[type]
+		var order: TradeOrder = current_orders[type]
 		create_order_locally(order.get_type(), order.get_amount(), order.is_buy_order())
 		if type == type_selected:
 			$Cargo_List.select($Cargo_List.item_count - 1)

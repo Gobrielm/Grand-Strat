@@ -13,6 +13,7 @@ func create_town(coords: Vector2i, prov_id: int) -> void:
 	if map_dat.get_population(prov_id) < TOWN_THRESHOLD:
 		return
 	var new_town: Town = Town.create(coords)
+	new_town.create_storage()
 	Utils.world_map.make_cell_invisible(coords)
 	set_tile.rpc(coords, Vector2i(0, 1))
 	add_terminal_to_province(new_town)
@@ -78,13 +79,13 @@ func get_primary_recipe_for_type(type: int) -> Array:
 	return []
 
 func create_factory(p_player_id: int, coords: Vector2i, obj_recipe: Array, mult: int) -> void:
-	var new_factory: factory
+	var new_factory: Factory
 	if p_player_id > 0:
-		new_factory =  player_factory.new(coords, p_player_id, obj_recipe[0], obj_recipe[1])
+		new_factory =  Factory.create(coords, p_player_id, obj_recipe[0], obj_recipe[1])
 	elif p_player_id < 0:
-		new_factory =  ai_factory.new(coords, p_player_id, obj_recipe[0], obj_recipe[1])
+		new_factory =  AiFactory.create(coords, p_player_id, obj_recipe[0], obj_recipe[1])
 	else:
-		new_factory = private_ai_factory.new(coords, obj_recipe[0], obj_recipe[1])
+		new_factory = PrivateAiFactory.create(coords, obj_recipe[0], obj_recipe[1])
 	for i: int in range(1, mult):
 		new_factory.admin_upgrade()
 	set_tile.rpc(coords, get_atlas_cell(obj_recipe))
@@ -107,7 +108,7 @@ func get_atlas_cell(obj_recipe: Array) -> Vector2i:
 	return Vector2i(4, 1)
 
 func create_construction_site(_player_id: int, coords: Vector2i) -> void:
-	var new_factory: construction_site = construction_site.new(coords, _player_id)
+	var new_factory: ConstructionSite = ConstructionSite.create(coords, _player_id)
 	set_tile.rpc(coords, Vector2i(3, 1))
 	add_terminal_to_province(new_factory)
 	terminal_map.get_instance().create_terminal(new_factory)

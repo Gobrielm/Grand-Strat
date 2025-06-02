@@ -3,7 +3,7 @@ class_name province extends RefCounted
 var province_id: int
 var population: int
 var tiles: Array
-var terminal_tiles: Dictionary[Vector2i, terminal]
+var terminal_tiles: Dictionary[Vector2i, Terminal]
 var country_id: int = -1
 var pops: Array[BasePop] = []
 
@@ -43,14 +43,14 @@ func get_random_tile() -> Variant:
 		random_tile = temp_tiles.pop_at(rand_index)
 	return random_tile
 
-func add_terminal(coords: Vector2i, term: terminal) -> void:
+func add_terminal(coords: Vector2i, term: Terminal) -> void:
 	terminal_tiles[coords] = term
 
 func remove_terminal(coords: Vector2i) -> void:
 	#BUG: Never gets called when deleting terminals
 	terminal_tiles.erase(coords)
 
-func get_terminals() -> Array[terminal]:
+func get_terminals() -> Array[Terminal]:
 	return terminal_tiles.values()
 
 # === Pops ===
@@ -59,40 +59,40 @@ func create_pops() -> void:
 	var number_of_rural_pops: int = floor(population * 0.8 / BasePop.get_people_per_pop())
 	var number_of_city_pops: int = floor(population * 0.2 / BasePop.get_people_per_pop())
 	for i: int in number_of_rural_pops:
-		pops.push_back(rural_pop.new(province_id))
-	var cities: Array[town] = get_cities()
+		pops.push_back(BasePop.create(province_id, null))
+	var cities: Array[Town] = get_cities()
 	#If no cities, then turn rest of population into rural pops
 	if cities.size() == 0:
 		for i: int in number_of_city_pops:
-			pops.push_back(rural_pop.new(province_id))
+			pops.push_back(BasePop.create(province_id, null))
 		return
 	var index: int = 0
 	for i: int in number_of_city_pops:
-		var city: town = cities[index]
+		var city: Town = cities[index]
 		city.add_pop(BasePop.create(province_id, 0))
 		index = (index + 1) % cities.size()
 
-func get_cities() -> Array[town]:
-	var toReturn: Array[town] = []
-	for term: terminal in terminal_tiles.values():
-		if term is town:
+func get_cities() -> Array[Town]:
+	var toReturn: Array[Town] = []
+	for term: Terminal in terminal_tiles.values():
+		if term is Town:
 			toReturn.append(term)
 	return toReturn
 
 func count_pops() -> int:
 	return pops.size()
 
-func find_employment(pop: BasePop) -> factory_template:
-	if pop is city_pop:
-		pass
-		#TODO: Add buildings to cities
-	elif pop is rural_pop:
-		for term: terminal in get_terminals():
-			if term is factory_template and will_work_here(pop, term):
-				return term
+func find_employment(_pop: BasePop) -> FactoryTemplate:
+	#if pop is city_pop:
+		#pass
+		##TODO: Add buildings to cities
+	#elif pop is rural_pop:
+		#for term: Terminal in get_terminals():
+			#if term is factory_template and will_work_here(pop, term):
+				#return term
 	return null
 
-func will_work_here(pop: BasePop, industry: factory_template) -> bool:
+func will_work_here(pop: BasePop, industry: FactoryTemplate) -> bool:
 	if !industry.is_hiring():
 		return false
 	var income: float = industry.get_wage()

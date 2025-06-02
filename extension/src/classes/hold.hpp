@@ -32,6 +32,7 @@ public:
     virtual int get_amount_to_add(int type, int amount) const;
 
     Dictionary get_current_hold() const;
+    void set_current_hold(Dictionary hold);
     int get_current_hold_total() const;
     bool is_full() const;
     bool is_empty() const;

@@ -7,6 +7,7 @@ using namespace godot;
 void Town::_bind_methods() {
     ClassDB::bind_static_method(get_class_static(), D_METHOD("create", "new_location"), &Town::create);
     ClassDB::bind_method(D_METHOD("initialize", "new_location"), &Town::initialize);
+    ClassDB::bind_method(D_METHOD("create_storage"), &Town::create_storage);
 
     // Trade-related
     ClassDB::bind_method(D_METHOD("does_accept", "type"), &Town::does_accept);
@@ -43,7 +44,9 @@ Town::Town(): Broker(Vector2i(0, 0), 0) {
 }
 
 Town::~Town() {
-    memdelete(market);
+    if (market != nullptr) {
+        memdelete(market);
+    }
     for (const auto &[__, pop]: city_pops) {
         memdelete(pop);
     }
@@ -68,6 +71,10 @@ Terminal* Town::create(Vector2i new_location) {
 void Town::initialize(Vector2i new_location) {
     market = memnew(TownMarket);
     Broker::initialize(new_location, 0);
+}
+
+void Town::create_storage() {
+    market -> create_storage();
 }
 
 // Trade
@@ -117,7 +124,7 @@ void Town::add_factory(FactoryTemplate* fact) {
 
 //Pop stuff
 void Town::add_pop(BasePop* pop) {
-    ERR_FAIL_COND_MSG(city_pops.count(pop -> get_pop_id()) == 0, "Pop of id, has not been created already");
+    ERR_FAIL_COND_MSG(city_pops.count(pop -> get_pop_id()) != 0, "Pop of id has already been created");
     city_pops[pop -> get_pop_id()] = pop;
 }
 

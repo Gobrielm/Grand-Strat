@@ -30,8 +30,8 @@ class LocalPriceController: public RefCounted {
     LocalPriceController();
     LocalPriceController(const std::unordered_map<int, int>& inputs, const std::unordered_map<int, int>& outputs);
 
-    static std::unordered_map<int, float>& get_base_prices();
-    static void set_base_prices(const Dictionary& p_base_prices);
+    static std::unordered_map<int, float> get_base_prices();
+    static void set_base_prices(const Dictionary p_base_prices);
 
     void add_cargo_type(int type, float starting_price = -1.0f);
     void remove_cargo_type(int type);

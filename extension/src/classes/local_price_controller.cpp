@@ -4,10 +4,12 @@
 
 using namespace godot;
 
+std::unordered_map<int, float> LocalPriceController::base_prices = {};
+const float LocalPriceController::MAX_DIFF = 1.5f;
+
 void LocalPriceController::_bind_methods() {
     ClassDB::bind_static_method(get_class_static(), D_METHOD("set_base_prices", "base"), &LocalPriceController::set_base_prices);
 }
-
 
 LocalPriceController::LocalPriceController() {}
 
@@ -18,12 +20,13 @@ LocalPriceController::LocalPriceController(const std::unordered_map<int, int>& i
         add_cargo_type(type);
 }
 
-std::unordered_map<int, float>& LocalPriceController::get_base_prices() {
+std::unordered_map<int, float> LocalPriceController::get_base_prices() {
     return base_prices;
 }
 
 //Only one from outside c++
-void LocalPriceController::set_base_prices(const Dictionary& p_base_prices) {
+void LocalPriceController::set_base_prices(const Dictionary p_base_prices) {
+    base_prices.clear();
     Array keys = p_base_prices.keys();
     for (int i = 0; i < keys.size(); i++) {
         int type = keys[i];
@@ -175,6 +178,3 @@ Dictionary LocalPriceController::get_local_prices() {
     }
     return d;
 }
-
-const float LocalPriceController::MAX_DIFF = 1.5f;
-std::unordered_map<int, float> LocalPriceController::base_prices = std::unordered_map<int, float>();

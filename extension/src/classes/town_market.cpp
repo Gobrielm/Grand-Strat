@@ -2,10 +2,28 @@
 #include "town_market.hpp"
 #include "local_price_controller.hpp"
 
-TownMarket::TownMarket(): Hold() {
+void TownMarket::_bind_methods() {
+    ClassDB::bind_method(D_METHOD("create_storage"), &TownMarket::create_storage);
+    ClassDB::bind_method(D_METHOD("add_cash", "amount"), &TownMarket::add_cash);
+    ClassDB::bind_method(D_METHOD("remove_cash", "amount"), &TownMarket::remove_cash);
+    ClassDB::bind_method(D_METHOD("get_cash"), &TownMarket::get_cash);
+    ClassDB::bind_method(D_METHOD("transfer_cash", "amount"), &TownMarket::transfer_cash);
+    ClassDB::bind_method(D_METHOD("get_fulfillment", "type"), &TownMarket::get_fulfillment);
+    ClassDB::bind_method(D_METHOD("report_attempt_to_sell", "type", "amount"), &TownMarket::report_attempt_to_sell);
+    ClassDB::bind_method(D_METHOD("get_local_price", "type"), &TownMarket::get_local_price);
+    ClassDB::bind_method(D_METHOD("is_price_acceptable", "type", "price"), &TownMarket::is_price_acceptable);
+    ClassDB::bind_method(D_METHOD("get_desired_cargo", "type", "price"), &TownMarket::get_desired_cargo);
+    ClassDB::bind_method(D_METHOD("buy_cargo", "type", "amount", "price"), &TownMarket::buy_cargo);
+    ClassDB::bind_method(D_METHOD("sell_cargo", "type", "amount", "price"), &TownMarket::sell_cargo);
+    ClassDB::bind_method(D_METHOD("month_tick"), &TownMarket::month_tick);
+}
+
+TownMarket::TownMarket(): Hold() {}
+
+void TownMarket::create_storage() {
     const auto m = LocalPriceController::get_base_prices();
     for (const auto& [type, price]: m) {
-        prices[type] = price;
+        prices.push_back(price);
         supply.push_back(0);
         demand.push_back(0);
     }
@@ -23,7 +41,7 @@ void TownMarket::remove_cash(float amount) {
     cash -= amount;
 }
 
-float TownMarket::get_cash() {
+float TownMarket::get_cash() const {
     return cash;
 }
 

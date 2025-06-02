@@ -189,7 +189,7 @@ func has_visited(visited: Dictionary, coords: Vector2i, direction: int) -> bool:
 func create_node(coords: Vector2i) -> void:
 	if !network.has(coords):
 		var weight: int = 0
-		var stat: station = terminal_map.get_instance().get_station(coords)
+		var stat: Station = terminal_map.get_instance().get_station(coords)
 		if stat != null:
 			weight = stat.get_orders_magnitude()
 			weight += 1

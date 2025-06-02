@@ -1,4 +1,5 @@
 extends Node
 
 func _ready() -> void:
-	pass
+	MoneyController.create([1])
+	print("AA")

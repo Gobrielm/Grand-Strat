@@ -102,10 +102,10 @@ func is_owned(player_id: int, coords: Vector2i) -> bool:
 	return map_node.is_owned(player_id, coords)
 
 func start_building_units() -> void:
-	province_machine.start_building_units()
+	state_machine.start_building_units()
 
 func is_controlling_camera() -> bool:
-	return province_machine.is_controlling_camera()
+	return state_machine.is_controlling_camera()
 
 #Units
 func create_untraversable_tiles() -> void:
@@ -168,15 +168,15 @@ func get_depot_direction(coords: Vector2i) -> int:
 	return rail_placer_obj.get_depot_direction(coords)
 
 func place_road_depot() -> void:
-	if !province_machine.is_hovering_over_gui():
+	if !state_machine.is_hovering_over_gui():
 		rail_placer_obj.place_road_depot(get_cell_position(), unique_id)
 
 #Cargo
 func is_location_valid_stop(coords: Vector2i) -> bool:
 	return map_data.get_instance().is_hold(coords) or map_data.get_instance().is_depot(coords)
 
-func get_depot_or_terminal(coords: Vector2i) -> terminal:
-	var new_depot: terminal = map_data.get_instance().get_depot(coords)
+func get_depot_or_terminal(coords: Vector2i) -> Terminal:
+	var new_depot: Terminal = map_data.get_instance().get_depot(coords)
 	if new_depot != null:
 		return new_depot
 	return terminal_map.get_instance().get_terminal(coords)

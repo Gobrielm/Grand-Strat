@@ -10,7 +10,7 @@ var id: int
 var near_stop: bool = false
 var acceleration_direction: Vector2
 var velocity: Vector2
-var cargo_hold: hold = hold.new(location, player_owner)
+var cargo_hold: Hold = Hold.create(location, player_owner, 50)
 var loading: bool = false
 var unloading: bool = false
 var ticker: float = 0
@@ -132,7 +132,7 @@ func decide_stop_action() -> bool:
 	var map_data_obj: map_data = map_data.get_instance()
 	
 	if map_data_obj.is_depot(location):
-		var depot: RefCounted = map_data_obj.get_depot(location)
+		var depot: vehicle_depot = map_data_obj.get_depot(location)
 		depot.add_train(self)
 		go_into_depot.rpc()
 		return true
@@ -165,7 +165,7 @@ func deaccelerate_train(delta: float) -> void:
 	velocity = acceleration_direction * speed
 
 func is_selecting_route() -> bool:
-	return province_machine.is_selecting_route()
+	return state_machine.is_selecting_route()
 
 func check_ticker() -> void:
 	if ticker > 1:

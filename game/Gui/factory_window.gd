@@ -57,7 +57,7 @@ func request_current_cash(coords: Vector2i) -> void:
 
 @rpc("any_peer", "call_local", "unreliable")
 func request_current_level(coords: Vector2i) -> void:
-	var _current_level: int = (terminal_map.get_instance().get_broker(coords) as factory_template).get_level()
+	var _current_level: int = (terminal_map.get_instance().get_broker(coords) as FactoryTemplate).get_level()
 	update_current_level.rpc_id(multiplayer.get_remote_sender_id(), _current_level)
 
 @rpc("authority", "call_local", "unreliable")

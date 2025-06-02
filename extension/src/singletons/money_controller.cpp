@@ -25,16 +25,16 @@ MoneyController::MoneyController() {
 
 void MoneyController::create(const Array& peers) {
     ERR_FAIL_COND_MSG(singleton_instance != nullptr, "Cannot create multiple instances of singleton!");
-    MoneyController x;
-    x.money[1] = INITIAL_AMOUNT_OF_MONEY; // Adds 1 for server
+    singleton_instance.instantiate();
+    singleton_instance -> add_peer(1); // Adds 1 for server
 
     for (int i = 0; i < peers.size(); i++) {
         int peer = peers[i];
-        x.money[peer] = INITIAL_AMOUNT_OF_MONEY;
+        singleton_instance -> add_peer(peer);
     }
 }
 
-MoneyController* MoneyController::get_instance() {
+Ref<MoneyController> MoneyController::get_instance() {
     ERR_FAIL_COND_V_MSG(singleton_instance == nullptr, nullptr, "Money_Manager has not been created but is being accessed");
     return singleton_instance;
 }
@@ -59,7 +59,12 @@ void MoneyController::remove_money_from_player(int id, float amount) {
 }
 
 float MoneyController::get_money(int id) const {
-    return money.at(id);
+    auto it = money.find(id);
+    if (it != money.end()) {
+        return it->second;
+    }
+    ERR_FAIL_COND_V_MSG(it == money.end(), 0.0f, "Money entry does not exist for player ID " + String::num_int64(id));
+    return 0.0f; // Or some error value
 }
 
 Dictionary MoneyController::get_money_dictionary() const {
@@ -75,5 +80,5 @@ bool MoneyController::player_has_enough_money(int id, int amount) const {
 }
 
 
-MoneyController* MoneyController::singleton_instance = nullptr;
+Ref<MoneyController> MoneyController::singleton_instance = nullptr;
 const int MoneyController::INITIAL_AMOUNT_OF_MONEY = 100000;

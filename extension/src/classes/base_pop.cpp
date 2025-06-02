@@ -36,9 +36,23 @@ void BasePop::_bind_methods() {
 
 const int BasePop::PEOPLE_PER_POP = 1000;
 int BasePop::total_pops = 0;
+std::mutex BasePop::m;
 const int BasePop::INITIAL_WEALTH = 1000;
 std::unordered_map<int, float> BasePop::base_needs;
 std::unordered_map<int, float> BasePop::specialities;
+
+BasePop::BasePop(): BasePop(-1, 0) {}
+
+BasePop::BasePop(int p_home_prov_id, Variant p_culture) {
+    home_prov_id = p_home_prov_id;
+    culture = p_culture;
+    m.lock();
+    pop_id = total_pops++;
+    m.unlock();
+    wealth = INITIAL_WEALTH;
+    income = 0.0;
+    education_level = 0;
+}
 
 BasePop::~BasePop() {}
 

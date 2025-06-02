@@ -5,19 +5,24 @@
 #include <unordered_map>
 
 class TownMarket : public Hold {
+    GDCLASS(TownMarket, Hold);
     int cash;
-    std::vector<int> supply;
-    std::vector<int> demand;
-    std::vector<float> prices;
+    std::vector<int> supply = {};
+    std::vector<int> demand = {};
+    std::vector<float> prices = {};
     std::unordered_map<int, int> last_month_demand;
+
+protected:
+    void static _bind_methods();
 
 public:
     TownMarket();
+    void create_storage();
     std::vector<int>& get_supply();
-    void add_cash(float amount);
-    void remove_cash(float amount);
-    float get_cash();
-    float transfer_cash(float amount);
+    void add_cash(float amount) override;
+    void remove_cash(float amount) override;
+    float get_cash() const override; 
+    float transfer_cash(float amount) override;
 
     float get_fulfillment(int type);
     void report_attempt_to_sell(int type, int amount);

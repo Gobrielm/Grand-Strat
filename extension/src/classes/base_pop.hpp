@@ -2,6 +2,7 @@
 
 #include <godot_cpp/classes/object.hpp>
 #include <unordered_map>
+#include <mutex>
 
 using namespace godot;
 
@@ -10,6 +11,7 @@ class BasePop : public Object {
 
     static const int PEOPLE_PER_POP;
     static int total_pops;
+    static std::mutex m;
     static std::unordered_map<int, float> base_needs;
     static std::unordered_map<int, float> specialities;
     static const int INITIAL_WEALTH;
@@ -24,6 +26,7 @@ class BasePop : public Object {
     protected:
     static void _bind_methods();
     String _to_string() const;
+    
     
 
     public:
@@ -53,14 +56,7 @@ class BasePop : public Object {
     void initialize(int p_home_prov_id = -1, Variant p_culture = 0);
     
 
-    _FORCE_INLINE_ BasePop(): BasePop(-1, 0) {}
-    _FORCE_INLINE_ BasePop(int p_home_prov_id, Variant p_culture) {
-        home_prov_id = p_home_prov_id;
-        culture = p_culture;
-        pop_id = total_pops++;
-        wealth = INITIAL_WEALTH;
-        income = 0.0;
-        education_level = 0;
-    }
+    BasePop();
+    BasePop(int p_home_prov_id, Variant p_culture);
     ~BasePop();
 };

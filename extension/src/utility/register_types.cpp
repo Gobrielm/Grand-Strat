@@ -13,6 +13,7 @@
 #include "../classes/fixed_hold.hpp"
 #include "../classes/broker.hpp"
 #include "../classes/station.hpp"
+#include "../classes/town_market.hpp"
 #include "../classes/town.hpp"
 #include "../classes/factory_template.hpp"
 #include "../classes/construction_site.hpp"
@@ -29,6 +30,9 @@ void initialize_gdextension_types(ModuleInitializationLevel p_level)
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
+	GDREGISTER_CLASS(LocalPriceController);
+	GDREGISTER_CLASS(MoneyController);
+
 	GDREGISTER_CLASS(BasePop);
 	GDREGISTER_CLASS(TradeOrder);
 	GDREGISTER_CLASS(Terminal);
@@ -37,6 +41,7 @@ void initialize_gdextension_types(ModuleInitializationLevel p_level)
 	GDREGISTER_CLASS(FixedHold);
 	GDREGISTER_CLASS(Broker);
 	GDREGISTER_CLASS(StationWOMethods);
+	GDREGISTER_CLASS(TownMarket);
 	GDREGISTER_CLASS(Town);
 	GDREGISTER_CLASS(FactoryTemplate);
 	GDREGISTER_CLASS(ConstructionSite);
@@ -44,8 +49,7 @@ void initialize_gdextension_types(ModuleInitializationLevel p_level)
 	GDREGISTER_CLASS(AiFactory);
 	GDREGISTER_CLASS(PrivateAiFactory);
 
-	GDREGISTER_CLASS(MoneyController);
-	GDREGISTER_CLASS(LocalPriceController);
+	
 }
 
 

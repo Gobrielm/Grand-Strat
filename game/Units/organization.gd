@@ -1,12 +1,11 @@
 class_name organization extends RefCounted
 
 var supply_needed: Dictionary[int, int] #Cargo type -> amount
-var current_supply: fixed_hold
+var current_supply: FixedHold
 
 func _init(p_supply_needed: Dictionary[int, int]) -> void:
 	supply_needed = p_supply_needed
-	current_supply = fixed_hold.new(Vector2i(0, 0), 0) #Owner doesn;t matter
-	current_supply.set_max_storage(10)
+	current_supply = FixedHold.create(Vector2i(0, 0), 0, 10) #Owner doesn;t matter
 	for type: int in supply_needed:
 		current_supply.add_accept(type)
 		current_supply.add_cargo(type, current_supply.max_amount)
@@ -17,7 +16,7 @@ static func create_with_client_array(client_array: Array) -> organization:
 	return toReturn
 
 func set_current_storage(p_storage: Dictionary) -> void:
-	current_supply.storage = p_storage
+	current_supply.set_current_hold(p_storage)
 
 ##[supply_needed, current_supply.storage]
 func convert_to_client_array() -> Array:

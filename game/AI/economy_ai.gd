@@ -6,7 +6,7 @@ var tile_ownership_obj: tile_ownership
 var cargo_map: TileMapLayer = terminal_map.get_instance().cargo_map
 var cargo_values: Node = cargo_map.cargo_values
 var rail_placer_obj: rail_placer
-var owned_factories: Array[factory_template]
+var owned_factories: Array[FactoryTemplate]
 var max_factories: int = 0
 
 var mutex: Mutex
@@ -96,12 +96,12 @@ func are_there_unconnected_buildings() -> bool:
 func get_owned_tiles() -> Array:
 	return tile_ownership_obj.get_owned_tiles(id)
 
-func get_owned_terminals() -> Array[terminal]:
-	var toReturn: Array[terminal] = []
+func get_owned_terminals() -> Array[Terminal]:
+	var toReturn: Array[Terminal] = []
 	var map_data_inst: map_data = map_data.get_instance()
 	for prov_id: int in map_data_inst.get_counties_provinces(country_id):
 		var prov: province = map_data_inst.get_province(prov_id)
-		for term: terminal in prov.get_terminals():
+		for term: Terminal in prov.get_terminals():
 			toReturn.append(term)
 	return toReturn
 
@@ -109,7 +109,7 @@ func are_there_unconnected_stations() -> bool:
 	for tile: Vector2i in get_owned_tiles():
 		#Only survey owned ai_stations
 		if terminal_map.get_instance().is_owned_ai_station(tile, id):
-			var stat: ai_station = terminal_map.get_instance().get_ai_station(tile)
+			var stat: AiStation = terminal_map.get_instance().get_ai_station(tile)
 			if !stat.has_station_connection():
 				stored_tile = tile
 				return false
@@ -192,8 +192,8 @@ func place_factory(type: int) -> void:
 
 func create_factory(location: Vector2i, type: int) -> void:
 	cargo_map.create_construction_site(id, location)
-	var term: terminal = terminal_map.get_instance().get_terminal(location)
-	assert(term is construction_site and term.player_owner == id)
+	var term: Terminal = terminal_map.get_instance().get_terminal(location)
+	assert(term is ConstructionSite and term.player_owner == id)
 	owned_factories.append(term)
 	for recipe_set: Array in recipe.get_set_recipes():
 		for output: int in recipe_set[1]:

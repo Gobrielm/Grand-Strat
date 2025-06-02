@@ -12,7 +12,7 @@ class MoneyController : public RefCounted {
 
 private:
     std::unordered_map<int, float> money;
-    static MoneyController* singleton_instance;
+    static Ref<MoneyController> singleton_instance;
     static const int INITIAL_AMOUNT_OF_MONEY;
 
 protected:
@@ -22,7 +22,7 @@ public:
     MoneyController();
     
     static void create(const Array& peers);
-    static MoneyController* get_instance();
+    static Ref<MoneyController> get_instance();
 
     void add_peer(int new_id);
     void delete_peer(int id);

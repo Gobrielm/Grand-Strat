@@ -11,24 +11,24 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	if is_mouse_hovering():
-		province_machine.hovering_over_gui_active()
+		state_machine.hovering_over_gui_active()
 	else:
-		province_machine.hovering_over_gui_inactive()
-	if Input.is_action_pressed("pan_left") and !province_machine.is_gui_pressed():
+		state_machine.hovering_over_gui_inactive()
+	if Input.is_action_pressed("pan_left") and !state_machine.is_gui_pressed():
 		position.x -= 5 / zoom.x
-	elif Input.is_action_pressed("pan_right") and !province_machine.is_gui_pressed():
+	elif Input.is_action_pressed("pan_right") and !state_machine.is_gui_pressed():
 		position.x += 5 / zoom.x
-	elif Input.is_action_pressed("pan_down") and !province_machine.is_gui_pressed():
+	elif Input.is_action_pressed("pan_down") and !state_machine.is_gui_pressed():
 		position.y -= 5 / zoom.x
-	elif Input.is_action_pressed("pan_up") and !province_machine.is_gui_pressed():
+	elif Input.is_action_pressed("pan_up") and !state_machine.is_gui_pressed():
 		position.y += 5 / zoom.x
-	if Input.is_action_just_released("zoom_in") and zoom.x < 2 and !province_machine.is_gui_pressed():
+	if Input.is_action_just_released("zoom_in") and zoom.x < 2 and !state_machine.is_gui_pressed():
 		zoom.x += 0.05
 		zoom.y += 0.05
-	elif Input.is_action_just_released("zoom_out") and zoom.x > 0.06 and !province_machine.is_gui_pressed():
+	elif Input.is_action_just_released("zoom_out") and zoom.x > 0.06 and !state_machine.is_gui_pressed():
 		zoom.x -= 0.05
 		zoom.y -= 0.05
-	elif Input.is_action_pressed("pan_mouse") and last_mouse_position and !province_machine.is_gui_pressed():
+	elif Input.is_action_pressed("pan_mouse") and last_mouse_position and !state_machine.is_gui_pressed():
 		var instant_mouse_movement: Vector2 = last_mouse_position - get_viewport().get_mouse_position()
 		position.x += 1 / zoom.x * instant_mouse_movement.x
 		position.y += 1 / zoom.y * instant_mouse_movement.y
@@ -52,7 +52,7 @@ func unpress_all_buttons() -> void:
 	for element: Node in $CanvasLayer.get_children():
 		if element is Button and element.has_method("unpress") and element.active:
 			element.unpress()
-			province_machine.unpress_gui()
+			state_machine.unpress_gui()
 
 func are_all_buttons_unpressed() -> bool:
 	var toReturn: bool = true
@@ -72,26 +72,26 @@ func update_desync_label(amount: int) -> void:
 	$CanvasLayer/Desync_Label.text = str(amount)
 
 func _on_station_button_pressed() -> void:
-	province_machine.station_button_toggled()
+	state_machine.station_button_toggled()
 
 func _on_track_button_pressed() -> void:
-	province_machine.many_track_button_toggled()
+	state_machine.many_track_button_toggled()
 
 func _on_depot_button_pressed() -> void:
-	province_machine.depot_button_toggled()
+	state_machine.depot_button_toggled()
 
 func _on_single_track_button_pressed() -> void:
-	province_machine.track_button_toggled()
+	state_machine.track_button_toggled()
 
 func _on_factory_button_pressed() -> void:
-	province_machine.factory_button_toggled()
+	state_machine.factory_button_toggled()
 
 func _on_start_or_ready_pressed() -> void:
 	Utils.world_map.get_parent().disable_nation_picker()
 	$nation_picker/start_or_ready.visible = false
 
 func _on_road_depot_button_pressed() -> void:
-	province_machine.building_road_depot_toggled()
+	state_machine.building_road_depot_toggled()
 
 func _on_music_pressed() -> void:
 	Utils.click_music()

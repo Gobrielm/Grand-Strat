@@ -17,13 +17,13 @@ class Town : public Broker {
     GDCLASS(Town, Broker)
 
 private:
-
+    TownMarket* market = nullptr;
     std::unordered_map<int, std::vector<FactoryTemplate*>> internal_factories;
     std::unordered_map<int, BasePop*> city_pops;
 
 protected:
     static void _bind_methods();
-    TownMarket* market = nullptr;
+    
 
 public:
     Town();
@@ -34,16 +34,16 @@ public:
 
     virtual void initialize(Vector2i new_location);
 
-
+    void create_storage();
 
     // Trade
-    bool does_accept(int type) const;
-    float get_local_price(int type) const;
-    bool is_price_acceptable(int type, float price) const;
+    bool does_accept(int type) const override;
+    float get_local_price(int type) const override;
+    bool is_price_acceptable(int type, float price) const override;
 
-    int get_desired_cargo(int type, float price) const;
-    void buy_cargo(int type, int amount, float price);
-    int sell_cargo(int type, int amount, float price);
+    int get_desired_cargo(int type, float price) const override;
+    void buy_cargo(int type, int amount, float price) override;
+    int sell_cargo(int type, int amount, float price) override;
 
     // Production
     float get_fulfillment(int type) const;
@@ -57,8 +57,8 @@ public:
 
     //Selling to brokers
     void sell_to_other_brokers();
-    void distribute_from_order(const TradeOrder* order);
-    void report_attempt(int type, int amount);
+    void distribute_from_order(const TradeOrder* order) override;
+    void report_attempt(int type, int amount) override;
 
     // GDVIRTUAL1(_my_virtual_method_name, int); Ex
 
