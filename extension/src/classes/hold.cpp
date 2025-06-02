@@ -5,6 +5,7 @@ using namespace godot;
 
 void Hold::_bind_methods() {
     ClassDB::bind_static_method(get_class_static(), D_METHOD("create", "new_location", "player_owner", "p_max_amount"), &Hold::create);
+    ClassDB::bind_static_method(get_class_static(), D_METHOD("set_num_of_goods", "p_num"), &Hold::set_number_of_goods);
 
     ClassDB::bind_method(D_METHOD("initialize", "new_location", "player_owner", "max_amount"), &Hold::initialize);
     ClassDB::bind_method(D_METHOD("add_cargo", "type", "amount"), &Hold::add_cargo);
@@ -114,5 +115,5 @@ void Hold::set_number_of_goods(int p_num) {
     NUMBER_OF_GOODS = p_num;
 }
 
-int Hold::NUMBER_OF_GOODS = 0;
+int Hold::NUMBER_OF_GOODS = 52;
 const int Hold::DEFAULT_MAX_STORAGE = 50;

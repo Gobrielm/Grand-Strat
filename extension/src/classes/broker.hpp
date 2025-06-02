@@ -51,15 +51,17 @@ class Broker : public FixedHold {
     virtual void buy_cargo(int type, int amount, float price);
     virtual int sell_cargo(int type, int amount, float price);
 
-    void place_order(int type, int amount, bool buy, float maxPrice);
-    void edit_order(int type, int amount, bool buy, float maxPrice);
+    virtual void place_order(int type, int amount, bool buy, float maxPrice);
+    virtual void edit_order(int type, int amount, bool buy, float maxPrice);
 
     TradeOrder* get_order(int type) const;
     std::unordered_map<int, TradeOrder*> get_orders();
-    void remove_order(int type);
+    Dictionary get_orders_dict();
+    virtual void remove_order(int type);
 
-    void add_connected_broker(Broker* broker);
-    void remove_connected_broker(const Broker* broker);
+    virtual void add_connected_broker(Broker* broker);
+    virtual void remove_connected_broker(const Broker* broker);
+    Dictionary get_connected_brokers();
 
     virtual void distribute_cargo(); // abstract
     virtual void distribute_from_order(const TradeOrder* order);
@@ -67,5 +69,5 @@ class Broker : public FixedHold {
 
     virtual void report_attempt(int type, int amount);
 
-
+    
 };

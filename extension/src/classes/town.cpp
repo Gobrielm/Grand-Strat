@@ -1,10 +1,46 @@
 #include "town.hpp"
 
+#include <godot_cpp/core/class_db.hpp>
+
+using namespace godot;
+
 void Town::_bind_methods() {
+    ClassDB::bind_static_method(get_class_static(), D_METHOD("create", "new_location"), &Town::create);
+    ClassDB::bind_method(D_METHOD("initialize", "new_location"), &Town::initialize);
+
+    // Trade-related
+    ClassDB::bind_method(D_METHOD("does_accept", "type"), &Town::does_accept);
+    ClassDB::bind_method(D_METHOD("get_local_price", "type"), &Town::get_local_price);
+    ClassDB::bind_method(D_METHOD("is_price_acceptable", "type", "price"), &Town::is_price_acceptable);
+    ClassDB::bind_method(D_METHOD("get_desired_cargo", "type", "price"), &Town::get_desired_cargo);
+    ClassDB::bind_method(D_METHOD("buy_cargo", "type", "amount", "price"), &Town::buy_cargo);
+    ClassDB::bind_method(D_METHOD("sell_cargo", "type", "amount", "price"), &Town::sell_cargo);
+
+    // Factory and Pop management
+    ClassDB::bind_method(D_METHOD("add_factory", "factory"), &Town::add_factory);
+    ClassDB::bind_method(D_METHOD("add_pop", "pop"), &Town::add_pop);
+
+    // Fulfillment
+    ClassDB::bind_method(D_METHOD("get_fulfillment", "type"), &Town::get_fulfillment);
+    ClassDB::bind_method(D_METHOD("get_fulfillment_dict"), &Town::get_fulfillment_dict);
+
+    // Selling
+    ClassDB::bind_method(D_METHOD("sell_to_pops"), &Town::sell_to_pops);
+    ClassDB::bind_method(D_METHOD("sell_type", "type"), &Town::sell_type);
+    ClassDB::bind_method(D_METHOD("sell_to_other_brokers"), &Town::sell_to_other_brokers);
+    ClassDB::bind_method(D_METHOD("distribute_from_order", "order"), &Town::distribute_from_order);
+    ClassDB::bind_method(D_METHOD("report_attempt", "type", "amount"), &Town::report_attempt);
+
+    // Game Loop
+    ClassDB::bind_method(D_METHOD("day_tick"), &Town::day_tick);
+    ClassDB::bind_method(D_METHOD("month_tick"), &Town::month_tick);
+
 
 }
 
-Town::Town(): Broker() {}
+Town::Town(): Broker(Vector2i(0, 0), 0) {
+    market = memnew(TownMarket);
+}
 
 Town::~Town() {
     memdelete(market);
@@ -21,13 +57,16 @@ Town::~Town() {
 
 }
 
-Town::Town(Vector2i new_location): Broker(new_location, 0) {}
+Town::Town(Vector2i new_location): Broker(new_location, 0) {
+    market = memnew(TownMarket);
+}
 
 Terminal* Town::create(Vector2i new_location) {
     return memnew(Town(new_location));
 }
 
 void Town::initialize(Vector2i new_location) {
+    market = memnew(TownMarket);
     Broker::initialize(new_location, 0);
 }
 
@@ -136,11 +175,15 @@ void Town::report_attempt(int type, int amount) {
     }
 }
 
+void idk() {
+
+}
 
 // Process Hooks
 void Town::day_tick() {
     sell_to_other_brokers();
 }
+
 void Town::month_tick() {
     sell_to_pops();
     market -> month_tick();

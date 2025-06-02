@@ -12,6 +12,8 @@
 #include "../classes/hold.hpp"
 #include "../classes/fixed_hold.hpp"
 #include "../classes/broker.hpp"
+#include "../classes/station.hpp"
+#include "../classes/town.hpp"
 #include "../classes/factory_template.hpp"
 #include "../classes/construction_site.hpp"
 #include "../classes/factory.hpp"
@@ -33,6 +35,8 @@ void initialize_gdextension_types(ModuleInitializationLevel p_level)
 	GDREGISTER_CLASS(Hold);
 	GDREGISTER_CLASS(FixedHold);
 	GDREGISTER_CLASS(Broker);
+	GDREGISTER_CLASS(StationWOMethods);
+	GDREGISTER_CLASS(Town);
 	GDREGISTER_CLASS(FactoryTemplate);
 	GDREGISTER_CLASS(ConstructionSite);
 	GDREGISTER_CLASS(Factory);

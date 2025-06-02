@@ -1,5 +1,8 @@
 #pragma once
 
+// #include <godot_cpp/core/binder_common.hpp>
+// #include <godot_cpp/core/gdvirtual.gen.inc>
+
 #include <unordered_map>
 #include <vector>
 
@@ -17,11 +20,10 @@ private:
 
     std::unordered_map<int, std::vector<FactoryTemplate*>> internal_factories;
     std::unordered_map<int, BasePop*> city_pops;
-    TownMarket* market;
-
 
 protected:
     static void _bind_methods();
+    TownMarket* market = nullptr;
 
 public:
     Town();
@@ -58,6 +60,7 @@ public:
     void distribute_from_order(const TradeOrder* order);
     void report_attempt(int type, int amount);
 
+    // GDVIRTUAL1(_my_virtual_method_name, int); Ex
 
     // Process Hooks
     virtual void day_tick();

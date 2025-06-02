@@ -23,6 +23,8 @@ void Broker::_bind_methods() {
     ClassDB::bind_method(D_METHOD("add_connected_broker", "broker"), &Broker::add_connected_broker);
     ClassDB::bind_method(D_METHOD("remove_connected_broker", "broker"), &Broker::remove_connected_broker);
     ClassDB::bind_method(D_METHOD("report_attempt", "type", "amount"), &Broker::report_attempt);
+    ClassDB::bind_method(D_METHOD("get_orders_dict"), &Broker::get_orders_dict);
+    ClassDB::bind_method(D_METHOD("get_connected_brokers"), &Broker::get_connected_brokers);
 
 }
 
@@ -120,6 +122,14 @@ std::unordered_map<int, TradeOrder*> Broker::get_orders() {
     return trade_orders;
 }
 
+Dictionary Broker::get_orders_dict() {
+    Dictionary d;
+    for (const auto &[type, order]: trade_orders) {
+        d[type] = order;
+    }
+    return d;
+}
+
 void Broker::remove_order(int type) {
     if (trade_orders.count(type)) {
         memdelete(trade_orders[type]);
@@ -133,6 +143,14 @@ void Broker::add_connected_broker(Broker* broker) {
 
 void Broker::remove_connected_broker(const Broker* broker) {
     connected_brokers.erase(broker->get_location());
+}
+
+Dictionary Broker::get_connected_brokers() {
+    Dictionary d;
+    for (const auto &[tile, broker]: connected_brokers) {
+        d[tile] = broker;
+    }
+    return d;
 }
 
 void Broker::distribute_cargo() {

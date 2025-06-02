@@ -1,11 +1,11 @@
 #pragma once
 
-#include <godot_cpp/classes/ref_counted.hpp>
+#include <godot_cpp/classes/object.hpp>
 
 using namespace godot;
 
-class Terminal : public RefCounted {
-    GDCLASS(Terminal, RefCounted);
+class Terminal : public Object {
+    GDCLASS(Terminal, Object);
     Vector2i location;
     int player_owner;
     

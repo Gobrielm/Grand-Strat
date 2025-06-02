@@ -10,6 +10,7 @@ func _init(_map: TileMapLayer) -> void:
 	create_cargo_types()
 	create_base_prices()
 	create_amount_of_primary_goods()
+	print(get_number_of_goods())
 	BasePop.create_base_needs({
 		get_cargo_type("grain"): 1, get_cargo_type("wood"): 0.3, get_cargo_type("salt"): 0.1, 
 		get_cargo_type("fish"): 0.2, get_cargo_type("fruit"): 0.2, get_cargo_type("meat"): 0.2,

@@ -30,7 +30,8 @@ func _init(home_prov: int, p_culture: Variant) -> void:
 
 # === Employment === 
 func find_employment() -> void:
-	var prov: province = map_data.get_instance().get_province(home_prov_id)
+	pass
+	#var prov: province = map_data.get_instance().get_province(home_prov_id)
 	#var work: factory_template = prov.find_employment(self)
 	#work.work_here(self)
 

@@ -94,8 +94,8 @@ bool ConstructionSite::is_finished_constructing() const {
 		if (get_cargo_amount(type) < val) {
             return false;
         }
-	return true;
     }
+    return true;
 }
 
 void ConstructionSite::month_tick() {
