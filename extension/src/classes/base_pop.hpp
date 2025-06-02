@@ -9,12 +9,13 @@ using namespace godot;
 class BasePop : public Object {
     GDCLASS(BasePop, Object);
 
-    static const int PEOPLE_PER_POP;
+    static constexpr int PEOPLE_PER_POP = 1000;
+    static constexpr int INITIAL_WEALTH = 1000;
     static int total_pops;
     static std::mutex m;
     static std::unordered_map<int, float> base_needs;
     static std::unordered_map<int, float> specialities;
-    static const int INITIAL_WEALTH;
+    
 
     int pop_id;
     int education_level;
@@ -34,6 +35,7 @@ class BasePop : public Object {
     static void create_base_needs(Dictionary d);
     static int get_people_per_pop();
     int get_pop_id() const;
+    void set_home_prov_id(int p_home_prov_id);
     int get_home_prov_id() const;
     // void find_employment() const;
     bool is_seeking_employment() const;

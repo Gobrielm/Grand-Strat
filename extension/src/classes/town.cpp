@@ -28,6 +28,7 @@ void Town::_bind_methods() {
     // Selling
     ClassDB::bind_method(D_METHOD("sell_to_pops"), &Town::sell_to_pops);
     ClassDB::bind_method(D_METHOD("sell_type", "type"), &Town::sell_type);
+    ClassDB::bind_method(D_METHOD("get_total_pops"), &Town::get_total_pops);
     ClassDB::bind_method(D_METHOD("sell_to_other_brokers"), &Town::sell_to_other_brokers);
     ClassDB::bind_method(D_METHOD("distribute_from_order", "order"), &Town::distribute_from_order);
     ClassDB::bind_method(D_METHOD("report_attempt", "type", "amount"), &Town::report_attempt);
@@ -148,6 +149,10 @@ void Town::sell_type(int type) {
 	market->remove_cargo(type, round(amount_sold));
 }
 
+int Town::get_total_pops() const {
+    return city_pops.size();
+}
+
 //Selling to brokers
 void Town::sell_to_other_brokers() {
     std::vector<int> supply = market->get_supply();
@@ -180,10 +185,6 @@ void Town::report_attempt(int type, int amount) {
         //Only called from selling, so amount is negitive, therefore swap it back to pos and report
 		market -> report_attempt_to_sell(type, -amount);
     }
-}
-
-void idk() {
-
 }
 
 // Process Hooks

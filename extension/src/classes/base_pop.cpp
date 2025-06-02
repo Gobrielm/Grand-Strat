@@ -34,10 +34,8 @@ void BasePop::_bind_methods() {
     ClassDB::add_property(get_class_static(),  PropertyInfo(Variant::INT, "income"), "", "get_income");
 }
 
-const int BasePop::PEOPLE_PER_POP = 1000;
 int BasePop::total_pops = 0;
 std::mutex BasePop::m;
-const int BasePop::INITIAL_WEALTH = 1000;
 std::unordered_map<int, float> BasePop::base_needs;
 std::unordered_map<int, float> BasePop::specialities;
 
@@ -87,6 +85,10 @@ int BasePop::get_pop_id() const {
 
 int BasePop::get_home_prov_id() const {
     return home_prov_id;
+}
+
+void BasePop::set_home_prov_id(int p_home_prov_id) {
+    home_prov_id = p_home_prov_id;
 }
 
 // void BasePop::find_employment() const {

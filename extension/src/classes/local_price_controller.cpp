@@ -1,6 +1,7 @@
 #include "local_price_controller.hpp"
 
 #include <godot_cpp/core/class_db.hpp>
+#include "../singletons/cargo_info.hpp"
 
 using namespace godot;
 
@@ -8,7 +9,7 @@ std::unordered_map<int, float> LocalPriceController::base_prices = {};
 const float LocalPriceController::MAX_DIFF = 1.5f;
 
 void LocalPriceController::_bind_methods() {
-    ClassDB::bind_static_method(get_class_static(), D_METHOD("set_base_prices", "base"), &LocalPriceController::set_base_prices);
+    ClassDB::bind_static_method(get_class_static(), D_METHOD("set_base_prices"), &LocalPriceController::set_base_prices);
 }
 
 LocalPriceController::LocalPriceController() {}
@@ -25,12 +26,9 @@ std::unordered_map<int, float> LocalPriceController::get_base_prices() {
 }
 
 //Only one from outside c++
-void LocalPriceController::set_base_prices(const Dictionary p_base_prices) {
-    base_prices.clear();
-    Array keys = p_base_prices.keys();
-    for (int i = 0; i < keys.size(); i++) {
-        int type = keys[i];
-        base_prices[type] = p_base_prices[type];
+void LocalPriceController::set_base_prices() {
+    for (const auto &[type, price]: CargoInfo::get_instance() -> get_base_prices()) {
+        base_prices[type] = price;
     }
 }
 

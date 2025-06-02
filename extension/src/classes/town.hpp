@@ -54,6 +54,7 @@ public:
     void add_pop(BasePop* pop);
     void sell_to_pops();
     void sell_type(int type);
+    int get_total_pops() const;
 
     //Selling to brokers
     void sell_to_other_brokers();

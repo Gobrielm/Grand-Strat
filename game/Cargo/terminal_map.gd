@@ -54,7 +54,7 @@ var map: TileMapLayer
 var cargo_map: TileMapLayer
 
 func _on_day_tick_timeout() -> void:
-	mutex.lock() #ISSUES HERE WITH EITHER TOWN, OR PRIVATE_AI_FACTORY
+	mutex.lock()
 	day_tick_priority = true
 	mutex.unlock()
 	for coords: Vector2i in cargo_map_terminals:
@@ -62,27 +62,26 @@ func _on_day_tick_timeout() -> void:
 		var obj_mutex: Mutex = object_mutexs[coords]
 		obj_mutex.lock()
 		if obj.has_method("day_tick"):
-			if obj is PrivateAiFactory:
-				obj.day_tick()
-			elif obj is Town:
-				obj.day_tick()
+			obj.day_tick()
 		obj_mutex.unlock()
 	mutex.lock()
 	day_tick_priority = false
 	mutex.unlock()
 
 func _on_month_tick_timeout() -> void:
-	for thread: Thread in month_threads:
-		thread.wait_to_finish()
-	month_threads.clear()
+	#for thread: Thread in month_threads:
+		#thread.wait_to_finish()
+	#month_threads.clear()
 	var total_size: int = cargo_map_terminals.size()
-	var threads: int = 6
-	for i: int in range(0, threads):
-		var temp_thread: Thread = Thread.new()
-		temp_thread.start(_on_month_tick_timeout_helper.bind(cargo_map_terminals.keys(), total_size * float(i) / threads, total_size * float(i + 1) / threads))
-		month_threads.push_back(temp_thread)
+	_on_month_tick_timeout_helper(cargo_map_terminals.keys(), 0, total_size)
+	#var threads: int = 6
+	#for i: int in range(0, threads):
+		#var temp_thread: Thread = Thread.new()
+		#temp_thread.start(_on_month_tick_timeout_helper.bind(cargo_map_terminals.keys(), total_size * float(i) / threads, total_size * float(i + 1) / threads))
+		#month_threads.push_back(temp_thread)
 
 func _on_month_tick_timeout_helper(keys: Array, from: int, to: int) -> void:
+	var total_pops: int = 0
 	for i: int in range(from, to):
 		var coords: Vector2i = keys[i]
 		#If index is near the day_tick then give up priority
@@ -94,6 +93,7 @@ func _on_month_tick_timeout_helper(keys: Array, from: int, to: int) -> void:
 		if obj.has_method("month_tick"):
 			obj.month_tick()
 		obj_mutex.unlock()
+	print(total_pops)
 
 func clear() -> void:
 	mutex.lock()
@@ -348,10 +348,7 @@ func create_cargo_types() -> void:
 		cargo_names_to_types[cargo_types[type]] = type
 
 func create_base_prices() -> void:
-	var new_base_prices: Dictionary = {}
-	for good_name: String in base_prices:
-		new_base_prices[cargo_names_to_types[good_name]] = base_prices[good_name]
-	LocalPriceController.set_base_prices(new_base_prices)
+	LocalPriceController.set_base_prices()
 	assert(base_prices.size() == cargo_types.size())
 
 func get_number_of_goods() -> int:
