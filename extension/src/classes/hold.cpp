@@ -28,6 +28,14 @@ Terminal* Hold::create(const Vector2i new_location, const int player_owner, cons
     return memnew(Hold(new_location, player_owner, p_max_amount));
 }   
 
+Hold::Hold(): Firm() {
+    ERR_FAIL_COND_MSG(NUMBER_OF_GOODS == 0, "NUMBER_OF_GOODS was not set");
+
+    for (int i = 0; i < NUMBER_OF_GOODS; i++) {
+        storage[i] = 0;
+    }
+}
+
 Hold::Hold(const Vector2i new_location, const int player_owner, const int p_max_amount): max_amount(p_max_amount), Firm(new_location, player_owner) {
     ERR_FAIL_COND_MSG(NUMBER_OF_GOODS == 0, "NUMBER_OF_GOODS was not set");
 
@@ -54,6 +62,10 @@ int Hold::add_cargo(int type, int amount) {
 }
 
 int Hold::get_cargo_amount(int type) const {
+    if (storage.count(type) == 0) {
+        ERR_PRINT("Storage has no such type: " + String::num_int64(type));
+        return 0; // or return some error value like -1, depending on your logic
+    }
     return storage.at(type);
 }
 

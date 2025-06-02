@@ -62,7 +62,10 @@ func _on_day_tick_timeout() -> void:
 		var obj_mutex: Mutex = object_mutexs[coords]
 		obj_mutex.lock()
 		if obj.has_method("day_tick"):
-			obj.day_tick()
+			if obj is PrivateAiFactory:
+				obj.day_tick()
+			elif obj is Town:
+				obj.day_tick()
 		obj_mutex.unlock()
 	mutex.lock()
 	day_tick_priority = false

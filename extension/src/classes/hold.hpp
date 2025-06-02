@@ -21,7 +21,7 @@ public:
 
     static Terminal* create(const Vector2i new_location, const int player_owner, const int p_max_amount = DEFAULT_MAX_STORAGE);
 
-    Hold(): Firm(), max_amount(0) {};
+    Hold();
     Hold(const Vector2i new_location, const int player_owner, const int p_max_amount);
     virtual void initialize(const Vector2i new_location, const int player_owner, const int p_max_amount = DEFAULT_MAX_STORAGE);
 

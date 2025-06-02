@@ -158,8 +158,8 @@ void Broker::distribute_cargo() {
 }
 
 void Broker::distribute_from_order(const TradeOrder* order) {
-    for (const auto& [coords, broker] : connected_brokers) {
-        if (broker && broker->does_accept(order->get_type())) {
+    for (const auto& [__, broker] : connected_brokers) {
+        if (broker->does_accept(order->get_type())) {
             distribute_to_order(broker, order);
         }
     }

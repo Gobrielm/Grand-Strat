@@ -60,9 +60,7 @@ public:
     void distribute_from_order(const TradeOrder* order) override;
     void report_attempt(int type, int amount) override;
 
-    // GDVIRTUAL1(_my_virtual_method_name, int); Ex
-
     // Process Hooks
-    virtual void day_tick();
-    virtual void month_tick();
+    void day_tick();
+    void month_tick();
 };

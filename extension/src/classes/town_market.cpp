@@ -18,7 +18,9 @@ void TownMarket::_bind_methods() {
     ClassDB::bind_method(D_METHOD("month_tick"), &TownMarket::month_tick);
 }
 
-TownMarket::TownMarket(): Hold() {}
+TownMarket::TownMarket(): Hold() {
+    set_max_storage(DEFAULT_MAX_STORAGE);
+}
 
 void TownMarket::create_storage() {
     const auto m = LocalPriceController::get_base_prices();
@@ -62,6 +64,10 @@ void TownMarket::report_attempt_to_sell(int type, int amount) {
 }
 
 float TownMarket::get_local_price(int type) {
+    if (prices.size() <= type) {
+        ERR_PRINT("Prices only has size " + String::num_int64(prices.size()) + " and you accessed " + String::num_int64(type));
+        return 0; // or return some error value like -1, depending on your logic
+    }
     return prices[type];
 }
 
