@@ -1,4 +1,10 @@
 #include "province.hpp"
+#include "base_pop.hpp"
+#include "rural_pop.hpp"
+#include "town_pop.hpp"
+#include "terminal.hpp"
+#include "factory_template.hpp"
+#include "town.hpp"
 
 void Province::_bind_methods() {
     ClassDB::bind_static_method(get_class_static(), D_METHOD("create", "prov_id"), &Province::create);

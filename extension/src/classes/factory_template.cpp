@@ -1,4 +1,5 @@
 #include "factory_template.hpp"
+#include "base_pop.hpp"
 #include <godot_cpp/core/class_db.hpp>
 #include <algorithm>
 

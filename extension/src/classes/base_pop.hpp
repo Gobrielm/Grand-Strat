@@ -7,6 +7,8 @@
 
 using namespace godot;
 
+class FactoryTemplate;
+
 class BasePop : public Object {
     GDCLASS(BasePop, Object);
 

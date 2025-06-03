@@ -1,14 +1,14 @@
 #pragma once
 
 #include <godot_cpp/classes/object.hpp>
-#include "base_pop.hpp"
-#include "rural_pop.hpp"
-#include "town_pop.hpp"
-#include "terminal.hpp"
-#include "factory_template.hpp"
-#include "town.hpp"
 #include <unordered_map>
+#include "../utility/vector2i_hash.hpp"
 #include <vector>
+
+class BasePop;
+class Terminal;
+class FactoryTemplate;
+class Town;
 
 using namespace godot;
 
@@ -19,7 +19,7 @@ class Province : public Object {
     int country_id = -1;
     int population;
     std::vector<Vector2i> tiles;
-    std::unordered_map<Vector2i, Terminal*> terminal_tiles; //Doesn't 'own' Terminals yet
+    std::unordered_map<Vector2i, Terminal*, godot_helpers::Vector2iHasher> terminal_tiles; //Doesn't 'own' Terminals yet
     std::vector<BasePop*> pops; //Owns pops
 
     std::vector<Town*> get_towns() const;

@@ -4,20 +4,10 @@
 #include "trade_order.hpp"
 #include "terminal.hpp"
 #include "local_price_controller.hpp"
+#include "../utility/vector2i_hash.hpp"
 #include <unordered_map>
 #include <unordered_set>
 #include <memory>
-
-namespace std {
-    template <>
-    struct hash<godot::Vector2i> {
-        size_t operator()(const godot::Vector2i& v) const {
-            // A simple hash combining x and y
-            return std::hash<int>()(v.x) ^ (std::hash<int>()(v.y) << 1);
-        }
-    };
-}
-
 
 class Broker : public FixedHold {
     GDCLASS(Broker, FixedHold);
@@ -29,7 +19,7 @@ class Broker : public FixedHold {
     static void _bind_methods();
 
     public:
-    std::unordered_map<Vector2i, Broker*> connected_brokers;
+    std::unordered_map<Vector2i, Broker*, godot_helpers::Vector2iHasher> connected_brokers;
     LocalPriceController* local_pricer = nullptr;
 
     static Terminal* create(const Vector2i new_location, const int player_owner, const int p_max_amount = DEFAULT_MAX_STORAGE);

@@ -5,9 +5,10 @@
 #include <list>
 
 #include "broker.hpp"
-#include "base_pop.hpp"
 
 using namespace godot;
+
+class BasePop;
 
 class FactoryTemplate : public Broker {
     GDCLASS(FactoryTemplate, Broker)

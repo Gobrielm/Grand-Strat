@@ -5,6 +5,9 @@
 #include <godot_cpp/godot.hpp>
 
 #include "../classes/base_pop.hpp"
+#include "../classes/rural_pop.hpp"
+#include "../classes/town_pop.hpp"
+#include "../classes/province.hpp"
 #include "../classes/trade_order.hpp"
 #include "../classes/local_price_controller.hpp"
 #include "../classes/terminal.hpp"
@@ -30,10 +33,14 @@ void initialize_gdextension_types(ModuleInitializationLevel p_level)
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
+	//--verbose in godot for more details
 	GDREGISTER_CLASS(LocalPriceController);
 	GDREGISTER_CLASS(MoneyController);
 
 	GDREGISTER_CLASS(BasePop);
+	GDREGISTER_CLASS(RuralPop);
+	GDREGISTER_CLASS(TownPop);
+	GDREGISTER_CLASS(Province);
 	GDREGISTER_CLASS(TradeOrder);
 	GDREGISTER_CLASS(Terminal);
 	GDREGISTER_CLASS(Firm);
