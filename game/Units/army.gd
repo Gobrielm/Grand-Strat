@@ -169,11 +169,6 @@ func get_speed() -> float:
 			slowest_speed = unit.get_speed()
 	return slowest_speed
 
-func _notification(what: int) -> void:
-	if what == NOTIFICATION_PREDELETE:
-		if units and is_instance_valid(units):
-			units.queue_free()
-
 func _to_string() -> String:
 	var toReturn: String = "["
 	for unit: base_unit in get_units():

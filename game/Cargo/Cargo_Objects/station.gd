@@ -1,5 +1,8 @@
 class_name Station extends StationWOMethods
 
+func _init(p_location: Vector2i, p_owner: int) -> void:
+	super.initialize(p_location, p_owner)
+
 func supply_armies() -> void:
 	var units_to_supply: Dictionary[Vector2i, int] = get_units_to_supply()
 	if units_to_supply.size() > 0:

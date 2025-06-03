@@ -667,7 +667,6 @@ func clean_up_killed_units() -> void:
 @rpc("authority", "call_local", "unreliable")
 func kill_army(army_id: int, coords: Vector2i) -> void:
 	var node: Control = get_control_node(army_id)
-	army_data[army_id].queue_free()
 	army_data.erase(army_id)
 	check_and_clean_army(army_id, coords)
 	check_and_clean_attacking_army(army_id, coords)

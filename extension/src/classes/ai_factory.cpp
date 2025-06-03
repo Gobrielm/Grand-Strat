@@ -42,19 +42,18 @@ void AiFactory::change_sell_orders() {
 void AiFactory::change_order(int type, bool buy) {
     int amount = buy ? inputs[type]: outputs[type];
     float price = get_local_price(type);
-    float max_price = buy ? price * 1.2: price * 0.8;
+    float limit_price = buy ? price * 1.2: price * 0.8;
 
     if (get_order(type) == nullptr) {
-        place_order(type, amount, buy, max_price);
+        place_order(type, amount, buy, limit_price);
     }
 
     TradeOrder* order = get_order(type);
 
     if (get_cargo_amount(type) > get_max_storage() * MAX_AMOUNT_WANTED && outputs.count(type)) {
         amount = amount * 2;
+        order->change_amount(amount);
     }
-
-    order->change_amount(amount);
 }
 
 //Upgrades
@@ -88,11 +87,11 @@ void AiFactory::consider_upgrade_secondary() {
 
 // Process Hooks
 void AiFactory::AiFactory::day_tick() {
-    change_orders();
     Factory::day_tick();
 }
 
 void AiFactory::month_tick() {
     Factory::month_tick();
+    change_orders();
     consider_upgrade();
 }

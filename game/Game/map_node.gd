@@ -10,6 +10,7 @@ extends Node
 @onready var unit_creator_window: Window = $main_map/unit_creator_window
 @onready var factory_recipe_window: Window = $main_map/factory_recipe_gui
 @onready var factory_construction_window: Window = $main_map/factory_construction_gui
+@onready var town_window: Window = $main_map/town_window
 @onready var cargo_map: Node = $cargo_map
 
 var unique_id: int
@@ -42,7 +43,7 @@ func initialize_game() -> void:
 		ai_manager.new()
 		terminal_map.get_instance().assign_cargo_map(cargo_map)
 		MoneyController.create(multiplayer.get_peers())
-		MoneyController.get_instance().connect("Update_Money_Gui", main_map.update_money_label.rpc)
+		MoneyController.get_instance().connect("Update_Money_Gui", main_map.update_money_label.rpc_id)
 		main_map.on_singleton_creation()
 		#First provences and population
 		Utils.cargo_values.create_provinces_and_pop()
@@ -55,8 +56,9 @@ func initialize_game() -> void:
 	enable_nation_picker()
 
 func _input(event: InputEvent) -> void:
+	var cell_position: Vector2i = get_cell_position()
 	main_map.update_hover()
-	camera.update_coord_label(get_cell_position())
+	camera.update_coord_label(cell_position)
 	if event.is_action_pressed("click"):
 		if state_machine.is_picking_nation():
 			pick_nation()
@@ -71,22 +73,24 @@ func _input(event: InputEvent) -> void:
 		elif state_machine.is_building_road_depot():
 			main_map.place_road_depot()
 	elif event.is_action_released("click"):
-		if state_machine.is_controlling_camera() and terminal_map.get_instance().is_owned_station(get_cell_position(), unique_id):
-			station_window.open_window(get_cell_position())
-		elif state_machine.is_controlling_camera() and terminal_map.get_instance().is_station(get_cell_position()):
-			viewer_station_window.open_window(get_cell_position())
-		elif state_machine.is_controlling_camera() and terminal_map.get_instance().is_owned_recipeless_construction_site(get_cell_position()):
-			factory_recipe_window.open_window(get_cell_position())
-		elif state_machine.is_controlling_camera() and terminal_map.get_instance().is_owned_construction_site(get_cell_position()):
-			factory_construction_window.open_window(get_cell_position())
-		elif state_machine.is_controlling_camera() and terminal_map.get_instance().is_factory(get_cell_position()):
-			factory_window.open_window(get_cell_position())
-		elif state_machine.is_controlling_camera() and map_data.get_instance().is_owned_depot(get_cell_position(), unique_id):
-			depot_window.open_window(get_cell_position())
+		if state_machine.is_controlling_camera() and terminal_map.get_instance().is_owned_station(cell_position, unique_id):
+			station_window.open_window(cell_position)
+		elif state_machine.is_controlling_camera() and terminal_map.get_instance().is_station(cell_position):
+			viewer_station_window.open_window(cell_position)
+		elif state_machine.is_controlling_camera() and terminal_map.get_instance().is_owned_recipeless_construction_site(cell_position):
+			factory_recipe_window.open_window(cell_position)
+		elif state_machine.is_controlling_camera() and terminal_map.get_instance().is_owned_construction_site(cell_position):
+			factory_construction_window.open_window(cell_position)
+		elif state_machine.is_controlling_camera() and terminal_map.get_instance().is_factory(cell_position):
+			factory_window.open_window(cell_position)
+		elif state_machine.is_controlling_camera() and terminal_map.get_instance().is_town(cell_position):
+			town_window.open_window(cell_position)
+		elif state_machine.is_controlling_camera() and map_data.get_instance().is_owned_depot(cell_position, unique_id):
+			depot_window.open_window(cell_position)
 		elif state_machine.is_building_many_rails():
 			main_map.place_rail_to_start()
 		elif state_machine.is_controlling_camera():
-			main_map.open_tile_window(get_cell_position())
+			main_map.open_tile_window(cell_position)
 		main_map.reset_start()
 	elif event.is_action_pressed("deselect"):
 		main_map.clear_all_temps()
@@ -94,7 +98,7 @@ func _input(event: InputEvent) -> void:
 			camera.unpress_all_buttons()
 			state_machine.default()
 	elif event.is_action_pressed("debug_place_train") and state_machine.is_controlling_camera():
-		main_map.create_train.rpc(get_cell_position())
+		main_map.create_train.rpc(cell_position)
 	elif event.is_action_pressed("debug_print") and state_machine.is_controlling_camera():
 		unit_creator_window.popup()
 	elif event.is_action_pressed("debug_ai_cycle") and state_machine.is_controlling_camera():

@@ -119,7 +119,7 @@ func assign_cargo_map(_cargo_map: TileMapLayer) -> void:
 	cargo_map = _cargo_map
 
 func create_station(coords: Vector2i, new_owner: int) -> void:
-	var new_station: Station = Station.create(coords, new_owner)
+	var new_station: Station = Station.new(coords, new_owner)
 	create_terminal(new_station)
 
 func create_road_depot(_coords: Vector2i, _player_id: int) -> void:
@@ -388,6 +388,14 @@ func get_available_primary_recipes(coords: Vector2i) -> Array:
 
 func is_town(coords: Vector2i) -> bool:
 	return get_terminal(coords) is Town
+
+func get_town(coords: Vector2i) -> Town:
+	var toReturn: Town = null
+	if is_town(coords):
+		mutex.lock()
+		toReturn = cargo_map_terminals[coords]
+		mutex.unlock()
+	return toReturn
 
 func get_town_fulfillment(coords: Vector2i) -> Dictionary[int, float]:
 	var toReturn: Dictionary[int, float] = {}

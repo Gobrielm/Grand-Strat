@@ -8,7 +8,7 @@ func _init(p_supply_needed: Dictionary[int, int]) -> void:
 	current_supply = FixedHold.create(Vector2i(0, 0), 0, 10) #Owner doesn;t matter
 	for type: int in supply_needed:
 		current_supply.add_accept(type)
-		current_supply.add_cargo(type, current_supply.max_amount)
+		current_supply.add_cargo(type, current_supply.get_max_storage())
 
 static func create_with_client_array(client_array: Array) -> organization:
 	var toReturn: organization = organization.new(client_array[0])
@@ -18,9 +18,9 @@ static func create_with_client_array(client_array: Array) -> organization:
 func set_current_storage(p_storage: Dictionary) -> void:
 	current_supply.set_current_hold(p_storage)
 
-##[supply_needed, current_supply.storage]
+##[supply_needed, current_supply.get_current_hold()]
 func convert_to_client_array() -> Array:
-	return [supply_needed, current_supply.storage]
+	return [supply_needed, current_supply.get_current_hold()]
 
 func get_organization() -> float:
 	var fulfillment: float = 0.0
