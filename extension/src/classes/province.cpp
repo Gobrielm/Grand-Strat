@@ -1,7 +1,27 @@
 #include "province.hpp"
 
 void Province::_bind_methods() {
+    ClassDB::bind_static_method(get_class_static(), D_METHOD("create", "prov_id"), &Province::create);
 
+    ClassDB::bind_method(D_METHOD("add_tile", "coords"), &Province::add_tile);
+    ClassDB::bind_method(D_METHOD("get_tiles"), &Province::get_tiles);
+    ClassDB::bind_method(D_METHOD("get_random_tile"), &Province::get_random_tile);
+
+    ClassDB::bind_method(D_METHOD("add_population", "population_to_add"), &Province::add_population);
+    ClassDB::bind_method(D_METHOD("set_population", "new_population"), &Province::set_population);
+    ClassDB::bind_method(D_METHOD("get_population"), &Province::get_population);
+
+    ClassDB::bind_method(D_METHOD("set_country_id", "country_id"), &Province::set_country_id);
+
+    ClassDB::bind_method(D_METHOD("add_terminal", "tile", "terminal"), &Province::add_terminal);
+    ClassDB::bind_method(D_METHOD("remove_terminal", "tile"), &Province::remove_terminal);
+    ClassDB::bind_method(D_METHOD("get_terminals"), &Province::get_terminals);
+
+    ClassDB::bind_method(D_METHOD("create_pops"), &Province::create_pops);
+    ClassDB::bind_method(D_METHOD("count_pops"), &Province::count_pops);
+
+    ClassDB::bind_method(D_METHOD("day_tick"), &Province::day_tick);
+    ClassDB::bind_method(D_METHOD("month_tick"), &Province::month_tick);
 }
     
 
@@ -121,23 +141,48 @@ std::vector<Town*> Province::get_towns() const {
 int Province::count_pops() const {
     return pops.size();
 }
+
 FactoryTemplate* Province::find_employment(BasePop* pop) const {
+    float max_wage = 0.0;
+    FactoryTemplate* best_fact = nullptr;
+    
     if (dynamic_cast<TownPop*>(pop)) {
-        //TODO: Add buildings to cities
-    }
-	if (dynamic_cast<RuralPop*>(pop)) {
+        best_fact = find_urban_employment(pop);
+    } else if (dynamic_cast<RuralPop*>(pop)) {
         for (const auto &[__, term]: terminal_tiles) {
             FactoryTemplate* fact = dynamic_cast<FactoryTemplate*>(term);
-            if (fact && will_work_here(pop, fact))
-				return fact;
+            if (fact && pop -> will_work_here(fact) && fact -> get_wage() > max_wage)
+                best_fact = fact;
+                max_wage = fact -> get_wage();
         }
     }
-	return nullptr;
+	return best_fact;
 }
 
-bool Province::will_work_here(BasePop* pop, FactoryTemplate* fact) const {
-    if (!fact -> is_hiring()) return false;
-	float income = fact -> get_wage();
-	if (pop -> is_income_acceptable(income)) return true;
-	return false;
+FactoryTemplate* Province::find_urban_employment(BasePop* pop) const {
+    float max_wage = 0.0;
+    FactoryTemplate* best_fact = nullptr;
+    for (Town* town: get_towns()) {
+        FactoryTemplate* fact = town -> find_employment(pop);
+        if (fact -> get_wage() > max_wage) {
+            best_fact = fact;
+            max_wage = fact -> get_wage();
+        }
+    }
+    return best_fact;
+}
+
+void Province::day_tick() {
+
+}
+
+void Province::month_tick() {
+    for (BasePop* pop: pops) {
+        if (pop -> is_seeking_employment()) {
+            FactoryTemplate* work = find_employment(pop);
+            if (work != nullptr) {
+                pop -> work_here(work);
+            }
+        }
+    }
 }

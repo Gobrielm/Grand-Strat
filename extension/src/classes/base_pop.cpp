@@ -91,10 +91,6 @@ void BasePop::set_home_prov_id(int p_home_prov_id) {
     home_prov_id = p_home_prov_id;
 }
 
-// void BasePop::find_employment() const {
-
-// }
-
 bool BasePop::is_seeking_employment() const {
     if (income == 0) {
         return true;
@@ -103,6 +99,19 @@ bool BasePop::is_seeking_employment() const {
         return false;
     }
 }
+
+bool BasePop::will_work_here(FactoryTemplate* fact) const {
+    //Checking of suitability, eg Literacy, 
+    if (!fact -> is_hiring()) return false;
+	float income = fact -> get_wage();
+	if (is_income_acceptable(income)) return true;
+	return false;
+}
+
+void BasePop::work_here(FactoryTemplate* work) {
+    work -> work_here(this);
+}
+
 void BasePop::pay_wage(float wage) {
     wealth += wage;
 }

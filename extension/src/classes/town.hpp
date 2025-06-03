@@ -55,6 +55,7 @@ public:
     void sell_to_pops();
     void sell_type(int type);
     int get_total_pops() const;
+    FactoryTemplate* find_employment(BasePop* pop) const;
 
     //Selling to brokers
     void sell_to_other_brokers();

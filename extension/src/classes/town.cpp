@@ -153,6 +153,20 @@ int Town::get_total_pops() const {
     return city_pops.size();
 }
 
+FactoryTemplate* Town::find_employment(BasePop* pop) const {
+    float max_wage = 0.0;
+    FactoryTemplate* best_fact = nullptr;
+    
+    for (const auto &[__, fact_vector]: internal_factories) {
+        for (const auto &fact: fact_vector) {
+            if (pop -> will_work_here(fact) && fact -> get_wage() > max_wage)
+                best_fact = fact;
+                max_wage = fact -> get_wage();
+        }
+    }
+	return best_fact;
+}
+
 //Selling to brokers
 void Town::sell_to_other_brokers() {
     std::vector<int> supply = market->get_supply();

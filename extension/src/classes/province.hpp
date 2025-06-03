@@ -53,9 +53,10 @@ class Province : public Object {
     void create_pops();
     int count_pops() const;
     FactoryTemplate* find_employment(BasePop* pop) const;
-    bool will_work_here(BasePop* pop, FactoryTemplate* fact) const;
+    FactoryTemplate* find_urban_employment(BasePop* pop) const;
 
-   
+    void day_tick();
+    void month_tick();
     
 
     
