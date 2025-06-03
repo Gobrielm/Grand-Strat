@@ -24,6 +24,7 @@
 #include "../classes/factory.hpp"
 #include "../classes/ai_factory.hpp"
 #include "../classes/private_ai_factory.hpp"
+#include "../classes/road_depot_wo_methods.hpp"
 #include "../singletons/money_controller.hpp"
 
 
@@ -61,6 +62,7 @@ void initialize_gdextension_types(ModuleInitializationLevel p_level)
 	GDREGISTER_CLASS(Factory);
 	GDREGISTER_CLASS(AiFactory);
 	GDREGISTER_CLASS(PrivateAiFactory);
+	GDREGISTER_CLASS(RoadDepotWOMethods);
 	GDREGISTER_CLASS(CargoInfo);
 	StaticRegistry::initialize();
 	

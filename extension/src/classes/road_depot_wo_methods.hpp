@@ -15,9 +15,10 @@ class RoadDepotWOMethods : public StationWOMethods {
     GDCLASS(RoadDepotWOMethods, StationWOMethods)
 
 private:
-    static constexpr int MAX_SUPPLY_DISTANCE = 10;
-    std::unordered_map<Vector2i, int, godot_helpers::Vector2iHasher> supplied_tiles = {};
-    virtual void supply_armies();
+    std::unordered_map<Vector2i, RoadDepotWOMethods*, godot_helpers::Vector2iHasher> other_road_depots = {};
+    static constexpr int MAX_THROUGHPUT = 20;
+    int cargo_sent = 0;
+
     GDVIRTUAL0(supply_armies);
 
 protected:
@@ -32,10 +33,10 @@ public:
 
     void distribute_cargo() override;
     void distribute_type(int type);
-    void distribute_type_to_broker(int type, Broker* broker);
+    void distribute_type_to_road_depot(int type, RoadDepotWOMethods* road_depot);
 
-    virtual void add_connected_broker(Broker* new_broker) override;
-    virtual void remove_connected_broker(const Broker* new_broker) override;
+    void add_connected_road_depot(RoadDepotWOMethods* new_road_depot);
+    void remove_connected_road_depot(const RoadDepotWOMethods* new_road_depot);
 
     virtual void day_tick();
 };

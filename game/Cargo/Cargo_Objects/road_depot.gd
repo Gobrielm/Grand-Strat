@@ -1,34 +1,50 @@
-#class_name road_depot extends Station
-#
-##TODO: Make a wrapped c++ road_depot then implement most in here
-#
-#var supplied_tiles: Dictionary[Vector2i, int] = {}
-#
-#const MAX_DISTANCE: int = 5
-##If distance is 5 then 5 * 1 = 5 cargo delievered
-#const CARGO_DELIEVERED_PER_UNIT_DISTANCE: int = 1
-#
-#func _init(coords: Vector2i, _player_owner: int) -> void:
-	#assert(false, "Not finished implementing")
-	#super._init(coords, _player_owner)
-#
-#func distribute_on_roads() -> void:
-	#for type: int in get_current_hold():
-		#distribute_type(type)
-#
-#func distribute_type(type: int) -> void:
-	#for tile: Vector2i in supplied_tiles:
-		#var broker_obj: Broker = terminal_map.get_instance().get_broker(tile)
-		#if broker_obj != null and broker_obj.does_accept(type):
-			##Only sends stuff inside country
-			#if tile_ownership.get_instance().is_owned(player_owner, broker_obj.get_location()):
-				#distribute_type_to_broker(type, broker_obj)
-#
-#func distribute_type_to_broker(type: int, broker_obj: Broker) -> void:
-	#var coords: Vector2i = broker_obj.get_location()
-	#var amount: int = broker_obj.get_amount_to_add(type, supplied_tiles[coords])
-	#amount = transfer_cargo(type, amount)
-	#broker_obj.add_cargo(type, amount)
-#
-#func day_tick() -> void:
-	#pass
+class_name RoadDepot extends RoadDepotWOMethods
+
+func _init(coords: Vector2i, _player_owner: int) -> void:
+	super.initialize(coords, _player_owner)
+
+func supply_armies() -> void:
+	var units_to_supply: Dictionary[Vector2i, int] = get_units_to_supply()
+	if units_to_supply.size() > 0:
+		print("supplying unit")
+	for tile: Vector2i in units_to_supply:
+		var storage: Dictionary = get_current_hold()
+		for type: int in storage:
+			if storage[type] == 0:
+				continue
+			supply_army(tile, type, units_to_supply[tile])
+
+func get_units_to_supply() -> Dictionary[Vector2i, int]:
+	var map: TileMapLayer = Utils.world_map
+	var unit_map: TileMapLayer = Utils.unit_map
+	var visited: Dictionary = {}
+	visited[get_location()] = MAX_SUPPLY_DISTANCE
+	var queue: Array = [get_location()]
+	var units_to_supply: Dictionary[Vector2i, int] = {}
+	while !queue.is_empty():
+		var curr: Vector2i = queue.pop_front()
+		for tile: Vector2i in map.get_surrounding_cells(curr):
+			if !visited.has(tile) or (visited.has(tile) and visited[tile] < visited[curr] - SUPPLY_DROPOFF):
+				#Can't supply through enemy units
+				if unit_map.tile_has_enemy_army(tile, player_owner):
+					continue
+				visited[tile] = visited[curr] - SUPPLY_DROPOFF
+				if visited[tile] > 0:
+					queue.push_back(tile)
+					if unit_map.tile_has_friendly_army(tile, player_owner):
+						units_to_supply[tile] = visited[tile]
+	return units_to_supply
+
+func supply_army(tile: Vector2i, type: int, max_supply: int) -> void:
+	var army_obj: army = Utils.unit_map.get_army(tile, player_owner)
+	if army_obj == null:
+		return
+	for unit: base_unit in army_obj.get_units():
+		supply_unit(unit, type, max_supply)
+	
+func supply_unit(unit: base_unit, type: int, max_supply: int) -> void:
+	var org: organization = unit.org
+	var desired: int = min(org.get_desired_cargo(type), max_supply)
+	var amount: int = transfer_cargo(type, desired)
+	org.add_cargo(type, amount)
+	#TODO: Do some storing of, amount spent/goods used, on war
