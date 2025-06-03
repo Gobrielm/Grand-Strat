@@ -4,6 +4,7 @@
 #include <godot_cpp/core/defs.hpp>
 #include <godot_cpp/godot.hpp>
 
+#include "static_registry.hpp"
 #include "../classes/base_pop.hpp"
 #include "../classes/rural_pop.hpp"
 #include "../classes/town_pop.hpp"
@@ -26,13 +27,18 @@
 #include "../singletons/money_controller.hpp"
 
 
+
 using namespace godot;
 
 void initialize_gdextension_types(ModuleInitializationLevel p_level)
 {
+
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
+
+	
+
 	//--verbose in godot for more details
 	GDREGISTER_CLASS(LocalPriceController);
 	GDREGISTER_CLASS(MoneyController);
@@ -55,7 +61,8 @@ void initialize_gdextension_types(ModuleInitializationLevel p_level)
 	GDREGISTER_CLASS(Factory);
 	GDREGISTER_CLASS(AiFactory);
 	GDREGISTER_CLASS(PrivateAiFactory);
-
+	GDREGISTER_CLASS(CargoInfo);
+	StaticRegistry::initialize();
 	
 }
 

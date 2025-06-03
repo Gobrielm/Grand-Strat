@@ -11,8 +11,6 @@ void CargoInfo::_bind_methods() {
 }
 
 CargoInfo::CargoInfo() {
-    ERR_FAIL_COND_MSG(singleton_instance != nullptr, "Cannot create multiple instances of singleton!");
-    singleton_instance.instantiate();
     int i = 0;
     for (const auto& [name, __]: base_prices) {
         cargo_names[i] = name;
@@ -21,8 +19,13 @@ CargoInfo::CargoInfo() {
     }
 }
 
+void CargoInfo::initialize_singleton() {
+    ERR_FAIL_COND_MSG(singleton_instance != nullptr, "Cannot create multiple instances of singleton!");
+    singleton_instance.instantiate();
+}
+
 Ref<CargoInfo> CargoInfo::get_instance() {
-    ERR_FAIL_COND_V_MSG(singleton_instance == nullptr, nullptr, "Money_Manager has not been created but is being accessed");
+    ERR_FAIL_COND_V_MSG(singleton_instance == nullptr, nullptr, "CargoInfo has not been created but is being accessed");
     return singleton_instance;
 }
 

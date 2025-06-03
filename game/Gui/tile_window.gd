@@ -45,7 +45,7 @@ func request_province_pop(p_coords: Vector2i) -> void:
 func request_province_pops(p_coords: Vector2i) -> void:
 	var map_data_obj: map_data = map_data.get_instance()
 	var prov_id: int = map_data_obj.get_province_id(p_coords)
-	var prov: province = map_data_obj.get_province(prov_id)
+	var prov: Province = map_data_obj.get_province(prov_id)
 	set_province_pops.rpc_id(multiplayer.get_remote_sender_id(), prov.count_pops())
 
 @rpc("authority", "call_local")

@@ -21,12 +21,12 @@ func create_town(coords: Vector2i, prov_id: int) -> void:
 
 func add_terminal_to_province(term: Terminal) -> void:
 	var map_dat: map_data = map_data.get_instance()
-	var prov: province = map_dat.get_province(map_dat.get_province_id(term.location))
+	var prov: Province = map_dat.get_province(map_dat.get_province_id(term.location))
 	prov.add_terminal(term.location, term)
 
 func remove_terminal_from_province(coords: Vector2i) -> void:
 	var map_dat: map_data = map_data.get_instance()
-	var prov: province = map_dat.get_province(map_dat.get_province_id(coords))
+	var prov: Province = map_dat.get_province(map_dat.get_province_id(coords))
 	prov.remove_terminal(coords)
 
 func transform_construction_site_to_factory(coords: Vector2i) -> void:
@@ -44,19 +44,19 @@ func place_random_industries() -> void:
 			{ "threshold": 10000,    "mod": 10, "mult": 2, "count": 1 },
 			{ "threshold": 0,        "mod": 30, "mult": 1, "count": 1 }
 		]
-		var prov: province = map_data_singleton.get_province(province_id)
+		var prov: Province = map_data_singleton.get_province(province_id)
 		create_town_in_province(prov)
 		for entry: Dictionary in chances:
 			if pop > entry.threshold and randi() % entry.mod == 0:
 				pick_and_place_random_industry(prov, entry.count, entry.mult)
 				break
 		
-func create_town_in_province(prov: province) -> void:
+func create_town_in_province(prov: Province) -> void:
 	var tile: Vector2i = prov.get_random_tile()
 	if tile != Vector2i(0, 0):
-		create_town(tile, prov.province_id)
+		create_town(tile, prov.get_province_id())
 
-func pick_and_place_random_industry(prov: province, count: int, multiplier: int) -> void:
+func pick_and_place_random_industry(prov: Province, count: int, multiplier: int) -> void:
 	for i: int in range(count):
 		var result: bool = place_random_industry(prov.get_random_tile(), randi() % multiplier)
 		var tries: int = 0

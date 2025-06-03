@@ -71,7 +71,7 @@ void BasePop::create_base_needs(Dictionary d) { //d<int, float>
     Array keys = d.keys();
     for (int i = 0; i < keys.size(); i++) {
         int type = keys[i];
-        base_needs[type] = (d)[type];
+        base_needs[type] = d[type];
     }
 }
 
@@ -110,6 +110,7 @@ bool BasePop::will_work_here(FactoryTemplate* fact) const {
 
 void BasePop::work_here(FactoryTemplate* work) {
     work -> work_here(this);
+    UtilityFunctions::print("I started working");
 }
 
 void BasePop::pay_wage(float wage) {

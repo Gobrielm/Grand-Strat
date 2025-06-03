@@ -7,7 +7,7 @@
 #include "town.hpp"
 
 void Province::_bind_methods() {
-    ClassDB::bind_static_method(get_class_static(), D_METHOD("create", "prov_id"), &Province::create);
+    ClassDB::bind_static_method(get_class_static(), D_METHOD("create", "p_prov_id"), &Province::create);
 
     ClassDB::bind_method(D_METHOD("add_tile", "coords"), &Province::add_tile);
     ClassDB::bind_method(D_METHOD("get_tiles"), &Province::get_tiles);
@@ -17,6 +17,8 @@ void Province::_bind_methods() {
     ClassDB::bind_method(D_METHOD("set_population", "new_population"), &Province::set_population);
     ClassDB::bind_method(D_METHOD("get_population"), &Province::get_population);
 
+    ClassDB::bind_method(D_METHOD("get_country_id"), &Province::get_country_id);
+    ClassDB::bind_method(D_METHOD("get_province_id"), &Province::get_province_id);
     ClassDB::bind_method(D_METHOD("set_country_id", "country_id"), &Province::set_country_id);
 
     ClassDB::bind_method(D_METHOD("add_terminal", "tile", "terminal"), &Province::add_terminal);
@@ -30,7 +32,6 @@ void Province::_bind_methods() {
     ClassDB::bind_method(D_METHOD("month_tick"), &Province::month_tick);
 }
     
-
 Province* Province::create(int p_prov_id) {
     return memnew(Province(p_prov_id));
 }
@@ -38,15 +39,15 @@ Province* Province::create(int p_prov_id) {
 void Province::initialize(int p_prov_id) {
     province_id = p_prov_id;
     population = 0;
-	tiles = {};
-	terminal_tiles = {};
 }
 
 Province::Province() {
-    initialize();
+    province_id = -1;
+    population = 0;
 }
 Province::Province(int p_prov_id) {
-    initialize(p_prov_id);
+    province_id = p_prov_id;
+    population = 0;
 }
 Province::~Province() {
     for (BasePop* pop: pops) {
@@ -54,7 +55,6 @@ Province::~Province() {
     }
     pops.clear();
 }
-
 
 void Province::add_tile(Vector2i coords) {
     tiles.push_back(coords);
@@ -72,6 +72,14 @@ void Province::set_population(int new_population) {
     population = new_population;
 }
 
+int Province::get_province_id() const {
+    return province_id;
+}
+
+int Province::get_country_id() const {
+    return country_id;
+}
+
 void Province::set_country_id(int p_country_id) {
     country_id = p_country_id;
 }
@@ -84,8 +92,20 @@ Array Province::get_tiles() const {
     return a;
 }
 
+//Used to pick a place for random industries, don't pick places with industries
 Vector2i Province::get_random_tile() const {
-    return tiles.at(rand() % (tiles.size() - 1));
+    std::vector<Vector2i> tiles_copy;
+    for (Vector2i tile: tiles) {
+        if (!terminal_tiles.count(tile)) {
+            tiles_copy.push_back(tile);
+        }
+    }
+    if (tiles_copy.size() == 0) {
+        return Vector2i(0, 0);
+    } else if (tiles_copy.size() == 1) {
+        return tiles_copy.at(0);
+    }
+    return tiles_copy.at(rand() % (tiles_copy.size() - 1));
 }
 
 void Province::add_terminal(Vector2i tile, Terminal* term) {

@@ -8,7 +8,7 @@ var depots: Dictionary[Vector2i, Terminal] = {}
 
 var holds: Dictionary = {}
 
-var provinces: Dictionary = {}
+var provinces: Dictionary[int, Province] = {}
 
 var tiles_to_province_id: Dictionary = {}
 
@@ -74,14 +74,14 @@ func is_owned_hold(coords: Vector2i, id: int) -> bool:
 func create_new_province() -> int:
 	mutex.lock()
 	var province_id: int = provinces.size()
-	provinces[province_id] = province.new(province_id)
+	provinces[province_id] = Province.create(province_id)
 	mutex.unlock()
 	return province_id
 
 func create_new_if_empty(province_id: int) -> void:
 	mutex.lock()
 	if !provinces.has(province_id):
-		provinces[province_id] = province.new(province_id)
+		provinces[province_id] = Province.create(province_id)
 	mutex.unlock()
 
 func add_tile_to_province(province_id: int, tile: Vector2i) -> void:
@@ -114,7 +114,7 @@ func get_population_as_level(province_id: int) -> int:
 
 func get_total_population() -> int:
 	var total: int = 0
-	for prov: province in provinces.values():
+	for prov: Province in provinces.values():
 		total += prov.get_population()
 	return total
 
@@ -137,12 +137,12 @@ func create_pops() -> void:
 
 func create_pops_range(i: int, j: int, provs: Array) -> void:
 	for index: int in range(i, j):
-		var prov: province = provs[index]
+		var prov: Province = provs[index]
 		prov.create_pops()
 
 # === province Checks ===
-func get_provinces() -> Array[province]:
-	var toReturn: Array[province] = []
+func get_provinces() -> Array[Province]:
+	var toReturn: Array[Province] = []
 	toReturn.assign(provinces.values())
 	return toReturn
 
@@ -160,23 +160,23 @@ func get_province_id(tile: Vector2i) -> int:
 	mutex.unlock()
 	return toReturn
 
-func get_province(province_id: int) -> province:
-	var toReturn: province = null
+func get_province(province_id: int) -> Province:
+	var toReturn: Province = null
 	mutex.lock()
 	if provinces.has(province_id):
 		toReturn = provinces[province_id] 
 	mutex.unlock()
 	return toReturn
 
-func add_province_to_country(prov: province, country_id: int) -> void:
-	var old_id: int = prov.country_id
+func add_province_to_country(prov: Province, country_id: int) -> void:
+	var old_id: int = prov.get_country_id()
 	#Gets rid of it from old country
 	if old_id != -1:
-		country_id_to_province_ids[old_id].erase(prov.province_id)
+		country_id_to_province_ids[old_id].erase(prov.get_province_id())
 	prov.set_country_id(country_id)
 	if !country_id_to_province_ids.has(country_id):
 		country_id_to_province_ids[country_id] = {}
-	country_id_to_province_ids[country_id][prov.province_id] = true
+	country_id_to_province_ids[country_id][prov.get_province_id()] = true
 
 func get_counties_provinces(country_id: int) -> Dictionary:
 	return country_id_to_province_ids[country_id]

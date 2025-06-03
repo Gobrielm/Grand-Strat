@@ -35,6 +35,7 @@ protected:
 
 public:
     CargoInfo();
+    static void initialize_singleton();
     
     static Ref<CargoInfo> get_instance();
 

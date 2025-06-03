@@ -218,8 +218,8 @@ func use_image_to_create_unique_province_colors() -> void:
 	var new_image: Image = Image.create(1920, 919, false, Image.FORMAT_RGBA8)
 	var colors: Dictionary[Color, bool] = {}
 	var prov_id_to_color: Dictionary[int, Color] = {}
-	for prov: province in map_data_obj.get_provinces():
-		var prov_id: int = prov.province_id
+	for prov: Province in map_data_obj.get_provinces():
+		var prov_id: int = prov.get_province_id()
 		for tile: Vector2i in prov.get_tiles():
 			@warning_ignore("integer_division")
 			var x: int = (tile.x + 609) * 3 / 2

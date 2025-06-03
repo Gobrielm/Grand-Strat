@@ -58,7 +58,6 @@ Town::~Town() {
         }
     }
     internal_factories.clear();
-
 }
 
 Town::Town(Vector2i new_location): Broker(new_location, 0) {

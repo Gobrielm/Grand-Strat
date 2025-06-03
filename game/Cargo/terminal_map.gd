@@ -131,19 +131,18 @@ func create_terminal(p_terminal: Terminal) -> void:
 	mutex.lock()
 	object_mutexs[coords] = Mutex.new()
 	cargo_map_terminals[coords] = p_terminal
-	add_connected_terminals(p_terminal)
+	if p_terminal is Broker:
+		add_connected_brokers(p_terminal)
 	mutex.unlock()
 
-func add_connected_terminals(p_terminal: Terminal) -> void:
-	var connected_terms: Array[Vector2i] = map.thread_get_surrounding_cells(p_terminal.get_location())
+func add_connected_brokers(p_broker: Broker) -> void:
+	var connected_terms: Array[Vector2i] = map.thread_get_surrounding_cells(p_broker.get_location())
 	for tile: Vector2i in connected_terms:
-		var o_terminal: Terminal = get_terminal(tile)
-		if o_terminal == null:
+		var o_broker: Broker = get_broker(tile)
+		if o_broker == null:
 			continue
-		if p_terminal.has_method("add_connected_terminal"):
-			p_terminal.add_connected_terminal(o_terminal)
-		if o_terminal.has_method("add_connected_terminal"):
-			o_terminal.add_connected_terminal(p_terminal)
+		p_broker.add_connected_broker(o_broker)
+		o_broker.add_connected_broker(p_broker)
 
 func is_hold(coords: Vector2i) -> bool:
 	mutex.lock()
@@ -348,7 +347,7 @@ func create_cargo_types() -> void:
 		cargo_names_to_types[cargo_types[type]] = type
 
 func create_base_prices() -> void:
-	LocalPriceController.set_base_prices()
+	#LocalPriceController.set_base_prices()
 	assert(base_prices.size() == cargo_types.size())
 
 func get_number_of_goods() -> int:

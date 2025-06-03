@@ -22,14 +22,14 @@ func create_countries() -> void:
 	var map_data_inst: map_data = map_data.get_instance()
 	var provinces_to_add: Array = [Vector2i(89, -112), Vector2i(105, -116), Vector2i(103, -105), Vector2i(103, -97), Vector2i(114, -114)]
 	for cell: Vector2i in provinces_to_add:
-		var prov: province = map_data_inst.get_province(map_data_inst.get_province_id(cell))
-		map_data_inst.add_province_to_country(prov, 1)
-		for tile: Vector2i in prov.get_tiles():
+		var province: Province = map_data_inst.get_province(map_data_inst.get_province_id(cell))
+		map_data_inst.add_province_to_country(province, 1)
+		for tile: Vector2i in province.get_tiles():
 			add_tile_to_country(tile, 1)
-	for prov: province in map_data_inst.get_provinces():
-		if prov.country_id == -1:
-			map_data_inst.add_province_to_country(prov, 2)
-			for cell: Vector2i in prov.get_tiles():
+	for province: Province in map_data_inst.get_provinces():
+		if province.get_country_id() == -1:
+			map_data_inst.add_province_to_country(province, 2)
+			for cell: Vector2i in province.get_tiles():
 				add_tile_to_country(cell, 2)
 
 func add_tile_to_country(tile: Vector2i, country_id: int) -> void:

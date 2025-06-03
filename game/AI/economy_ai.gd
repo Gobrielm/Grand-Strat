@@ -100,7 +100,7 @@ func get_owned_terminals() -> Array[Terminal]:
 	var toReturn: Array[Terminal] = []
 	var map_data_inst: map_data = map_data.get_instance()
 	for prov_id: int in map_data_inst.get_counties_provinces(country_id):
-		var prov: province = map_data_inst.get_province(prov_id)
+		var prov: Province = map_data_inst.get_province(prov_id)
 		for term: Terminal in prov.get_terminals():
 			toReturn.append(term)
 	return toReturn

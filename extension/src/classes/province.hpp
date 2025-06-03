@@ -44,6 +44,8 @@ class Province : public Object {
     int get_population() const;
     void add_population(int population_to_add);
     void set_population(int new_population);
+    int get_province_id() const;
+    int get_country_id() const;
     void set_country_id(int p_country_id);
     Array get_tiles() const;
     Vector2i get_random_tile() const;
