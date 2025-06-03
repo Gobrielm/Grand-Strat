@@ -59,7 +59,7 @@ void FactoryTemplate::initialize(Vector2i new_location, int player_owner, Dictio
     Array output_keys = new_outputs.keys();
     for (int i = 0; i < output_keys.size(); i++) {
         int type = output_keys[i];
-        inputs[type] = new_outputs[type];
+        outputs[type] = new_outputs[type];
     }
     local_pricer = memnew(LocalPriceController(inputs, outputs));
     pops_needed = 1;
@@ -101,7 +101,7 @@ int FactoryTemplate::get_batch_size() const {
         batch_size = std::min((int)floor(get_cargo_amount(type) / amount), batch_size);
     }
     for (auto& [type, amount]: outputs) {
-        batch_size = std::min((int)floor(get_max_storage() - get_cargo_amount(type) / amount), batch_size);
+        batch_size = std::min((int)floor((get_max_storage() - get_cargo_amount(type)) / amount), batch_size);
     }
     return batch_size;
 }

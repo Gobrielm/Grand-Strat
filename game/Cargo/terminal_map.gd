@@ -81,7 +81,6 @@ func _on_month_tick_timeout() -> void:
 		#month_threads.push_back(temp_thread)
 
 func _on_month_tick_timeout_helper(keys: Array, from: int, to: int) -> void:
-	var total_pops: int = 0
 	for i: int in range(from, to):
 		var coords: Vector2i = keys[i]
 		#If index is near the day_tick then give up priority
@@ -93,7 +92,6 @@ func _on_month_tick_timeout_helper(keys: Array, from: int, to: int) -> void:
 		if obj.has_method("month_tick"):
 			obj.month_tick()
 		obj_mutex.unlock()
-	print(total_pops)
 
 func clear() -> void:
 	mutex.lock()

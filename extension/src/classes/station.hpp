@@ -17,7 +17,6 @@ class StationWOMethods : public Broker {
 private:
     static constexpr int SUPPLY_DROPOFF = 1;
     static constexpr int MAX_SUPPLY_DISTANCE = 5;
-    static constexpr int MAX_SUPPLY_GIVEN = 5;
 
     virtual void supply_armies();
     GDVIRTUAL0(supply_armies);
@@ -43,7 +42,7 @@ public:
     void edit_order(int type, int amount, bool buy, float max_price) override;
     int get_orders_magnitude();
     void remove_order(int type) override;
-    void distribute_cargo() override;
+    virtual void distribute_cargo() override;
 
     virtual void add_connected_broker(Broker* new_broker) override;
     virtual void remove_connected_broker(const Broker* new_broker) override;

@@ -1,0 +1,41 @@
+#pragma once
+
+#include "broker.hpp"
+#include "trade_order.hpp"
+#include "local_price_controller.hpp"
+#include "station.hpp"
+#include <godot_cpp/variant/dictionary.hpp>
+
+#include <godot_cpp/core/binder_common.hpp>
+#include <godot_cpp/core/gdvirtual.gen.inc>
+
+using namespace godot;
+
+class RoadDepotWOMethods : public StationWOMethods {
+    GDCLASS(RoadDepotWOMethods, StationWOMethods)
+
+private:
+    static constexpr int MAX_SUPPLY_DISTANCE = 10;
+    std::unordered_map<Vector2i, int, godot_helpers::Vector2iHasher> supplied_tiles = {};
+    virtual void supply_armies();
+    GDVIRTUAL0(supply_armies);
+
+protected:
+    static void _bind_methods();
+
+public:
+
+    RoadDepotWOMethods();
+    RoadDepotWOMethods(Vector2i new_location, int player_owner);
+
+    virtual void initialize(Vector2i new_location, int player_owner) override;
+
+    void distribute_cargo() override;
+    void distribute_type(int type);
+    void distribute_type_to_broker(int type, Broker* broker);
+
+    virtual void add_connected_broker(Broker* new_broker) override;
+    virtual void remove_connected_broker(const Broker* new_broker) override;
+
+    virtual void day_tick();
+};

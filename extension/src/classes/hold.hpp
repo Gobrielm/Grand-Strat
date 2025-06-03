@@ -9,7 +9,6 @@ class Hold : public Firm {
     GDCLASS(Hold, Firm);
 
 private:
-    std::unordered_map<int, int> storage;
     int max_amount;
     static int NUMBER_OF_GOODS;
 
@@ -17,6 +16,7 @@ protected:
     static void _bind_methods();
 
 public:
+    std::unordered_map<int, int> storage;
     static const int DEFAULT_MAX_STORAGE;
 
     static Terminal* create(const Vector2i new_location, const int player_owner, const int p_max_amount = DEFAULT_MAX_STORAGE);

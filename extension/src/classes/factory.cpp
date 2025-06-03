@@ -29,7 +29,7 @@ bool Factory::check_recipe() {
 }
 
 bool Factory::check_inputs() {
-    for (auto& [type, amount]: inputs) {
+    for (const auto& [type, amount]: inputs) {
         if (get_cargo_amount(type) < amount) {
             return false;
         }
@@ -38,7 +38,7 @@ bool Factory::check_inputs() {
 }
 
 bool Factory::check_outputs() {
-    for (auto& [type, amount]: outputs) {
+    for (const auto& [type, amount]: outputs) {
         if (get_max_storage() - get_cargo_amount(type) < amount) {
             return false;
         }

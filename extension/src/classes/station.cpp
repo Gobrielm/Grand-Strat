@@ -17,7 +17,6 @@ void StationWOMethods::_bind_methods() {
 
     ClassDB::bind_integer_constant(get_class_static(), "Int", "SUPPLY_DROPOFF", SUPPLY_DROPOFF);
     ClassDB::bind_integer_constant(get_class_static(), "Int", "MAX_SUPPLY_DISTANCE", MAX_SUPPLY_DISTANCE);
-    ClassDB::bind_integer_constant(get_class_static(), "Int", "MAX_SUPPLY_GIVEN", MAX_SUPPLY_GIVEN);
 
     GDVIRTUAL_BIND(supply_armies);
 
