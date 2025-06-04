@@ -168,8 +168,10 @@ func get_depot_direction(coords: Vector2i) -> int:
 	return rail_placer_obj.get_depot_direction(coords)
 
 func place_road_depot() -> void:
-	if !state_machine.is_hovering_over_gui():
-		rail_placer_obj.place_road_depot(get_cell_position(), unique_id)
+	var tile: Vector2i = get_cell_position()
+	if DisplayServer.window_is_focused() and terminal_map.get_instance().is_tile_taken(tile):
+		terminal_map.get_instance().create_terminal(RoadDepot.new(tile, unique_id))
+		RoadMap.get_instance().place_road_depot(tile)
 
 #Cargo
 func is_location_valid_stop(coords: Vector2i) -> bool:

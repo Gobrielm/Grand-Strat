@@ -93,7 +93,10 @@ void StationWOMethods::distribute_cargo() {
 }
 
 void StationWOMethods::supply_armies() {
-    
+    if (GDVIRTUAL_CALL(supply_armies)) {
+        return;
+    }
+    ERR_FAIL_MSG("Not implemented");
 }
 
 void StationWOMethods::add_connected_broker(Broker* new_broker) {

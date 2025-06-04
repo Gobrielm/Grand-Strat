@@ -25,4 +25,23 @@ namespace godot_helpers {
             result *= i;
         return result;
     }
+
+    //Will be sorted with smaller weight in front, use pop_front
+    template<typename T>
+    struct weighted_value {
+        float weight;
+        T val;
+
+        weighted_value(): val(), weight(-1) {}
+
+        weighted_value(T p_val, float p_weight): val(p_val), weight(p_weight) {}
+
+        bool operator==(const weighted_value &other) const {
+            return weight == other.weight;
+        }
+
+        bool operator<(const weighted_value &other) const {
+            return weight < other.weight;
+        }
+    };
 }

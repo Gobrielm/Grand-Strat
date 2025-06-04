@@ -3,37 +3,47 @@
 RoadMap* RoadMap::singleton_instance = nullptr;
 
 void RoadMap::_bind_methods() {
+    ClassDB::bind_static_method(get_class_static(), D_METHOD("get_instance"), &RoadMap::get_instance);
+    
+    ClassDB::bind_method(D_METHOD("place_road_depot", "location"), &RoadMap::place_road_depot);
+
     ClassDB::bind_method(D_METHOD("place_road", "location"), &RoadMap::place_road);
     ClassDB::bind_method(D_METHOD("upgrade_road", "location"), &RoadMap::upgrade_road);
     ClassDB::bind_method(D_METHOD("get_road_value", "location"), &RoadMap::get_road_value);
 }
 
-RoadMap::RoadMap() {
-    set_z_as_relative(true);
-    set_y_sort_enabled(true);
+void RoadMap::_notification(int p_what) {
+    if (p_what == NOTIFICATION_READY) {
+        ERR_FAIL_COND_MSG(singleton_instance != nullptr, "RoadMap has already been created but is being created again");
+        singleton_instance = this;
+    }
+}
 
+RoadMap::RoadMap() {
     Ref<Texture2D> texture = ResourceLoader::get_singleton()->load("res://Map_Icons/roads.png");
     if (!texture.is_valid()) {
         UtilityFunctions::print("Failed to load tileset texture!");
         return;
     }
 
+    tile_set.instantiate();
+    tile_set->set_tile_shape(TileSet::TILE_SHAPE_HEXAGON);
+    tile_set->set_tile_offset_axis(TileSet::TILE_OFFSET_AXIS_VERTICAL);
+    tile_set -> set_tile_size(Vector2i(127, 110));
+    set_tile_set(tile_set);
 
-    tileset.instantiate();
-    tileset->set_tile_shape(TileSet::TILE_SHAPE_HEXAGON);
-    tileset->set_tile_offset_axis(TileSet::TILE_OFFSET_AXIS_VERTICAL);
-    tileset -> set_tile_size(Vector2i(127, 110));
+    set_z_as_relative(true);
+    set_y_sort_enabled(true);
 
     atlas_source.instantiate();
-    int source_id = tileset->add_source(atlas_source);
+    int source_id = tile_set->add_source(atlas_source);
     atlas_source -> set_texture_region_size(Vector2i(127, 128));
     atlas_source->set_texture(texture);
     atlas_source->set_texture_region_size(Vector2i(128, 128));
     atlas_source->set_separation(Vector2i(0, 64));
     
-
-
     atlas_source->create_tile(Vector2i(0, 5)); //For all 6 tile
+    atlas_source->create_tile(Vector2i(1, 5)); //For road depot
     atlas_source->create_tile(Vector2i(6, 0)); //For extra 0 tile
 
     for (int i = 0; i < 20; i++) {
@@ -48,14 +58,14 @@ RoadMap::RoadMap() {
         }
        
     }
-    
-    set_tile_set(tileset);
-    singleton_instance = this;
-
 }
 
 RoadMap::~RoadMap() {}
 
+RoadMap* RoadMap::get_instance() {
+    ERR_FAIL_COND_V_MSG(singleton_instance == nullptr, nullptr, "RoadMap has not been created but is being accessed");
+    return singleton_instance;
+}
 
 void RoadMap::place_road(Vector2i location) {
     road_value[location] = 1;
@@ -110,4 +120,8 @@ void RoadMap::fix_tile(Vector2i center, bool repeating) {
         current++;
     }
     set_cell(center, 0, Vector2i(index, y));
+}
+
+void RoadMap::place_road_depot(Vector2i location) {
+    set_cell(location, 0, Vector2i(1, 5));
 }

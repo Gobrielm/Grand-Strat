@@ -3,19 +3,11 @@ class_name RoadDepot extends RoadDepotWOMethods
 func _init(coords: Vector2i, _player_owner: int) -> void:
 	super.initialize(coords, _player_owner)
 
-func bfs_to_find_road_depots() -> void:
-	var world_map: TileMapLayer = Utils.world_map
-	var rail_singleton: rail_placer = rail_placer.get_instance()
-	var visited: Dictionary[Vector2i, float] = {}
-	var pq: priority_queue = priority_queue.new()
-	pq.insert_element(location, 0)
-	
-	while !pq.is_empty():
-		var curr: Vector2i = pq.pop_back()
-		
-		for tile: Vector2i in world_map.thread_get_surrounding_cells(curr):
-			pass
-	
+func get_road_depot(tile: Vector2i) -> RoadDepotWOMethods:
+	var terminal: Terminal = terminal_map.get_instance().get_terminal(tile)
+	if terminal is RoadDepotWOMethods:
+		return terminal
+	return null
 
 func supply_armies() -> void:
 	var units_to_supply: Dictionary[Vector2i, int] = get_units_to_supply()
