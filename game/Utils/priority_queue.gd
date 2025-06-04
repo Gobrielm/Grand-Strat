@@ -7,12 +7,13 @@ var backing_array: Array[weighted_value]
 func _init() -> void:
 	backing_array = []
 
-func pop_top() -> Variant:
+func pop_top() -> Variant: ##Use Pop front for biggest weight
 	if get_size() == 0:
 		return null
 	return (backing_array.pop_front() as weighted_value).val
 
-func pop_back() -> Variant:
+
+func pop_back() -> Variant: ##Use Pop back for smallest weight
 	if get_size() == 0:
 		return null
 	return (backing_array.pop_back() as weighted_value).val

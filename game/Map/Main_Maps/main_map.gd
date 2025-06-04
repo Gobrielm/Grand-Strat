@@ -311,7 +311,6 @@ func thread_get_surrounding_cells(center: Vector2i) -> Array[Vector2i]:
 	mutex.unlock()
 	return toReturn
 
-
 #Map Functions
 func get_cell_position() -> Vector2i:
 	mutex.lock()

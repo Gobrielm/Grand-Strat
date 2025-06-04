@@ -1,5 +1,7 @@
 extends Node
 
 func _ready() -> void:
-	MoneyController.create([1])
-	print("AA")
+	$RoadMap.place_road(Vector2i(0, 0))
+	$RoadMap.place_road(Vector2i(0, 1))
+	$RoadMap.place_road(Vector2i(1, 1))
+	$RoadMap.place_road(Vector2i(1, 0))
