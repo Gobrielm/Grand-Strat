@@ -11,6 +11,7 @@ static var building_units: bool = false
 static var selecting_route: bool = false
 static var picking_nation: bool = false
 static var building_road_depot: bool = false
+static var building_many_roads: bool = false
 
 static func print_all() -> void:
 	print(building_rails)
@@ -39,6 +40,7 @@ static func all_off() -> void:
 	building_factory = false
 	gui_inputs = false
 	building_road_depot = false
+	building_many_roads = false
 
 static func gui_button_pressed() -> void:
 	all_off()
@@ -63,6 +65,14 @@ static func many_track_button_toggled() -> void:
 	if building_many_rails:
 		all_off()
 		building_many_rails = true
+	else:
+		default()
+
+static func roads_button_toggled() -> void:
+	building_many_roads = !building_many_roads
+	if building_many_roads:
+		all_off()
+		building_many_roads = true
 	else:
 		default()
 
@@ -100,6 +110,9 @@ static func factory_button_toggled() -> void:
 
 static func is_building_many_rails() -> bool:
 	return building_many_rails and !hovering_over_gui
+
+static func is_building_roads() -> bool:
+	return building_many_roads and DisplayServer.window_is_focused()
 
 static func is_controlling_camera() -> bool:
 	return controlling_camera

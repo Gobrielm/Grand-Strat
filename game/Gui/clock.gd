@@ -64,7 +64,7 @@ func _on_game_speed_drag_ended(value_changed: bool) -> void:
 
 @rpc("any_peer", "call_local", "unreliable")
 func request_change_speed(speed: int) -> void:
-	cargo_controller.get_instance().change_speed(speed)
+	cargo_controller.get_instance().change_speed(speed )
 	update_clock.rpc(speed)
 
 @rpc("authority", "call_local", "unreliable")

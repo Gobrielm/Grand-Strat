@@ -54,12 +54,12 @@ void RoadDepotWOMethods::distribute_type_to_road_depot(int type, RoadDepotWOMeth
 }
 
 void RoadDepotWOMethods::add_connected_road_depot(RoadDepotWOMethods* new_road_depot) {
-    ERR_FAIL_COND_MSG(other_road_depots.count(new_road_depot -> get_location()) == 0, "Already has a road depot there");
+    ERR_FAIL_COND_MSG(other_road_depots.count(new_road_depot -> get_location()) != 0, "Already has a road depot there");
     other_road_depots[new_road_depot -> get_location()] = new_road_depot;
 }
 
 void RoadDepotWOMethods::remove_connected_road_depot(const RoadDepotWOMethods* new_road_depot) {
-    ERR_FAIL_COND_MSG(other_road_depots.count(new_road_depot -> get_location()) != 0, "Never had a road depot there");
+    ERR_FAIL_COND_MSG(other_road_depots.count(new_road_depot -> get_location()) == 0, "Never had a road depot there");
     other_road_depots.erase(new_road_depot -> get_location());
 }
 

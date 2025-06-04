@@ -14,6 +14,7 @@ class RoadMap : public TileMapLayer {
 private:
     static RoadMap* singleton_instance;
     std::unordered_map<Vector2i, int, godot_helpers::Vector2iHasher> road_value;
+    std::unordered_map<Vector2i, int, godot_helpers::Vector2iHasher> temp_road_value;
     Ref<TileSet> tile_set = nullptr;
     Ref<TileSetAtlasSource> atlas_source = nullptr;
     void fix_tile(Vector2i center, bool repeating = false);
@@ -28,7 +29,11 @@ public:
 
     static RoadMap* get_instance();
     void place_road(Vector2i location);
+    void hover_road(Vector2i location);
     void upgrade_road(Vector2i location);
+    void hover_upgrade(Vector2i location);
+    void remove_hovers();
     int get_road_value(Vector2i location) const;
+    int get_temp_road_value(Vector2i location) const;
     void place_road_depot(Vector2i location);
 };

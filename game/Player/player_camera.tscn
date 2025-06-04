@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3 uid="uid://c6spn0m6m85vs"]
+[gd_scene load_steps=12 format=3 uid="uid://c6spn0m6m85vs"]
 
 [ext_resource type="Script" uid="uid://xbopekwwthhq" path="res://Player/player_camera.gd" id="1_7vtmc"]
 [ext_resource type="PackedScene" uid="uid://pbahdxufv0k5" path="res://Gui/Building_Buttons/track_button.tscn" id="2_f342f"]
@@ -15,6 +15,10 @@
 width = 50
 height = 50
 noise = SubResource("FastNoiseLite_lfvmj")
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_ja5pc"]
+width = 50
+height = 50
 
 [node name="player_camera" type="Camera2D"]
 position_smoothing_enabled = true
@@ -76,6 +80,17 @@ grow_horizontal = 2
 grow_vertical = 2
 toggle_mode = true
 icon = SubResource("NoiseTexture2D_83rbs")
+flat = true
+script = ExtResource("5_x18jc")
+metadata/_edit_use_anchors_ = true
+
+[node name="roads_button" type="Button" parent="CanvasLayer"]
+offset_left = -174.0
+offset_top = -80.0
+offset_right = -116.0
+offset_bottom = -22.0
+toggle_mode = true
+icon = SubResource("NoiseTexture2D_ja5pc")
 flat = true
 script = ExtResource("5_x18jc")
 metadata/_edit_use_anchors_ = true
@@ -157,5 +172,7 @@ icon = ExtResource("7_cyv1u")
 [connection signal="pressed" from="CanvasLayer/factory_button" to="." method="_on_factory_button_pressed"]
 [connection signal="pressed" from="CanvasLayer/road_depot_button" to="." method="_on_road_depot_button_pressed"]
 [connection signal="pressed" from="CanvasLayer/road_depot_button" to="CanvasLayer/road_depot_button" method="_on_pressed"]
+[connection signal="pressed" from="CanvasLayer/roads_button" to="." method="_on_roads_button_pressed"]
+[connection signal="pressed" from="CanvasLayer/roads_button" to="CanvasLayer/roads_button" method="_on_pressed"]
 [connection signal="pressed" from="nation_picker/start_or_ready" to="." method="_on_start_or_ready_pressed"]
 [connection signal="pressed" from="CanvasLayer2/Music" to="." method="_on_music_pressed"]

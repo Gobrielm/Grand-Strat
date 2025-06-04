@@ -93,6 +93,9 @@ func _on_start_or_ready_pressed() -> void:
 func _on_road_depot_button_pressed() -> void:
 	state_machine.building_road_depot_toggled()
 
+func _on_roads_button_pressed() -> void:
+	state_machine.roads_button_toggled()
+
 func _on_music_pressed() -> void:
 	Utils.click_music()
 	if Utils.is_music_playing():

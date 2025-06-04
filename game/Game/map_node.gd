@@ -60,12 +60,11 @@ func _input(event: InputEvent) -> void:
 	main_map.update_hover()
 	camera.update_coord_label(cell_position)
 	if event.is_action_pressed("click"):
+		main_map.record_start()
 		if state_machine.is_picking_nation():
 			pick_nation()
 		elif state_machine.is_building():
 			main_map.record_hover_click()
-		elif state_machine.is_building_many_rails():
-			main_map.record_start_rail()
 		elif state_machine.is_building_units():
 			main_map.create_unit()
 		elif state_machine.is_building_factory():
@@ -89,6 +88,8 @@ func _input(event: InputEvent) -> void:
 			depot_window.open_window(cell_position)
 		elif state_machine.is_building_many_rails():
 			main_map.place_rail_to_start()
+		elif state_machine.is_building_roads():
+			main_map.place_road_to_start()
 		elif state_machine.is_controlling_camera():
 			main_map.open_tile_window(cell_position)
 		main_map.reset_start()

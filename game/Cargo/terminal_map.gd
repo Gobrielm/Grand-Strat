@@ -150,7 +150,7 @@ func is_hold(coords: Vector2i) -> bool:
 
 func is_tile_taken(coords: Vector2i) -> bool:
 	mutex.lock()
-	var toReturn: bool = cargo_map_terminals.has(coords) or !map.is_tile_traversable(coords)
+	var toReturn: bool = !(!cargo_map_terminals.has(coords) and map.is_tile_traversable(coords))
 	mutex.unlock()
 	return toReturn
 

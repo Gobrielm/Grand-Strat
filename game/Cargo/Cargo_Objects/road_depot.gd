@@ -1,5 +1,7 @@
 class_name RoadDepot extends RoadDepotWOMethods
 
+#TODO: Add automated orderrs
+
 func _init(coords: Vector2i, _player_owner: int) -> void:
 	super.initialize(coords, _player_owner)
 

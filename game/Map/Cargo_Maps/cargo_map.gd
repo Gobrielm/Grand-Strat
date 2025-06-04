@@ -18,11 +18,12 @@ func create_town(coords: Vector2i, prov_id: int) -> void:
 	set_tile.rpc(coords, Vector2i(0, 1))
 	add_terminal_to_province(new_town)
 	terminal_map.get_instance().create_terminal(new_town)
+	place_random_road_depot(coords)
 
 func add_terminal_to_province(term: Terminal) -> void:
 	var map_dat: map_data = map_data.get_instance()
-	var prov: Province = map_dat.get_province(map_dat.get_province_id(term.location))
-	prov.add_terminal(term.location, term)
+	var prov: Province = map_dat.get_province(map_dat.get_province_id(term.get_location()))
+	prov.add_terminal(term.get_location(), term)
 
 func remove_terminal_from_province(coords: Vector2i) -> void:
 	var map_dat: map_data = map_data.get_instance()
@@ -91,6 +92,19 @@ func create_factory(p_player_id: int, coords: Vector2i, obj_recipe: Array, mult:
 	set_tile.rpc(coords, get_atlas_cell(obj_recipe))
 	add_terminal_to_province(new_factory)
 	terminal_map.get_instance().create_terminal(new_factory)
+	place_random_road_depot(coords)
+	
+
+func place_random_road_depot(middle: Vector2i) -> void:
+	var tiles: Array = Utils.world_map.thread_get_surrounding_cells(middle)
+	tiles.shuffle()
+	for tile: Vector2i in tiles:
+		if !terminal_map.get_instance().is_tile_taken(tile):
+			RoadMap.get_instance().place_road_depot(tile)
+			var road_depot: RoadDepot = RoadDepot.new(tile, 0)
+			add_terminal_to_province(road_depot)
+			terminal_map.get_instance().create_terminal(road_depot)
+			return
 
 func place_test_industry() -> void:
 	var output: Dictionary = {}

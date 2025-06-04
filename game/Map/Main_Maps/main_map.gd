@@ -149,10 +149,12 @@ func clear_all_temps() -> void:
 
 func update_hover() -> void:
 	var rail_type: int = get_rail_type_selected()
-	if get_rail_type_selected() < 3:
+	if get_rail_type_selected() < 3 and single_track_button.active:
 		rail_placer_obj.hover(get_cell_position(), rail_type, map_to_local(get_cell_position()), get_mouse_local_to_map())
 	elif is_start_valid and track_button.active:
 		get_rail_to_hover()
+	elif state_machine.is_building_roads():
+		hover_roads()
 
 func record_hover_click() -> void:
 	var coords: Vector2i = rail_placer_obj.get_coordinates()
@@ -219,7 +221,7 @@ func get_trains_in_depot(coords: Vector2i) -> Array:
 	return []
 
 #Rail Builder
-func record_start_rail() -> void:
+func record_start() -> void:
 	start = get_cell_position()
 	is_start_valid = true
 
@@ -249,6 +251,40 @@ func place_to_end_rail(new_start: Vector2i, new_end: Vector2i) -> void:
 		queue.push_back(find_tile_with_min_distance(get_surrounding_cells(current), end))
 		prev = current
 	reset_start()
+
+func place_road_to_start() -> void:
+	create_roads(false)
+
+func hover_roads() -> void:
+	create_roads(true)
+
+func create_roads(temp: bool) -> void:
+	var end: Vector2i = get_cell_position()
+	var queue: Array = [start]
+	var curr: Vector2i
+	var tile_to_prev: Dictionary[Vector2i, Vector2i] = {}
+	var found: bool = false
+	tile_to_prev[start] = Vector2i(0, 0)
+	
+	while !queue.is_empty():
+		curr = queue.pop_front()
+		if curr == end:
+			found = true
+			break
+		for tile: Vector2i in thread_get_surrounding_cells(curr):
+			if !tile_to_prev.has(tile) and is_tile_traversable(tile):
+				queue.push_back(tile)
+				tile_to_prev[tile] = curr
+	var road_map: RoadMap = RoadMap.get_instance()
+	road_map.remove_hovers()
+	while curr != Vector2i(0, 0) and found:
+		if temp:
+			road_map.hover_road(curr)
+		else:
+			road_map.place_road(curr)
+		curr = tile_to_prev[curr]
+	if !temp:
+		reset_start()
 
 func get_rail_to_hover() -> void:
 	if !is_start_valid:

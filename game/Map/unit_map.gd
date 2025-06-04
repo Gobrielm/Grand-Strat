@@ -25,10 +25,10 @@ func _ready() -> void:
 	Utils.assign_unit_map(self)
 
 func _input(event: InputEvent) -> void:
-	if event.is_action_pressed("click") and DisplayServer.window_is_focused():
+	if event.is_action_pressed("click") and DisplayServer.window_is_focused() and (state_machine.is_controlling_camera() or state_machine.is_selecting_unit()):
 		last_click = map.get_mouse_local_to_map()
 		click_valid = true
-	elif event.is_action_released("click") and DisplayServer.window_is_focused():
+	elif event.is_action_released("click") and DisplayServer.window_is_focused() and (state_machine.is_controlling_camera() or state_machine.is_selecting_unit()):
 		select_many_armies(map.get_mouse_local_to_map(), last_click , multiplayer.get_unique_id(), shift_held)
 		click_valid = false
 		remove_selection_box()
