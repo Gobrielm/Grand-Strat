@@ -8,13 +8,14 @@ namespace godot {
 class FixedHold : public Hold {
     GDCLASS(FixedHold, Hold);
 
-    std::unordered_set<int> accepts;
-
 protected:
     static void _bind_methods();
 
 public:
+    std::unordered_set<int> accepts;
+
     static Terminal* create(const Vector2i new_location, const int player_owner, const int p_max_amount = DEFAULT_MAX_STORAGE);
+
 
     FixedHold();
     FixedHold(const Vector2i new_location, const int player_owner, const int p_max_amount);

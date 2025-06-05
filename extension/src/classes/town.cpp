@@ -1,5 +1,5 @@
 #include "town.hpp"
-
+#include "../singletons/cargo_info.hpp"
 #include <godot_cpp/core/class_db.hpp>
 
 using namespace godot;
@@ -7,7 +7,6 @@ using namespace godot;
 void Town::_bind_methods() {
     ClassDB::bind_static_method(get_class_static(), D_METHOD("create", "new_location"), &Town::create);
     ClassDB::bind_method(D_METHOD("initialize", "new_location"), &Town::initialize);
-    ClassDB::bind_method(D_METHOD("create_storage"), &Town::create_storage);
 
     // Trade-related
     ClassDB::bind_method(D_METHOD("does_accept", "type"), &Town::does_accept);
@@ -20,6 +19,8 @@ void Town::_bind_methods() {
     // Factory and Pop management
     ClassDB::bind_method(D_METHOD("add_factory", "factory"), &Town::add_factory);
     ClassDB::bind_method(D_METHOD("add_pop", "pop"), &Town::add_pop);
+    ClassDB::bind_method(D_METHOD("get_supply"), &Town::get_supply);
+    ClassDB::bind_method(D_METHOD("get_demand"), &Town::get_demand);
 
     // Fulfillment
     ClassDB::bind_method(D_METHOD("get_fulfillment", "type"), &Town::get_fulfillment);
@@ -73,10 +74,6 @@ void Town::initialize(Vector2i new_location) {
     Broker::initialize(new_location, 0);
 }
 
-void Town::create_storage() {
-    market -> create_storage();
-}
-
 // Trade
 bool Town::does_accept(int type) const {
     return get_cargo_amount(type) != get_max_storage();
@@ -122,6 +119,24 @@ void Town::add_factory(FactoryTemplate* fact) {
 	fact->add_connected_broker(this);
 }
 
+Dictionary Town::get_supply() const {
+    Dictionary d = {};
+    const auto v = market -> get_supply();
+    for (int type = 0; type < v.size(); type++) {
+        d[type] = v[type];
+    }
+    return d;
+}
+
+Dictionary Town::get_demand() const {
+    Dictionary d = {};
+    const auto v = market -> get_demand();
+    for (int type = 0; type < v.size(); type++) {
+        d[type] = v[type];
+    }
+    return d;
+}
+
 //Pop stuff
 void Town::add_pop(BasePop* pop) {
     ERR_FAIL_COND_MSG(city_pops.count(pop -> get_pop_id()) != 0, "Pop of id has already been created");
@@ -129,22 +144,37 @@ void Town::add_pop(BasePop* pop) {
 }
 
 void Town::sell_to_pops() {
+    //market -> get_supply().size() represents all goods
     for (int type = 0; type < market->get_supply().size(); type++) {
         sell_type(type);
     }
 }
-void Town::sell_type(int type) {
+
+void Town::update_buy_orders() {
+    const auto v = market -> get_demand();
+    for (int type = 0; type < v.size(); type++) {
+        if (v[type == 0]) {
+            remove_order(type);
+        } else {
+            edit_order(type, v[type], true, market -> get_local_price(type));
+        }
+    }
+}
+
+void Town::sell_type(int type) { // Types are weird
     float amount_sold = 0.0;
+    float amount_wanted = 0.0;
 	for (const auto &[__, pop]: city_pops) {
 		float price = market -> get_local_price(type);
 		float amount = pop -> get_desired(type, price); //Float for each pop
-        market->report_attempt_to_sell(type, round(amount)); //Each amount wanted by pops
-        float available_in_market = float(market->get_cargo_amount(type) - amount_sold);
+        amount_wanted += amount;
+        float available_in_market = float(market->get_cargo_amount(type)) - amount_sold;
 		amount = std::min(amount, available_in_market);
 		amount_sold += amount;
 		pop->buy_good(amount, price);
 		market->add_cash(amount * price);
     }
+    market->report_attempt_to_sell(type, round(amount_wanted)); //Each amount wanted by pops
 	market->remove_cargo(type, round(amount_sold));
 }
 
@@ -207,5 +237,6 @@ void Town::day_tick() {
 
 void Town::month_tick() {
     sell_to_pops();
+    // update_buy_orders();
     market -> month_tick();
 }

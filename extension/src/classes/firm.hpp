@@ -13,8 +13,8 @@ class Firm : public Terminal {
 
     public:
 
-    Firm(): Terminal() {}
-    Firm(const Vector2i p_location, const int p_owner): Terminal(p_location, p_owner) {}	
+    Firm();
+    Firm(const Vector2i p_location, const int p_owner);
 
     static Terminal* create(const Vector2i p_location, const int p_owner);
     virtual void initialize(const Vector2i p_location = Vector2i(), const int p_owner = 0);

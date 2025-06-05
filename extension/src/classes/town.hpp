@@ -11,6 +11,8 @@
 #include "town_market.hpp"
 #include "base_pop.hpp"
 
+class CargoInfo;
+
 using namespace godot;
 
 class Town : public Broker {
@@ -34,8 +36,6 @@ public:
 
     virtual void initialize(Vector2i new_location);
 
-    void create_storage();
-
     // Trade
     bool does_accept(int type) const override;
     float get_local_price(int type) const override;
@@ -49,10 +49,13 @@ public:
     float get_fulfillment(int type) const;
     Dictionary get_fulfillment_dict() const;
     void add_factory(FactoryTemplate* fact);
+    Dictionary get_supply() const;
+    Dictionary get_demand() const;
 
     //Pop stuff
     void add_pop(BasePop* pop);
     void sell_to_pops();
+    void update_buy_orders();
     void sell_type(int type);
     int get_total_pops() const;
     FactoryTemplate* find_employment(BasePop* pop) const;

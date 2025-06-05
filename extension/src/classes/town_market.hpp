@@ -6,11 +6,12 @@
 
 class TownMarket : public Hold {
     GDCLASS(TownMarket, Hold);
-    int cash;
+    int cash = 1000;
     std::vector<int> supply = {};
     std::vector<int> demand = {};
     std::vector<float> prices = {};
-    std::unordered_map<int, int> last_month_demand;
+    std::vector<int> last_month_demand = {};
+    std::vector<int> last_month_supply = {};
 
 protected:
     void static _bind_methods();
@@ -19,6 +20,7 @@ public:
     TownMarket();
     void create_storage();
     std::vector<int>& get_supply();
+    std::vector<int>& get_demand();
     void add_cash(float amount) override;
     void remove_cash(float amount) override;
     float get_cash() const override; 

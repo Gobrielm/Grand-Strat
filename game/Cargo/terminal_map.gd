@@ -276,7 +276,7 @@ func get_broker(coords: Vector2i) -> Broker:
 	return toReturn
 
 func is_station(coords: Vector2i) -> bool:
-	return get_terminal(coords) is Station
+	return get_terminal(coords) is StationWOMethods
 
 func is_owned_station(coords: Vector2i, player_id: int) -> bool:
 	var temp: Station = get_station(coords)
@@ -322,7 +322,7 @@ func get_station_orders(coords: Vector2i) -> Dictionary:
 	var toReturn: Dictionary = {}
 	if is_station(coords):
 		mutex.lock()
-		var orders: Dictionary = (cargo_map_terminals[coords] as Station).get_orders_dict()
+		var orders: Dictionary = (cargo_map_terminals[coords] as StationWOMethods).get_orders_dict()
 		mutex.unlock()
 		for type: int in orders:
 			toReturn[type] = (orders[type] as TradeOrder).convert_to_array()

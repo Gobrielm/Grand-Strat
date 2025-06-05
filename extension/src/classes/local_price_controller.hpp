@@ -9,7 +9,7 @@ class LocalPriceController: public RefCounted {
     GDCLASS(LocalPriceController, RefCounted);
     
     static const float MAX_DIFF;
-    static std::unordered_map<int, float> base_prices;
+    static std::vector<float> base_prices;
 
     std::unordered_map<int, int> change;
     std::unordered_map<int, int> attempts_to_trade;
@@ -30,7 +30,7 @@ class LocalPriceController: public RefCounted {
     LocalPriceController();
     LocalPriceController(const std::unordered_map<int, int>& inputs, const std::unordered_map<int, int>& outputs);
 
-    static std::unordered_map<int, float> get_base_prices();
+    static std::vector<float> get_base_prices();
     static void set_base_prices();
 
     void add_cargo_type(int type, float starting_price = -1.0f);

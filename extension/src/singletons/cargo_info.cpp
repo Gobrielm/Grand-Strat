@@ -12,9 +12,8 @@ void CargoInfo::_bind_methods() {
 
 CargoInfo::CargoInfo() {
     int i = 0;
-    for (const auto& [name, __]: base_prices) {
-        cargo_names[i] = name;
-        cargo_types[name] = i;
+    for (const std::string &s: cargo_names) {
+        cargo_types[s] = i;
         i++;
     }
 }

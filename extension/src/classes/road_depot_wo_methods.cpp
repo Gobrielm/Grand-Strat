@@ -27,6 +27,7 @@ void RoadDepotWOMethods::initialize(Vector2i new_location, int player_owner) {
 }
 
 void RoadDepotWOMethods::distribute_cargo() {
+    cargo_sent = 0;
     for (const auto &[type, __]: storage) {
         distribute_type(type);
         if (cargo_sent == MAX_THROUGHPUT) {
@@ -50,17 +51,56 @@ void RoadDepotWOMethods::distribute_type_to_road_depot(int type, RoadDepotWOMeth
     int amount = std::min(amount_desired, std::min(get_cargo_amount(type), MAX_THROUGHPUT - cargo_sent));
     cargo_sent += amount;
     road_depot -> add_cargo(type, transfer_cargo(type, amount));
-    
+}
+
+void RoadDepotWOMethods::add_connected_broker(Broker* broker) {
+    StationWOMethods::add_connected_broker(broker);
+    for (const auto &[__, road_depot]: other_road_depots) {
+        road_depot -> add_accepts_from_depot(this);
+    }
+}
+
+void RoadDepotWOMethods::remove_connected_broker(const Broker* broker) {
+    StationWOMethods::remove_connected_broker(broker);
+    for (const auto &[__, road_depot]: other_road_depots) {
+        road_depot -> refresh_accepts();
+    }
 }
 
 void RoadDepotWOMethods::add_connected_road_depot(RoadDepotWOMethods* new_road_depot) {
     ERR_FAIL_COND_MSG(other_road_depots.count(new_road_depot -> get_location()) != 0, "Already has a road depot there");
     other_road_depots[new_road_depot -> get_location()] = new_road_depot;
+    add_accepts_from_depot(new_road_depot);
 }
 
 void RoadDepotWOMethods::remove_connected_road_depot(const RoadDepotWOMethods* new_road_depot) {
     ERR_FAIL_COND_MSG(other_road_depots.count(new_road_depot -> get_location()) == 0, "Never had a road depot there");
     other_road_depots.erase(new_road_depot -> get_location());
+    refresh_accepts();
+}
+
+void RoadDepotWOMethods::add_accepts_from_depot(const RoadDepotWOMethods* road_depot) {
+    for (int type: road_depot -> accepts) {
+        add_accept(type);
+        if (rand() % 20 == 0) {
+            UtilityFunctions::print("Road Depot near road depot accepts " + String(CargoInfo::get_instance() -> get_cargo_name(type).c_str()));
+        }
+    }
+}
+
+void RoadDepotWOMethods::refresh_accepts() {
+    accepts.clear();
+    update_accepts_from_trains(); //Adds accepts from towns/factories/ect
+    UtilityFunctions::print(other_road_depots.size());
+    for (const auto &[__, road_depot]: other_road_depots) {
+        add_accepts_from_depot(road_depot);
+    }
+}
+
+//Depot is buying
+bool RoadDepotWOMethods::is_price_acceptable(int type, float pricePer) const {
+    return true;
+    // get_local_price(type) >= pricePer;
 }
 
 
@@ -97,6 +137,13 @@ void RoadDepotWOMethods::search_for_and_add_road_depots() {
     }
 }
 
+int RoadDepotWOMethods::get_desired_cargo(int type) const {
+    if (does_accept(type)) {
+        return MAX_THROUGHPUT;
+    }
+    return 0;
+}
+
 RoadDepotWOMethods* RoadDepotWOMethods::get_road_depot(Vector2i tile) const {
     RoadDepotWOMethods* result = nullptr;
     if (GDVIRTUAL_CALL(get_road_depot, tile, result)) {
@@ -105,7 +152,23 @@ RoadDepotWOMethods* RoadDepotWOMethods::get_road_depot(Vector2i tile) const {
     ERR_FAIL_V_MSG(nullptr, "Not implemented");
 }
 
-void RoadDepotWOMethods::day_tick() {
+float RoadDepotWOMethods::get_cash() const {
+    if (get_player_owner() == 0) {
+        return 1000;
+    } else {
+        return Firm::get_cash();
+    }
+}
+
+void RoadDepotWOMethods::add_cash(float amount) {}
+
+void RoadDepotWOMethods::remove_cash(float amount) {}
+
+void RoadDepotWOMethods::day_tick() { //This may never fire either
     distribute_cargo();
-    StationWOMethods::day_tick();
+}
+
+void RoadDepotWOMethods::month_tick() { //This never fires
+    UtilityFunctions::print("month tick");
+    refresh_accepts(); //Needs to happen monthly, since towns change orders
 }

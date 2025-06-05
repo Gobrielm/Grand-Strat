@@ -13,7 +13,17 @@ class CargoInfo : public RefCounted {
 private:
     static Ref<CargoInfo> singleton_instance;
 
-    std::unordered_map<int, std::string> cargo_names = {};
+    std::vector<std::string> cargo_names = {
+        "clay", "sand", "sulfur", "lead", "iron", "coal", "copper", "zinc", "wood", "salt", 
+        "grain", "livestock", "fish", "fruit", "cotton", "silk", "spices", "coffee", "tea", "tobacco", 
+        "gold",
+        
+        "bricks", "glass", "lumber", "paper", "tools", "steel", "brass", "dynamite",
+        "flour", "fabric", "liquor", "bread", "leather", "meat", "clothes",
+        "wine", "luxury_clothes", "preserved_fruit", "porcelain",
+        "furniture", "wagons", "boats", "lanterns", "trains",
+        "ammo", "guns", "artillery", "preserved_meat", "canned_food", "rations", "luxury_rations",
+    };
     std::unordered_map<std::string, int> cargo_types = {};
     const std::unordered_map<std::string, float> base_prices = {
     {"clay", 10.0f}, {"sand", 10.0f}, {"sulfur", 10.0f}, {"lead", 10.0f}, {"iron", 10.0f},

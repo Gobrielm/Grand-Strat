@@ -4,6 +4,7 @@
 #include "trade_order.hpp"
 #include "local_price_controller.hpp"
 #include "terminal.hpp"
+#include "../singletons/cargo_info.hpp"
 #include <godot_cpp/variant/dictionary.hpp>
 
 #include <godot_cpp/core/binder_common.hpp>
@@ -20,7 +21,6 @@ private:
 
     virtual void supply_armies();
     GDVIRTUAL0(supply_armies);
-    void update_accepts_from_trains();
     void add_accepts(Broker* broker);
     void reset_accepts_train();
 
@@ -46,6 +46,8 @@ public:
 
     virtual void add_connected_broker(Broker* new_broker) override;
     virtual void remove_connected_broker(const Broker* new_broker) override;
+
+    void update_accepts_from_trains();
 
     virtual void day_tick();
 };

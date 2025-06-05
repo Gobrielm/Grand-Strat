@@ -13,9 +13,10 @@ void Firm::_bind_methods() {
     ClassDB::bind_method(D_METHOD("get_cash"), &Firm::get_cash);
     ClassDB::bind_method(D_METHOD("transfer_cash", "amount"), &Firm::transfer_cash);
 
-    
-    
 }
+
+Firm::Firm(): Terminal() {}
+Firm::Firm(const Vector2i p_location, const int p_owner): Terminal(p_location, p_owner) {}	
 
 Terminal* Firm::create(const Vector2i p_location, const int p_owner) {
     return memnew(Firm(p_location, p_owner));

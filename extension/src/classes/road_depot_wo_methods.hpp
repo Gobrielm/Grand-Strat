@@ -5,6 +5,7 @@
 #include "local_price_controller.hpp"
 #include "station.hpp"
 #include "../singletons/road_map.hpp"
+#include "../singletons/cargo_info.hpp"
 #include <queue>
 
 
@@ -42,10 +43,23 @@ public:
     void distribute_type(int type);
     void distribute_type_to_road_depot(int type, RoadDepotWOMethods* road_depot);
 
+    void add_connected_broker(Broker* broker) override;
+    void remove_connected_broker(const Broker* broker) override;
+
     void add_connected_road_depot(RoadDepotWOMethods* new_road_depot);
     void remove_connected_road_depot(const RoadDepotWOMethods* new_road_depot);
 
+    void add_accepts_from_depot(const RoadDepotWOMethods* road_depot);
+    void refresh_accepts();
+    bool is_price_acceptable(int type, float pricePer) const override;
     void search_for_and_add_road_depots();
 
-    virtual void day_tick();
+    virtual int get_desired_cargo(int type) const override;
+
+    virtual float get_cash() const override; //Temporary for testing
+    virtual void add_cash(float amount) override; //Temporary for testing
+    virtual void remove_cash(float amount) override; //Temporary for testing
+
+    virtual void day_tick() override;
+    virtual void month_tick();
 };

@@ -106,21 +106,22 @@ void StationWOMethods::add_connected_broker(Broker* new_broker) {
 
 void StationWOMethods::remove_connected_broker(const Broker* new_broker) {
     Broker::remove_connected_broker(new_broker);
+    reset_accepts_train();
     update_accepts_from_trains();
 }
 
 void StationWOMethods::update_accepts_from_trains() {
-    reset_accepts_train();
     for (const auto &[tile, broker] : connected_brokers) {
         add_accepts(broker);
     }
 }
 
 void StationWOMethods::add_accepts(Broker* broker) {
-    Array accepts = broker->get_accepts().keys();
-    for (int i = 0; i < accepts.size(); i++) {
-        int type = accepts[i];
+    for (int type: broker->accepts) {
         add_accept(type);
+        if (rand() % 20 == 0) {
+            UtilityFunctions::print("Road Depot near broker accepts " + String(CargoInfo::get_instance() -> get_cargo_name(type).c_str()));
+        }
     }
 }
 

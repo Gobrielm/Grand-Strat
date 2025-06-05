@@ -21,6 +21,10 @@ void RoadMap::_notification(int p_what) {
     if (p_what == NOTIFICATION_READY) {
         ERR_FAIL_COND_MSG(singleton_instance != nullptr, "RoadMap has already been created but is being created again");
         singleton_instance = this;
+    } else if (p_what == NOTIFICATION_EDITOR_POST_SAVE) {
+        singleton_instance = nullptr;
+    } else if (p_what == NOTIFICATION_EXIT_TREE) {
+        singleton_instance = nullptr;
     }
 }
 

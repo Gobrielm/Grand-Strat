@@ -1,6 +1,7 @@
 
 #include "town_market.hpp"
 #include "local_price_controller.hpp"
+#include "../singletons/cargo_info.hpp"
 
 void TownMarket::_bind_methods() {
     ClassDB::bind_method(D_METHOD("create_storage"), &TownMarket::create_storage);
@@ -20,19 +21,26 @@ void TownMarket::_bind_methods() {
 
 TownMarket::TownMarket(): Hold() {
     set_max_storage(DEFAULT_MAX_STORAGE);
+    create_storage();
 }
 
 void TownMarket::create_storage() {
-    const auto m = LocalPriceController::get_base_prices();
-    for (const auto& [type, price]: m) {
+    const auto v = LocalPriceController::get_base_prices();
+    for (const auto &price: v) {
         prices.push_back(price);
         supply.push_back(0);
         demand.push_back(0);
+        last_month_demand.push_back(0);
+        last_month_supply.push_back(0);
     }
 }
 
 std::vector<int>& TownMarket::get_supply() {
-    return supply;
+    return last_month_supply;
+}
+
+std::vector<int>& TownMarket::get_demand() {
+    return last_month_demand;
 }
 
 void TownMarket::add_cash(float amount) {
@@ -66,7 +74,7 @@ void TownMarket::report_attempt_to_sell(int type, int amount) {
 float TownMarket::get_local_price(int type) {
     if (prices.size() <= type) {
         ERR_PRINT("Prices only has size " + String::num_int64(prices.size()) + " and you accessed " + String::num_int64(type));
-        return 0; // or return some error value like -1, depending on your logic
+        return 0;
     }
     return prices[type];
 }
@@ -76,7 +84,7 @@ bool TownMarket::is_price_acceptable(int type, float price) {
 }
 
 int TownMarket::get_desired_cargo(int type, float price) {
-    if (is_price_acceptable(type, price) && last_month_demand.count(type)) {
+    if (is_price_acceptable(type, price)) {
 		int amount_could_get = std::min(get_max_storage() - get_cargo_amount(type), get_amount_can_buy(price));
 		return std::min(last_month_demand[type], amount_could_get);
     }
@@ -96,20 +104,22 @@ int TownMarket::sell_cargo(int type, int amount, float price) {
 }
 
 void TownMarket::adjust_prices() {
-    const auto m = LocalPriceController::get_base_prices();
-    last_month_demand.clear();
-	for (const auto& [type, base_price]: m) {
-
-        float percent_diff = float(demand[type] - supply[type]) / demand[type]; //+>1 if demand > supply
+    const auto v = LocalPriceController::get_base_prices();
+    int type = 0;
+	for (const auto& base_price: v) {
+        //If no demand, don't defer from base_price
+        float percent_diff = demand[type] == 0 ? 0: float(demand[type] - supply[type]) / demand[type]; //+>1 if demand > supply
 
         float diff_from_base = 1 + percent_diff;
 
 		diff_from_base = std::min(diff_from_base, 1.5f);
 		diff_from_base = std::max(diff_from_base, 0.5f);
 		prices[type] = base_price * diff_from_base;
+        last_month_supply[type] = supply[type];
 		supply[type] = 0;
         last_month_demand[type] = demand[type];
 		demand[type] = 0;
+        type++;
     }
 }
 
