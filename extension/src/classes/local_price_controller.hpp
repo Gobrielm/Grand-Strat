@@ -39,6 +39,9 @@ class LocalPriceController: public RefCounted {
     void add_supply(int type, int amount); //Supply is only from bought/created goods
     int get_demand(int type) const;
     int get_supply(int type) const;
+    int get_last_month_demand(int type) const;
+    int get_last_month_supply(int type) const;
+
 
     const std::vector<int>& get_demand() const;
     const std::vector<int>& get_supply() const;

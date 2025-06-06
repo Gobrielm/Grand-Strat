@@ -14,6 +14,8 @@ LocalPriceController::LocalPriceController() {
         local_prices.push_back(price);
         supply.push_back(0);
         demand.push_back(0);
+        last_month_supply.push_back(0);
+        last_month_demand.push_back(0);
     }
 }
 
@@ -36,6 +38,8 @@ void LocalPriceController::add_demand(int type, int amount) { demand[type] += am
 void LocalPriceController::add_supply(int type, int amount) { supply[type] += amount; }
 int LocalPriceController::get_demand(int type) const { return demand.at(type); }
 int LocalPriceController::get_supply(int type) const { return supply.at(type); }
+int LocalPriceController::get_last_month_demand(int type) const { return last_month_demand.at(type); }
+int LocalPriceController::get_last_month_supply(int type) const { return last_month_supply.at(type); }
 
 const std::vector<int>& LocalPriceController::get_demand() const { return demand; }
 const std::vector<int>& LocalPriceController::get_supply() const { return supply; }
