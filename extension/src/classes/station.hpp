@@ -47,7 +47,7 @@ public:
     virtual void add_connected_broker(Broker* new_broker) override;
     virtual void remove_connected_broker(const Broker* new_broker) override;
 
-    void update_accepts_from_trains();
+    virtual void refresh_accepts();
 
     virtual void day_tick();
 };

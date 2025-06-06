@@ -101,16 +101,16 @@ void StationWOMethods::supply_armies() {
 
 void StationWOMethods::add_connected_broker(Broker* new_broker) {
     Broker::add_connected_broker(new_broker);
-    update_accepts_from_trains();
+    refresh_accepts();
 }
 
 void StationWOMethods::remove_connected_broker(const Broker* new_broker) {
     Broker::remove_connected_broker(new_broker);
-    reset_accepts_train();
-    update_accepts_from_trains();
+    refresh_accepts();
 }
 
-void StationWOMethods::update_accepts_from_trains() {
+void StationWOMethods::refresh_accepts() {
+    reset_accepts();
     for (const auto &[tile, broker] : connected_brokers) {
         add_accepts(broker);
     }
@@ -131,3 +131,4 @@ void StationWOMethods::reset_accepts_train() {
 void StationWOMethods::day_tick() {
     distribute_cargo();
 }
+

@@ -1,7 +1,8 @@
 #include "road_depot_wo_methods.hpp"
 
 //TODO: Problems with road depots selling in between each other, and depots selling to towns and towns selling right back
-
+//Build a custom inherited local pricer that uses supply / demand to have its own local price, then just sell profitably, and will go in the right direction
+//Then 'island' depots can still trade and have local market, good for supply army method.
 
 void RoadDepotWOMethods::_bind_methods() {
     ClassDB::bind_method(D_METHOD("initialize", "new_location", "player_owner"), &RoadDepotWOMethods::initialize);
@@ -28,8 +29,30 @@ RoadDepotWOMethods::~RoadDepotWOMethods() {
 //Called by godot
 void RoadDepotWOMethods::initialize(Vector2i new_location, int player_owner) {
     StationWOMethods::initialize(new_location, player_owner);
+    depot_accepts.resize(CargoInfo::get_instance() -> get_base_prices().size());
     search_for_and_add_road_depots();
 }
+
+void RoadDepotWOMethods::refresh_depot_accepts() {
+    for (int type = 0; type < depot_accepts.size(); type++) {
+        if (does_accept(type)) { // If depot accepts then it is sink depot
+            depot_accepts[type] = 0;
+        } else {
+            for (const auto &[__, depot]: other_road_depots) {
+                int val = depot -> get_depot_accept(type) + 1;
+                if (val == 0) continue; // Has no connection to it
+                if (depot_accepts[type] > val || depot_accepts[type] == -1) { // Found a shorter path or created a new one
+                    depot_accepts[type] = val;
+                }
+            }
+        }
+    }
+}
+
+int RoadDepotWOMethods::get_depot_accept(int type) const {
+    return depot_accepts[type];
+}
+
 
 void RoadDepotWOMethods::distribute_cargo() {
     cargo_sent = 0;
@@ -105,8 +128,7 @@ void RoadDepotWOMethods::add_accepts_from_depot(const RoadDepotWOMethods* road_d
 }
 
 void RoadDepotWOMethods::refresh_accepts() {
-    clear_accepts();
-    update_accepts_from_trains(); //Adds accepts from towns/factories/ect
+    StationWOMethods::refresh_accepts(); //Adds accepts from towns/factories/ect
     for (const auto &[__, road_depot]: other_road_depots) {
         add_accepts_from_depot(road_depot);
     }

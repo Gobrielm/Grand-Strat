@@ -22,6 +22,10 @@ private:
     std::unordered_map<Vector2i, RoadDepotWOMethods*, godot_helpers::Vector2iHasher> other_road_depots = {};
     static constexpr int MAX_THROUGHPUT = 20;
     static constexpr int MAX_SUPPLY_DISTANCE = 10;
+    std::vector<int> depot_accepts; //-1 means no accept, 0 means it accepts, anything above means that it is that number of depots away from sink
+    void refresh_depot_accepts();
+    int get_depot_accept(int type) const;
+
     int cargo_sent = 0;
 
     GDVIRTUAL0(supply_armies);
@@ -51,7 +55,7 @@ public:
     void remove_connected_road_depot(const RoadDepotWOMethods* new_road_depot);
 
     void add_accepts_from_depot(const RoadDepotWOMethods* road_depot);
-    void refresh_accepts();
+    void refresh_accepts() override;
     bool is_price_acceptable(int type, float pricePer) const override;
     void search_for_and_add_road_depots();
 
