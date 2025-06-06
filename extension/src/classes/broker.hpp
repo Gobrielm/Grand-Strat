@@ -40,6 +40,8 @@ class Broker : public FixedHold {
 
     virtual void buy_cargo(int type, int amount, float price);
     virtual int sell_cargo(int type, int amount, float price);
+    int add_cargo(int type, int amount) override;
+    int add_cargo_ignore_accepts(int type, int amount) override;
 
     virtual void place_order(int type, int amount, bool buy, float maxPrice);
     virtual void edit_order(int type, int amount, bool buy, float maxPrice);
@@ -57,7 +59,7 @@ class Broker : public FixedHold {
     virtual void distribute_from_order(const TradeOrder* order);
     void distribute_to_order(Broker* otherBroker, const TradeOrder* order);
 
-    virtual void report_attempt(int type, int amount);
+    virtual void report_attempt_to_sell(int type, int amount);
 
     
 };

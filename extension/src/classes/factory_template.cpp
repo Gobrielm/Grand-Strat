@@ -11,8 +11,6 @@ void FactoryTemplate::_bind_methods() {
 
     ClassDB::bind_method(D_METHOD("get_min_price", "type"), &FactoryTemplate::get_min_price);
     ClassDB::bind_method(D_METHOD("get_max_price", "type"), &FactoryTemplate::get_max_price);
-    ClassDB::bind_method(D_METHOD("get_monthly_demand", "type"), &FactoryTemplate::get_monthly_demand);
-    ClassDB::bind_method(D_METHOD("get_monthly_supply", "type"), &FactoryTemplate::get_monthly_supply);
     ClassDB::bind_method(D_METHOD("does_create", "type"), &FactoryTemplate::does_create);
 
     ClassDB::bind_method(D_METHOD("distribute_cargo"), &FactoryTemplate::distribute_cargo);
@@ -61,7 +59,7 @@ void FactoryTemplate::initialize(Vector2i new_location, int player_owner, Dictio
         int type = output_keys[i];
         outputs[type] = new_outputs[type];
     }
-    local_pricer = memnew(LocalPriceController(inputs, outputs));
+    local_pricer = memnew(LocalPriceController);
     pops_needed = 1;
 }
 
@@ -73,16 +71,6 @@ float FactoryTemplate::get_min_price(int type) const {
 float FactoryTemplate::get_max_price(int type) const {
     ERR_FAIL_COND_V(outputs.size() != 0, 100.0);
     return 100.0;
-}
-
-int FactoryTemplate::get_monthly_demand(int type) const {
-    //TODO: ClockSingleton::get_instance()->get_days_in_current_month()
-    return inputs.at(type) * 30 * level;
-}
-
-int FactoryTemplate::get_monthly_supply(int type) const {
-    //TODO: ClockSingleton::get_instance()->get_days_in_current_month()
-    return outputs.at(type) * 30 * level;
 }
 
 bool FactoryTemplate::does_create(int type) const {

@@ -44,8 +44,6 @@ public:
     // Trade
     float get_min_price(int type) const;
     float get_max_price(int type) const;
-    int get_monthly_demand(int type) const;
-    int get_monthly_supply(int type) const;
     bool does_create(int type) const;
 
     // Production

@@ -73,7 +73,7 @@ public:
     //Selling to brokers
     void sell_to_other_brokers();
     void distribute_from_order(const TradeOrder* order) override;
-    void report_attempt(int type, int amount) override;
+    void report_attempt_to_sell(int type, int amount) override;
     std::vector<bool> get_accepts_vector() const override;
 
     // Process Hooks

@@ -73,7 +73,7 @@ void AiFactory::consider_upgrade_primary() {
     float total_diff = 0.0;
 	int amount = 0;
 	for (auto& [type, __]: outputs) {
-		total_diff += local_pricer -> get_percent_difference(type);
+		total_diff += local_pricer -> get_current_difference_from_base_price(type) - 1;
 		amount += 1;
     }
 	total_diff /= amount;

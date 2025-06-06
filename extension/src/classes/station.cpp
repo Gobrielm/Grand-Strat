@@ -34,7 +34,7 @@ StationWOMethods::StationWOMethods(Vector2i new_location, int player_owner) {
 
 void StationWOMethods::initialize(Vector2i new_location, int player_owner) {
     Broker::initialize(new_location, player_owner);
-    local_pricer = memnew(LocalPriceController({}, {}));
+    local_pricer = memnew(LocalPriceController);
 }
 
 float StationWOMethods::get_local_price(int type) const {
@@ -54,7 +54,6 @@ float StationWOMethods::get_local_price(int type) const {
 
 void StationWOMethods::place_order(int type, int amount, bool buy, float max_price) {
     add_accept(type);
-    local_pricer->add_cargo_type(type);
     Broker::place_order(type, amount, buy, max_price);
 }
 
@@ -76,7 +75,6 @@ int StationWOMethods::get_orders_magnitude() {
 
 void StationWOMethods::remove_order(int type) {
     if (get_order(type) != nullptr) {
-        local_pricer->remove_cargo_type(type);
         remove_accept(type);
         Broker::remove_order(type);
     }

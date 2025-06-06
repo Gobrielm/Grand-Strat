@@ -9,19 +9,17 @@ class LocalPriceController: public RefCounted {
     GDCLASS(LocalPriceController, RefCounted);
     
     static std::vector<float> base_prices;
+    static constexpr float MARKET_CHANGE_RATE = 0.1f; //Higher the faster
+
+    std::vector<int> demand;
+    std::vector<int> last_month_demand;
+    std::vector<int> supply;
+    std::vector<int> last_month_supply;
+    std::vector<float> local_prices;
+
     
-
-    std::unordered_map<int, int> change;
-    std::unordered_map<int, int> attempts_to_trade;
-    std::unordered_map<int, float> local_prices;
-
-    float get_multiple(int type) const;
-
-    void vary_buy_order(int demand, int supply, int type);
-    void vary_sell_order(int demand, int supply, int type);
-    void bump_up_good_price(int type, float percentage_met, int amount);
-    void bump_down_good_price(int type, float percentage_met, int amount);
-    void equalize_good_price(int type);
+    void adjust_cargo_price(int type, float base_price);
+    float get_difference_from_base_price(int type, std::vector<int> &p_supply, std::vector<int> &p_demand) const;
 
     protected:
     static void _bind_methods();
@@ -30,28 +28,26 @@ class LocalPriceController: public RefCounted {
     static constexpr float MAX_DIFF = 1.5f;
 
     LocalPriceController();
-    LocalPriceController(const std::unordered_map<int, int>& inputs, const std::unordered_map<int, int>& outputs);
 
     static std::vector<float> get_base_prices();
     static void set_base_prices();
 
-    void add_cargo_type(int type, float starting_price = -1.0f);
-    void remove_cargo_type(int type);
-    void add_cargo_from_factory(const std::unordered_map<int, int>& outputs);
+    void adjust_prices();
+    float get_current_difference_from_base_price(int type);
 
-    int get_change(int type) const;
-    void reset_change(int type);
-    void report_change(int type, int amount);
-    void report_attempt(int type, int amount);
-    void reset_attempts(int type);
-    int get_attempts(int type) const;
+    void add_demand(int type, int amount); //Demand is only from attempts to buy/sell
+    void add_supply(int type, int amount); //Supply is only from bought/created goods
+    int get_demand(int type) const;
+    int get_supply(int type) const;
+
+    const std::vector<int>& get_demand() const;
+    const std::vector<int>& get_supply() const;
+    const std::vector<int>& get_last_month_demand() const;
+    const std::vector<int>& get_last_month_supply() const;
+
 
     float get_local_price(int type) const;
     float get_base_price(int type) const;
-    float get_percent_difference(int type) const;
-
-    void vary_input_price(int demand, int type);
-    void vary_output_price(int supply, int type);
 
     Dictionary get_local_prices();
 };

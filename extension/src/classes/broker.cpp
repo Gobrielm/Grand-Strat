@@ -22,7 +22,6 @@ void Broker::_bind_methods() {
     ClassDB::bind_method(D_METHOD("remove_order", "type"), &Broker::remove_order);
     ClassDB::bind_method(D_METHOD("add_connected_broker", "broker"), &Broker::add_connected_broker);
     ClassDB::bind_method(D_METHOD("remove_connected_broker", "broker"), &Broker::remove_connected_broker);
-    ClassDB::bind_method(D_METHOD("report_attempt", "type", "amount"), &Broker::report_attempt);
     ClassDB::bind_method(D_METHOD("get_orders_dict"), &Broker::get_orders_dict);
     ClassDB::bind_method(D_METHOD("get_connected_brokers"), &Broker::get_connected_brokers);
 
@@ -86,7 +85,6 @@ void Broker::buy_cargo(int type, int amount, float price) {
     int total = std::round(amount * price);
     remove_cash(total);
     change_in_cash -= total;
-    local_pricer->report_change(type, amount);
 }
 
 int Broker::sell_cargo(int type, int amount, float price) {
@@ -94,8 +92,18 @@ int Broker::sell_cargo(int type, int amount, float price) {
     int total = std::round(price * transferred);
     add_cash(total);
     change_in_cash += total;
-    local_pricer->report_change(type, -transferred);
     return transferred;
+}
+
+int Broker::add_cargo_ignore_accepts(int type, int amount) { //Make sure 
+    local_pricer -> add_supply(type, amount);
+    return FixedHold::add_cargo_ignore_accepts(type, amount);
+}
+
+int Broker::add_cargo(int type, int amount) { // If amount is ever negitive, it will break
+    amount = FixedHold::add_cargo(type, amount);
+    local_pricer -> add_supply(type, amount);
+    return amount;
 }
 
 void Broker::place_order(int type, int amount, bool buy, float maxPrice) {
@@ -174,10 +182,9 @@ void Broker::distribute_to_order(Broker* otherBroker, const TradeOrder* order) {
     if (!order->is_price_acceptable(price) || !otherBroker->is_price_acceptable(type, price)) return;
 
     int desired = otherBroker->get_desired_cargo(type, price);
-    otherBroker->report_attempt(type, desired);
-    report_attempt(type, -order->get_amount());
+    report_attempt_to_sell(type, std::min(desired, order->get_amount() * 3)); // Put a cap on how much one broker can desire
 
-    int amount = std::min(desired, order->get_amount());
+    int amount = std::min(desired, order->get_amount()); 
 
     if (amount > 0) {
         amount = sell_cargo(type, amount, price);
@@ -185,8 +192,8 @@ void Broker::distribute_to_order(Broker* otherBroker, const TradeOrder* order) {
     }
 }
 
-void Broker::report_attempt(int type, int amount) {
+void Broker::report_attempt_to_sell(int type, int amount) {
     if (local_pricer) {
-        local_pricer->report_attempt(type, amount);
+        local_pricer->add_demand(type, amount);
     }
 }

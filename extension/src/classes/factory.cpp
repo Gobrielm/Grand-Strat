@@ -25,16 +25,18 @@ void Factory::initialize(Vector2i new_location, int player_owner, Dictionary new
 
     // Recipe
 bool Factory::check_recipe() {
-    return check_inputs() && check_outputs();
+    return check_outputs() && check_inputs(); // Check outputs first, since check_inputs shouldn't be run if outputs aren't open
 }
 
 bool Factory::check_inputs() {
+    bool toReturn = true;
     for (const auto& [type, amount]: inputs) {
+        local_pricer -> add_demand(type, amount);
         if (get_cargo_amount(type) < amount) {
-            return false;
+            toReturn = false;
         }
     }
-    return true;
+    return toReturn;
 }
 
 bool Factory::check_outputs() {
@@ -57,10 +59,6 @@ void Factory::day_tick() {
 
 void Factory::month_tick() {
     FactoryTemplate::month_tick();
-    for (auto& [type, __]: inputs) {
-        local_pricer->vary_input_price(get_monthly_demand(type), type);
-    }
-    for (auto& [type, __]: outputs) {
-        local_pricer->vary_output_price(get_monthly_supply(type), type);
-    }
+    
+    local_pricer->adjust_prices();
 }

@@ -32,7 +32,6 @@ void Town::_bind_methods() {
     ClassDB::bind_method(D_METHOD("get_total_pops"), &Town::get_total_pops);
     ClassDB::bind_method(D_METHOD("sell_to_other_brokers"), &Town::sell_to_other_brokers);
     ClassDB::bind_method(D_METHOD("distribute_from_order", "order"), &Town::distribute_from_order);
-    ClassDB::bind_method(D_METHOD("report_attempt", "type", "amount"), &Town::report_attempt);
 
     // Game Loop
     ClassDB::bind_method(D_METHOD("day_tick"), &Town::day_tick);
@@ -247,11 +246,9 @@ void Town::distribute_from_order(const TradeOrder* order) {
     }
 }
 
-void Town::report_attempt(int type, int amount) {
-    if (amount < 0) {
-        //Only called from selling, so amount is negitive, therefore swap it back to pos and report
-		market -> report_attempt_to_sell(type, -amount);
-    }
+void Town::report_attempt_to_sell(int type, int amount) {
+    //Only called from selling, so amount is negitive, therefore swap it back to pos and report
+    market -> report_attempt_to_sell(type, amount);
 }
 
 std::vector<bool> Town::get_accepts_vector() const {

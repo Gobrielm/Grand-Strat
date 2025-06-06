@@ -23,7 +23,7 @@ public:
     virtual void initialize(const Vector2i new_location, const int player_owner, const int p_max_amount = DEFAULT_MAX_STORAGE);
 
     int add_cargo(int type, int amount) override;
-    int add_cargo_ignore_accepts(int type, int amount);
+    virtual int add_cargo_ignore_accepts(int type, int amount);
     virtual int transfer_cargo(int type, int amount) override;
     virtual int get_desired_cargo(int type) const;
 
