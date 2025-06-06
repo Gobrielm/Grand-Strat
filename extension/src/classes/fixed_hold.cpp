@@ -35,7 +35,7 @@ void FixedHold::initialize(Vector2i new_location, int player_owner, const int p_
 }
 
 int FixedHold::add_cargo(int type, int amount) {
-    if (accepts.count(type)) {
+    if (does_accept(type)) {
         return Hold::add_cargo(type, amount);
     }
     return 0;
@@ -52,7 +52,7 @@ int FixedHold::transfer_cargo(int type, int amount) {
 }
 
 int FixedHold::get_desired_cargo(int type) const {
-    if (accepts.count(type)) {
+    if (does_accept(type)) {
         return get_max_storage() - get_cargo_amount(type);
     }
     return 0;
@@ -70,6 +70,15 @@ Dictionary FixedHold::get_accepts() const {
     return dict;
 }
 
+std::vector<bool> FixedHold::get_accepts_vector() const {
+    std::vector<bool> v;
+    v.resize(accepts.size());
+    for (const int& type: accepts) {
+        v[type] = true;
+    }
+    return v;
+}
+
 void FixedHold::add_accept(int type) {
     accepts.insert(type);
 }
@@ -80,4 +89,8 @@ void FixedHold::remove_accept(int type) {
 
 bool FixedHold::does_accept(int type) const {
     return accepts.count(type);
+}
+
+void FixedHold::clear_accepts() {
+    accepts.clear();
 }

@@ -6,7 +6,6 @@
 using namespace godot;
 
 std::vector<float> LocalPriceController::base_prices = {};
-const float LocalPriceController::MAX_DIFF = 1.5f;
 
 void LocalPriceController::_bind_methods() {
     ClassDB::bind_static_method(get_class_static(), D_METHOD("set_base_prices"), &LocalPriceController::set_base_prices);

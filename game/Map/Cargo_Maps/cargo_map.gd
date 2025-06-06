@@ -142,3 +142,8 @@ func set_tile(coords: Vector2i, atlas: Vector2i) -> void:
 func _on_cargo_values_finished_created_map_resources() -> void:
 	if !Utils.world_map.is_testing():
 		place_random_industries()
+
+func test() -> void:
+	create_factory(0, Vector2i(101, -117), get_primary_recipe_for_type(terminal_map.get_instance().get_cargo_type("grain")), 1)
+	
+	create_town(Vector2i(101, -114), 177)

@@ -61,6 +61,13 @@ float TownMarket::transfer_cash(float amount) {
     return amount;
 }
 
+int TownMarket::add_cargo(int type, int amount) {
+    int amount_to_add = get_amount_to_add(type, amount);
+    storage[type] += amount_to_add;
+    supply[type] += amount_to_add;
+    return amount_to_add;
+}
+
 float TownMarket::get_fulfillment(int type) {
     if (supply[type] == 0)
 		return 5;
@@ -93,7 +100,6 @@ int TownMarket::get_desired_cargo(int type, float price) {
 
 void TownMarket::buy_cargo(int type, int amount, float price) {
     add_cargo(type, amount);
-	supply[type] += amount;
 	remove_cash(round(amount * price));
 }
 

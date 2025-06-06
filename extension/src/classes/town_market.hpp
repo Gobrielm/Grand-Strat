@@ -26,6 +26,8 @@ public:
     float get_cash() const override; 
     float transfer_cash(float amount) override;
 
+    int add_cargo(int type, int amount) override;
+
     float get_fulfillment(int type);
     void report_attempt_to_sell(int type, int amount);
     float get_local_price(int type);

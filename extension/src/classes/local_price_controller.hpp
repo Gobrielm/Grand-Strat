@@ -8,8 +8,8 @@ using namespace godot;
 class LocalPriceController: public RefCounted {
     GDCLASS(LocalPriceController, RefCounted);
     
-    static const float MAX_DIFF;
     static std::vector<float> base_prices;
+    
 
     std::unordered_map<int, int> change;
     std::unordered_map<int, int> attempts_to_trade;
@@ -27,6 +27,8 @@ class LocalPriceController: public RefCounted {
     static void _bind_methods();
 
     public:
+    static constexpr float MAX_DIFF = 1.5f;
+
     LocalPriceController();
     LocalPriceController(const std::unordered_map<int, int>& inputs, const std::unordered_map<int, int>& outputs);
 

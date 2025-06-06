@@ -26,7 +26,6 @@ namespace godot_helpers {
         return result;
     }
 
-    //Will be sorted with smaller weight in front, use pop_front
     template<typename T>
     struct weighted_value {
         float weight;
@@ -42,6 +41,10 @@ namespace godot_helpers {
 
         bool operator<(const weighted_value &other) const {
             return weight < other.weight;
+        }
+
+        bool operator>(const weighted_value &other) const {
+            return weight > other.weight;
         }
     };
 }

@@ -63,6 +63,7 @@ float MoneyController::get_money(int id) const {
     if (it != money.end()) {
         return it->second;
     }
+    UtilityFunctions::print("Error");
     ERR_FAIL_COND_V_MSG(it == money.end(), 0.0f, "Money entry does not exist for player ID " + String::num_int64(id));
     return 0.0f; // Or some error value
 }

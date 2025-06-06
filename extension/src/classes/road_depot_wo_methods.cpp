@@ -1,11 +1,16 @@
 #include "road_depot_wo_methods.hpp"
 
+//TODO: Problems with road depots selling in between each other, and depots selling to towns and towns selling right back
+
+
 void RoadDepotWOMethods::_bind_methods() {
     ClassDB::bind_method(D_METHOD("initialize", "new_location", "player_owner"), &RoadDepotWOMethods::initialize);
 
     // Expose methods to GDScript
     ClassDB::bind_method(D_METHOD("add_connected_road_depot", "road_depot"), &RoadDepotWOMethods::add_connected_road_depot);
     ClassDB::bind_method(D_METHOD("remove_connected_road_depot", "road_depot"), &RoadDepotWOMethods::remove_connected_road_depot);
+
+    ClassDB::bind_method(D_METHOD("month_tick"), &RoadDepotWOMethods::month_tick);
 
     GDVIRTUAL_BIND(supply_armies);
     GDVIRTUAL_BIND(get_road_depot, "tile");
@@ -28,21 +33,26 @@ void RoadDepotWOMethods::initialize(Vector2i new_location, int player_owner) {
 
 void RoadDepotWOMethods::distribute_cargo() {
     cargo_sent = 0;
-    for (const auto &[type, __]: storage) {
+    for (const auto &[type, amount]: storage) {
+        if (amount == 0) continue;
         distribute_type(type);
-        if (cargo_sent == MAX_THROUGHPUT) {
-            return;
-        }
     }	
 }
 
 void RoadDepotWOMethods::distribute_type(int type) {
-    for (const auto &[tile, road_depot]: other_road_depots) {
+    //Prioritize local before sending onward
+    for (const auto &[__, broker]: connected_brokers) {
+        if (broker -> does_accept(type) && broker -> get_player_owner() == get_player_owner()) {
+			distribute_type_to_broker(type, broker);
+        }
+    }
+
+    for (const auto &[__, road_depot]: other_road_depots) {
+        if (cargo_sent == MAX_THROUGHPUT) break;
         //Must be owned by same person
 		if (road_depot -> does_accept(type) && road_depot -> get_player_owner() == get_player_owner()) {
-			distribute_type_to_road_depot(type, road_depot);
+            distribute_type_to_road_depot(type, road_depot);
         }
-			
     }
 }
 
@@ -51,6 +61,12 @@ void RoadDepotWOMethods::distribute_type_to_road_depot(int type, RoadDepotWOMeth
     int amount = std::min(amount_desired, std::min(get_cargo_amount(type), MAX_THROUGHPUT - cargo_sent));
     cargo_sent += amount;
     road_depot -> add_cargo(type, transfer_cargo(type, amount));
+}
+
+void RoadDepotWOMethods::distribute_type_to_broker(int type, Broker* broker) {
+    int amount_desired = broker -> get_desired_cargo_from_train(type);
+    int amount = std::min(amount_desired, get_cargo_amount(type));
+    broker -> add_cargo(type, transfer_cargo(type, amount));
 }
 
 void RoadDepotWOMethods::add_connected_broker(Broker* broker) {
@@ -80,18 +96,17 @@ void RoadDepotWOMethods::remove_connected_road_depot(const RoadDepotWOMethods* n
 }
 
 void RoadDepotWOMethods::add_accepts_from_depot(const RoadDepotWOMethods* road_depot) {
-    for (int type: road_depot -> accepts) {
-        add_accept(type);
-        if (rand() % 20 == 0) {
-            UtilityFunctions::print("Road Depot near road depot accepts " + String(CargoInfo::get_instance() -> get_cargo_name(type).c_str()));
+    std::vector<bool> accepts = road_depot -> get_accepts_vector();
+    for (int type = 0; type < accepts.size(); type++) {
+        if (accepts[type]) {
+            add_accept(type);
         }
     }
 }
 
 void RoadDepotWOMethods::refresh_accepts() {
-    accepts.clear();
+    clear_accepts();
     update_accepts_from_trains(); //Adds accepts from towns/factories/ect
-    UtilityFunctions::print(other_road_depots.size());
     for (const auto &[__, road_depot]: other_road_depots) {
         add_accepts_from_depot(road_depot);
     }
@@ -105,7 +120,11 @@ bool RoadDepotWOMethods::is_price_acceptable(int type, float pricePer) const {
 
 
 void RoadDepotWOMethods::search_for_and_add_road_depots() {
-    std::priority_queue<godot_helpers::weighted_value<Vector2i>> pq;
+    std::priority_queue<
+    godot_helpers::weighted_value<Vector2i>,
+    std::vector<godot_helpers::weighted_value<Vector2i>>, /*vector on backend*/
+    std::greater<godot_helpers::weighted_value<Vector2i>> /*Smallest in front*/
+    > pq;
     std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> s;
     s.insert(get_location());
     RoadMap* road_map = RoadMap::get_instance();
@@ -113,17 +132,17 @@ void RoadDepotWOMethods::search_for_and_add_road_depots() {
 
     push(get_location(), 0);
     godot_helpers::weighted_value<Vector2i> curr;
-    while (pq.size() != 0) {
+    while (pq.size() > 0) {
         curr = pq.top();
         pq.pop();
         RoadDepotWOMethods* road_depot = get_road_depot(curr.val);
-        if (road_depot != nullptr) {
+        if (road_depot != nullptr && road_depot != this) {
             add_connected_road_depot(road_depot);
             road_depot -> add_connected_road_depot(this);
         }
 
         Array tiles = road_map -> get_surrounding_cells(curr.val);
-        for (int i = 0; i < 6; i++) {
+        for (int i = 0; i < tiles.size(); i++) {
             Vector2i tile = tiles[i];
             if (!s.count(tile)) {
                 s.insert(tile);
@@ -137,9 +156,9 @@ void RoadDepotWOMethods::search_for_and_add_road_depots() {
     }
 }
 
-int RoadDepotWOMethods::get_desired_cargo(int type) const {
+int RoadDepotWOMethods::get_desired_cargo(int type, float pricePer) const {
     if (does_accept(type)) {
-        return MAX_THROUGHPUT;
+        return std::min(get_max_storage() - get_cargo_amount(type), get_amount_can_buy(pricePer));
     }
     return 0;
 }
@@ -160,15 +179,16 @@ float RoadDepotWOMethods::get_cash() const {
     }
 }
 
+//For Testing
+
 void RoadDepotWOMethods::add_cash(float amount) {}
 
 void RoadDepotWOMethods::remove_cash(float amount) {}
 
-void RoadDepotWOMethods::day_tick() { //This may never fire either
+void RoadDepotWOMethods::day_tick() {
     distribute_cargo();
 }
 
-void RoadDepotWOMethods::month_tick() { //This never fires
-    UtilityFunctions::print("month tick");
+void RoadDepotWOMethods::month_tick() {
     refresh_accepts(); //Needs to happen monthly, since towns change orders
 }

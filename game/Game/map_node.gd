@@ -50,10 +50,12 @@ func initialize_game() -> void:
 		#Then countries
 		tile_ownership_obj.create_countries()
 		#Then resources and industries that need both of those
-		cargo_map.place_resources(main_map)
+		#cargo_map.place_resources(main_map)
+		cargo_map.test()
 		#Then create pops which needs towns
 		map_data.get_instance().create_pops()
 	enable_nation_picker()
+	
 
 func _input(event: InputEvent) -> void:
 	var cell_position: Vector2i = get_cell_position()

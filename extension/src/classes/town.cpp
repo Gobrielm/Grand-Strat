@@ -99,6 +99,16 @@ int Town::sell_cargo(int type, int amount, float price) {
     return market -> sell_cargo(type, amount, price);
 }
 
+void Town::add_cash(float amount) {
+    market -> add_cash(amount);
+}
+void Town::remove_cash(float amount) {
+    market -> remove_cash(amount);
+}
+float Town::get_cash() const {
+    return market -> get_cash();
+}
+
 // Production
 float Town::get_fulfillment(int type) const {
     return market -> get_fulfillment(type);
@@ -135,6 +145,20 @@ Dictionary Town::get_demand() const {
         d[type] = v[type];
     }
     return d;
+}
+
+//Storage
+Dictionary Town::get_current_hold() const {
+    return market -> get_current_hold();
+}
+int Town::add_cargo(int type, int amount) {
+    return market -> add_cargo(type, amount);
+}
+void Town::remove_cargo(int type, int amount) {
+    market -> remove_cargo(type, amount);
+}
+int Town::transfer_cargo(int type, int amount) {
+    return market -> transfer_cargo(type, amount);
 }
 
 //Pop stuff
@@ -230,6 +254,16 @@ void Town::report_attempt(int type, int amount) {
     }
 }
 
+std::vector<bool> Town::get_accepts_vector() const {
+    std::vector<bool> v;
+    int size = get_supply().size();
+    v.resize(size);
+    for (int type = 0; type < size; type++) {
+        v[type] = does_accept(type);
+    }
+    return v;
+}
+
 // Process Hooks
 void Town::day_tick() {
     sell_to_other_brokers();
@@ -237,6 +271,6 @@ void Town::day_tick() {
 
 void Town::month_tick() {
     sell_to_pops();
-    // update_buy_orders();
+    update_buy_orders();
     market -> month_tick();
 }

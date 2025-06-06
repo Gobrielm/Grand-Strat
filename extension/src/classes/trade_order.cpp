@@ -94,7 +94,7 @@ Array TradeOrder::convert_to_array() const {
 }
 
 bool TradeOrder::is_price_acceptable(double price) const {
-    return buy ? price < max_price : price > max_price;
+    return buy ? price <= max_price : price >= max_price;
 }
 
 TradeOrder* TradeOrder::construct_from_array(const Array& array) {

@@ -41,15 +41,15 @@ float StationWOMethods::get_local_price(int type) const {
     int amount_total = 0;
     float market_price = 0.0;
 
-    for (const auto &[tile, broker] : connected_brokers) {
+    for (const auto &[__, broker] : connected_brokers) {
         const TradeOrder* order = broker->get_order(type);
-        if (!order) continue;
+        if (order == nullptr) continue;
 
         amount_total += order->get_amount();
         market_price += order->get_amount() * broker->get_local_price(type);
     }
-
-    return amount_total == 0 ? 0.0f : market_price / amount_total;
+    float max_price = CargoInfo::get_instance() -> get_base_prices().at(type) * LocalPriceController::MAX_DIFF;
+    return amount_total == 0 ? max_price : market_price / amount_total;
 }
 
 void StationWOMethods::place_order(int type, int amount, bool buy, float max_price) {
@@ -117,11 +117,10 @@ void StationWOMethods::update_accepts_from_trains() {
 }
 
 void StationWOMethods::add_accepts(Broker* broker) {
-    for (int type: broker->accepts) {
-        add_accept(type);
-        if (rand() % 20 == 0) {
-            UtilityFunctions::print("Road Depot near broker accepts " + String(CargoInfo::get_instance() -> get_cargo_name(type).c_str()));
-        }
+    int type = 0;
+    for (bool status: broker->get_accepts_vector()) {
+        if (status) add_accept(type);
+        type++;
     }
 }
 

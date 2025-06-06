@@ -119,7 +119,7 @@ void FactoryTemplate::add_outputs(int batch_size) {
 }
 
 void FactoryTemplate::distribute_cargo() {
-    for (auto& [type, amount]: outputs) {
+    for (const auto& [type, __]: outputs) {
         TradeOrder* order = get_order(type);
         if (order && order->is_sell_order()) {
             distribute_from_order(order);

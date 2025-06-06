@@ -46,9 +46,13 @@ void AiFactory::change_order(int type, bool buy) {
 
     if (get_order(type) == nullptr) {
         place_order(type, amount, buy, limit_price);
+    } else {
+        edit_order(type, amount, buy, limit_price);
     }
 
     TradeOrder* order = get_order(type);
+
+
 
     if (get_cargo_amount(type) > get_max_storage() * MAX_AMOUNT_WANTED && outputs.count(type)) {
         amount = amount * 2;

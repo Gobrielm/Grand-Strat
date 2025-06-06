@@ -76,6 +76,7 @@ int Broker::get_desired_cargo_from_train(int type) const {
     return 0;
 }
 
+//For buying
 bool Broker::is_price_acceptable(int type, float pricePer) const {
     return trade_orders.at(type)->get_limit_price() >= pricePer;
 }
@@ -113,8 +114,7 @@ void Broker::edit_order(int type, int amount, bool buy, float maxPrice) {
 }
 
 TradeOrder* Broker::get_order(int type) const {
-    auto it = trade_orders.find(type);
-    if (it != trade_orders.end()) return it->second;
+    if (trade_orders.count(type) == 1) return trade_orders.at(type);
     return nullptr;
 }
 
@@ -178,6 +178,7 @@ void Broker::distribute_to_order(Broker* otherBroker, const TradeOrder* order) {
     report_attempt(type, -order->get_amount());
 
     int amount = std::min(desired, order->get_amount());
+
     if (amount > 0) {
         amount = sell_cargo(type, amount, price);
         otherBroker->buy_cargo(type, amount, price);

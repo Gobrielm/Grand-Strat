@@ -71,7 +71,7 @@ int Hold::get_cargo_amount(int type) const {
 
 void Hold::remove_cargo(int type, int amount) {
     storage[type] -= amount;
-    ERR_FAIL_COND_MSG(storage[type] < 0, "Storage went below zero!");
+    ERR_FAIL_COND_MSG(storage[type] < 0, "Storage went below zero! It is " + String::num(storage[type]));
 }
 
 int Hold::transfer_cargo(int type, int amount) {

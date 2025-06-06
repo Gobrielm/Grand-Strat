@@ -42,6 +42,7 @@ public:
     void distribute_cargo() override;
     void distribute_type(int type);
     void distribute_type_to_road_depot(int type, RoadDepotWOMethods* road_depot);
+    void distribute_type_to_broker(int type, Broker* broker);
 
     void add_connected_broker(Broker* broker) override;
     void remove_connected_broker(const Broker* broker) override;
@@ -54,11 +55,11 @@ public:
     bool is_price_acceptable(int type, float pricePer) const override;
     void search_for_and_add_road_depots();
 
-    virtual int get_desired_cargo(int type) const override;
+    virtual int get_desired_cargo(int type, float pricePer) const override;
 
-    virtual float get_cash() const override; //Temporary for testing
-    virtual void add_cash(float amount) override; //Temporary for testing
-    virtual void remove_cash(float amount) override; //Temporary for testing
+    float get_cash() const override; //Temporary for testing
+    void add_cash(float amount) override; //Temporary for testing
+    void remove_cash(float amount) override; //Temporary for testing
 
     virtual void day_tick() override;
     virtual void month_tick();
