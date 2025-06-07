@@ -18,7 +18,6 @@
 #include "../classes/fixed_hold.hpp"
 #include "../classes/broker.hpp"
 #include "../classes/station.hpp"
-#include "../classes/town_market.hpp"
 #include "../classes/town.hpp"
 #include "../classes/factory_template.hpp"
 #include "../classes/construction_site.hpp"
@@ -40,13 +39,10 @@ void initialize_gdextension_types(ModuleInitializationLevel p_level)
 		return;
 	}
 
-	
-
 	//--verbose in godot for more details
 	GDREGISTER_CLASS(LocalPriceController);
 	GDREGISTER_CLASS(FactoryLocalPriceController);
 	GDREGISTER_CLASS(MoneyController);
-
 	GDREGISTER_CLASS(BasePop);
 	GDREGISTER_CLASS(RuralPop);
 	GDREGISTER_CLASS(TownPop);
@@ -58,7 +54,6 @@ void initialize_gdextension_types(ModuleInitializationLevel p_level)
 	GDREGISTER_CLASS(FixedHold);
 	GDREGISTER_CLASS(Broker);
 	GDREGISTER_CLASS(StationWOMethods);
-	GDREGISTER_CLASS(TownMarket);
 	GDREGISTER_CLASS(Town);
 	GDREGISTER_CLASS(FactoryTemplate);
 	GDREGISTER_CLASS(ConstructionSite);

@@ -32,7 +32,7 @@ public:
     std::unordered_map<int, int> outputs;
 
     FactoryTemplate();
-    ~FactoryTemplate();
+    virtual ~FactoryTemplate();
     FactoryTemplate(Vector2i new_location, int player_owner, Dictionary new_inputs, Dictionary new_outputs);
 
     static Terminal* create(Vector2i new_location, int player_owner, Dictionary new_inputs, Dictionary new_outputs);

@@ -21,5 +21,5 @@ class RuralPop : public BasePop {
 
     RuralPop();
     RuralPop(int p_home_prov_id, Variant p_culture);
-    ~RuralPop();
+    virtual ~RuralPop();
 };

@@ -21,5 +21,5 @@ class TownPop : public BasePop {
 
     TownPop();
     TownPop(int p_home_prov_id, Variant p_culture);
-    ~TownPop();
+    virtual ~TownPop();
 };

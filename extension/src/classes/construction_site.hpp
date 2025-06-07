@@ -19,7 +19,7 @@ protected:
 
 public:
     ConstructionSite();
-    ~ConstructionSite();
+    virtual ~ConstructionSite();
     ConstructionSite(Vector2i new_location, int player_owner);
 
     static Terminal* create(Vector2i new_location, int player_owner);

@@ -6,7 +6,7 @@ using namespace godot;
 
 class PrivateAiFactory : public AiFactory {
     GDCLASS(PrivateAiFactory, AiFactory)
-    int cash = 1000;
+    float cash = 1000;
 
 
 protected:
@@ -14,7 +14,7 @@ protected:
 
 public:
     PrivateAiFactory();
-    ~PrivateAiFactory();
+    virtual ~PrivateAiFactory();
     PrivateAiFactory(Vector2i new_location, Dictionary new_inputs, Dictionary new_outputs);
 
     static Terminal* create(Vector2i new_location, Dictionary new_inputs, Dictionary new_outputs);

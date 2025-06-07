@@ -38,7 +38,7 @@ public:
 
     RoadDepotWOMethods();
     RoadDepotWOMethods(Vector2i new_location, int player_owner);
-    ~RoadDepotWOMethods();
+    virtual ~RoadDepotWOMethods();
 
     virtual void initialize(Vector2i new_location, int player_owner) override;
     void distribute_cargo() override;

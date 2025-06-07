@@ -26,5 +26,5 @@ class Terminal : public Object {
         location = p_location;
         player_owner = p_owner;
     }
-    ~Terminal() {}
+    virtual ~Terminal() {}
 };

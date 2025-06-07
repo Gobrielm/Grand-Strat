@@ -37,9 +37,10 @@ Broker::Broker(const Vector2i new_location, const int player_owner, const int p_
 
 Broker::~Broker() {
     for (auto& [key, ptr]: trade_orders) {
-        delete ptr;
+        memdelete(ptr);
     }
     trade_orders.clear();
+    if (local_pricer) memdelete(local_pricer);
 }
 
 void Broker::initialize(const Vector2i new_location, const int player_owner, const int p_max_amount) {

@@ -26,20 +26,20 @@ class Broker : public FixedHold {
 
     Broker();
     Broker(const Vector2i new_location, const int player_owner, const int p_max_amount = DEFAULT_MAX_STORAGE);
-    ~Broker();
+    virtual ~Broker();
     virtual void initialize(const Vector2i new_location, const int player_owner, const int p_max_amount = DEFAULT_MAX_STORAGE);
 
     bool can_afford(int price) const;
-    virtual Dictionary get_local_prices() const;
+    Dictionary get_local_prices() const;
     virtual float get_local_price(int type) const;
 
     virtual int get_desired_cargo(int type, float pricePer) const;
-    virtual int get_desired_cargo_from_train(int type) const;
+    int get_desired_cargo_from_train(int type) const;
 
     virtual bool is_price_acceptable(int type, float pricePer) const;
 
-    virtual void buy_cargo(int type, int amount, float price);
-    virtual int sell_cargo(int type, int amount, float price);
+    void buy_cargo(int type, int amount, float price);
+    int sell_cargo(int type, int amount, float price);
     int add_cargo(int type, int amount) override;
     int add_cargo_ignore_accepts(int type, int amount) override;
 
@@ -59,7 +59,7 @@ class Broker : public FixedHold {
     virtual void distribute_from_order(const TradeOrder* order);
     void distribute_to_order(Broker* otherBroker, const TradeOrder* order);
 
-    virtual void report_attempt_to_sell(int type, int amount);
+    void report_attempt_to_sell(int type, int amount);
 
     
 };
