@@ -35,6 +35,9 @@ const std::vector<int>& TownMarket::get_demand() {
    return local_pricer -> get_demand();
 }
 
+const std::vector<int>& TownMarket::get_last_month_supply() { return local_pricer -> get_last_month_supply(); }
+const std::vector<int>& TownMarket::get_last_month_demand() { return local_pricer -> get_last_month_demand(); }
+
 void TownMarket::add_cash(float amount) {
     cash += amount;
 }

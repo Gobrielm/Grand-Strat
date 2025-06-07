@@ -25,7 +25,7 @@ class LocalPriceController: public RefCounted {
     static void _bind_methods();
 
     public:
-    static constexpr float MAX_DIFF = 1.5f;
+    static constexpr float MAX_DIFF = 1.5f; //Highest difference from base price for all traders
 
     LocalPriceController();
 
@@ -53,4 +53,6 @@ class LocalPriceController: public RefCounted {
     float get_base_price(int type) const;
 
     Dictionary get_local_prices();
+
+    virtual float get_max_diff() const;
 };

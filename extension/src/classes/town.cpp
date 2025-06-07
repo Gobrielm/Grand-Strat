@@ -19,8 +19,8 @@ void Town::_bind_methods() {
     // Factory and Pop management
     ClassDB::bind_method(D_METHOD("add_factory", "factory"), &Town::add_factory);
     ClassDB::bind_method(D_METHOD("add_pop", "pop"), &Town::add_pop);
-    ClassDB::bind_method(D_METHOD("get_supply"), &Town::get_supply);
-    ClassDB::bind_method(D_METHOD("get_demand"), &Town::get_demand);
+    ClassDB::bind_method(D_METHOD("get_last_month_supply"), &Town::get_last_month_supply);
+    ClassDB::bind_method(D_METHOD("get_last_month_demand"), &Town::get_last_month_demand);
 
     // Fulfillment
     ClassDB::bind_method(D_METHOD("get_fulfillment", "type"), &Town::get_fulfillment);
@@ -82,12 +82,20 @@ float Town::get_local_price(int type) const {
     return market -> get_local_price(type);
 }
 
+Dictionary Town::get_local_prices() const {
+    return market -> get_local_prices();
+}
+
 bool Town::is_price_acceptable(int type, float price) const {
     return market -> is_price_acceptable(type, price);
 }
 
 int Town::get_desired_cargo(int type, float price) const {
     return market -> get_desired_cargo(type, price);
+}
+
+int Town::get_desired_cargo_from_train(int type) const {
+    return market -> get_desired_cargo_from_train(type);
 }
 
 void Town::buy_cargo(int type, int amount, float price) {
@@ -128,18 +136,18 @@ void Town::add_factory(FactoryTemplate* fact) {
 	fact->add_connected_broker(this);
 }
 
-Dictionary Town::get_supply() const {
+Dictionary Town::get_last_month_supply() const {
     Dictionary d = {};
-    const auto v = market -> get_supply();
+    const auto v = market -> get_last_month_supply();
     for (int type = 0; type < v.size(); type++) {
         d[type] = v[type];
     }
     return d;
 }
 
-Dictionary Town::get_demand() const {
+Dictionary Town::get_last_month_demand() const {
     Dictionary d = {};
-    const auto v = market -> get_demand();
+    const auto v = market -> get_last_month_demand();
     for (int type = 0; type < v.size(); type++) {
         d[type] = v[type];
     }
@@ -253,7 +261,7 @@ void Town::report_attempt_to_sell(int type, int amount) {
 
 std::vector<bool> Town::get_accepts_vector() const {
     std::vector<bool> v;
-    int size = get_supply().size();
+    int size = market -> get_supply().size();
     v.resize(size);
     for (int type = 0; type < size; type++) {
         v[type] = does_accept(type);

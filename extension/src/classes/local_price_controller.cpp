@@ -67,14 +67,11 @@ void LocalPriceController::adjust_cargo_price(int type, float base_price) {
 
     float diff_from_base = get_current_difference_from_base_price(type);
 
-    diff_from_base = std::min(diff_from_base, 1.5f);
-    diff_from_base = std::max(diff_from_base, 0.5f);
-
     float current_diff_from_base = get_difference_from_base_price(type, last_month_supply, last_month_demand);
 
     float change_of_price = (diff_from_base - current_diff_from_base) * MARKET_CHANGE_RATE; // Discrepancy_of_price
 
-    change_of_price = change_of_price > 0 ? std::max(change_of_price, 0.01f) : std::min(change_of_price, -0.01f);
+    if (change_of_price != 0) change_of_price = change_of_price > 0 ? std::max(change_of_price, 0.01f) : std::min(change_of_price, -0.01f);
 
     local_prices[type] = base_price * (current_diff_from_base + change_of_price);
 
@@ -86,9 +83,16 @@ void LocalPriceController::adjust_cargo_price(int type, float base_price) {
 }
 
 
-float LocalPriceController::get_difference_from_base_price(int type, std::vector<int> &p_supply, std::vector<int> &p_demand) const {
+float LocalPriceController::get_difference_from_base_price(int type, std::vector<int> &p_supply, std::vector<int> &p_demand) const { // Returns percentage diff + 1
+    if (supply[type] == demand[type] && supply[type] == 0) {
+        return 1;
+    }
     //If no demand, then make price very cheap
-    return 1 + p_demand[type] == 0 ? -1: float(p_demand[type] - p_supply[type]) / p_demand[type]; //+>1 if demand > supply
+    float diff_from_base = 1 + (p_demand[type] == 0 ? -1: float(p_demand[type] - p_supply[type]) / p_demand[type]);
+    diff_from_base = std::min(diff_from_base, get_max_diff());
+    diff_from_base = std::max(diff_from_base, 1 / get_max_diff());
+
+    return diff_from_base; //+>1 if demand > supply
 }
 
 float LocalPriceController::get_current_difference_from_base_price(int type) {
@@ -101,4 +105,8 @@ Dictionary LocalPriceController::get_local_prices() {
         d[type] = local_prices[type];
     }
     return d;
+}
+
+float LocalPriceController::get_max_diff() const {
+    return MAX_DIFF;
 }

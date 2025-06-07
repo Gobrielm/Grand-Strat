@@ -25,7 +25,6 @@ private:
 
 protected:
     static void _bind_methods();
-    
 
 public:
     Town();
@@ -39,9 +38,11 @@ public:
     // Trade
     bool does_accept(int type) const override;
     float get_local_price(int type) const override;
+    Dictionary get_local_prices() const override;
     bool is_price_acceptable(int type, float price) const override;
 
     int get_desired_cargo(int type, float price) const override;
+    int get_desired_cargo_from_train(int type) const override;
     void buy_cargo(int type, int amount, float price) override;
     int sell_cargo(int type, int amount, float price) override;
 
@@ -53,8 +54,8 @@ public:
     float get_fulfillment(int type) const;
     Dictionary get_fulfillment_dict() const;
     void add_factory(FactoryTemplate* fact);
-    Dictionary get_supply() const;
-    Dictionary get_demand() const;
+    Dictionary get_last_month_supply() const;
+    Dictionary get_last_month_demand() const;
 
     //Storage
     Dictionary get_current_hold() const override;

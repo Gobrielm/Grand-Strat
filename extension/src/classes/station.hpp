@@ -28,7 +28,7 @@ protected:
     static void _bind_methods();
 
 public:
-    
+    static constexpr float SERVICE_FEE = 0.02;
 
     static Terminal* create(Vector2i new_location, int player_owner);
 

@@ -1,4 +1,5 @@
 #include "factory_template.hpp"
+#include "factory_local_price_controller.hpp"
 #include "base_pop.hpp"
 #include <godot_cpp/core/class_db.hpp>
 #include <algorithm>
@@ -59,7 +60,7 @@ void FactoryTemplate::initialize(Vector2i new_location, int player_owner, Dictio
         int type = output_keys[i];
         outputs[type] = new_outputs[type];
     }
-    local_pricer = memnew(LocalPriceController);
+    local_pricer = memnew(FactoryLocalPriceController);
     pops_needed = 1;
 }
 

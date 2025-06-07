@@ -74,7 +74,9 @@ func _input(event: InputEvent) -> void:
 		elif state_machine.is_building_road_depot():
 			main_map.place_road_depot()
 	elif event.is_action_released("click"):
-		if state_machine.is_controlling_camera() and terminal_map.get_instance().is_owned_station(cell_position, unique_id):
+		if state_machine.is_controlling_camera() and terminal_map.get_instance().is_road_depot(cell_position):
+			factory_window.open_window(cell_position)
+		elif state_machine.is_controlling_camera() and terminal_map.get_instance().is_owned_station(cell_position, unique_id):
 			station_window.open_window(cell_position)
 		elif state_machine.is_controlling_camera() and terminal_map.get_instance().is_station(cell_position):
 			viewer_station_window.open_window(cell_position)
@@ -85,9 +87,11 @@ func _input(event: InputEvent) -> void:
 		elif state_machine.is_controlling_camera() and terminal_map.get_instance().is_factory(cell_position):
 			factory_window.open_window(cell_position)
 		elif state_machine.is_controlling_camera() and terminal_map.get_instance().is_town(cell_position):
-			town_window.open_window(cell_position)
+			factory_window.open_window(cell_position)
+			#town_window.open_window(cell_position)
 		elif state_machine.is_controlling_camera() and map_data.get_instance().is_owned_depot(cell_position, unique_id):
-			depot_window.open_window(cell_position)
+			factory_window.open_window(cell_position)
+			#depot_window.open_window(cell_position)
 		elif state_machine.is_building_many_rails():
 			main_map.place_rail_to_start()
 		elif state_machine.is_building_roads():

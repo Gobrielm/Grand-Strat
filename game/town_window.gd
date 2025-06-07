@@ -20,7 +20,7 @@ func update_window() -> void:
 func request_market_info(p_coords: Vector2i) -> void:
 	var town: Town = terminal_map.get_instance().get_town(p_coords)
 	if town != null:
-		set_market_info.rpc_id(multiplayer.get_remote_sender_id(), town.get_current_hold(), town.get_supply(), town.get_demand())
+		set_market_info.rpc_id(multiplayer.get_remote_sender_id(), town.get_current_hold(), town.get_last_month_supply(), town.get_last_month_demand())
 	set_market_info.rpc_id(multiplayer.get_remote_sender_id(), {}, {}, {})
 
 

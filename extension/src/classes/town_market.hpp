@@ -17,6 +17,9 @@ public:
     const std::vector<int>& get_supply();
     const std::vector<int>& get_demand();
 
+    const std::vector<int>& get_last_month_supply();
+    const std::vector<int>& get_last_month_demand();
+
     void add_cash(float amount) override;
     void remove_cash(float amount) override;
     float get_cash() const override; 

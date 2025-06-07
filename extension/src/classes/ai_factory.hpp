@@ -7,7 +7,7 @@ using namespace godot;
 class AiFactory : public Factory {
     GDCLASS(AiFactory, Factory)
     static constexpr int CASH_NEEDED_MULTIPLIER = 5;
-    static constexpr float MAX_AMOUNT_WANTED = 0.75;
+    static constexpr float MAX_AMOUNT_WANTED = 0.5f;
 
 
 protected:

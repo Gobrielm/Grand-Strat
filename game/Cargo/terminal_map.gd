@@ -254,7 +254,7 @@ func get_local_prices(coords: Vector2i) -> Dictionary:
 	mutex.lock()
 	if cargo_map_terminals.has(coords):
 		var fact: Terminal = cargo_map_terminals[coords]
-		if fact is FactoryTemplate:
+		if fact is Broker:
 			toReturn = fact.get_local_prices()
 	mutex.unlock()
 	return toReturn
@@ -277,6 +277,9 @@ func get_broker(coords: Vector2i) -> Broker:
 
 func is_station(coords: Vector2i) -> bool:
 	return get_terminal(coords) is StationWOMethods
+
+func is_road_depot(coords: Vector2i) -> bool:
+	return get_terminal(coords) is RoadDepotWOMethods
 
 func is_owned_station(coords: Vector2i, player_id: int) -> bool:
 	var temp: Station = get_station(coords)
