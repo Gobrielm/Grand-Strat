@@ -16,6 +16,7 @@ CargoInfo::CargoInfo() {
         cargo_types[s] = i;
         i++;
     }
+    create_amount_of_primary_goods();
 }
 
 void CargoInfo::initialize_singleton() {
@@ -45,4 +46,29 @@ int CargoInfo::get_cargo_type(std::string cargo_name) const {
         ERR_FAIL_V_MSG(-1, ("No cargo of name " + cargo_name).c_str());
     }
     return cargo_types.at(cargo_name);
+}
+
+void CargoInfo::create_amount_of_primary_goods() {
+    for (int i = 0; i < cargo_types.size(); ++i) {
+        if (String(cargo_names[i].c_str()) == "gold") {
+            amount_of_primary_goods = i + 1;
+            break;
+        }
+    }
+}
+
+int CargoInfo::get_number_of_goods() const {
+    return cargo_names.size();
+}
+
+bool CargoInfo::is_cargo_primary(int cargo_type) const {
+    return cargo_type < amount_of_primary_goods;
+}
+
+Array CargoInfo::get_cargo_array() const {
+    Array toReturn;
+    for (std::string x: cargo_names) {
+        toReturn.push_back(String(x.c_str()));
+    }
+    return toReturn;
 }

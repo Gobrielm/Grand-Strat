@@ -44,6 +44,8 @@ protected:
     static void _bind_methods();
 
 public:
+    int amount_of_primary_goods = 0;
+    
     CargoInfo();
     static void initialize_singleton();
     
@@ -52,5 +54,8 @@ public:
     const std::unordered_map<int, float> get_base_prices();
     std::string get_cargo_name(int type) const;
     int get_cargo_type(std::string cargo_name) const;
-    
+    void create_amount_of_primary_goods();
+    int get_number_of_goods() const;
+    bool is_cargo_primary(int cargo_type) const;
+    Array get_cargo_array() const;
 };

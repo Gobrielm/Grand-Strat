@@ -63,19 +63,17 @@ void LocalPriceController::adjust_prices() {
 }
 
 void LocalPriceController::adjust_cargo_price(int type, float base_price) {
-    
 
     float diff_from_base = get_current_difference_from_base_price(type);
 
-    float current_diff_from_base = get_difference_from_base_price(type, last_month_supply, last_month_demand);
+    float current_diff_from_base = local_prices[type] / base_price;
 
     float change_of_price = (diff_from_base - current_diff_from_base) * MARKET_CHANGE_RATE; // Discrepancy_of_price
-
-    if (change_of_price != 0) change_of_price = change_of_price > 0 ? std::max(change_of_price, 0.01f) : std::min(change_of_price, -0.01f);
-
-    local_prices[type] = base_price * (current_diff_from_base + change_of_price);
-
-
+    
+    if (abs(change_of_price) > 0.01f) {
+        local_prices[type] = base_price * (current_diff_from_base + change_of_price); 
+    }
+    
     last_month_supply[type] = supply[type];
     supply[type] = 0;
     last_month_demand[type] = demand[type];
@@ -84,7 +82,7 @@ void LocalPriceController::adjust_cargo_price(int type, float base_price) {
 
 
 float LocalPriceController::get_difference_from_base_price(int type, std::vector<int> &p_supply, std::vector<int> &p_demand) const { // Returns percentage diff + 1
-    if (supply[type] == demand[type] && supply[type] == 0) {
+    if (p_supply[type] == p_demand[type] && p_supply[type] == 0) {
         return 1;
     }
     //If no demand, then make price very cheap

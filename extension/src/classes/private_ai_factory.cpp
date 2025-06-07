@@ -26,7 +26,7 @@ void PrivateAiFactory::initialize(Vector2i new_location, Dictionary new_inputs, 
 
 //Orders
 void PrivateAiFactory::add_cash(float amount) {
-    amount += amount;
+    cash += amount;
 }
 void PrivateAiFactory::remove_cash(float amount) {
     cash -= amount;
