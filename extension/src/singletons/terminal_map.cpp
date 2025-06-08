@@ -241,11 +241,11 @@ bool TerminalMap::is_owned_station(const Vector2i &coords, int player_id) {
     }
     return false;
 }
-bool TerminalMap::is_ai_station(const Vector2i &coords) {                       //TODO
-    return false;
+bool TerminalMap::is_ai_station(const Vector2i &coords) {                       //May work?
+    return get_terminal(coords) -> get_class() == "AiStation";
 } 
-bool TerminalMap::is_owned_ai_station(const Vector2i &coords, int id) {         //TODO
-    return false;
+bool TerminalMap::is_owned_ai_station(const Vector2i &coords, int id) {
+    return is_ai_station(coords) && get_terminal(coords) -> get_player_owner() == id;
 } 
 bool TerminalMap::is_town(const Vector2i &coords) {
     return dynamic_cast<Town*>(get_terminal(coords)) != nullptr;
@@ -340,7 +340,7 @@ Town* TerminalMap::get_town(const Vector2i &coords) {
 }
 
 //External Getters
-Ref<ScopedTerminal> TerminalMap::request_terminal(const Vector2i &coords) { //                  TODO: Almost crashes when sending anything
+Ref<ScopedTerminal> TerminalMap::request_terminal(const Vector2i &coords) {
     if (object_mutexs.count(coords)) {
         object_mutexs[coords]->lock();
         Ref<ScopedTerminal> scoped;
