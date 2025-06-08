@@ -92,8 +92,8 @@ public:
     Dictionary get_town_fulfillment(const Vector2i &coords);
 
     //External Getters
-    ScopedTerminal* request_terminal(const Vector2i &coords);
-    void return_terminal(ScopedTerminal* scoped_terminal);
+    Ref<ScopedTerminal> request_terminal(const Vector2i &coords);
+    void return_terminal(Ref<ScopedTerminal> scoped_terminal);
 
     //Action doers
     void set_construction_site_recipe(const Vector2i &coords, const Array &selected_recipe);

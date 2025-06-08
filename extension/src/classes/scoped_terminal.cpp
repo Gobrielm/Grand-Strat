@@ -6,15 +6,20 @@ void ScopedTerminal::_bind_methods() {
     ClassDB::bind_method(D_METHOD("release_lock"), &ScopedTerminal::release_lock);
 }
 
-
 ScopedTerminal::ScopedTerminal(Terminal* val) {
+    UtilityFunctions::print("Constructor");
     value = val;
 }
 
 ScopedTerminal::~ScopedTerminal() {
+    UtilityFunctions::print("Destructor");
     if (value != nullptr) {
         ERR_FAIL_MSG("A Scoped Terminal was not given back");
     }
+}
+
+void ScopedTerminal::set_terminal(Terminal* terminal) {
+    value = terminal;
 }
 
 Terminal* ScopedTerminal::get_value() const {
@@ -22,5 +27,6 @@ Terminal* ScopedTerminal::get_value() const {
 }
 
 void ScopedTerminal::release_lock() {
+    UtilityFunctions::print("Released");
     value = nullptr;
 }

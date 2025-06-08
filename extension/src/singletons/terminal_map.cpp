@@ -340,15 +340,18 @@ Town* TerminalMap::get_town(const Vector2i &coords) {
 }
 
 //External Getters
-ScopedTerminal* TerminalMap::request_terminal(const Vector2i &coords) { //                  TODO: Almost crashes when sending anything
+Ref<ScopedTerminal> TerminalMap::request_terminal(const Vector2i &coords) { //                  TODO: Almost crashes when sending anything
     if (object_mutexs.count(coords)) {
         object_mutexs[coords]->lock();
-        return memnew(ScopedTerminal(get_terminal(coords)));
+        Ref<ScopedTerminal> scoped;
+        scoped.instantiate();
+        scoped -> set_terminal(get_terminal(coords));
+        return scoped;
     }
     return nullptr;
 }
 
-void TerminalMap::return_terminal(ScopedTerminal* scoped_terminal) {
+void TerminalMap::return_terminal(Ref<ScopedTerminal> scoped_terminal) {
     Terminal* terminal = scoped_terminal -> get_value();
     if (terminal) {
         Vector2i coords = terminal -> get_location();
