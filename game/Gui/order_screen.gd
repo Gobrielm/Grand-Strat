@@ -55,10 +55,10 @@ func _on_order_window_placed_order(type: int, amount: int, buy: bool, price: flo
 
 func edit_order(index: int, type: int, amount: int, buy: bool) -> void:
 	set_order_icon(index, buy)
-	$Cargo_List.set_item_text(index, terminal_map.get_instance().get_cargo_name(type) + ": " + str(amount))
+	$Cargo_List.set_item_text(index, CargoInfo.get_instance().get_cargo_name(type) + ": " + str(amount))
 
 func create_order_locally(type: int, amount: int, buy: bool) -> void:
-	$Cargo_List.add_item(terminal_map.get_instance().get_cargo_name(type) + ": " + str(amount))
+	$Cargo_List.add_item(CargoInfo.get_instance().get_cargo_name(type) + ": " + str(amount))
 	set_order_icon($Cargo_List.item_count - 1, buy)
 
 func set_order_icon(index: int, buy: bool) -> void:
@@ -76,7 +76,7 @@ func remove_order(index: int) -> void:
 		text = text.left(text.length() - 1)
 	
 	var location: Vector2i = station_window.get_location()
-	var type: int = terminal_map.get_instance().get_cargo_type(text)
+	var type: int = CargoInfo.get_instance().get_cargo_type(text)
 	terminal_map.get_instance().remove_order_station(location, type)
 	$Cargo_List.remove_item(index)
 
@@ -90,4 +90,4 @@ func get_selected_type() -> int:
 		if !arg.is_valid_int() and !arg == ":" and !arg == " ":
 			break
 		text = text.left(text.length() - 1)
-	return terminal_map.get_instance().get_cargo_type(text)
+	return CargoInfo.get_instance().get_cargo_type(text)

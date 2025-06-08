@@ -1,6 +1,8 @@
+#pragma once
+
+
 #include "terminal.hpp"
 #include <godot_cpp/classes/object.hpp>
-
 
 using namespace godot;
 

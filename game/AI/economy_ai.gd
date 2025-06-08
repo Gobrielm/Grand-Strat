@@ -383,7 +383,7 @@ func get_shared_tile_between(coords1: Vector2i, coords2: Vector2i) -> Array:
 	return shared
 
 func is_cell_available(coords: Vector2i) -> bool:
-	return !terminal_map.get_instance().is_tile_taken(coords) and tile_ownership_obj.is_owned(id, coords) 
+	return !Utils.is_tile_taken(coords) and tile_ownership_obj.is_owned(id, coords) 
 
 func get_town_tiles() -> Array:
 	var toReturn: Array = []
@@ -486,7 +486,7 @@ func get_cells_in_front(coords: Vector2i, directions: Array) -> Array:
 	var index: int = 2
 	var toReturn: Array = [null, null, null, null, null, null]
 	for cell: Vector2i in world_map.thread_get_surrounding_cells(coords):
-		if directions[index] or directions[(index + 1) % 6] or directions[(index + 5) % 6] and !terminal_map.get_instance().is_tile_taken(cell):
+		if directions[index] or directions[(index + 1) % 6] or directions[(index + 5) % 6] and !Utils.is_tile_taken(cell):
 			toReturn[index] = cell
 		index = (index + 1) % 6
 	return toReturn

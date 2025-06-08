@@ -74,7 +74,7 @@ func set_resources_available(resource_dict: Dictionary) -> void:
 	$Tile_control/ItemList.clear()
 	for type: int in resource_dict:
 		var mag: int = resource_dict[type]
-		$Tile_control/ItemList.add_item(terminal_map.get_instance().get_cargo_name(type) + " - " + str(mag))
+		$Tile_control/ItemList.add_item(CargoInfo.get_instance().get_cargo_name(type) + " - " + str(mag))
 	
 func _on_close_requested() -> void:
 	hide()

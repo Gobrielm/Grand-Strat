@@ -58,6 +58,7 @@ func initialize_game() -> void:
 		var cargo_cntrlr: cargo_controller = load("res://Singletons/cargo_controller.tscn").instantiate()
 		add_child(cargo_cntrlr)
 		terminal_map.new(self)
+		TerminalMap.create(self)
 		recipe.create_set_recipes()
 		rail_placer_obj.init_all_rails()
 		$player_camera/CanvasLayer/Desync_Label.visible = true
@@ -171,7 +172,7 @@ func get_depot_direction(coords: Vector2i) -> int:
 
 func place_road_depot() -> void:
 	var tile: Vector2i = get_cell_position()
-	if DisplayServer.window_is_focused() and terminal_map.get_instance().is_tile_taken(tile):
+	if DisplayServer.window_is_focused() and Utils.is_tile_taken(tile):
 		terminal_map.get_instance().create_terminal(RoadDepot.new(tile, unique_id))
 		RoadMap.get_instance().place_road_depot(tile)
 

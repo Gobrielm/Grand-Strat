@@ -83,7 +83,7 @@ func station_window() -> void:
 		cargo_list.remove_item(0)
 	for cargo: int in current_cargo.size():
 		if current_cargo[cargo] != 0:
-			var cargo_name: String = terminal_map.get_instance().get_cargo_name(cargo)
+			var cargo_name: String = CargoInfo.get_instance().get_cargo_name(cargo)
 			cargo_list.add_item(cargo_name + ", " + str(current_cargo[cargo]))
 			if cargo_name == selected_name:
 				cargo_list.select(cargo)

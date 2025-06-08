@@ -6,19 +6,68 @@ Ref<TerminalMap> TerminalMap::singleton_instance = nullptr;
 
 void TerminalMap::_bind_methods() {
     ClassDB::bind_static_method(get_class_static(), D_METHOD("get_instance"), &TerminalMap::get_instance);
-    ClassDB::bind_static_method(get_class_static(), D_METHOD("create", "p_map"), &TerminalMap::create);
-    // You should continue binding all necessary methods here
+    ClassDB::bind_static_method(get_class_static(), D_METHOD("create", "p_map"), &TerminalMap::initialize_singleton);
+    // Initialization
+    ClassDB::bind_method(D_METHOD("assign_cargo_map", "p_cargo_map"), &TerminalMap::assign_cargo_map);
+
+    // Process hooks
+    ClassDB::bind_method(D_METHOD("_on_day_tick_timeout"), &TerminalMap::_on_day_tick_timeout);
+    ClassDB::bind_method(D_METHOD("_on_month_tick_timeout"), &TerminalMap::_on_month_tick_timeout);
+
+    // Core functions
+    ClassDB::bind_method(D_METHOD("clear"), &TerminalMap::clear);
+    ClassDB::bind_method(D_METHOD("get_main_map"), &TerminalMap::get_main_map);
+
+    // Creators
+    ClassDB::bind_method(D_METHOD("create_terminal", "p_terminal"), &TerminalMap::create_terminal);
+    ClassDB::bind_method(D_METHOD("add_connected_brokers", "p_broker"), &TerminalMap::add_connected_brokers);
+    ClassDB::bind_method(D_METHOD("create_factory", "p_location", "p_player_owner", "p_inputs", "p_outputs"), &TerminalMap::create_factory);
+
+    // Checkers
+    ClassDB::bind_method(D_METHOD("is_hold", "coords"), &TerminalMap::is_hold);
+    ClassDB::bind_method(D_METHOD("is_owned_recipeless_construction_site", "coords"), &TerminalMap::is_owned_recipeless_construction_site);
+    ClassDB::bind_method(D_METHOD("is_building", "coords"), &TerminalMap::is_building);
+    ClassDB::bind_method(D_METHOD("is_owned_building", "coords", "id"), &TerminalMap::is_owned_building);
+    ClassDB::bind_method(D_METHOD("is_owned_construction_site", "coords"), &TerminalMap::is_owned_construction_site);
+    ClassDB::bind_method(D_METHOD("is_factory", "coords"), &TerminalMap::is_factory);
+    ClassDB::bind_method(D_METHOD("is_station", "coords"), &TerminalMap::is_station);
+    ClassDB::bind_method(D_METHOD("is_road_depot", "coords"), &TerminalMap::is_road_depot);
+    ClassDB::bind_method(D_METHOD("is_owned_station", "coords", "player_id"), &TerminalMap::is_owned_station);
+    ClassDB::bind_method(D_METHOD("is_ai_station", "coords"), &TerminalMap::is_ai_station);
+    ClassDB::bind_method(D_METHOD("is_owned_ai_station", "coords", "id"), &TerminalMap::is_owned_ai_station);
+    ClassDB::bind_method(D_METHOD("is_town", "coords"), &TerminalMap::is_town);
+
+    // Info getters
+    ClassDB::bind_method(D_METHOD("get_construction_site_recipe", "coords"), &TerminalMap::get_construction_site_recipe);
+    ClassDB::bind_method(D_METHOD("get_construction_materials", "coords"), &TerminalMap::get_construction_materials);
+    ClassDB::bind_method(D_METHOD("get_cash_of_firm", "coords"), &TerminalMap::get_cash_of_firm);
+    ClassDB::bind_method(D_METHOD("get_local_prices", "coords"), &TerminalMap::get_local_prices);
+    ClassDB::bind_method(D_METHOD("get_station_orders", "coords"), &TerminalMap::get_station_orders);
+    ClassDB::bind_method(D_METHOD("get_town_fulfillment", "coords"), &TerminalMap::get_town_fulfillment);
+
+    // External getters
+    ClassDB::bind_method(D_METHOD("request_terminal", "coords"), &TerminalMap::request_terminal);
+    ClassDB::bind_method(D_METHOD("return_terminal", "scoped_terminal"), &TerminalMap::return_terminal);
+
+    // Action doers
+    ClassDB::bind_method(D_METHOD("set_construction_site_recipe", "coords", "selected_recipe"), &TerminalMap::set_construction_site_recipe);
+    ClassDB::bind_method(D_METHOD("destroy_recipe", "coords"), &TerminalMap::destroy_recipe);
+    ClassDB::bind_method(D_METHOD("transform_construction_site_to_factory", "coords"), &TerminalMap::transform_construction_site_to_factory);
+    ClassDB::bind_method(D_METHOD("edit_order_station", "coords", "type", "amount", "buy", "max_price"), &TerminalMap::edit_order_station);
+    ClassDB::bind_method(D_METHOD("remove_order_station", "coords", "type"), &TerminalMap::remove_order_station);
 }
 
-Ref<TerminalMap> TerminalMap::create(TileMapLayer* p_map) { return memnew(TerminalMap(p_map)); }
+void TerminalMap::initialize_singleton(TileMapLayer* p_map) {
+    ERR_FAIL_COND_MSG(singleton_instance != nullptr, "Cannot create multiple instances of singleton!");
+    singleton_instance.instantiate();
+}
 
 TerminalMap::TerminalMap(TileMapLayer* p_map) {
-    singleton_instance.instantiate();
-    singleton_instance -> map = p_map;
+    map = p_map;
     Dictionary needs;
 
 
-    Ref<CargoInfo> cargo_info = CargoInfo::get_instance();
+    Ref<CargoInfo> cargo_info = CargoInfo::get_instance(); //TODO: Should be expanded and moved elsewhere
     needs[cargo_info -> get_cargo_type("grain")] = 1;
     needs[cargo_info -> get_cargo_type("wood")] = 0.3;
     needs[cargo_info -> get_cargo_type("salt")] = 0.1;
@@ -43,7 +92,7 @@ TerminalMap::~TerminalMap() {
 }
 
 Ref<TerminalMap> TerminalMap::get_instance() { 
-    ERR_FAIL_COND_V(singleton_instance == nullptr, nullptr);
+    ERR_FAIL_COND_V_MSG(singleton_instance == nullptr, nullptr, "Terminal Map has not been created yet");
     return singleton_instance;
 }
 
@@ -86,16 +135,14 @@ void TerminalMap::_on_month_tick_timeout() {
         int step = chunk_size + (i == NUMBER_OF_THREADS - 1 ? cargo_map_terminals.size() % NUMBER_OF_THREADS : 0);
         std::advance(end, step);
         
-        // std::thread thrd([this, start, end]() {
-        //     _on_month_tick_timeout_helper(IteratorPair(start, end));
-        // });
-        // month_threads.push_back(thrd);
+        std::thread thrd(&TerminalMap::_on_month_tick_timeout_helper, this, start, end);
+        month_threads.push_back(std::move(thrd));
         start = end;
     }
 }
 
-void TerminalMap::_on_month_tick_timeout_helper(const IteratorPair &range) {
-    for (auto it = range.first; it != range.second; it++) {
+void TerminalMap::_on_month_tick_timeout_helper(MapType::iterator start, MapType::iterator end) {
+    for (auto it = start; it != end; it++) {
         while (day_tick_priority) {
             std::this_thread::sleep_for(std::chrono::milliseconds(2));
         }
@@ -117,20 +164,11 @@ void TerminalMap::clear() {
     m.unlock();
 }
 
-//Resources
-// Dictionary TerminalMap::get_available_resources(const Vector2i &coords); // Switch to cargo_map
+TileMapLayer* TerminalMap::get_main_map() const {
+    return map;
+}
 
 //Creators
-void TerminalMap::create_station(const Vector2i &coords, int player_id) { //TODO: DO call outside
-    StationWOMethods* station = memnew(StationWOMethods(coords, player_id));
-    create_terminal(station);
-}
-
-void TerminalMap::create_road_depot(const Vector2i &coords, int player_id) {
-    RoadDepotWOMethods* road_depot = memnew(RoadDepotWOMethods(coords, player_id));
-    create_terminal(road_depot);
-}
-
 void TerminalMap::create_terminal(Terminal *p_terminal) {
     m.lock();
     object_mutexs[p_terminal -> get_location()] = new std::mutex;
@@ -159,16 +197,7 @@ Factory* TerminalMap::create_factory(const Vector2i &p_location, int p_player_ow
     return memnew(AiFactory(p_location, p_player_owner, p_inputs, p_outputs));
 }
 
-void TerminalMap::create_ai_station(const Vector2i &coords, int orientation, int p_owner) {} //TODO: 
-
-
 //Checkers
-bool TerminalMap::is_tile_taken(const Vector2i &coords) { //Add Utils call
-    m.lock();
-    bool toReturn = cargo_map_terminals.count(coords);
-    m.unlock();
-    return toReturn;
-}
 bool TerminalMap::is_hold(const Vector2i &coords) {
     return dynamic_cast<Hold*>(get_terminal(coords)) != nullptr;
 }
@@ -212,10 +241,10 @@ bool TerminalMap::is_owned_station(const Vector2i &coords, int player_id) {
     }
     return false;
 }
-bool TerminalMap::is_ai_station(const Vector2i &coords) {//TODO
+bool TerminalMap::is_ai_station(const Vector2i &coords) {                       //TODO
     return false;
 } 
-bool TerminalMap::is_owned_ai_station(const Vector2i &coords, int id) {//TODO
+bool TerminalMap::is_owned_ai_station(const Vector2i &coords, int id) {         //TODO
     return false;
 } 
 bool TerminalMap::is_town(const Vector2i &coords) {
@@ -275,10 +304,6 @@ Dictionary TerminalMap::get_station_orders(const Vector2i &coords) {
     return toReturn;
 }
 
-Array TerminalMap::get_available_primary_recipes(const Vector2i &coords) { //TODO
-    return Array();
-} 
-
 Dictionary TerminalMap::get_town_fulfillment(const Vector2i &coords) {
     Dictionary toReturn;
     Town* town = get_town(coords);
@@ -314,11 +339,13 @@ Town* TerminalMap::get_town(const Vector2i &coords) {
     return nullptr;
 }
 
-
 //External Getters
-ScopedTerminal* TerminalMap::request_terminal(const Vector2i &coords) {
-    object_mutexs[coords]->lock();
-    return memnew(ScopedTerminal(get_terminal(coords)));
+ScopedTerminal* TerminalMap::request_terminal(const Vector2i &coords) { //                  TODO: Almost crashes when sending anything
+    if (object_mutexs.count(coords)) {
+        object_mutexs[coords]->lock();
+        return memnew(ScopedTerminal(get_terminal(coords)));
+    }
+    return nullptr;
 }
 
 void TerminalMap::return_terminal(ScopedTerminal* scoped_terminal) {
@@ -347,7 +374,7 @@ void TerminalMap::destroy_recipe(const Vector2i &coords) {
     }
 }
 
-void TerminalMap::transform_construction_site_to_factory(const Vector2i &coords) { //TODO
+void TerminalMap::transform_construction_site_to_factory(const Vector2i &coords) {
     if (is_owned_construction_site(coords)) {
         object_mutexs[coords] -> lock();
         ConstructionSite* old_site = dynamic_cast<ConstructionSite*>(cargo_map_terminals[coords]);
@@ -356,7 +383,6 @@ void TerminalMap::transform_construction_site_to_factory(const Vector2i &coords)
 
         memdelete(old_site);
         object_mutexs[coords] -> unlock();
-        // cargo_map.transform_construction_site_to_factory(coords)
     }
 }
 

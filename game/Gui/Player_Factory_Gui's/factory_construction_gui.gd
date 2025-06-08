@@ -44,17 +44,17 @@ func set_construction_materials(new_current_materials: Dictionary, new_needed_ma
 	current_materials = new_current_materials
 	needed_materials = new_needed_materials
 	for type: int in needed_materials:
-		material_list.add_item(terminal_map.get_instance().get_cargo_name(type) + " " + str(current_materials[type]) + "/" + str(needed_materials[type]))
+		material_list.add_item(CargoInfo.get_instance().get_cargo_name(type) + " " + str(current_materials[type]) + "/" + str(needed_materials[type]))
 
 func get_name_for_recipe(inputs: Dictionary, outputs: Dictionary) -> String:
 	var toReturn: String = ""
 	for type: int in inputs:
-		toReturn += terminal_map.get_instance().get_cargo_name(type) + " "
+		toReturn += CargoInfo.get_instance().get_cargo_name(type) + " "
 		toReturn += str(inputs[type]) + "+ "
 	toReturn = toReturn.left(toReturn.length() - 2)
 	toReturn += " = "
 	for type: int in outputs:
-		toReturn += terminal_map.get_instance().get_cargo_name(type) + " "
+		toReturn += CargoInfo.get_instance().get_cargo_name(type) + " "
 		toReturn += str(outputs[type]) + "+ "
 	toReturn = toReturn.left(toReturn.length() - 2)
 	return toReturn

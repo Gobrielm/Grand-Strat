@@ -42,11 +42,14 @@ private:
     StationWOMethods *get_station(const Vector2i &coords);
     Town* get_town(const Vector2i &coords);
 
+    using MapType = std::unordered_map<Vector2i, Terminal*, godot_helpers::Vector2iHasher>;
+    void _on_month_tick_timeout_helper(MapType::iterator start, MapType::iterator end);
+
 protected:
     static void _bind_methods();
 
 public:
-    static Ref<TerminalMap> create(TileMapLayer* p_map);
+    static void initialize_singleton(TileMapLayer* p_map);
 
     TerminalMap(TileMapLayer* p_map = nullptr);
     ~TerminalMap();
@@ -58,23 +61,15 @@ public:
     void _on_day_tick_timeout();
     void _on_month_tick_timeout();
 
-    using MapType = std::unordered_map<Vector2i, Terminal*, godot_helpers::Vector2iHasher>;
-    using IteratorPair = std::pair<MapType::iterator, MapType::iterator>;
-    void _on_month_tick_timeout_helper(const IteratorPair &range);
-
     void clear();
+    TileMapLayer* get_main_map() const;
 
     //Creators
-    void create_station(const Vector2i &coords, int new_owner);
-    void create_road_depot(const Vector2i &coords, int player_id);
     void create_terminal(Terminal *p_terminal);
     void add_connected_brokers(Broker *p_broker);
     Factory* create_factory(const Vector2i &p_location, int p_player_owner, const Dictionary &p_inputs, const Dictionary &p_outputs);
-    void create_ai_station(const Vector2i &coords, int orientation, int p_owner);
-
     
     //Checkers
-    bool is_tile_taken(const Vector2i &coords);
     bool is_hold(const Vector2i &coords);
     bool is_owned_recipeless_construction_site(const Vector2i &coords);
     bool is_building(const Vector2i &coords);
@@ -94,7 +89,6 @@ public:
     int get_cash_of_firm(const Vector2i &coords);
     Dictionary get_local_prices(const Vector2i &coords);
     Dictionary get_station_orders(const Vector2i &coords);
-    Array get_available_primary_recipes(const Vector2i &coords);
     Dictionary get_town_fulfillment(const Vector2i &coords);
 
     //External Getters
@@ -107,7 +101,5 @@ public:
     void transform_construction_site_to_factory(const Vector2i &coords);
     void edit_order_station(const Vector2i &coords, int type, int amount, bool buy, float max_price);
     void remove_order_station(const Vector2i &coords, int type);
-    
-    // AiStation *get_ai_station(const Vector2i &coords);
 };
 

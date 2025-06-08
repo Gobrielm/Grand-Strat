@@ -30,6 +30,7 @@ func remove_terminal_from_province(coords: Vector2i) -> void:
 	prov.remove_terminal(coords)
 
 func transform_construction_site_to_factory(coords: Vector2i) -> void:
+	terminal_map.get_instance().transform_construction_site_to_factory(coords)
 	set_tile.rpc(coords, Vector2i(4, 1))
 	add_terminal_to_province(terminal_map.get_instance().get_terminal(coords))
 
@@ -98,7 +99,7 @@ func place_random_road_depot(middle: Vector2i) -> void:
 	var tiles: Array = Utils.world_map.thread_get_surrounding_cells(middle)
 	tiles.shuffle()
 	for tile: Vector2i in tiles:
-		if !terminal_map.get_instance().is_tile_taken(tile):
+		if !Utils.is_tile_taken(tile):
 			RoadMap.get_instance().place_road_depot(tile)
 			var road_depot: RoadDepot = RoadDepot.new(tile, 0)
 			add_terminal_to_province(road_depot)
@@ -144,6 +145,6 @@ func _on_cargo_values_finished_created_map_resources() -> void:
 		place_random_industries()
 
 func test() -> void:
-	create_factory(0, Vector2i(101, -117), get_primary_recipe_for_type(terminal_map.get_instance().get_cargo_type("grain")), 1)
+	create_factory(0, Vector2i(101, -117), get_primary_recipe_for_type(CargoInfo.get_instance().get_cargo_type("grain")), 1)
 	
 	create_town(Vector2i(101, -114), 177)

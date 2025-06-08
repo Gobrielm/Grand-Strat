@@ -24,10 +24,10 @@ func clear_orders() -> void:
 
 func edit_order(index: int, type: int, amount: int, buy: bool) -> void:
 	set_order_icon(index, buy)
-	$Cargo_List.set_item_text(index, terminal_map.get_instance().get_cargo_name(type) + ": " + str(amount))
+	$Cargo_List.set_item_text(index, CargoInfo.get_instance().get_cargo_name(type) + ": " + str(amount))
 
 func create_order_locally(type: int, amount: int, buy: bool, price: float) -> void:
-	$Cargo_List.add_item(terminal_map.get_instance().get_cargo_name(type) + ": " + str(amount) + " -- " + str(price))
+	$Cargo_List.add_item(CargoInfo.get_instance().get_cargo_name(type) + ": " + str(amount) + " -- " + str(price))
 	set_order_icon($Cargo_List.item_count - 1, buy)
 
 func set_order_icon(index: int, buy: bool) -> void:

@@ -107,22 +107,8 @@ func create_amount_of_primary_goods() -> void:
 			amount_of_primary_goods = i + 1
 	mutex.unlock()
 
-func get_available_resources(coords: Vector2i) -> Dictionary:
-	mutex.lock()
-	var toReturn: Dictionary = cargo_map.cargo_values.get_available_resources(coords)
-	mutex.unlock()
-	return toReturn
-
 func assign_cargo_map(_cargo_map: TileMapLayer) -> void:
 	cargo_map = _cargo_map
-
-func create_station(coords: Vector2i, new_owner: int) -> void:
-	var new_station: Station = Station.new(coords, new_owner)
-	create_terminal(new_station)
-
-func create_road_depot(_coords: Vector2i, _player_id: int) -> void:
-	pass #Road depot unfinished
-	
 
 func create_terminal(p_terminal: Terminal) -> void:
 	var coords: Vector2i = p_terminal.get_location()
@@ -234,7 +220,6 @@ func transform_construction_site_to_factory(coords: Vector2i) -> void:
 	cargo_map_terminals[coords] = create_factory(coords, old_site.get_player_owner(), obj_recipe[0], obj_recipe[1])
 	old_site.free()
 	mutex.unlock()
-	cargo_map.transform_construction_site_to_factory(coords)
 
 func create_factory(p_location: Vector2i, p_player_owner: int, p_inputs: Dictionary, p_outputs: Dictionary) -> Factory:
 	if p_player_owner > 0:
@@ -296,14 +281,6 @@ func get_station(coords: Vector2i) -> Station:
 		toReturn = cargo_map_terminals[coords]
 		mutex.unlock()
 	return toReturn
-
-func create_ai_station(coords: Vector2i, orientation: int, p_owner: int) -> void:
-	mutex.lock()
-	if !cargo_map_terminals.has(coords):
-		cargo_map_terminals[coords] = AiStation.new(coords, p_owner)
-		rail_placer.get_instance().place_station.rpc(coords, orientation)
-		rail_placer.get_instance().place_station.rpc(coords, (orientation + 3) % 6)
-	mutex.unlock()
 
 func get_ai_station(coords: Vector2i) -> AiStation:
 	var toReturn: Terminal = null
@@ -375,9 +352,6 @@ func get_cargo_array() -> Array:
 
 func is_cargo_primary(cargo_type: int) -> bool:
 	return cargo_type < amount_of_primary_goods
-
-func get_available_primary_recipes(coords: Vector2i) -> Array:
-	return cargo_map.get_available_primary_recipes(coords)
 
 func is_town(coords: Vector2i) -> bool:
 	return get_terminal(coords) is Town

@@ -10,8 +10,8 @@ func _init() -> void:
 	morale = 100
 	
 	var supply_neeeded: Dictionary[int, int] = {}
-	supply_neeeded[terminal_map.get_instance().get_cargo_type("grain")] = 2
-	supply_neeeded[terminal_map.get_instance().get_cargo_type("guns")] = 1
+	supply_neeeded[CargoInfo.get_instance().get_cargo_type("grain")] = 2
+	supply_neeeded[CargoInfo.get_instance().get_cargo_type("guns")] = 1
 	org = organization.new(supply_neeeded)
 	
 	speed = 80

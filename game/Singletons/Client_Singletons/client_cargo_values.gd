@@ -25,7 +25,7 @@ func get_layer(type: int) -> TileMapLayer:
 	return layer
 
 func get_good_name_uppercase(type: int) -> String:
-	var cargo_name: String = terminal_map.get_instance().get_cargo_name(type)
+	var cargo_name: String = CargoInfo.get_instance().get_cargo_name(type)
 	cargo_name[0] = cargo_name[0].to_upper()
 	return cargo_name
 

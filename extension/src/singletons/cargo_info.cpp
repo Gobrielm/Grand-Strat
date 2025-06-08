@@ -10,6 +10,8 @@ void CargoInfo::_bind_methods() {
     ClassDB::bind_static_method(CargoInfo::get_class_static(), D_METHOD("get_instance"), &CargoInfo::get_instance);
 
     ClassDB::bind_method(D_METHOD("get_cargo_array"), &CargoInfo::get_cargo_array);
+    ClassDB::bind_method(D_METHOD("get_cargo_name", "type"), &CargoInfo::get_cargo_name);
+    ClassDB::bind_method(D_METHOD("get_cargo_type", "cargo_name"), &CargoInfo::get_cargo_type);
 }
 
 CargoInfo::CargoInfo() {
