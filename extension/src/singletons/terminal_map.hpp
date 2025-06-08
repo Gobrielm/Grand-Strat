@@ -16,6 +16,7 @@
 #include "../classes/ai_factory.hpp"
 #include "../classes/town.hpp"
 #include "../classes/road_depot_wo_methods.hpp"
+#include "../classes/scoped_terminal.hpp"
 
 using namespace godot;
 
@@ -25,36 +26,43 @@ class TerminalMap : public RefCounted {
 private:
     static Ref<TerminalMap> singleton_instance;
 
-    Ref<TileMapLayer> map;
-    Ref<TileMapLayer> cargo_map;
+    TileMapLayer* map;
+    TileMapLayer* cargo_map;
 
     std::mutex m;
     std::unordered_map<Vector2i, std::mutex*, godot_helpers::Vector2iHasher> object_mutexs;
     std::unordered_map<Vector2i, Terminal*, godot_helpers::Vector2iHasher> cargo_map_terminals;
 
-    std::vector<Ref<std::thread>> month_threads;
+    std::vector<std::thread> month_threads;
     bool day_tick_priority = false;
+
+    //Internal Getters
+    Terminal *get_terminal(const Vector2i &coords);
+    Broker *get_broker(const Vector2i &coords);
+    StationWOMethods *get_station(const Vector2i &coords);
+    Town* get_town(const Vector2i &coords);
 
 protected:
     static void _bind_methods();
 
 public:
-    static Ref<TerminalMap> create(Ref<TileMapLayer> p_map);
+    static Ref<TerminalMap> create(TileMapLayer* p_map);
 
-    TerminalMap(Ref<TileMapLayer> p_map = nullptr);
+    TerminalMap(TileMapLayer* p_map = nullptr);
+    ~TerminalMap();
 
     static Ref<TerminalMap> get_instance();
-    void assign_cargo_map(Ref<TileMapLayer> p_cargo_map);
+    void assign_cargo_map(TileMapLayer* p_cargo_map);
 
     //Process hooks
     void _on_day_tick_timeout();
     void _on_month_tick_timeout();
-    void _on_month_tick_timeout_helper(int from, int to);
+
+    using MapType = std::unordered_map<Vector2i, Terminal*, godot_helpers::Vector2iHasher>;
+    using IteratorPair = std::pair<MapType::iterator, MapType::iterator>;
+    void _on_month_tick_timeout_helper(const IteratorPair &range);
 
     void clear();
-
-    //Resources
-    Dictionary get_available_resources(const Vector2i &coords);
 
     //Creators
     void create_station(const Vector2i &coords, int new_owner);
@@ -81,7 +89,6 @@ public:
     bool is_town(const Vector2i &coords);
 
     //Info getters
-    Dictionary get_hold(const Vector2i &coords);
     Array get_construction_site_recipe(const Vector2i &coords);
     Dictionary get_construction_materials(const Vector2i &coords);
     int get_cash_of_firm(const Vector2i &coords);
@@ -90,11 +97,9 @@ public:
     Array get_available_primary_recipes(const Vector2i &coords);
     Dictionary get_town_fulfillment(const Vector2i &coords);
 
-    //Getters
-    Terminal *get_terminal(const Vector2i &coords);
-    Broker *get_broker(const Vector2i &coords);
-    StationWOMethods *get_station(const Vector2i &coords);
-    Town* get_town(const Vector2i &coords);
+    //External Getters
+    ScopedTerminal* request_terminal(const Vector2i &coords);
+    void return_terminal(ScopedTerminal* scoped_terminal);
 
     //Action doers
     void set_construction_site_recipe(const Vector2i &coords, const Array &selected_recipe);

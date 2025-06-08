@@ -154,14 +154,6 @@ func is_tile_taken(coords: Vector2i) -> bool:
 	mutex.unlock()
 	return toReturn
 
-func get_hold(coords: Vector2i) -> Dictionary:
-	if is_hold(coords):
-		mutex.lock()
-		var toReturn: Dictionary = cargo_map_terminals[coords].get_current_hold()
-		mutex.unlock()
-		return toReturn
-	return {}
-
 func is_owned_recipeless_construction_site(coords: Vector2i) -> bool:
 	mutex.lock()
 	var toReturn: bool = cargo_map_terminals.has(coords) and cargo_map_terminals[coords] is ConstructionSite and !cargo_map_terminals[coords].has_recipe()

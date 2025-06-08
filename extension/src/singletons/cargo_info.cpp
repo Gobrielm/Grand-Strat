@@ -8,12 +8,14 @@ Ref<CargoInfo> CargoInfo::singleton_instance = nullptr;
 
 void CargoInfo::_bind_methods() {
     ClassDB::bind_static_method(CargoInfo::get_class_static(), D_METHOD("get_instance"), &CargoInfo::get_instance);
+
+    ClassDB::bind_method(D_METHOD("get_cargo_array"), &CargoInfo::get_cargo_array);
 }
 
 CargoInfo::CargoInfo() {
     int i = 0;
-    for (const std::string &s: cargo_names) {
-        cargo_types[s] = i;
+    for (const String s: cargo_names) {
+        cargo_types[s.utf8().get_data()] = i;
         i++;
     }
     create_amount_of_primary_goods();
@@ -32,25 +34,25 @@ Ref<CargoInfo> CargoInfo::get_instance() {
 const std::unordered_map<int, float> CargoInfo::get_base_prices() {
     std::unordered_map<int, float> toReturn = {};
     for (const auto &[cargo_name, price]: base_prices) {
-        toReturn[get_cargo_type(cargo_name)] = price;
+        toReturn[get_cargo_type(cargo_name.c_str())] = price;
     }
     return toReturn;
 }
 
-std::string CargoInfo::get_cargo_name(int type) const {
+String CargoInfo::get_cargo_name(int type) const {
     return cargo_names.at(type);
 }
 
-int CargoInfo::get_cargo_type(std::string cargo_name) const {
-    if (cargo_types.count(cargo_name) == 0) {
-        ERR_FAIL_V_MSG(-1, ("No cargo of name " + cargo_name).c_str());
+int CargoInfo::get_cargo_type(String cargo_name) const {
+    if (cargo_types.count(cargo_name.utf8().get_data()) == 0) {
+        ERR_FAIL_V_MSG(-1, ("No cargo of name " + cargo_name));
     }
-    return cargo_types.at(cargo_name);
+    return cargo_types.at(cargo_name.utf8().get_data());
 }
 
 void CargoInfo::create_amount_of_primary_goods() {
     for (int i = 0; i < cargo_types.size(); ++i) {
-        if (String(cargo_names[i].c_str()) == "gold") {
+        if (String(cargo_names[i]) == "gold") {
             amount_of_primary_goods = i + 1;
             break;
         }
@@ -67,8 +69,8 @@ bool CargoInfo::is_cargo_primary(int cargo_type) const {
 
 Array CargoInfo::get_cargo_array() const {
     Array toReturn;
-    for (std::string x: cargo_names) {
-        toReturn.push_back(String(x.c_str()));
+    for (String x: cargo_names) {
+        toReturn.push_back(x);
     }
     return toReturn;
 }

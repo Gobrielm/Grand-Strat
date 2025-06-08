@@ -41,6 +41,9 @@ Broker::~Broker() {
     }
     trade_orders.clear();
     if (local_pricer) memdelete(local_pricer);
+    for (auto& [__, broker]: connected_brokers) {
+        remove_connected_broker(this);
+    }
 }
 
 void Broker::initialize(const Vector2i new_location, const int player_owner, const int p_max_amount) {

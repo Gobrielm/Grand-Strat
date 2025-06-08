@@ -1,7 +1,10 @@
 #include "scoped_terminal.hpp"
 #include <godot_cpp/core/class_db.hpp>
 
-void ScopedTerminal::_bind_methods() {}
+void ScopedTerminal::_bind_methods() {
+    ClassDB::bind_method(D_METHOD("get_value"), &ScopedTerminal::get_value);
+    ClassDB::bind_method(D_METHOD("release_lock"), &ScopedTerminal::release_lock);
+}
 
 
 ScopedTerminal::ScopedTerminal(Terminal* val) {

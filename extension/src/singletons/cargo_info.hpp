@@ -13,7 +13,7 @@ class CargoInfo : public RefCounted {
 private:
     static Ref<CargoInfo> singleton_instance;
 
-    std::vector<std::string> cargo_names = {
+    std::vector<String> cargo_names = {
         "clay", "sand", "sulfur", "lead", "iron", "coal", "copper", "zinc", "wood", "salt", 
         "grain", "livestock", "fish", "fruit", "cotton", "silk", "spices", "coffee", "tea", "tobacco", 
         "gold",
@@ -52,8 +52,8 @@ public:
     static Ref<CargoInfo> get_instance();
 
     const std::unordered_map<int, float> get_base_prices();
-    std::string get_cargo_name(int type) const;
-    int get_cargo_type(std::string cargo_name) const;
+    String get_cargo_name(int type) const;
+    int get_cargo_type(String cargo_name) const;
     void create_amount_of_primary_goods();
     int get_number_of_goods() const;
     bool is_cargo_primary(int cargo_type) const;
