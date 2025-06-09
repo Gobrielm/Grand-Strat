@@ -101,7 +101,7 @@ func place_random_road_depot(middle: Vector2i) -> void:
 	for tile: Vector2i in tiles:
 		if !Utils.is_tile_taken(tile):
 			RoadMap.get_instance().place_road_depot(tile)
-			var road_depot: RoadDepot = RoadDepot.new(tile, 0)
+			var road_depot: RoadDepotWOMethods = RoadDepotWOMethods.create(tile, 0)
 			add_terminal_to_province(road_depot)
 			TerminalMap.get_instance().create_terminal(road_depot)
 			return

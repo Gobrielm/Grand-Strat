@@ -38,6 +38,8 @@ void TerminalMap::_bind_methods() {
     ClassDB::bind_method(D_METHOD("is_town", "coords"), &TerminalMap::is_town);
 
     // Info getters
+
+    ClassDB::bind_method(D_METHOD("get_cargo_dict", "coords"), &TerminalMap::get_cargo_dict);
     ClassDB::bind_method(D_METHOD("get_construction_site_recipe", "coords"), &TerminalMap::get_construction_site_recipe);
     ClassDB::bind_method(D_METHOD("get_construction_materials", "coords"), &TerminalMap::get_construction_materials);
     ClassDB::bind_method(D_METHOD("get_cash_of_firm", "coords"), &TerminalMap::get_cash_of_firm);
@@ -139,8 +141,10 @@ void TerminalMap::_on_month_tick_timeout() {
 
     for (int i = 0; i < NUMBER_OF_THREADS; i++) {
         auto end = start;
-        int step = chunk_size + (i == NUMBER_OF_THREADS - 1 ? cargo_map_terminals.size() % NUMBER_OF_THREADS : 0);
-        std::advance(end, step);
+        std::advance(end, chunk_size);
+        if (i == (NUMBER_OF_THREADS - 1)) {
+            end = cargo_map_terminals.end();
+        }
         
         std::thread thrd(&TerminalMap::_on_month_tick_timeout_helper, this, start, end);
         month_threads.push_back(std::move(thrd));
@@ -181,7 +185,7 @@ void TerminalMap::create_terminal(Ref<Terminal> p_terminal) {
     object_mutexs[p_terminal -> get_location()] = new (std::mutex);
     cargo_map_terminals[p_terminal -> get_location()] = p_terminal;
     m.unlock();
-    Ref<Broker> broker = Ref<Broker>(p_terminal);
+    Ref<Broker> broker = get_terminal_as<Broker>(p_terminal -> get_location());
     if (broker.is_valid()) {
         add_connected_brokers(broker);
     }
@@ -214,21 +218,29 @@ Ref<Factory> TerminalMap::create_factory(const Vector2i &p_location, int p_playe
 }
 
 //Checkers
+bool TerminalMap::is_terminal(const Vector2i &coords) {
+    return cargo_map_terminals.count(coords) == 1;
+}
+
 bool TerminalMap::is_hold(const Vector2i &coords) {
-    return Ref<Hold>(get_terminal(coords)).is_valid();
+    return get_terminal_as<Hold>(coords).is_valid();
 }
 bool TerminalMap::is_owned_recipeless_construction_site(const Vector2i &coords) {
     bool toReturn = false;
+    Ref<ConstructionSite> construction_site =  get_terminal_as<ConstructionSite>(coords);
+    if (construction_site.is_null()) return false;
+    
     object_mutexs[coords] -> lock();
-    Ref<ConstructionSite> construction_site = Ref<ConstructionSite>(cargo_map_terminals[coords]);
-    if (construction_site.is_valid()) toReturn = construction_site -> has_recipe();
+    toReturn = construction_site -> has_recipe();
     object_mutexs[coords] -> unlock();
+
     return toReturn;
 }
 bool TerminalMap::is_building(const Vector2i &coords) {
     bool toReturn = false;
+    if (!object_mutexs.count(coords)) return false;
     object_mutexs[coords]->lock();
-    toReturn = Ref<ConstructionSite>(cargo_map_terminals[coords]).is_valid() || Ref<Town>(cargo_map_terminals[coords]).is_valid() || Ref<FactoryTemplate>(cargo_map_terminals[coords]).is_valid();
+    toReturn = get_terminal_as<ConstructionSite>(coords).is_valid() ||  get_terminal_as<Town>(coords).is_valid() ||  get_terminal_as<FactoryTemplate>(coords).is_valid();
     object_mutexs[coords]->unlock();
     return toReturn;
 }
@@ -239,19 +251,19 @@ bool TerminalMap::is_owned_building(const Vector2i &coords, int id) {
     return false;
 }
 bool TerminalMap::is_owned_construction_site(const Vector2i &coords) {
-    return Ref<ConstructionSite>(get_terminal(coords)) != nullptr;
+   return get_terminal_as<ConstructionSite>(coords).is_valid();
 }
 bool TerminalMap::is_factory(const Vector2i &coords) {
-    return Ref<Factory>(get_terminal(coords)) != nullptr;
+    return get_terminal_as<Factory>(coords).is_valid();
 }
 bool TerminalMap::is_station(const Vector2i &coords) {
-    return Ref<StationWOMethods>(get_terminal(coords)) != nullptr;
+    return get_terminal_as<StationWOMethods>(coords).is_valid();
 }
 bool TerminalMap::is_road_depot(const Vector2i &coords) {
-    return Ref<RoadDepotWOMethods>(get_terminal(coords)) != nullptr;
+    return get_terminal_as<RoadDepotWOMethods>(coords).is_valid();
 }
 bool TerminalMap::is_owned_station(const Vector2i &coords, int player_id) {
-    Ref<StationWOMethods> temp = Ref<StationWOMethods>(get_terminal(coords));
+    Ref<StationWOMethods> temp = get_terminal_as<StationWOMethods>(coords);
     if (temp.is_valid()) {
         return temp->get_player_owner() == player_id;
     }
@@ -260,7 +272,7 @@ bool TerminalMap::is_owned_station(const Vector2i &coords, int player_id) {
 bool TerminalMap::is_ai_station(const Vector2i &coords) {                       //May work?
     bool val = false;
     m.lock();
-    Ref<Terminal> term = get_terminal(coords);
+    Ref<StationWOMethods> term = get_terminal_as<StationWOMethods>(coords);
     if (term.is_valid()) {
         lock(coords);
         val = term -> get_class() == "AiStation";
@@ -273,22 +285,32 @@ bool TerminalMap::is_owned_ai_station(const Vector2i &coords, int id) {
     bool val = false;
     if (is_ai_station(coords)) {
         lock(coords);
-        Ref<Terminal> terminal = get_terminal(coords);
-        val = terminal -> get_player_owner() == id;
+        Ref<StationWOMethods> station = get_terminal_as<StationWOMethods>(coords);
+        val = station -> get_player_owner() == id;
         unlock(coords);
     }
     return val;
 } 
 bool TerminalMap::is_town(const Vector2i &coords) {
-    return Ref<Town>(get_terminal(coords)) != nullptr;
+    return get_terminal_as<Town>(coords).is_valid();
 }
 
 //Info getters
+Dictionary TerminalMap::get_cargo_dict(const Vector2i &coords) {
+    Dictionary d;
+    Ref<Hold> hold = get_terminal_as<Hold>(coords);
+    if (hold.is_null()) return d;
+
+    d = hold -> get_current_hold();
+    return d;
+}
+
+
 Array TerminalMap::get_construction_site_recipe(const Vector2i &coords) {
     Array toReturn = {};
     Ref<Terminal> temp = get_terminal(coords);
     object_mutexs[coords]->lock();
-    Ref<ConstructionSite> construction_site = Ref<ConstructionSite>(temp);
+    Ref<ConstructionSite> construction_site = get_terminal_as<ConstructionSite>(coords);
     if (construction_site.is_valid()) {
         toReturn = construction_site->get_recipe();
     }
@@ -300,7 +322,7 @@ Dictionary TerminalMap::get_construction_materials(const Vector2i &coords) {
     Dictionary toReturn;
     if (is_owned_construction_site(coords)) {
         object_mutexs[coords] -> lock();
-        toReturn = Ref<ConstructionSite>(cargo_map_terminals[coords]) -> get_construction_materials();
+        toReturn = get_terminal_as<ConstructionSite>(coords) -> get_construction_materials();
         object_mutexs[coords] -> unlock();
     }
     return toReturn;
@@ -309,7 +331,7 @@ Dictionary TerminalMap::get_construction_materials(const Vector2i &coords) {
 int TerminalMap::get_cash_of_firm(const Vector2i &coords) {
     int toReturn;
     object_mutexs[coords] -> lock();
-    Ref<Firm> firm = Ref<Firm>(cargo_map_terminals[coords]);
+    Ref<Firm> firm = get_terminal_as<Firm>(coords);
     if (firm.is_valid()) {
         toReturn = firm->get_cash();
     }
@@ -332,7 +354,7 @@ Dictionary TerminalMap::get_station_orders(const Vector2i &coords) {
     Dictionary toReturn;
     if (is_station(coords)) {
         object_mutexs[coords] -> lock();
-        toReturn = Ref<StationWOMethods>(cargo_map_terminals[coords]) -> get_orders_dict();
+        toReturn = get_terminal_as<StationWOMethods>(coords) -> get_orders_dict();
         object_mutexs[coords] -> unlock();
     }
     return toReturn;
@@ -351,58 +373,37 @@ Dictionary TerminalMap::get_town_fulfillment(const Vector2i &coords) {
 
 //Internal Getters
 Ref<Terminal> TerminalMap::get_terminal(const Vector2i &coords) {
-    Ref<Terminal> toReturn = Ref<Terminal>();
-    m.lock();
-    if (cargo_map_terminals.count(coords) == 1) {
-        toReturn = cargo_map_terminals[coords];
-    }
-    m.unlock();
-    return toReturn;
+    return get_terminal_as<Terminal>(coords);
 }
 Ref<Broker> TerminalMap::get_broker(const Vector2i &coords) {
-    Ref<Broker> toReturn = Ref<Broker>();
-    m.lock();
-    if (cargo_map_terminals.count(coords) == 1) {
-        toReturn = Ref<Broker>(cargo_map_terminals[coords]);
-    }
-    m.unlock();
-    return toReturn;
+    return get_terminal_as<Broker>(coords);
 }
 Ref<StationWOMethods> TerminalMap::get_station(const Vector2i &coords) {
-    Ref<StationWOMethods> toReturn = Ref<StationWOMethods>();
-    m.lock();
-    if (cargo_map_terminals.count(coords) == 1) {
-        toReturn = Ref<StationWOMethods>(cargo_map_terminals[coords]);
-    }
-    m.unlock();
-    return toReturn;
+    return get_terminal_as<StationWOMethods>(coords);
 }
 Ref<StationWOMethods> TerminalMap::get_ai_station(const Vector2i &coords) {
-    Ref<StationWOMethods> toReturn = Ref<StationWOMethods>();
-    m.lock();
-    if (is_ai_station(coords)) {
-        toReturn = Ref<StationWOMethods>(cargo_map_terminals[coords]);
-    }
-    m.unlock();
-    return toReturn;
+    return get_terminal_as<StationWOMethods>(coords, [](const Vector2i &pos) { return TerminalMap::get_instance()->is_ai_station(pos);});
 }
 Ref<Town> TerminalMap::get_town(const Vector2i &coords) {
-    Ref<Town> toReturn = Ref<Town>();
+    return get_terminal_as<Town>(coords);
+}
+
+template <typename T>
+Ref<T> TerminalMap::get_terminal_as(const Vector2i &coords, const std::function<bool(const Vector2i &)> &type_check) {
+    Ref<T> toReturn;
     m.lock();
-    if (cargo_map_terminals.count(coords) == 1) {
-        toReturn = Ref<Town>(cargo_map_terminals[coords]);
+    if (cargo_map_terminals.count(coords) == 1 && (!type_check || type_check(coords))) {
+        Ref<Terminal> base = cargo_map_terminals[coords];
+        T* cast_ptr = dynamic_cast<T*>(*base);
+        toReturn = Ref<T>(cast_ptr);
     }
     m.unlock();
     return toReturn;
 }
 
 //External Locks
-bool TerminalMap::lock(const Vector2i& coords) {
-    if (object_mutexs.count(coords) == 0) {
-        return false;
-    }
+void TerminalMap::lock(const Vector2i& coords) {
     object_mutexs[coords]->lock();
-    return true;
 }
 
 void TerminalMap::unlock(const Vector2i& coords) {
@@ -413,7 +414,7 @@ void TerminalMap::unlock(const Vector2i& coords) {
 void TerminalMap::set_construction_site_recipe(const Vector2i &coords, const Array &selected_recipe) {
     if (is_owned_recipeless_construction_site(coords)) {
         object_mutexs[coords] -> lock();
-        Ref<ConstructionSite>(cargo_map_terminals[coords]) -> set_recipe(selected_recipe);
+        get_terminal_as<ConstructionSite>(coords) -> set_recipe(selected_recipe);
         object_mutexs[coords] -> unlock();
     }
 }
@@ -421,7 +422,7 @@ void TerminalMap::set_construction_site_recipe(const Vector2i &coords, const Arr
 void TerminalMap::destroy_recipe(const Vector2i &coords) {
     if (is_owned_recipeless_construction_site(coords)) {
         object_mutexs[coords] -> lock();
-        Ref<ConstructionSite>(cargo_map_terminals[coords]) -> destroy_recipe();
+        get_terminal_as<ConstructionSite>(coords) -> destroy_recipe();
         object_mutexs[coords] -> unlock();
     }
 }
@@ -429,7 +430,7 @@ void TerminalMap::destroy_recipe(const Vector2i &coords) {
 void TerminalMap::transform_construction_site_to_factory(const Vector2i &coords) {
     if (is_owned_construction_site(coords)) {
         object_mutexs[coords] -> lock();
-        Ref<ConstructionSite> old_site = Ref<ConstructionSite>(cargo_map_terminals[coords]);
+        Ref<ConstructionSite> old_site = get_terminal_as<ConstructionSite>(coords);
         
         cargo_map_terminals[coords] = create_factory(coords, old_site->get_player_owner(), old_site->get_recipe()[0], old_site->get_recipe()[1]);
 
@@ -441,7 +442,7 @@ void TerminalMap::edit_order_station(const Vector2i &coords, int type, int amoun
     if (is_station(coords)) {
         object_mutexs[coords] -> lock();
 
-        Ref<StationWOMethods> station = Ref<StationWOMethods>(cargo_map_terminals[coords]);
+        Ref<StationWOMethods> station = get_terminal_as<StationWOMethods>(coords);
         station -> edit_order(type, amount, buy, max_price);
 
         object_mutexs[coords] -> unlock();
@@ -452,7 +453,7 @@ void TerminalMap::remove_order_station(const Vector2i &coords, int type) {
     if (is_station(coords)) {
         object_mutexs[coords] -> lock();
 
-        Ref<StationWOMethods> station = Ref<StationWOMethods>(cargo_map_terminals[coords]);
+        Ref<StationWOMethods> station = get_terminal_as<StationWOMethods>(coords);
         station -> remove_order(type);
 
         object_mutexs[coords] -> unlock();

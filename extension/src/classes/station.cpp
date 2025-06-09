@@ -35,7 +35,6 @@ StationWOMethods::StationWOMethods(Vector2i new_location, int player_owner) {
 
 void StationWOMethods::initialize(Vector2i new_location, int player_owner) {
     Broker::initialize(new_location, player_owner);
-    local_pricer = memnew(LocalPriceController);
 }
 
 float StationWOMethods::get_local_price(int type) const {

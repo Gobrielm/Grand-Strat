@@ -179,7 +179,7 @@ Ref<FactoryTemplate> Province::find_employment(BasePop* pop) const {
         best_fact = find_urban_employment(pop);
     } else if (dynamic_cast<RuralPop*>(pop)) {
         for (const auto tile: terminal_tiles) {
-            Ref<FactoryTemplate> fact = Ref<FactoryTemplate>(TerminalMap::get_instance() -> get_terminal(tile));
+            Ref<FactoryTemplate> fact = TerminalMap::get_instance() -> get_terminal_as<FactoryTemplate>(tile);
             if (fact.is_valid() && pop -> will_work_here(fact) && fact -> get_wage() > max_wage) {
                 best_fact = fact;
                 max_wage = fact -> get_wage();

@@ -3,13 +3,9 @@ class_name RoadDepot extends RoadDepotWOMethods
 #TODO: Add automated orderrs
 
 func _init(coords: Vector2i, _player_owner: int) -> void:
+	print("A")
 	super.initialize(coords, _player_owner)
-
-func get_road_depot(tile: Vector2i) -> RoadDepotWOMethods:
-	var terminal: Terminal = TerminalMap.get_instance().get_terminal(tile)
-	if terminal is RoadDepotWOMethods:
-		return terminal
-	return null
+	print("B")
 
 func supply_armies() -> void:
 	var units_to_supply: Dictionary[Vector2i, int] = get_units_to_supply()

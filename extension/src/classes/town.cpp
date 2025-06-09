@@ -203,9 +203,11 @@ Ref<FactoryTemplate> Town::find_employment(BasePop* pop) const {
 void Town::sell_to_other_brokers() {
     std::vector<int> supply = get_supply();
 	for (int type = 0; type < supply.size(); type++) {
-		TradeOrder* order = memnew(TradeOrder(type, get_cargo_amount(type), false, get_local_price(type)));
+		TradeOrder* order = get_order(type);
+        if (order == nullptr) {
+            continue;
+        }
 		distribute_from_order(order);
-        memdelete(order);
     }
 }
 

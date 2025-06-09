@@ -337,7 +337,7 @@ func done_loading() -> void:
 	start_train()
 
 func prep_update_cargo_gui() -> void:
-	var cargo_names: Array = TerminalMap.get_instance().get_cargo_array()
+	var cargo_names: Array = CargoInfo.get_instance().get_cargo_array()
 	var cargo_dict: Dictionary = cargo_hold.get_current_hold()
 	update_cargo_gui.rpc(cargo_names, cargo_dict)
 

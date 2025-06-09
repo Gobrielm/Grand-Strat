@@ -32,7 +32,7 @@ protected:
     static void _bind_methods();
 
 public:
-
+    static Ref<RoadDepotWOMethods> create(const Vector2i new_location, const int player_owner);
     RoadDepotWOMethods();
     RoadDepotWOMethods(Vector2i new_location, int player_owner);
     virtual ~RoadDepotWOMethods();
@@ -46,10 +46,11 @@ public:
     void add_connected_broker(Ref<Broker> broker) override;
     void remove_connected_broker(const Ref<Broker> broker) override;
 
-    void add_connected_road_depot(Ref<RoadDepotWOMethods> new_road_depot);
+    void add_connected_road_depot(RoadDepotWOMethods* new_road_depot);
     void remove_connected_road_depot(const Ref<RoadDepotWOMethods> new_road_depot);
 
     void add_accepts_from_depot(const Ref<RoadDepotWOMethods> road_depot);
+    void add_accepts_from_depot(const RoadDepotWOMethods* road_depot);
     void refresh_accepts() override;
     virtual float get_local_price(int type) const;
 

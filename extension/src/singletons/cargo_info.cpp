@@ -12,6 +12,9 @@ void CargoInfo::_bind_methods() {
     ClassDB::bind_method(D_METHOD("get_cargo_array"), &CargoInfo::get_cargo_array);
     ClassDB::bind_method(D_METHOD("get_cargo_name", "type"), &CargoInfo::get_cargo_name);
     ClassDB::bind_method(D_METHOD("get_cargo_type", "cargo_name"), &CargoInfo::get_cargo_type);
+    ClassDB::bind_method(D_METHOD("get_amount_of_primary_goods"), &CargoInfo::get_amount_of_primary_goods);
+
+    ADD_PROPERTY(PropertyInfo(Variant::INT, "amount_of_primary_goods"), "", "get_amount_of_primary_goods");
 }
 
 CargoInfo::CargoInfo() {
@@ -59,6 +62,10 @@ void CargoInfo::create_amount_of_primary_goods() {
             break;
         }
     }
+}
+
+int CargoInfo::get_amount_of_primary_goods() const {
+    return amount_of_primary_goods;
 }
 
 int CargoInfo::get_number_of_goods() const {

@@ -55,6 +55,7 @@ public:
     String get_cargo_name(int type) const;
     int get_cargo_type(String cargo_name) const;
     void create_amount_of_primary_goods();
+    int get_amount_of_primary_goods() const;
     int get_number_of_goods() const;
     bool is_cargo_primary(int cargo_type) const;
     Array get_cargo_array() const;

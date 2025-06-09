@@ -63,6 +63,7 @@ public:
     Ref<Factory> create_factory(const Vector2i &p_location, int p_player_owner, const Dictionary &p_inputs, const Dictionary &p_outputs);
     
     //Checkers
+    bool is_terminal(const Vector2i &coords);
     bool is_hold(const Vector2i &coords);
     bool is_owned_recipeless_construction_site(const Vector2i &coords);
     bool is_building(const Vector2i &coords);
@@ -77,6 +78,7 @@ public:
     bool is_town(const Vector2i &coords);
 
     //Info getters
+    Dictionary get_cargo_dict(const Vector2i &coords);
     Array get_construction_site_recipe(const Vector2i &coords);
     Dictionary get_construction_materials(const Vector2i &coords);
     int get_cash_of_firm(const Vector2i &coords);
@@ -85,7 +87,7 @@ public:
     Dictionary get_town_fulfillment(const Vector2i &coords);
 
     //External Locks
-    bool lock(const Vector2i& coords); //If it returns false, then the terminal does not exist, Error
+    void lock(const Vector2i& coords); //If it returns false, then the terminal does not exist, Error
     void unlock(const Vector2i& coords);
 
     //Getters
@@ -94,6 +96,10 @@ public:
     Ref<StationWOMethods> get_station(const Vector2i &coords);
     Ref<StationWOMethods> get_ai_station(const Vector2i &coords);
     Ref<Town> get_town(const Vector2i &coords);
+
+    template <typename T>
+    Ref<T> get_terminal_as(const Vector2i &coords, const std::function<bool(const Vector2i &)> &type_check = nullptr);
+   
 
     //Action doers
     void set_construction_site_recipe(const Vector2i &coords, const Array &selected_recipe);

@@ -46,7 +46,7 @@ func request_current_name(coords: Vector2i) -> void:
 
 @rpc("any_peer", "call_local", "unreliable")
 func request_station_cargo(coords: Vector2i) -> void:
-	var good_dict: Dictionary = TerminalMap.get_instance().get_cargo_array_at_location(coords)
+	var good_dict: Dictionary = TerminalMap.get_instance().get_cargo_dict(coords)
 	update_current_cargo.rpc_id(multiplayer.get_remote_sender_id(), good_dict)
 
 @rpc("any_peer", "call_local", "unreliable")

@@ -112,6 +112,7 @@ void RoadMap::fix_tile(Vector2i center, bool repeating) {
     int y = -1; //Also is 1 less than the number of connections
     std::vector<bool> connections = {};
     for (int i = 0; i < 6; i++) {
+        if (tiles[i].get_type() != Variant::VECTOR2I) continue;
         Vector2i tile = tiles[(i + offset) % 6];
         int val = get_road_value(tile) + get_temp_road_value(tile);
         if (val > 0) {
