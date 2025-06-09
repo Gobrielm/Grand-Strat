@@ -21,7 +21,7 @@ private:
 
     virtual void supply_armies();
     GDVIRTUAL0(supply_armies);
-    void add_accepts(Broker* broker);
+    void add_accepts(Ref<Broker> broker);
     void reset_accepts_train();
 
 protected:
@@ -30,7 +30,7 @@ protected:
 public:
     static constexpr float SERVICE_FEE = 0.02;
 
-    static Terminal* create(Vector2i new_location, int player_owner);
+    static Ref<StationWOMethods> create(Vector2i new_location, int player_owner);
 
     StationWOMethods();
     StationWOMethods(Vector2i new_location, int player_owner);
@@ -44,8 +44,8 @@ public:
     void remove_order(int type) override;
     virtual void distribute_cargo() override;
 
-    virtual void add_connected_broker(Broker* new_broker) override;
-    virtual void remove_connected_broker(const Broker* new_broker) override;
+    virtual void add_connected_broker(Ref<Broker> new_broker) override;
+    virtual void remove_connected_broker(const Ref<Broker> new_broker) override;
 
     virtual void refresh_accepts();
 

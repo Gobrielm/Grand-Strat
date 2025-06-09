@@ -1,4 +1,5 @@
 #include "station.hpp"
+#include "../singletons/terminal_map.hpp"
 
 using namespace godot;
 
@@ -22,8 +23,8 @@ void StationWOMethods::_bind_methods() {
 
 }
 
-Terminal* StationWOMethods::create(Vector2i new_location, int player_owner) {
-    return memnew(StationWOMethods(new_location, player_owner));
+Ref<StationWOMethods> StationWOMethods::create(Vector2i new_location, int player_owner) {
+    return Ref<StationWOMethods>(memnew(StationWOMethods(new_location, player_owner)));
 }
 
 StationWOMethods::StationWOMethods() {}
@@ -41,12 +42,18 @@ float StationWOMethods::get_local_price(int type) const {
     int amount_total = 0;
     float market_price = 0.0;
 
-    for (const auto &[__, broker] : connected_brokers) {
+    for (const auto &tile : connected_brokers) {
+        Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
+        Ref<Broker> broker = terminal_map -> get_broker(tile);
+        terminal_map -> lock(tile);
         const TradeOrder* order = broker->get_order(type);
+        terminal_map -> unlock(tile);
         if (order == nullptr) continue;
 
         amount_total += order->get_amount();
+        terminal_map -> lock(tile);
         market_price += order->get_amount() * broker->get_local_price(type);
+        terminal_map -> unlock(tile);
     }
     float max_price = CargoInfo::get_instance() -> get_base_prices().at(type) * LocalPriceController::MAX_DIFF;
     return amount_total == 0 ? max_price : market_price / amount_total;
@@ -97,26 +104,31 @@ void StationWOMethods::supply_armies() {
     ERR_FAIL_MSG("Not implemented");
 }
 
-void StationWOMethods::add_connected_broker(Broker* new_broker) {
+void StationWOMethods::add_connected_broker(Ref<Broker> new_broker) {
     Broker::add_connected_broker(new_broker);
     refresh_accepts();
 }
 
-void StationWOMethods::remove_connected_broker(const Broker* new_broker) {
+void StationWOMethods::remove_connected_broker(const Ref<Broker> new_broker) {
     Broker::remove_connected_broker(new_broker);
     refresh_accepts();
 }
 
 void StationWOMethods::refresh_accepts() {
     reset_accepts();
-    for (const auto &[tile, broker] : connected_brokers) {
+    Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
+    for (const auto &tile : connected_brokers) {
+        Ref<Broker> broker = terminal_map -> get_broker(tile);
         add_accepts(broker);
     }
 }
 
-void StationWOMethods::add_accepts(Broker* broker) {
+void StationWOMethods::add_accepts(Ref<Broker> broker) {
     int type = 0;
-    for (bool status: broker->get_accepts_vector()) {
+    TerminalMap::get_instance() -> lock(broker -> get_location());
+    std::vector<bool> accepts_vector = broker->get_accepts_vector();
+    TerminalMap::get_instance() -> unlock(broker -> get_location());
+    for (bool status: accepts_vector) {
         if (status) add_accept(type);
         type++;
     }

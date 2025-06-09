@@ -14,8 +14,7 @@ protected:
 
 public:
     
-
-    static Ref<Terminal> create(const Vector2i new_location, const int player_owner, const int p_max_amount = DEFAULT_MAX_STORAGE);
+    static Ref<FixedHold> create(const Vector2i new_location, const int player_owner, const int p_max_amount = DEFAULT_MAX_STORAGE);
 
 
     FixedHold();

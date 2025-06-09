@@ -5,7 +5,6 @@
 #include "terminal.hpp"
 #include "local_price_controller.hpp"
 #include "../utility/vector2i_hash.hpp"
-#include "../singletons/terminal_map.hpp"
 #include <unordered_map>
 #include <unordered_set>
 #include <memory>
@@ -23,7 +22,7 @@ class Broker : public FixedHold {
     std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> connected_brokers;
     LocalPriceController* local_pricer = nullptr;
 
-    static Ref<Terminal> create(const Vector2i new_location, const int player_owner, const int p_max_amount = DEFAULT_MAX_STORAGE);
+    static Ref<Broker> create(const Vector2i new_location, const int player_owner, const int p_max_amount = DEFAULT_MAX_STORAGE);
 
     Broker();
     Broker(const Vector2i new_location, const int player_owner, const int p_max_amount = DEFAULT_MAX_STORAGE);

@@ -26,8 +26,8 @@ ConstructionSite::ConstructionSite(Vector2i new_location, int player_owner): Fac
 
 }
 
-Terminal* ConstructionSite::create(Vector2i new_location, int player_owner) {
-    return memnew(ConstructionSite(new_location, player_owner));
+Ref<ConstructionSite> ConstructionSite::create(Vector2i new_location, int player_owner) {
+    return Ref<ConstructionSite>(memnew(ConstructionSite(new_location, player_owner)));
 }
 
 void ConstructionSite::initialize(Vector2i new_location, int player_owner) {

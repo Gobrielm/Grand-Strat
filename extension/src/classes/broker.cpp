@@ -1,4 +1,5 @@
 #include "broker.hpp"
+#include "../singletons/terminal_map.hpp"
 #include <algorithm>
 #include <cmath>
 #include <cassert>
@@ -27,8 +28,8 @@ void Broker::_bind_methods() {
 
 }
 
-Ref<Terminal> Broker::create(const Vector2i new_location, const int player_owner, const int p_max_amount) {
-    return Ref<Terminal>(memnew(Broker(new_location, player_owner, p_max_amount)));
+Ref<Broker> Broker::create(const Vector2i new_location, const int player_owner, const int p_max_amount) {
+    return Ref<Broker>(memnew(Broker(new_location, player_owner, p_max_amount)));
 }
 
 Broker::Broker(): FixedHold() {}
@@ -41,8 +42,9 @@ Broker::~Broker() {
     }
     trade_orders.clear();
     if (local_pricer) memdelete(local_pricer);
-    for (auto& tile: connected_brokers) {
+    for (const auto& tile: connected_brokers) {
         Ref<Broker> broker = TerminalMap::get_instance() -> get_broker(tile);
+        if (broker.is_null()) continue;
         TerminalMap::get_instance() -> lock(tile);
         broker -> remove_connected_broker(this);
         TerminalMap::get_instance() -> unlock(tile);
@@ -175,7 +177,12 @@ void Broker::distribute_cargo() {
 void Broker::distribute_from_order(const TradeOrder* order) {
     for (const auto& tile : connected_brokers) {
         Ref<Broker> broker = TerminalMap::get_instance() -> get_broker(tile);
-        if (broker.is_valid() && broker->does_accept(order->get_type())) {
+        if (broker.is_null()) continue;
+        TerminalMap::get_instance() -> lock(tile);
+        bool val = broker->does_accept(order->get_type());
+        TerminalMap::get_instance() -> unlock(tile);
+
+        if (val) {
             distribute_to_order(broker, order);
         }
     }

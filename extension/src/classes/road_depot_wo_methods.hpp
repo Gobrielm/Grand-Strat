@@ -19,7 +19,7 @@ class RoadDepotWOMethods : public StationWOMethods {
     GDCLASS(RoadDepotWOMethods, StationWOMethods)
 
 private:
-    std::unordered_map<Vector2i, RoadDepotWOMethods*, godot_helpers::Vector2iHasher> other_road_depots = {};
+    std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> other_road_depots = {};
     static constexpr int MAX_THROUGHPUT = 20;
     static constexpr int MAX_SUPPLY_DISTANCE = 10;
 
@@ -27,9 +27,6 @@ private:
     float cash = 1000;
 
     GDVIRTUAL0(supply_armies);
-
-    virtual RoadDepotWOMethods* get_road_depot(Vector2i) const;
-    GDVIRTUAL1RC(RoadDepotWOMethods*, get_road_depot, Vector2i);
 
 protected:
     static void _bind_methods();
@@ -43,16 +40,16 @@ public:
     virtual void initialize(Vector2i new_location, int player_owner) override;
     void distribute_cargo() override;
     void distribute_type(int type);
-    void distribute_type_to_road_depot(int type, RoadDepotWOMethods* road_depot);
-    void distribute_type_to_broker(int type, Broker* broker);
+    void distribute_type_to_road_depot(int type, Ref<RoadDepotWOMethods> road_depot);
+    void distribute_type_to_broker(int type, Ref<Broker> broker);
 
-    void add_connected_broker(Broker* broker) override;
-    void remove_connected_broker(const Broker* broker) override;
+    void add_connected_broker(Ref<Broker> broker) override;
+    void remove_connected_broker(const Ref<Broker> broker) override;
 
-    void add_connected_road_depot(RoadDepotWOMethods* new_road_depot);
-    void remove_connected_road_depot(const RoadDepotWOMethods* new_road_depot);
+    void add_connected_road_depot(Ref<RoadDepotWOMethods> new_road_depot);
+    void remove_connected_road_depot(const Ref<RoadDepotWOMethods> new_road_depot);
 
-    void add_accepts_from_depot(const RoadDepotWOMethods* road_depot);
+    void add_accepts_from_depot(const Ref<RoadDepotWOMethods> road_depot);
     void refresh_accepts() override;
     virtual float get_local_price(int type) const;
 

@@ -1,4 +1,5 @@
 #include "road_depot_wo_methods.hpp"
+#include "../singletons/terminal_map.hpp"
 
 //TODO: Problems with road depots selling in between each other, and depots selling to towns and towns selling right back
 //Build a custom inherited local pricer that uses supply / demand to have its own local price, then just sell profitably, and will go in the right direction
@@ -14,7 +15,6 @@ void RoadDepotWOMethods::_bind_methods() {
     ClassDB::bind_method(D_METHOD("month_tick"), &RoadDepotWOMethods::month_tick);
 
     GDVIRTUAL_BIND(supply_armies);
-    GDVIRTUAL_BIND(get_road_depot, "tile");
 }
 
 RoadDepotWOMethods::RoadDepotWOMethods(): StationWOMethods() {}
@@ -24,8 +24,14 @@ RoadDepotWOMethods::RoadDepotWOMethods(Vector2i new_location, int player_owner):
 }
 
 RoadDepotWOMethods::~RoadDepotWOMethods() {
-    for (const auto &[__, road_depot]: other_road_depots) {
+    Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
+    for (const auto &tile: other_road_depots) {
+        Ref<RoadDepotWOMethods> road_depot = Ref<RoadDepotWOMethods>(terminal_map -> get_broker(tile));
+        if (road_depot.is_null()) continue;
+
+        terminal_map -> lock(tile);
         road_depot -> remove_connected_road_depot(this);
+        terminal_map -> unlock(tile);
     }
 }
 
@@ -44,77 +50,127 @@ void RoadDepotWOMethods::distribute_cargo() {
 }
 
 void RoadDepotWOMethods::distribute_type(int type) {
+    Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     //Prioritize local before sending onward
-    for (const auto &[__, broker]: connected_brokers) {
-        if (broker -> does_accept(type) && broker -> get_player_owner() == get_player_owner()) {
+    for (const auto &tile: connected_brokers) {
+        Ref<Broker> broker = terminal_map->get_broker(tile);
+        terminal_map->lock(tile);
+        bool val = broker.is_valid() && broker -> does_accept(type) && broker -> get_player_owner() == get_player_owner();
+        terminal_map->unlock(tile);
+        if (val) {
 			distribute_type_to_broker(type, broker);
         }
     }
 
-    for (const auto &[__, road_depot]: other_road_depots) {
+    for (const auto &tile: other_road_depots) {
         //Must be owned by same person
-		if (road_depot -> does_accept(type) && road_depot -> get_player_owner() == get_player_owner()) {
+        Ref<RoadDepotWOMethods> road_depot = Ref<RoadDepotWOMethods>(terminal_map->get_terminal(tile));
+        if (road_depot.is_null()) continue;
+        terminal_map->lock(tile);
+        bool val = road_depot -> does_accept(type) && road_depot -> get_player_owner() == get_player_owner();
+        terminal_map->unlock(tile);
+
+		if (val) {
             distribute_type_to_road_depot(type, road_depot);
         }
     }
 }
 
-void RoadDepotWOMethods::distribute_type_to_broker(int type, Broker* broker) {
+void RoadDepotWOMethods::distribute_type_to_broker(int type, Ref<Broker> broker) {
+    Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
+    Vector2i tile = broker -> get_location();
     float price1 = get_local_price(type);
+    
+    terminal_map->lock(tile);
     float price2 = broker->get_local_price(type);
+    terminal_map->unlock(tile);
+    
     float price = std::max(price1, price2) - std::abs(price1 - price2) / 2.0f;
+
+    terminal_map->lock(tile);
     if (!is_price_acceptable_to_sell(type, price) || !broker->is_price_acceptable(type, price)) return;
-
-
     int amount_desired = broker -> get_desired_cargo_from_train(type);
+    terminal_map->unlock(tile);
+
     local_pricer -> add_demand(type, amount_desired);
 
     int amount = std::min(amount_desired, get_cargo_amount(type));
-    if (amount != 0) broker -> buy_cargo(type, sell_cargo(type, amount, price), price);
+    if (amount != 0) {
+        terminal_map->lock(tile);
+        broker -> buy_cargo(type, sell_cargo(type, amount, price), price);
+        terminal_map->unlock(tile);
+    }
 }
 
-void RoadDepotWOMethods::distribute_type_to_road_depot(int type, RoadDepotWOMethods* road_depot) {
-    float price1 = get_local_price(type);
-    float price2 = road_depot->get_local_price(type);
-    float price = std::max(price1, price2) - std::abs(price1 - price2) / 2.0f;
-    if (!is_price_acceptable_to_sell(type, price) || !road_depot->is_price_acceptable_to_buy(type, price)) return;
+void RoadDepotWOMethods::distribute_type_to_road_depot(int type, Ref<RoadDepotWOMethods> road_depot) {
+    Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
+    Vector2i tile = road_depot -> get_location();
 
+    float price1 = get_local_price(type);
+
+    terminal_map->lock(tile);
+    float price2 = road_depot->get_local_price(type);
+    terminal_map->unlock(tile);
+
+    float price = std::max(price1, price2) - std::abs(price1 - price2) / 2.0f;
+
+    terminal_map->lock(tile);
+    if (!is_price_acceptable_to_sell(type, price) || !road_depot->is_price_acceptable_to_buy(type, price)) return;
     int amount_desired = road_depot -> get_desired_cargo_from_train(type);
+    terminal_map->unlock(tile);
+
     local_pricer -> add_demand(type, std::min(amount_desired, MAX_THROUGHPUT));
     int amount = std::min(amount_desired, std::min(get_cargo_amount(type), MAX_THROUGHPUT - cargo_sent));
     cargo_sent += amount;
 
-    if (amount != 0) road_depot -> buy_cargo(type, sell_cargo(type, amount, price), price);
+    if (amount != 0) {
+        terminal_map->lock(tile);
+        road_depot -> buy_cargo(type, sell_cargo(type, amount, price), price);
+        terminal_map->unlock(tile);
+    }
 }
 
-void RoadDepotWOMethods::add_connected_broker(Broker* broker) {
+void RoadDepotWOMethods::add_connected_broker(Ref<Broker> broker) {
+    Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     StationWOMethods::add_connected_broker(broker);
-    for (const auto &[__, road_depot]: other_road_depots) {
+    for (const auto &tile: other_road_depots) {
+        Ref<RoadDepotWOMethods> road_depot = Ref<RoadDepotWOMethods>(terminal_map->get_broker(tile));
+        if (road_depot.is_null()) continue;
+        terminal_map->lock(tile);
         road_depot -> add_accepts_from_depot(this);
+        terminal_map->unlock(tile);
     }
 }
 
-void RoadDepotWOMethods::remove_connected_broker(const Broker* broker) {
+void RoadDepotWOMethods::remove_connected_broker(const Ref<Broker> broker) {
+    Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     StationWOMethods::remove_connected_broker(broker);
-    for (const auto &[__, road_depot]: other_road_depots) {
+    for (const auto &tile: other_road_depots) {
+        Ref<RoadDepotWOMethods> road_depot = Ref<RoadDepotWOMethods>(terminal_map -> get_broker(tile));
+        if (road_depot.is_null()) continue;
+
+        terminal_map -> lock(tile);
         road_depot -> refresh_accepts();
+        terminal_map -> unlock(tile);
     }
 }
 
-void RoadDepotWOMethods::add_connected_road_depot(RoadDepotWOMethods* new_road_depot) {
+void RoadDepotWOMethods::add_connected_road_depot(Ref<RoadDepotWOMethods> new_road_depot) {
     ERR_FAIL_COND_MSG(other_road_depots.count(new_road_depot -> get_location()) != 0, "Already has a road depot there");
-    other_road_depots[new_road_depot -> get_location()] = new_road_depot;
+    other_road_depots.insert(new_road_depot -> get_location());
     add_accepts_from_depot(new_road_depot);
 }
 
-void RoadDepotWOMethods::remove_connected_road_depot(const RoadDepotWOMethods* new_road_depot) {
+void RoadDepotWOMethods::remove_connected_road_depot(const Ref<RoadDepotWOMethods> new_road_depot) {
     ERR_FAIL_COND_MSG(other_road_depots.count(new_road_depot -> get_location()) == 0, "Never had a road depot there");
     other_road_depots.erase(new_road_depot -> get_location());
     refresh_accepts();
 }
 
-void RoadDepotWOMethods::add_accepts_from_depot(const RoadDepotWOMethods* road_depot) {
+void RoadDepotWOMethods::add_accepts_from_depot(const Ref<RoadDepotWOMethods> road_depot) {
+    TerminalMap::get_instance() -> lock(road_depot -> get_location());
     std::vector<bool> accepts = road_depot -> get_accepts_vector();
+    TerminalMap::get_instance() -> unlock(road_depot -> get_location());
     for (int type = 0; type < accepts.size(); type++) {
         if (accepts[type]) {
             add_accept(type);
@@ -124,7 +180,9 @@ void RoadDepotWOMethods::add_accepts_from_depot(const RoadDepotWOMethods* road_d
 
 void RoadDepotWOMethods::refresh_accepts() {
     StationWOMethods::refresh_accepts(); //Adds accepts from towns/factories/ect
-    for (const auto &[__, road_depot]: other_road_depots) {
+    for (const auto &tile: other_road_depots) {
+        Ref<RoadDepotWOMethods> road_depot =  TerminalMap::get_instance() -> get_broker(tile);
+        if (road_depot.is_null()) continue;
         add_accepts_from_depot(road_depot);
     }
 }
@@ -165,10 +223,13 @@ void RoadDepotWOMethods::search_for_and_add_road_depots() {
     while (pq.size() > 0) {
         curr = pq.top();
         pq.pop();
-        RoadDepotWOMethods* road_depot = get_road_depot(curr.val);
-        if (road_depot != nullptr && road_depot != this) {
+        Ref<RoadDepotWOMethods> road_depot = Ref<RoadDepotWOMethods>(TerminalMap::get_instance() -> get_broker(curr.val));
+        if (road_depot.is_valid() && *road_depot != this) {
             add_connected_road_depot(road_depot);
+
+            TerminalMap::get_instance() -> lock(curr.val);
             road_depot -> add_connected_road_depot(this);
+            TerminalMap::get_instance() -> unlock(curr.val);
         }
 
         Array tiles = road_map -> get_surrounding_cells(curr.val);
@@ -191,14 +252,6 @@ int RoadDepotWOMethods::get_desired_cargo(int type, float pricePer) const {
         return std::min(get_max_storage() - get_cargo_amount(type), get_amount_can_buy(pricePer));
     }
     return 0;
-}
-
-RoadDepotWOMethods* RoadDepotWOMethods::get_road_depot(Vector2i tile) const {
-    RoadDepotWOMethods* result = nullptr;
-    if (GDVIRTUAL_CALL(get_road_depot, tile, result)) {
-        return result;
-    }
-    ERR_FAIL_V_MSG(nullptr, "Not implemented");
 }
 
 float RoadDepotWOMethods::get_cash() const {

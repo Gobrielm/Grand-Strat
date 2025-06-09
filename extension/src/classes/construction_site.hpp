@@ -22,7 +22,7 @@ public:
     virtual ~ConstructionSite();
     ConstructionSite(Vector2i new_location, int player_owner);
 
-    static Terminal* create(Vector2i new_location, int player_owner);
+    static Ref<ConstructionSite> create(Vector2i new_location, int player_owner);
 
     virtual void initialize(Vector2i new_location, int player_owner);
 

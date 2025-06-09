@@ -1,4 +1,5 @@
 #include "base_pop.hpp"
+#include "../singletons/terminal_map.hpp"
 #include <godot_cpp/core/class_db.hpp>
 
 void BasePop::_bind_methods() {

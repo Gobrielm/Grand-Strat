@@ -20,19 +20,27 @@ func month_tick() -> void:
 
 func fetch_local_goods_needed() -> Array[TradeOrder]:
 	var toReturn: Array[TradeOrder] = []
-	for broker_obj: Broker in get_connected_brokers().values():
-		for order: TradeOrder in broker_obj.get_orders().values():
+	for tile: Vector2i in get_connected_broker_locations():
+		var broker: Broker = TerminalMap.get_instance().get_broker(tile)
+		if broker == null: continue
+		TerminalMap.get_instance().lock(tile)
+		for order: TradeOrder in broker.get_orders().values():
 			if order.is_buy_order():
 				toReturn.append(order)
+		TerminalMap.get_instance().unlock(tile)
 	return toReturn
 
 #Returns which types are available
 func get_local_goods_available() -> Dictionary[int, bool]:
 	var toReturn: Dictionary[int, bool] = {}
-	for broker_obj: Broker in get_connected_brokers().values():
-		for order: TradeOrder in broker_obj.get_orders_dict().values():
+	for tile: Vector2i in get_connected_broker_locations():
+		var broker: Broker = TerminalMap.get_instance().get_broker(tile)
+		if broker == null: continue
+		TerminalMap.get_instance().lock(tile)
+		for order: TradeOrder in broker.get_orders_dict().values():
 			if order.is_sell_order():
 				toReturn[order.type] = true
+		TerminalMap.get_instance().unlock(tile)
 	return toReturn
 
 func update_orders() -> void:
@@ -91,14 +99,18 @@ func create_consolidated_market_for_desired_goods() -> Dictionary[int, TradeOrde
 	var amount_total: Dictionary[int, int] = {}
 	var market_price: Dictionary[int, float] = {} # Represents either the max for buying or min for selling
 	var toReturn : Dictionary[int, TradeOrder] = {}
-	for broker_obj: Broker in get_connected_brokers().values():
-		for order: TradeOrder in broker_obj.get_orders_dict().values():
+	for tile: Vector2i in get_connected_broker_locations():
+		var broker: Broker = TerminalMap.get_instance().get_broker(tile)
+		if broker == null: continue
+		TerminalMap.get_instance().lock(tile)
+		for order: TradeOrder in broker.get_orders_dict().values():
 			if order.is_buy_order():
 				if !amount_total.has(order.type):
 					amount_total[order.type] = 0
 					market_price[order.type] = 0.0
 				amount_total[order.type] += order.amount
-				market_price[order.type] += order.amount * broker_obj.get_local_price(order.type)
+				market_price[order.type] += order.amount * broker.get_local_price(order.type)
+		TerminalMap.get_instance().unlock(tile)
 	
 	for type: int in amount_total:
 		market_price[type] /= amount_total[type]

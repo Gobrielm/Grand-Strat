@@ -1,5 +1,6 @@
 #include "town.hpp"
 #include "../singletons/cargo_info.hpp"
+#include "../singletons/terminal_map.hpp"
 #include <godot_cpp/core/class_db.hpp>
 
 using namespace godot;

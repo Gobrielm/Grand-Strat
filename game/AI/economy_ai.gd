@@ -110,9 +110,12 @@ func are_there_unconnected_stations() -> bool:
 		#Only survey owned ai_stations
 		if TerminalMap.get_instance().is_owned_ai_station(tile, id):
 			var stat: AiStation = TerminalMap.get_instance().get_ai_station(tile)
+			TerminalMap.get_instance().lock(tile)
 			if !stat.has_station_connection():
+				TerminalMap.get_instance().unlock(tile)
 				stored_tile = tile
 				return false
+			TerminalMap.get_instance().unlock(tile)
 	return false
 
 func place_station(center: Vector2i) -> void:
@@ -193,8 +196,8 @@ func place_factory(type: int) -> void:
 func create_factory(location: Vector2i, type: int) -> void:
 	cargo_map.create_construction_site(id, location)
 	var term: Terminal = TerminalMap.get_instance().get_terminal(location)
-	assert(term is ConstructionSite and term.player_owner == id)
-	owned_factories.append(term)
+	assert(term is ConstructionSite and term.get_player_owner() == id)
+	owned_factories.append(location)
 	for recipe_set: Array in recipe.get_set_recipes():
 		for output: int in recipe_set[1]:
 			if output == type:

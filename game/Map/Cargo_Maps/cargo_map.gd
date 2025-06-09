@@ -22,7 +22,7 @@ func create_town(coords: Vector2i, prov_id: int) -> void:
 func add_terminal_to_province(term: Terminal) -> void:
 	var map_dat: map_data = map_data.get_instance()
 	var prov: Province = map_dat.get_province(map_dat.get_province_id(term.get_location()))
-	prov.add_terminal(term.get_location(), term)
+	prov.add_terminal(term.get_location())
 
 func remove_terminal_from_province(coords: Vector2i) -> void:
 	var map_dat: map_data = map_data.get_instance()

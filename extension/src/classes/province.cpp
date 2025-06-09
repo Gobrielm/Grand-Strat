@@ -1,3 +1,4 @@
+#include "../singletons/terminal_map.hpp"
 #include "province.hpp"
 #include "base_pop.hpp"
 #include "rural_pop.hpp"
