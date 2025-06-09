@@ -100,16 +100,24 @@ bool BasePop::is_seeking_employment() const {
     }
 }
 
-bool BasePop::will_work_here(FactoryTemplate* fact) const {
+bool BasePop::will_work_here(Ref<FactoryTemplate> fact) const {
+    TerminalMap::get_instance() -> lock(fact -> get_location());
     //Checking of suitability, eg Literacy, 
-    if (!fact -> is_hiring()) return false;
+    
+    if (!fact -> is_hiring()) {
+        TerminalMap::get_instance() -> unlock(fact -> get_location());
+        return false;
+    } 
 	float income = fact -> get_wage();
-	if (is_income_acceptable(income)) return true;
-	return false;
+    TerminalMap::get_instance() -> unlock(fact -> get_location());
+    bool val = is_income_acceptable(income);
+    return val;
 }
 
-void BasePop::work_here(FactoryTemplate* work) {
+void BasePop::work_here(Ref<FactoryTemplate> work) {
+    TerminalMap::get_instance() -> lock(work -> get_location());
     work -> work_here(this);
+    TerminalMap::get_instance() -> unlock(work -> get_location());
     UtilityFunctions::print("I started working");
 }
 

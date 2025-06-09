@@ -40,9 +40,9 @@ class BasePop : public Object {
     int get_pop_id() const;
     void set_home_prov_id(int p_home_prov_id);
     int get_home_prov_id() const;
-    void work_here(FactoryTemplate* work);
+    void work_here(Ref<FactoryTemplate> work);
     bool is_seeking_employment() const;
-    bool will_work_here(FactoryTemplate* fact) const;
+    bool will_work_here(Ref<FactoryTemplate> fact) const;
     void pay_wage(float wage);
     void employ(float wage);
     void fire();

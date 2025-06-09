@@ -21,9 +21,9 @@ void Province::_bind_methods() {
     ClassDB::bind_method(D_METHOD("get_province_id"), &Province::get_province_id);
     ClassDB::bind_method(D_METHOD("set_country_id", "country_id"), &Province::set_country_id);
 
-    ClassDB::bind_method(D_METHOD("add_terminal", "tile", "terminal"), &Province::add_terminal);
+    ClassDB::bind_method(D_METHOD("add_terminal", "tile"), &Province::add_terminal);
     ClassDB::bind_method(D_METHOD("remove_terminal", "tile"), &Province::remove_terminal);
-    ClassDB::bind_method(D_METHOD("get_terminals"), &Province::get_terminals);
+    ClassDB::bind_method(D_METHOD("get_terminal_tiles"), &Province::get_terminal_tiles);
 
     ClassDB::bind_method(D_METHOD("create_pops"), &Province::create_pops);
     ClassDB::bind_method(D_METHOD("count_pops"), &Province::count_pops);
@@ -108,12 +108,12 @@ Vector2i Province::get_random_tile() const {
     return tiles_copy.at(rand() % (tiles_copy.size() - 1));
 }
 
-void Province::add_terminal(Vector2i tile, Terminal* term) {
+void Province::add_terminal(Vector2i tile) {
     if (terminal_tiles.count(tile) != 0) {
         ERR_FAIL_MSG("Already has a terminal there");
         return;
     }
-    terminal_tiles[tile] = term;
+    terminal_tiles.insert(tile);
 }
 
 void Province::remove_terminal(Vector2i tile) { //BUG: Never gets called when deleting terminals
@@ -123,10 +123,10 @@ void Province::remove_terminal(Vector2i tile) { //BUG: Never gets called when de
     }
     terminal_tiles.erase(tile);
 }
-Array Province::get_terminals() const {
+Array Province::get_terminal_tiles() const {
     Array a;
-    for (const auto &[__, term]: terminal_tiles) {
-        a.push_back(term);
+    for (const auto tile: terminal_tiles) {
+        a.push_back(tile);
     }
     return a;
 }
@@ -138,7 +138,7 @@ void Province::create_pops() {
         pops.push_back(memnew(BasePop(province_id, 0)));
     }
 		
-	std::vector<Town*> towns = get_towns();
+	std::vector<Vector2i> towns = get_town_tiles();
 	//If no cities, then turn rest of population into rural pops
 	if (towns.size() == 0) {
 		for (int i = 0; i < number_of_city_pops; i++) {
@@ -148,17 +148,19 @@ void Province::create_pops() {
     }
 	int index = 0;
 	for (int i = 0; i < number_of_city_pops; i++) {
-		Town* town = towns[index];
-		town -> add_pop(memnew(BasePop(province_id, 0)));
-		index = (index + 1) % towns.size();
+        Ref<Town> town = TerminalMap::get_instance() -> get_town(towns[index]);
+        if (town.is_valid()) {
+            town -> add_pop(memnew(BasePop(province_id, 0)));
+        }
+        index = (index + 1) % towns.size();
     }
 }
 
-std::vector<Town*> Province::get_towns() const {
-    std::vector<Town*> toReturn;
-    for (const auto &[__, term]: terminal_tiles) {
-        if (Town* town = dynamic_cast<Town*>(term)) {
-            toReturn.push_back(town);
+std::vector<Vector2i> Province::get_town_tiles() const {
+    std::vector<Vector2i> toReturn;
+    for (const auto &tile: terminal_tiles) {
+        if (TerminalMap::get_instance() -> is_town(tile)) {
+            toReturn.push_back(tile);
         }
     }
     return toReturn;
@@ -168,32 +170,43 @@ int Province::count_pops() const {
     return pops.size();
 }
 
-FactoryTemplate* Province::find_employment(BasePop* pop) const {
+Ref<FactoryTemplate> Province::find_employment(BasePop* pop) const {
     float max_wage = 0.0;
-    FactoryTemplate* best_fact = nullptr;
+    Ref<FactoryTemplate> best_fact = nullptr;
     
     if (dynamic_cast<TownPop*>(pop)) {
         best_fact = find_urban_employment(pop);
     } else if (dynamic_cast<RuralPop*>(pop)) {
-        for (const auto &[__, term]: terminal_tiles) {
-            FactoryTemplate* fact = dynamic_cast<FactoryTemplate*>(term);
-            if (fact && pop -> will_work_here(fact) && fact -> get_wage() > max_wage)
+        for (const auto tile: terminal_tiles) {
+            Ref<FactoryTemplate> fact = Ref<FactoryTemplate>(TerminalMap::get_instance() -> get_terminal(tile));
+            if (fact.is_valid() && pop -> will_work_here(fact) && fact -> get_wage() > max_wage) {
                 best_fact = fact;
                 max_wage = fact -> get_wage();
+            }
+ 
         }
     }
 	return best_fact;
 }
 
-FactoryTemplate* Province::find_urban_employment(BasePop* pop) const {
+Ref<FactoryTemplate> Province::find_urban_employment(BasePop* pop) const {
     float max_wage = 0.0;
-    FactoryTemplate* best_fact = nullptr;
-    for (Town* town: get_towns()) {
-        FactoryTemplate* fact = town -> find_employment(pop);
+    Ref<FactoryTemplate> best_fact = nullptr;
+    for (const Vector2i& tile: get_town_tiles()) {
+        Ref<Town> town = TerminalMap::get_instance() -> get_town(tile);
+
+        if (town.is_null()) continue;
+
+        Ref<FactoryTemplate> fact = town -> find_employment(pop);
+        
+        if (fact.is_null()) continue;
+        
+        TerminalMap::get_instance() -> lock(fact -> get_location());
         if (fact -> get_wage() > max_wage) {
             best_fact = fact;
             max_wage = fact -> get_wage();
         }
+        TerminalMap::get_instance() -> unlock(fact -> get_location());
     }
     return best_fact;
 }
@@ -205,8 +218,8 @@ void Province::day_tick() {
 void Province::month_tick() {
     for (BasePop* pop: pops) {
         if (pop -> is_seeking_employment()) {
-            FactoryTemplate* work = find_employment(pop);
-            if (work != nullptr) {
+            Ref<FactoryTemplate> work = find_employment(pop);
+            if (work.is_valid()) {
                 pop -> work_here(work);
             }
         }

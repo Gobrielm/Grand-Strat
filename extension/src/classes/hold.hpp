@@ -19,7 +19,7 @@ public:
     std::unordered_map<int, int> storage;
     static const int DEFAULT_MAX_STORAGE;
 
-    static Terminal* create(const Vector2i new_location, const int player_owner, const int p_max_amount = DEFAULT_MAX_STORAGE);
+    static Ref<Terminal> create(const Vector2i new_location, const int player_owner, const int p_max_amount = DEFAULT_MAX_STORAGE);
 
     Hold();
     Hold(const Vector2i new_location, const int player_owner, const int p_max_amount);

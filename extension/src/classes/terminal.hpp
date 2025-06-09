@@ -1,11 +1,11 @@
 #pragma once
 
-#include <godot_cpp/classes/object.hpp>
+#include <godot_cpp/classes/ref_counted.hpp>
 
 using namespace godot;
 
-class Terminal : public Object {
-    GDCLASS(Terminal, Object);
+class Terminal : public RefCounted {
+    GDCLASS(Terminal, RefCounted);
     Vector2i location;
     int player_owner;
     
@@ -17,7 +17,7 @@ class Terminal : public Object {
     void set_location(const Vector2i p_location);
     Vector2i get_location() const;
     int get_player_owner() const;
-    static Terminal* create(const Vector2i p_location, const int p_owner);
+    static Ref<Terminal> create(const Vector2i p_location, const int p_owner);
     
     virtual void initialize(const Vector2i p_location = Vector2i(0, 0), const int p_owner = 0);
 

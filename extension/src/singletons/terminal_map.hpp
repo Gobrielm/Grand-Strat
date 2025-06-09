@@ -30,12 +30,12 @@ private:
 
     std::mutex m;
     std::unordered_map<Vector2i, std::mutex*, godot_helpers::Vector2iHasher> object_mutexs;
-    std::unordered_map<Vector2i, Terminal*, godot_helpers::Vector2iHasher> cargo_map_terminals;
+    std::unordered_map<Vector2i, Ref<Terminal>, godot_helpers::Vector2iHasher> cargo_map_terminals;
 
     std::vector<std::thread> month_threads;
     bool day_tick_priority = false;
 
-    using MapType = std::unordered_map<Vector2i, Terminal*, godot_helpers::Vector2iHasher>;
+    using MapType = std::unordered_map<Vector2i, Ref<Terminal>, godot_helpers::Vector2iHasher>;
     void _on_month_tick_timeout_helper(MapType::iterator start, MapType::iterator end);
 
 protected:
@@ -58,9 +58,9 @@ public:
     TileMapLayer* get_main_map() const;
 
     //Creators
-    void create_terminal(Terminal *p_terminal);
-    void add_connected_brokers(Broker *p_broker);
-    Factory* create_factory(const Vector2i &p_location, int p_player_owner, const Dictionary &p_inputs, const Dictionary &p_outputs);
+    void create_terminal(Ref<Terminal> p_terminal);
+    void add_connected_brokers(Ref<Broker> p_broker);
+    Ref<Factory> create_factory(const Vector2i &p_location, int p_player_owner, const Dictionary &p_inputs, const Dictionary &p_outputs);
     
     //Checkers
     bool is_hold(const Vector2i &coords);
@@ -89,11 +89,11 @@ public:
     void unlock(const Vector2i& coords);
 
     //Getters
-    Terminal* get_terminal(const Vector2i &coords);
-    Broker* get_broker(const Vector2i &coords);
-    StationWOMethods* get_station(const Vector2i &coords);
-    StationWOMethods* get_ai_station(const Vector2i &coords);
-    Town* get_town(const Vector2i &coords);
+    Ref<Terminal> get_terminal(const Vector2i &coords);
+    Ref<Broker> get_broker(const Vector2i &coords);
+    Ref<StationWOMethods> get_station(const Vector2i &coords);
+    Ref<StationWOMethods> get_ai_station(const Vector2i &coords);
+    Ref<Town> get_town(const Vector2i &coords);
 
     //Action doers
     void set_construction_site_recipe(const Vector2i &coords, const Array &selected_recipe);

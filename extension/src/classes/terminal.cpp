@@ -25,8 +25,8 @@ int Terminal::get_player_owner() const {
     return player_owner;
 }
 
-Terminal* Terminal::create(const Vector2i p_location, const int p_owner) {
-    return memnew(Terminal(p_location, p_owner));
+Ref<Terminal> Terminal::create(const Vector2i p_location, const int p_owner) {
+    return Ref<Terminal>(memnew(Terminal(p_location, p_owner)));
 }
 
 void Terminal::initialize(const Vector2i p_location, int p_owner) {

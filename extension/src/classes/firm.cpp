@@ -18,8 +18,8 @@ void Firm::_bind_methods() {
 Firm::Firm(): Terminal() {}
 Firm::Firm(const Vector2i p_location, const int p_owner): Terminal(p_location, p_owner) {}	
 
-Terminal* Firm::create(const Vector2i p_location, const int p_owner) {
-    return memnew(Firm(p_location, p_owner));
+Ref<Terminal> Firm::create(const Vector2i p_location, const int p_owner) {
+    return Ref<Terminal>(memnew(Firm(p_location, p_owner)));
 }
 
 void Firm::initialize(const Vector2i p_location, const int p_owner) {

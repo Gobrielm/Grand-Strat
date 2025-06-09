@@ -15,7 +15,7 @@ class Town : public Broker {
     GDCLASS(Town, Broker)
 
 private:
-    std::unordered_map<int, std::vector<FactoryTemplate*>> internal_factories;
+    std::unordered_map<int, std::vector<Ref<FactoryTemplate>>> internal_factories; //Not thread safe
     std::unordered_map<int, BasePop*> city_pops;
     int cash = 1000;
 
@@ -27,7 +27,7 @@ public:
     virtual ~Town();
     Town(Vector2i new_location);
 
-    static Terminal* create(Vector2i new_location);
+    static Ref<Town> create(Vector2i new_location);
 
     virtual void initialize(Vector2i new_location);
 
@@ -44,7 +44,7 @@ public:
     // Production
     float get_fulfillment(int type) const;
     Dictionary get_fulfillment_dict() const;
-    void add_factory(FactoryTemplate* fact);
+    void add_factory(Ref<FactoryTemplate> fact);
     Dictionary get_last_month_supply() const;
     Dictionary get_last_month_demand() const;
 
@@ -54,7 +54,7 @@ public:
     void update_buy_orders();
     void sell_type(int type);
     int get_total_pops() const;
-    FactoryTemplate* find_employment(BasePop* pop) const;
+    Ref<FactoryTemplate> find_employment(BasePop* pop) const;
 
     //Selling to brokers
     void sell_to_other_brokers();

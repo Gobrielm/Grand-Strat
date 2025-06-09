@@ -45,8 +45,8 @@ FactoryTemplate::FactoryTemplate(Vector2i new_location, int player_owner, Dictio
 
 FactoryTemplate::~FactoryTemplate() {}
 
-Terminal* FactoryTemplate::create(Vector2i new_location, int player_owner, Dictionary new_inputs, Dictionary new_outputs) {
-    return memnew(FactoryTemplate(new_location, player_owner, new_inputs, new_outputs));
+Ref<FactoryTemplate> FactoryTemplate::create(Vector2i new_location, int player_owner, Dictionary new_inputs, Dictionary new_outputs) {
+    return Ref<FactoryTemplate>(memnew(FactoryTemplate(new_location, player_owner, new_inputs, new_outputs)));
 }
 void FactoryTemplate::initialize(Vector2i new_location, int player_owner, Dictionary new_inputs, Dictionary new_outputs) {
     Broker::initialize(new_location, player_owner);

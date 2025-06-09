@@ -23,12 +23,12 @@ void Broker::_bind_methods() {
     ClassDB::bind_method(D_METHOD("add_connected_broker", "broker"), &Broker::add_connected_broker);
     ClassDB::bind_method(D_METHOD("remove_connected_broker", "broker"), &Broker::remove_connected_broker);
     ClassDB::bind_method(D_METHOD("get_orders_dict"), &Broker::get_orders_dict);
-    ClassDB::bind_method(D_METHOD("get_connected_brokers"), &Broker::get_connected_brokers);
+    ClassDB::bind_method(D_METHOD("get_connected_broker_locations"), &Broker::get_connected_broker_locations);
 
 }
 
-Terminal* Broker::create(const Vector2i new_location, const int player_owner, const int p_max_amount) {
-    return memnew(Broker(new_location, player_owner, p_max_amount));
+Ref<Terminal> Broker::create(const Vector2i new_location, const int player_owner, const int p_max_amount) {
+    return Ref<Terminal>(memnew(Broker(new_location, player_owner, p_max_amount)));
 }
 
 Broker::Broker(): FixedHold() {}
@@ -41,8 +41,11 @@ Broker::~Broker() {
     }
     trade_orders.clear();
     if (local_pricer) memdelete(local_pricer);
-    for (auto& [__, broker]: connected_brokers) {
+    for (auto& tile: connected_brokers) {
+        Ref<Broker> broker = TerminalMap::get_instance() -> get_broker(tile);
+        TerminalMap::get_instance() -> lock(tile);
         broker -> remove_connected_broker(this);
+        TerminalMap::get_instance() -> unlock(tile);
     }
 }
 
@@ -149,18 +152,18 @@ void Broker::remove_order(int type) {
     }
 }
 
-void Broker::add_connected_broker(Broker* broker) {
-    connected_brokers[broker->get_location()] = broker;
+void Broker::add_connected_broker(Ref<Broker> broker) {
+    connected_brokers.insert(broker->get_location());
 }
 
-void Broker::remove_connected_broker(const Broker* broker) {
+void Broker::remove_connected_broker(const Ref<Broker> broker) {
     connected_brokers.erase(broker->get_location());
 }
 
-Dictionary Broker::get_connected_brokers() {
+Dictionary Broker::get_connected_broker_locations() {
     Dictionary d;
-    for (const auto &[tile, broker]: connected_brokers) {
-        d[tile] = broker;
+    for (const auto &tile: connected_brokers) {
+        d[tile] = true;
     }
     return d;
 }
@@ -170,29 +173,40 @@ void Broker::distribute_cargo() {
 }
 
 void Broker::distribute_from_order(const TradeOrder* order) {
-    for (const auto& [__, broker] : connected_brokers) {
-        if (broker->does_accept(order->get_type())) {
+    for (const auto& tile : connected_brokers) {
+        Ref<Broker> broker = TerminalMap::get_instance() -> get_broker(tile);
+        if (broker.is_valid() && broker->does_accept(order->get_type())) {
             distribute_to_order(broker, order);
         }
     }
 }
 
-void Broker::distribute_to_order(Broker* otherBroker, const TradeOrder* order) {
+void Broker::distribute_to_order(Ref<Broker> otherBroker, const TradeOrder* order) {
+    Vector2i tile = otherBroker -> get_location();
     int type = order->get_type();
     float price1 = get_local_price(type);
+
+    TerminalMap::get_instance() -> lock(tile);
     float price2 = otherBroker->get_local_price(type);
+    TerminalMap::get_instance() -> unlock(tile);
+    
     float price = std::max(price1, price2) - std::abs(price1 - price2) / 2.0f;
 
+    TerminalMap::get_instance() -> lock(tile);
     if (!order->is_price_acceptable(price) || !otherBroker->is_price_acceptable(type, price)) return;
-
     int desired = otherBroker->get_desired_cargo(type, price);
+    TerminalMap::get_instance() -> unlock(tile);
+
     report_attempt_to_sell(type, std::min(desired, order->get_amount() * 3)); // Put a cap on how much one broker can desire
 
     int amount = std::min(desired, order->get_amount()); 
 
     if (amount > 0) {
         amount = sell_cargo(type, amount, price);
+
+        TerminalMap::get_instance() -> lock(tile);
         otherBroker->buy_cargo(type, amount, price);
+        TerminalMap::get_instance() -> unlock(tile);
     }
 }
 

@@ -15,8 +15,8 @@ Factory::Factory(Vector2i new_location, int player_owner, Dictionary new_inputs,
     FactoryTemplate::initialize(new_location, player_owner, new_inputs, new_outputs);
 }
 
-Terminal* Factory::create(Vector2i new_location, int player_owner, Dictionary new_inputs, Dictionary new_outputs) {
-    return memnew(Factory(new_location, player_owner, new_inputs, new_outputs));
+Ref<Factory> Factory::create(Vector2i new_location, int player_owner, Dictionary new_inputs, Dictionary new_outputs) {
+    return Ref<Factory>(memnew(Factory(new_location, player_owner, new_inputs, new_outputs)));
 }
 
 void Factory::initialize(Vector2i new_location, int player_owner, Dictionary new_inputs, Dictionary new_outputs) {

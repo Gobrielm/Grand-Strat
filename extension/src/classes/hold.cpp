@@ -24,8 +24,8 @@ void Hold::_bind_methods() {
     ClassDB::bind_method(D_METHOD("does_accept", "type"), &Hold::does_accept);
 }
 
-Terminal* Hold::create(const Vector2i new_location, const int player_owner, const int p_max_amount) {
-    return memnew(Hold(new_location, player_owner, p_max_amount));
+Ref<Terminal> Hold::create(const Vector2i new_location, const int player_owner, const int p_max_amount) {
+    return Ref<Terminal>(memnew(Hold(new_location, player_owner, p_max_amount)));
 }   
 
 Hold::Hold(): Firm() {

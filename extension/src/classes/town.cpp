@@ -45,11 +45,6 @@ Town::~Town() {
         memdelete(pop);
     }
     city_pops.clear();
-    for (const auto &[__, list]: internal_factories) {
-        for (FactoryTemplate* fact: list) {
-            memdelete(fact);
-        }
-    }
     internal_factories.clear();
 }
 
@@ -58,8 +53,8 @@ Town::Town(Vector2i new_location): Broker(new_location, 0) {
     local_pricer = memnew(LocalPriceController);
 }
 
-Terminal* Town::create(Vector2i new_location) {
-    return memnew(Town(new_location));
+Ref<Town> Town::create(Vector2i new_location) {
+    return Ref<Town>(memnew(Town(new_location)));
 }
 
 void Town::initialize(Vector2i new_location) {
@@ -117,9 +112,9 @@ float Town::get_fulfillment(int type) const {
 	return float(demand / supply);
 }
 
-void Town::add_factory(FactoryTemplate* fact) {
+void Town::add_factory(Ref<FactoryTemplate> fact) {
     if (!internal_factories.count(fact->get_player_owner()))
-		internal_factories[fact->get_player_owner()] = std::vector<FactoryTemplate*>();
+		internal_factories[fact->get_player_owner()] = std::vector<Ref<FactoryTemplate>>();
 	internal_factories[fact->get_player_owner()].push_back(fact);
 	fact->add_connected_broker(this);
 }
@@ -189,9 +184,9 @@ int Town::get_total_pops() const {
     return city_pops.size();
 }
 
-FactoryTemplate* Town::find_employment(BasePop* pop) const {
+Ref<FactoryTemplate> Town::find_employment(BasePop* pop) const {
     float max_wage = 0.0;
-    FactoryTemplate* best_fact = nullptr;
+    Ref<FactoryTemplate> best_fact = nullptr;
     
     for (const auto &[__, fact_vector]: internal_factories) {
         for (const auto &fact: fact_vector) {
@@ -216,15 +211,21 @@ void Town::sell_to_other_brokers() {
 void Town::distribute_from_order(const TradeOrder* order) {
     //Distribute to local factories
 	for (const auto &[__, fact_vector]: internal_factories) {
-		for (FactoryTemplate* fact: fact_vector) {
+		for (Ref<FactoryTemplate> fact: fact_vector) {
 			if (fact->does_accept(order->get_type())) {
                 distribute_to_order(fact, order);
             }
         }
     }
 	//Distribute to stations, ports, or other brokers
-	for (const auto &[__, broker]: connected_brokers) {
-		if (broker->does_accept(order->get_type())) {
+	for (const auto &tile: connected_brokers) {
+        Ref<Broker> broker = TerminalMap::get_instance() -> get_broker(tile);
+
+        TerminalMap::get_instance() -> lock(tile);
+        bool does_accept = broker->does_accept(order->get_type());
+        TerminalMap::get_instance() -> unlock(tile);
+        
+		if (does_accept) {
             distribute_to_order(broker, order);
         }
     }

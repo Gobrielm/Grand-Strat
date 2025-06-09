@@ -16,8 +16,8 @@ PrivateAiFactory::PrivateAiFactory(Vector2i new_location, Dictionary new_inputs,
     AiFactory::initialize(new_location, 0, new_inputs, new_outputs);
 }
 
-Terminal* PrivateAiFactory::create(Vector2i new_location, Dictionary new_inputs, Dictionary new_outputs) {
-    return memnew(PrivateAiFactory(new_location, new_inputs, new_outputs));
+Ref<PrivateAiFactory> PrivateAiFactory::create(Vector2i new_location, Dictionary new_inputs, Dictionary new_outputs) {
+    return Ref<PrivateAiFactory>(memnew(PrivateAiFactory(new_location, new_inputs, new_outputs)));
 }
 
 void PrivateAiFactory::initialize(Vector2i new_location, Dictionary new_inputs, Dictionary new_outputs) {

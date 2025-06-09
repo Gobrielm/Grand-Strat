@@ -17,7 +17,7 @@ public:
     virtual ~PrivateAiFactory();
     PrivateAiFactory(Vector2i new_location, Dictionary new_inputs, Dictionary new_outputs);
 
-    static Terminal* create(Vector2i new_location, Dictionary new_inputs, Dictionary new_outputs);
+    static Ref<PrivateAiFactory> create(Vector2i new_location, Dictionary new_inputs, Dictionary new_outputs);
 
     virtual void initialize(Vector2i new_location, Dictionary new_inputs, Dictionary new_outputs);
 

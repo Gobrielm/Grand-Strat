@@ -35,7 +35,7 @@ public:
     virtual ~FactoryTemplate();
     FactoryTemplate(Vector2i new_location, int player_owner, Dictionary new_inputs, Dictionary new_outputs);
 
-    static Terminal* create(Vector2i new_location, int player_owner, Dictionary new_inputs, Dictionary new_outputs);
+    static Ref<FactoryTemplate> create(Vector2i new_location, int player_owner, Dictionary new_inputs, Dictionary new_outputs);
 
     virtual void initialize(Vector2i new_location, int player_owner, Dictionary new_inputs, Dictionary new_outputs);
 

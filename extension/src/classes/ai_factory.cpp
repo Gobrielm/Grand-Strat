@@ -13,8 +13,8 @@ AiFactory::~AiFactory() {
 
 AiFactory::AiFactory(Vector2i new_location, int player_owner, Dictionary new_inputs, Dictionary new_outputs): Factory(new_location, player_owner, new_inputs, new_outputs) {}
 
-Terminal* AiFactory::create(Vector2i new_location, int player_owner, Dictionary new_inputs, Dictionary new_outputs) {
-    return memnew(AiFactory(new_location, player_owner, new_inputs, new_outputs));
+Ref<AiFactory> AiFactory::create(Vector2i new_location, int player_owner, Dictionary new_inputs, Dictionary new_outputs) {
+    return Ref<AiFactory>(memnew(AiFactory(new_location, player_owner, new_inputs, new_outputs)));
 }
 
 void AiFactory::initialize(Vector2i new_location, int player_owner, Dictionary new_inputs, Dictionary new_outputs) {

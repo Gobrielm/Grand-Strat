@@ -20,10 +20,10 @@ class Broker : public FixedHold {
     static void _bind_methods();
 
     public:
-    std::unordered_map<Vector2i, Broker*, godot_helpers::Vector2iHasher> connected_brokers;
+    std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> connected_brokers;
     LocalPriceController* local_pricer = nullptr;
 
-    static Terminal* create(const Vector2i new_location, const int player_owner, const int p_max_amount = DEFAULT_MAX_STORAGE);
+    static Ref<Terminal> create(const Vector2i new_location, const int player_owner, const int p_max_amount = DEFAULT_MAX_STORAGE);
 
     Broker();
     Broker(const Vector2i new_location, const int player_owner, const int p_max_amount = DEFAULT_MAX_STORAGE);
@@ -52,13 +52,13 @@ class Broker : public FixedHold {
     Dictionary get_orders_dict();
     virtual void remove_order(int type);
 
-    virtual void add_connected_broker(Broker* broker);
-    virtual void remove_connected_broker(const Broker* broker);
-    Dictionary get_connected_brokers();
+    virtual void add_connected_broker(Ref<Broker> broker);
+    virtual void remove_connected_broker(const Ref<Broker> broker);
+    Dictionary get_connected_broker_locations();
 
     virtual void distribute_cargo(); // abstract
     virtual void distribute_from_order(const TradeOrder* order);
-    void distribute_to_order(Broker* otherBroker, const TradeOrder* order);
+    void distribute_to_order(Ref<Broker> otherBroker, const TradeOrder* order);
 
     void report_attempt_to_sell(int type, int amount);
 

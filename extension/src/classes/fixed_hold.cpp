@@ -18,8 +18,8 @@ void FixedHold::_bind_methods() {
     ClassDB::bind_method(D_METHOD("does_accept", "type"), &FixedHold::does_accept);
 }
 
-Terminal* FixedHold::create(const Vector2i new_location, const int player_owner, const int p_max_amount) {
-    return memnew(FixedHold(new_location, player_owner, p_max_amount));
+Ref<Terminal> FixedHold::create(const Vector2i new_location, const int player_owner, const int p_max_amount) {
+    return Ref<Terminal>(memnew(FixedHold(new_location, player_owner, p_max_amount)));
 }
 
 FixedHold::FixedHold(): Hold() {}
