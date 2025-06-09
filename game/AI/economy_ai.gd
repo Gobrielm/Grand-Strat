@@ -3,7 +3,7 @@ class_name economy_ai extends ai_base
 #Set of provinces
 var world_map: TileMapLayer
 var tile_ownership_obj: tile_ownership
-var cargo_map: TileMapLayer = terminal_map.get_instance().cargo_map
+var cargo_map: TileMapLayer = TerminalMap.get_instance().cargo_map
 var cargo_values: Node = cargo_map.cargo_values
 var rail_placer_obj: rail_placer
 var owned_factories: Array[FactoryTemplate]
@@ -82,11 +82,11 @@ func set_max_factories(max_f: int) -> void:
 func are_there_unconnected_buildings() -> bool:
 	for tile: Vector2i in get_owned_tiles():
 		#Checks for town's neutrally since they aren't really owned
-		if terminal_map.get_instance().is_owned_building(tile, id) or terminal_map.get_instance().is_town(tile):
+		if TerminalMap.get_instance().is_owned_building(tile, id) or TerminalMap.get_instance().is_town(tile):
 			var found: bool = false
 			for cell: Vector2i in world_map.thread_get_surrounding_cells(tile):
 				#Checks for player stations as well, but could be troublesome
-				if tile_ownership_obj.is_owned(id, cell) and terminal_map.get_instance().is_station(cell):
+				if tile_ownership_obj.is_owned(id, cell) and TerminalMap.get_instance().is_station(cell):
 					found = true
 			if !found:
 				stored_tile = tile
@@ -108,8 +108,8 @@ func get_owned_terminals() -> Array[Terminal]:
 func are_there_unconnected_stations() -> bool:
 	for tile: Vector2i in get_owned_tiles():
 		#Only survey owned ai_stations
-		if terminal_map.get_instance().is_owned_ai_station(tile, id):
-			var stat: AiStation = terminal_map.get_instance().get_ai_station(tile)
+		if TerminalMap.get_instance().is_owned_ai_station(tile, id):
+			var stat: AiStation = TerminalMap.get_instance().get_ai_station(tile)
 			if !stat.has_station_connection():
 				stored_tile = tile
 				return false
@@ -136,10 +136,10 @@ func place_station(center: Vector2i) -> void:
 		pass
 
 func find_closest_station(start: Vector2i) -> Vector2i:
-	return find_closest_target(start, Callable(terminal_map.get_instance(), "is_station"))
+	return find_closest_target(start, Callable(TerminalMap.get_instance(), "is_station"))
 
 func find_closest_building(start: Vector2i) -> Vector2i:
-	return find_closest_target(start, Callable(terminal_map.get_instance(), "is_building"))
+	return find_closest_target(start, Callable(TerminalMap.get_instance(), "is_building"))
 
 func find_closest_target(start: Vector2i, target: Callable) -> Vector2i:
 	assert(target.is_valid())
@@ -159,7 +159,7 @@ func find_closest_target(start: Vector2i, target: Callable) -> Vector2i:
 
 #Checks for ownership, terrain, and buildings
 func is_tile_open(coords: Vector2i) -> bool:
-	return !terminal_map.get_instance().is_building(coords)
+	return !TerminalMap.get_instance().is_building(coords)
 
 func is_tile_valid(coords: Vector2i) -> bool:
 	return world_map.is_tile_traversable(coords) and tile_ownership_obj.is_owned(id, coords)
@@ -192,13 +192,13 @@ func place_factory(type: int) -> void:
 
 func create_factory(location: Vector2i, type: int) -> void:
 	cargo_map.create_construction_site(id, location)
-	var term: Terminal = terminal_map.get_instance().get_terminal(location)
+	var term: Terminal = TerminalMap.get_instance().get_terminal(location)
 	assert(term is ConstructionSite and term.player_owner == id)
 	owned_factories.append(term)
 	for recipe_set: Array in recipe.get_set_recipes():
 		for output: int in recipe_set[1]:
 			if output == type:
-				terminal_map.get_instance().set_construction_site_recipe(location, recipe_set)
+				TerminalMap.get_instance().set_construction_site_recipe(location, recipe_set)
 				break
 
 func get_optimal_primary_industry(type: int) -> Vector2i:
@@ -248,9 +248,9 @@ func is_tile_connected_to_world(coords: Vector2i) -> bool:
 		for tile: Vector2i in world_map.thread_get_surrounding_cells(curr):
 			#Only survey 100 tiles out
 			if is_tile_valid(tile) and !visited.has(tile) and visited[curr] < 100:
-				if terminal_map.get_instance().is_town(tile) or terminal_map.get_instance().is_station(tile):
+				if TerminalMap.get_instance().is_town(tile) or TerminalMap.get_instance().is_station(tile):
 					return true
-				elif !terminal_map.get_instance().is_building(tile):
+				elif !TerminalMap.get_instance().is_building(tile):
 					#Isn't blocked by building that isn't station or town
 					visited[tile] = visited[curr] + 1
 					queue.append(tile)
@@ -260,8 +260,8 @@ func get_cargo_magnitude(coords: Vector2i, type: int) -> int:
 	return cargo_values.get_tile_magnitude(coords, type)
 
 func coords_of_closest_station(coords: Vector2i) -> Vector2i:
-	var target1: Callable = Callable(terminal_map.get_instance(), "is_station")
-	var target2: Callable = Callable(terminal_map.get_instance(), "is_town")
+	var target1: Callable = Callable(TerminalMap.get_instance(), "is_station")
+	var target2: Callable = Callable(TerminalMap.get_instance(), "is_town")
 	assert(target1.is_valid())
 	assert(target2.is_valid())
 	return info_of_closest_target(coords, target1, target2)[1]
@@ -294,7 +294,7 @@ func info_of_closest_target(coords: Vector2i, target: Callable, secondary_target
 	return closest_secondary_target
 
 func is_cargo_primary(type: int) -> bool:
-	return terminal_map.get_instance().amount_of_primary_goods > type
+	return TerminalMap.get_instance().amount_of_primary_goods > type
 
 #Gets the type of the most expensive good in the market
 func get_most_needed_cargo() -> int:
@@ -314,7 +314,7 @@ func get_global_prices() -> Dictionary[int, float]:
 	var total: Dictionary = {}
 	var towns: float = town_tiles.size()
 	for town_tile: Vector2i in town_tiles:
-		var town_fulfillment: Dictionary[int, float] = terminal_map.get_instance().get_town_fulfillment(town_tile)
+		var town_fulfillment: Dictionary[int, float] = TerminalMap.get_instance().get_town_fulfillment(town_tile)
 		for type: int in town_fulfillment:
 			if !total.has(type):
 				total[type] = 0.0
@@ -346,9 +346,9 @@ func connect_station(coords: Vector2i) -> void:
 func connect_town(coords: Vector2i) -> void:
 	#Function is sort of a test and shouldn't ever be used
 	assert(false)
-	var target1: Callable = Callable(terminal_map.get_instance(), "is_town")
+	var target1: Callable = Callable(TerminalMap.get_instance(), "is_town")
 	#TODO: Should be dock but station as placeholder
-	var target2: Callable = Callable(terminal_map.get_instance(), "is_station")
+	var target2: Callable = Callable(TerminalMap.get_instance(), "is_station")
 	assert(target1.is_valid())
 	assert(target2.is_valid())
 	var coords_of_closest_town: Vector2i = info_of_closest_target(coords, target1, target2)[1]
@@ -388,7 +388,7 @@ func is_cell_available(coords: Vector2i) -> bool:
 func get_town_tiles() -> Array:
 	var toReturn: Array = []
 	for tile: Vector2i in get_owned_tiles():
-		if terminal_map.get_instance().is_town(tile):
+		if TerminalMap.get_instance().is_town(tile):
 			toReturn.append(tile)
 	return toReturn
 

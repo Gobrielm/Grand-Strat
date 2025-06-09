@@ -46,8 +46,14 @@ void TerminalMap::_bind_methods() {
     ClassDB::bind_method(D_METHOD("get_town_fulfillment", "coords"), &TerminalMap::get_town_fulfillment);
 
     // External getters
-    ClassDB::bind_method(D_METHOD("request_terminal", "coords"), &TerminalMap::request_terminal);
-    ClassDB::bind_method(D_METHOD("return_terminal", "scoped_terminal"), &TerminalMap::return_terminal);
+    ClassDB::bind_method(D_METHOD("lock", "coords"), &TerminalMap::lock);
+    ClassDB::bind_method(D_METHOD("unlock", "coords"), &TerminalMap::unlock);
+
+    ClassDB::bind_method(D_METHOD("get_terminal", "coords"), &TerminalMap::get_terminal);
+    ClassDB::bind_method(D_METHOD("get_broker", "coords"), &TerminalMap::get_broker);
+    ClassDB::bind_method(D_METHOD("get_station", "coords"), &TerminalMap::get_station);
+    ClassDB::bind_method(D_METHOD("get_ai_station", "coords"), &TerminalMap::get_ai_station);
+    ClassDB::bind_method(D_METHOD("get_town", "coords"), &TerminalMap::get_town);
 
     // Action doers
     ClassDB::bind_method(D_METHOD("set_construction_site_recipe", "coords", "selected_recipe"), &TerminalMap::set_construction_site_recipe);
@@ -60,6 +66,7 @@ void TerminalMap::_bind_methods() {
 void TerminalMap::initialize_singleton(TileMapLayer* p_map) {
     ERR_FAIL_COND_MSG(singleton_instance != nullptr, "Cannot create multiple instances of singleton!");
     singleton_instance.instantiate();
+    singleton_instance -> map = p_map;
 }
 
 TerminalMap::TerminalMap(TileMapLayer* p_map) {
@@ -169,19 +176,20 @@ TileMapLayer* TerminalMap::get_main_map() const {
 }
 
 //Creators
-void TerminalMap::create_terminal(Terminal *p_terminal) {
+void TerminalMap::create_terminal(Terminal* p_terminal) {
     m.lock();
-    object_mutexs[p_terminal -> get_location()] = new std::mutex;
+    object_mutexs[p_terminal -> get_location()] = new (std::mutex);
     cargo_map_terminals[p_terminal -> get_location()] = p_terminal;
+    m.unlock();
     if (Broker* broker = dynamic_cast<Broker*>(p_terminal)) {
         add_connected_brokers(broker);
     }
-    m.unlock();
 }
 
 void TerminalMap::add_connected_brokers(Broker *p_broker) {
     Array connected = map->get_surrounding_cells(p_broker->get_location());
-    for (int i = 0; i < connected.size(); ++i) {
+    for (int i = 0; i < connected.size(); i++) {
+        if (connected[i].get_type() != Variant::VECTOR2I) continue;
         Vector2i tile = connected[i];
         Broker *other = get_broker(tile);
         if (!other) continue;
@@ -242,10 +250,26 @@ bool TerminalMap::is_owned_station(const Vector2i &coords, int player_id) {
     return false;
 }
 bool TerminalMap::is_ai_station(const Vector2i &coords) {                       //May work?
-    return get_terminal(coords) -> get_class() == "AiStation";
+    bool val = false;
+    m.lock();
+    Terminal* term = get_terminal(coords);
+    if (term) {
+        lock(coords);
+        val = term -> get_class() == "AiStation";
+        unlock(coords);
+    }
+    m.unlock();
+    return val;
 } 
 bool TerminalMap::is_owned_ai_station(const Vector2i &coords, int id) {
-    return is_ai_station(coords) && get_terminal(coords) -> get_player_owner() == id;
+    bool val = false;
+    if (is_ai_station(coords)) {
+        lock(coords);
+        Terminal* terminal = get_terminal(coords);
+        val = terminal -> get_player_owner() == id;
+        unlock(coords);
+    }
+    return val;
 } 
 bool TerminalMap::is_town(const Vector2i &coords) {
     return dynamic_cast<Town*>(get_terminal(coords)) != nullptr;
@@ -315,49 +339,64 @@ Dictionary TerminalMap::get_town_fulfillment(const Vector2i &coords) {
     return toReturn;
 }
 
-
 //Internal Getters
 Terminal* TerminalMap::get_terminal(const Vector2i &coords) {
-    return cargo_map_terminals[coords];
+    Terminal* toReturn = nullptr;
+    m.lock();
+    if (cargo_map_terminals.count(coords) == 1) {
+        toReturn = cargo_map_terminals[coords];
+    }
+    m.unlock();
+    return toReturn;
 }
 Broker* TerminalMap::get_broker(const Vector2i &coords) {
-    if (Broker* broker = dynamic_cast<Broker*>(cargo_map_terminals[coords])) {
-        return broker;
+    Broker* toReturn = nullptr;
+    m.lock();
+    if (cargo_map_terminals.count(coords) == 1) {
+        toReturn = dynamic_cast<Broker*>(cargo_map_terminals[coords]);
     }
-    return nullptr;
+    m.unlock();
+    return toReturn;
 }
 StationWOMethods* TerminalMap::get_station(const Vector2i &coords) {
-    if (StationWOMethods* station = dynamic_cast<StationWOMethods*>(cargo_map_terminals[coords])) {
-        return station;
+    StationWOMethods* toReturn = nullptr;
+    m.lock();
+    if (cargo_map_terminals.count(coords) == 1) {
+        toReturn = dynamic_cast<StationWOMethods*>(cargo_map_terminals[coords]);
     }
-    return nullptr;
+    m.unlock();
+    return toReturn;
+}
+StationWOMethods* TerminalMap::get_ai_station(const Vector2i &coords) {
+    StationWOMethods* toReturn = nullptr;
+    m.lock();
+    if (is_ai_station(coords)) {
+        toReturn = dynamic_cast<StationWOMethods*>(cargo_map_terminals[coords]);
+    }
+    m.unlock();
+    return toReturn;
 }
 Town* TerminalMap::get_town(const Vector2i &coords) {
-    if (Town* town = dynamic_cast<Town*>(cargo_map_terminals[coords])) {
-        return town;
+    Town* toReturn = nullptr;
+    m.lock();
+    if (cargo_map_terminals.count(coords) == 1) {
+        toReturn = dynamic_cast<Town*>(cargo_map_terminals[coords]);
     }
-    return nullptr;
+    m.unlock();
+    return toReturn;
 }
 
-//External Getters
-Ref<ScopedTerminal> TerminalMap::request_terminal(const Vector2i &coords) {
-    if (object_mutexs.count(coords)) {
-        object_mutexs[coords]->lock();
-        Ref<ScopedTerminal> scoped;
-        scoped.instantiate();
-        scoped -> set_terminal(get_terminal(coords));
-        return scoped;
+//External Locks
+bool TerminalMap::lock(const Vector2i& coords) {
+    if (object_mutexs.count(coords) == 0) {
+        return false;
     }
-    return nullptr;
+    object_mutexs[coords]->lock();
+    return true;
 }
 
-void TerminalMap::return_terminal(Ref<ScopedTerminal> scoped_terminal) {
-    Terminal* terminal = scoped_terminal -> get_value();
-    if (terminal) {
-        Vector2i coords = terminal -> get_location();
-        object_mutexs[coords]->unlock();
-        scoped_terminal -> release_lock();
-    }
+void TerminalMap::unlock(const Vector2i& coords) {
+    object_mutexs[coords]->unlock();
 }
 
 //Action doers

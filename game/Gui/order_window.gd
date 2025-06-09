@@ -11,7 +11,7 @@ func _ready() -> void:
 func _on_about_to_popup() -> void:
 	if !completed:
 		var cargo_list: ItemList = $Control/Cargo_List
-		for type: String in terminal_map.get_instance().get_cargo_array():
+		for type: String in TerminalMap.get_instance().get_cargo_array():
 			cargo_list.add_item(type)
 		completed = true
 

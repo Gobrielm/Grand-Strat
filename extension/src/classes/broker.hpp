@@ -5,6 +5,7 @@
 #include "terminal.hpp"
 #include "local_price_controller.hpp"
 #include "../utility/vector2i_hash.hpp"
+#include "../singletons/terminal_map.hpp"
 #include <unordered_map>
 #include <unordered_set>
 #include <memory>

@@ -25,7 +25,7 @@ func _on_search_bar_text_changed(_new_text: String) -> void:
 
 @rpc("any_peer", "call_local", "unreliable")
 func request_populate_recipes(coords: Vector2i) -> void:
-	var extra_recipes: Array = terminal_map.get_instance().get_available_primary_recipes(coords)
+	var extra_recipes: Array = TerminalMap.get_instance().get_available_primary_recipes(coords)
 	populate_recipes.rpc_id(multiplayer.get_remote_sender_id(), extra_recipes)
 
 @rpc("authority", "call_local", "unreliable")
@@ -90,7 +90,7 @@ func _on_confirm_pressed() -> void:
 
 @rpc("any_peer", "call_local", "reliable")
 func request_change_construction_recipe(coords: Vector2i, selected_recipe: Array) -> void:
-	terminal_map.get_instance().set_construction_site_recipe(coords, selected_recipe)
+	TerminalMap.get_instance().set_construction_site_recipe(coords, selected_recipe)
 
 func _on_search_bar_focus_exited() -> void:
 	state_machine.unpress_gui()

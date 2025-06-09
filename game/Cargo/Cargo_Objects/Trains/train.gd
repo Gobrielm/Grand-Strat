@@ -119,7 +119,7 @@ func check_near_next_stop() -> void:
 	var final_dest: Vector2i = stops[stop_number]
 	var local_final_dest: Vector2 = map.map_to_local(final_dest)
 	#Only slows down for stations, and for depots
-	if !(terminal_map.get_instance().is_station(final_dest) or map_data.get_instance().is_depot(final_dest)):
+	if !(TerminalMap.get_instance().is_station(final_dest) or map_data.get_instance().is_depot(final_dest)):
 		return
 	
 	if position.distance_to(local_final_dest) < (velocity.length() / BREAKING_SPEED * 60):
@@ -136,7 +136,7 @@ func decide_stop_action() -> bool:
 		depot.add_train(self)
 		go_into_depot.rpc()
 		return true
-	elif terminal_map.get_instance().is_station(location):
+	elif TerminalMap.get_instance().is_station(location):
 		unloading = true
 		return true
 	return false
@@ -268,7 +268,7 @@ func interact_stations() -> void:
 		load_train()
 
 func unload_train() -> void:
-	var obj: Station = terminal_map.get_instance().get_station(location)
+	var obj: Station = TerminalMap.get_instance().get_station(location)
 	if obj != null and ticker > 1:
 		unload_tick(obj)
 		prep_update_cargo_gui()
@@ -297,7 +297,7 @@ func done_unloading() -> void:
 	start_loading()
 
 func load_train() -> void:
-	if terminal_map.get_instance().is_hold(location) and ticker > 1:
+	if TerminalMap.get_instance().is_hold(location) and ticker > 1:
 		load_tick()
 		prep_update_cargo_gui()
 		if cargo_hold.is_full():
@@ -305,7 +305,7 @@ func load_train() -> void:
 
 func load_tick() -> void:
 	var amount_loaded: int = 0
-	var obj: Station = terminal_map.get_instance().get_station(location)
+	var obj: Station = TerminalMap.get_instance().get_station(location)
 	var current_hold: Dictionary = obj.get_current_hold()
 	if hold_is_empty(current_hold):
 		done_loading()
@@ -337,7 +337,7 @@ func done_loading() -> void:
 	start_train()
 
 func prep_update_cargo_gui() -> void:
-	var cargo_names: Array = terminal_map.get_instance().get_cargo_array()
+	var cargo_names: Array = TerminalMap.get_instance().get_cargo_array()
 	var cargo_dict: Dictionary = cargo_hold.get_current_hold()
 	update_cargo_gui.rpc(cargo_names, cargo_dict)
 
@@ -450,7 +450,7 @@ func intialize_order(order: Dictionary, coords: Vector2i, direction: int) -> voi
 func get_train_dir_in_array() -> Array:
 	var toReturn: Array = [false, false, false, false, false, false]
 	toReturn[get_direction()] = true
-	if terminal_map.get_instance().is_station(location):
+	if TerminalMap.get_instance().is_station(location):
 		toReturn[swap_direction(get_direction())] = true
 	return toReturn
 

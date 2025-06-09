@@ -42,7 +42,7 @@ Broker::~Broker() {
     trade_orders.clear();
     if (local_pricer) memdelete(local_pricer);
     for (auto& [__, broker]: connected_brokers) {
-        remove_connected_broker(this);
+        broker -> remove_connected_broker(this);
     }
 }
 

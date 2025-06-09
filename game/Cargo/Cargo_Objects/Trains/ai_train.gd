@@ -26,10 +26,10 @@ func create_cargo_to_load() -> void:
 	#Decide what cargo we should load here then follow in each load tick
 	var storage_to_fill: int = cargo_hold.max_amount - cargo_hold.get_current_hold_total()
 	var amount_filled: int = 0
-	var station_obj: Station = terminal_map.get_instance().get_station(location)
+	var station_obj: Station = TerminalMap.get_instance().get_station(location)
 	var current_station_num: int = (stop_number + 1) % stops.size()
 	#Start with next station and go until filled or until loop
-	var other_station: Station = terminal_map.get_instance().get_station(stops[current_station_num])
+	var other_station: Station = TerminalMap.get_instance().get_station(stops[current_station_num])
 	while other_station.get_location() != station_obj.get_location() and storage_to_fill > amount_filled:
 	
 		var stack: sorted_stack = sorted_stack.new()
@@ -52,7 +52,7 @@ func create_cargo_to_load() -> void:
 				break
 		
 		current_station_num = (current_station_num + 1) % stops.size()
-		other_station = terminal_map.get_instance().get_station(stops[current_station_num])
+		other_station = TerminalMap.get_instance().get_station(stops[current_station_num])
 
 func get_price_diff_between_stations(dest_stat: Station, source_stat: Station, type: int) -> float:
 	if dest_stat.does_accept(type):
@@ -61,7 +61,7 @@ func get_price_diff_between_stations(dest_stat: Station, source_stat: Station, t
 
 func load_tick() -> void:
 	var amount_loaded: int = 0
-	var station_obj: Station = terminal_map.get_instance().get_station(location)
+	var station_obj: Station = TerminalMap.get_instance().get_station(location)
 	var current_hold: Dictionary = station_obj.get_current_hold()
 	if hold_is_empty(current_hold) or cargo_hold.is_full():
 		done_loading()

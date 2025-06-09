@@ -18,7 +18,7 @@ func update_window() -> void:
 # === Requests ===
 @rpc("any_peer", "call_local", "unreliable")
 func request_market_info(p_coords: Vector2i) -> void:
-	var town: Town = terminal_map.get_instance().get_town(p_coords)
+	var town: Town = TerminalMap.get_instance().get_town(p_coords)
 	if town != null:
 		set_market_info.rpc_id(multiplayer.get_remote_sender_id(), town.get_current_hold(), town.get_last_month_supply(), town.get_last_month_demand())
 	set_market_info.rpc_id(multiplayer.get_remote_sender_id(), {}, {}, {})
@@ -29,9 +29,9 @@ func request_market_info(p_coords: Vector2i) -> void:
 func set_market_info(info: Dictionary, supply: Dictionary, demand: Dictionary) -> void:
 	if supply.is_empty():
 		return
-	var term_singleton: terminal_map = terminal_map.get_instance()
+	var cargo_info: CargoInfo = CargoInfo.get_instance()
 	for index: int in range(0, info.size()):
-		var text: String = term_singleton.get_cargo_name(index) + ": " + str(supply[index]) + "/" + str(demand[index]) + ": " +str(info[index])
+		var text: String = cargo_info.get_cargo_name(index) + ": " + str(supply[index]) + "/" + str(demand[index]) + ": " +str(info[index])
 		if market.item_count > index:
 			market.set_item_text(index, text)
 		else:

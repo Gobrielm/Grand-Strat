@@ -180,10 +180,10 @@ func ai_station_and_ai_train_test() -> void:
 	
 	build_town(town1)
 	
-	var station1: AiStation = terminal_map.get_instance().get_ai_station(stat1)
-	var station2: AiStation = terminal_map.get_instance().get_ai_station(stat2)
-	var station3: AiStation = terminal_map.get_instance().get_ai_station(stat3)
-	var station4: AiStation = terminal_map.get_instance().get_ai_station(stat4)
+	var station1: AiStation = TerminalMap.get_instance().get_ai_station(stat1)
+	var station2: AiStation = TerminalMap.get_instance().get_ai_station(stat2)
+	var station3: AiStation = TerminalMap.get_instance().get_ai_station(stat3)
+	var station4: AiStation = TerminalMap.get_instance().get_ai_station(stat4)
 	
 	var stations: Array[AiStation] = [station1, station2, station3, station4]
 	for i: int in stations.size():

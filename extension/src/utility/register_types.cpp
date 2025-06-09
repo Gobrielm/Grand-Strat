@@ -5,7 +5,6 @@
 #include <godot_cpp/godot.hpp>
 
 #include "static_registry.hpp"
-#include "../classes/scoped_terminal.hpp"
 #include "../classes/base_pop.hpp"
 #include "../classes/rural_pop.hpp"
 #include "../classes/town_pop.hpp"
@@ -43,7 +42,6 @@ void initialize_gdextension_types(ModuleInitializationLevel p_level)
 	}
 
 	//--verbose in godot for more details
-	GDREGISTER_CLASS(ScopedTerminal);
 	GDREGISTER_CLASS(LocalPriceController);
 	GDREGISTER_CLASS(FactoryLocalPriceController);
 	GDREGISTER_CLASS(MoneyController);

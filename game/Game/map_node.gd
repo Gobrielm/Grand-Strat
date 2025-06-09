@@ -41,7 +41,7 @@ func initialize_game() -> void:
 		#Singleton Creation
 		train_manager.new()
 		ai_manager.new()
-		terminal_map.get_instance().assign_cargo_map(cargo_map)
+		TerminalMap.get_instance().assign_cargo_map(cargo_map)
 		MoneyController.create(multiplayer.get_peers())
 		MoneyController.get_instance().connect("Update_Money_Gui", main_map.update_money_label.rpc_id)
 		main_map.on_singleton_creation()
@@ -74,19 +74,19 @@ func _input(event: InputEvent) -> void:
 		elif state_machine.is_building_road_depot():
 			main_map.place_road_depot()
 	elif event.is_action_released("click"):
-		if state_machine.is_controlling_camera() and terminal_map.get_instance().is_road_depot(cell_position):
+		if state_machine.is_controlling_camera() and TerminalMap.get_instance().is_road_depot(cell_position):
 			factory_window.open_window(cell_position)
-		elif state_machine.is_controlling_camera() and terminal_map.get_instance().is_owned_station(cell_position, unique_id):
+		elif state_machine.is_controlling_camera() and TerminalMap.get_instance().is_owned_station(cell_position, unique_id):
 			station_window.open_window(cell_position)
-		elif state_machine.is_controlling_camera() and terminal_map.get_instance().is_station(cell_position):
+		elif state_machine.is_controlling_camera() and TerminalMap.get_instance().is_station(cell_position):
 			viewer_station_window.open_window(cell_position)
-		elif state_machine.is_controlling_camera() and terminal_map.get_instance().is_owned_recipeless_construction_site(cell_position):
+		elif state_machine.is_controlling_camera() and TerminalMap.get_instance().is_owned_recipeless_construction_site(cell_position):
 			factory_recipe_window.open_window(cell_position)
-		elif state_machine.is_controlling_camera() and terminal_map.get_instance().is_owned_construction_site(cell_position):
+		elif state_machine.is_controlling_camera() and TerminalMap.get_instance().is_owned_construction_site(cell_position):
 			factory_construction_window.open_window(cell_position)
-		elif state_machine.is_controlling_camera() and terminal_map.get_instance().is_factory(cell_position):
+		elif state_machine.is_controlling_camera() and TerminalMap.get_instance().is_factory(cell_position):
 			factory_window.open_window(cell_position)
-		elif state_machine.is_controlling_camera() and terminal_map.get_instance().is_town(cell_position):
+		elif state_machine.is_controlling_camera() and TerminalMap.get_instance().is_town(cell_position):
 			factory_window.open_window(cell_position)
 			#town_window.open_window(cell_position)
 		elif state_machine.is_controlling_camera() and map_data.get_instance().is_owned_depot(cell_position, unique_id):

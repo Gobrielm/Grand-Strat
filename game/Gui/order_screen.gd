@@ -45,13 +45,13 @@ func _on_add_order_pressed() -> void:
 func _on_order_window_placed_order(type: int, amount: int, buy: bool, price: float) -> void:
 	var location: Vector2i = station_window.get_location()
 	#Check to see if order exists first
-	for cargo_type: int in terminal_map.get_instance().get_station_orders(location):
+	for cargo_type: int in TerminalMap.get_instance().get_station_orders(location):
 		if cargo_type == type:
 			edit_order(cargo_type, type, amount, buy)
-			terminal_map.get_instance().edit_order_station(location, type, amount, buy, price)
+			TerminalMap.get_instance().edit_order_station(location, type, amount, buy, price)
 			return
 	create_order_locally(type, amount, buy)
-	terminal_map.get_instance().edit_order_station(location, type, amount, buy, price)
+	TerminalMap.get_instance().edit_order_station(location, type, amount, buy, price)
 
 func edit_order(index: int, type: int, amount: int, buy: bool) -> void:
 	set_order_icon(index, buy)
@@ -77,7 +77,7 @@ func remove_order(index: int) -> void:
 	
 	var location: Vector2i = station_window.get_location()
 	var type: int = CargoInfo.get_instance().get_cargo_type(text)
-	terminal_map.get_instance().remove_order_station(location, type)
+	TerminalMap.get_instance().remove_order_station(location, type)
 	$Cargo_List.remove_item(index)
 
 func get_selected_type() -> int:

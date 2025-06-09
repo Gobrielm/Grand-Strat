@@ -30,7 +30,7 @@ func get_good_name_uppercase(type: int) -> String:
 	return cargo_name
 
 func close_all_layers() -> void:
-	for i: int in terminal_map.get_instance().amount_of_primary_goods:
+	for i: int in TerminalMap.get_instance().amount_of_primary_goods:
 		get_layer(i).visible = false
 
 func open_resource_map(type: int) -> void:

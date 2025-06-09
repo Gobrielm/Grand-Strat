@@ -16,7 +16,6 @@
 #include "../classes/ai_factory.hpp"
 #include "../classes/town.hpp"
 #include "../classes/road_depot_wo_methods.hpp"
-#include "../classes/scoped_terminal.hpp"
 
 using namespace godot;
 
@@ -26,8 +25,8 @@ class TerminalMap : public RefCounted {
 private:
     static Ref<TerminalMap> singleton_instance;
 
-    TileMapLayer* map;
-    TileMapLayer* cargo_map;
+    TileMapLayer* map = nullptr;
+    TileMapLayer* cargo_map = nullptr;
 
     std::mutex m;
     std::unordered_map<Vector2i, std::mutex*, godot_helpers::Vector2iHasher> object_mutexs;
@@ -35,12 +34,6 @@ private:
 
     std::vector<std::thread> month_threads;
     bool day_tick_priority = false;
-
-    //Internal Getters
-    Terminal *get_terminal(const Vector2i &coords);
-    Broker *get_broker(const Vector2i &coords);
-    StationWOMethods *get_station(const Vector2i &coords);
-    Town* get_town(const Vector2i &coords);
 
     using MapType = std::unordered_map<Vector2i, Terminal*, godot_helpers::Vector2iHasher>;
     void _on_month_tick_timeout_helper(MapType::iterator start, MapType::iterator end);
@@ -91,9 +84,16 @@ public:
     Dictionary get_station_orders(const Vector2i &coords);
     Dictionary get_town_fulfillment(const Vector2i &coords);
 
-    //External Getters
-    Ref<ScopedTerminal> request_terminal(const Vector2i &coords);
-    void return_terminal(Ref<ScopedTerminal> scoped_terminal);
+    //External Locks
+    bool lock(const Vector2i& coords); //If it returns false, then the terminal does not exist, Error
+    void unlock(const Vector2i& coords);
+
+    //Getters
+    Terminal* get_terminal(const Vector2i &coords);
+    Broker* get_broker(const Vector2i &coords);
+    StationWOMethods* get_station(const Vector2i &coords);
+    StationWOMethods* get_ai_station(const Vector2i &coords);
+    Town* get_town(const Vector2i &coords);
 
     //Action doers
     void set_construction_site_recipe(const Vector2i &coords, const Array &selected_recipe);

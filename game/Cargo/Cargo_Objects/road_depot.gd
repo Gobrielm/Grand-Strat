@@ -6,7 +6,7 @@ func _init(coords: Vector2i, _player_owner: int) -> void:
 	super.initialize(coords, _player_owner)
 
 func get_road_depot(tile: Vector2i) -> RoadDepotWOMethods:
-	var terminal: Terminal = terminal_map.get_instance().get_terminal(tile)
+	var terminal: Terminal = TerminalMap.get_instance().get_terminal(tile)
 	if terminal is RoadDepotWOMethods:
 		return terminal
 	return null

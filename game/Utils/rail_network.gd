@@ -163,7 +163,7 @@ func is_node(tile: Vector2i) -> bool:
 	return is_station_node(tile) or rail_placer.get_instance().get_track_connection_count(tile) >= 3 or map_data.get_instance().is_depot(tile)
 
 func is_station_node(tile: Vector2i) -> bool:
-	return terminal_map.get_instance().is_station(tile) 
+	return TerminalMap.get_instance().is_station(tile) 
 
 func get_cells_in_front(coords: Vector2i, directions: Array, map: TileMapLayer) -> Array:
 	var index: int = 2
@@ -189,7 +189,7 @@ func has_visited(visited: Dictionary, coords: Vector2i, direction: int) -> bool:
 func create_node(coords: Vector2i) -> void:
 	if !network.has(coords):
 		var weight: int = 0
-		var stat: Station = terminal_map.get_instance().get_station(coords)
+		var stat: Station = TerminalMap.get_instance().get_station(coords)
 		if stat != null:
 			weight = stat.get_orders_magnitude()
 			weight += 1

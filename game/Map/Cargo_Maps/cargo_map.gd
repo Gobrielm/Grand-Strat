@@ -16,7 +16,7 @@ func create_town(coords: Vector2i, prov_id: int) -> void:
 	Utils.world_map.make_cell_invisible(coords)
 	set_tile.rpc(coords, Vector2i(0, 1))
 	add_terminal_to_province(new_town)
-	terminal_map.get_instance().create_terminal(new_town)
+	TerminalMap.get_instance().create_terminal(new_town)
 	place_random_road_depot(coords)
 
 func add_terminal_to_province(term: Terminal) -> void:
@@ -30,9 +30,9 @@ func remove_terminal_from_province(coords: Vector2i) -> void:
 	prov.remove_terminal(coords)
 
 func transform_construction_site_to_factory(coords: Vector2i) -> void:
-	terminal_map.get_instance().transform_construction_site_to_factory(coords)
+	TerminalMap.get_instance().transform_construction_site_to_factory(coords)
 	set_tile.rpc(coords, Vector2i(4, 1))
-	add_terminal_to_province(terminal_map.get_instance().get_terminal(coords))
+	add_terminal_to_province(TerminalMap.get_instance().get_terminal(coords))
 
 func place_random_industries() -> void:
 	var map_data_singleton: map_data = map_data.get_instance()
@@ -91,7 +91,7 @@ func create_factory(p_player_id: int, coords: Vector2i, obj_recipe: Array, mult:
 		new_factory.admin_upgrade()
 	set_tile.rpc(coords, get_atlas_cell(obj_recipe))
 	add_terminal_to_province(new_factory)
-	terminal_map.get_instance().create_terminal(new_factory)
+	TerminalMap.get_instance().create_terminal(new_factory)
 	place_random_road_depot(coords)
 	
 
@@ -103,7 +103,7 @@ func place_random_road_depot(middle: Vector2i) -> void:
 			RoadMap.get_instance().place_road_depot(tile)
 			var road_depot: RoadDepot = RoadDepot.new(tile, 0)
 			add_terminal_to_province(road_depot)
-			terminal_map.get_instance().create_terminal(road_depot)
+			TerminalMap.get_instance().create_terminal(road_depot)
 			return
 
 func place_test_industry() -> void:
@@ -125,7 +125,7 @@ func create_construction_site(_player_id: int, coords: Vector2i) -> void:
 	var new_factory: ConstructionSite = ConstructionSite.create(coords, _player_id)
 	set_tile.rpc(coords, Vector2i(3, 1))
 	add_terminal_to_province(new_factory)
-	terminal_map.get_instance().create_terminal(new_factory)
+	TerminalMap.get_instance().create_terminal(new_factory)
 
 func get_available_primary_recipes(coords: Vector2i) -> Array:
 	return cargo_values.get_available_primary_recipes(coords)

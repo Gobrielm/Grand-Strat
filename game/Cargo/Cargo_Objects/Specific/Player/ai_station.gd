@@ -12,7 +12,7 @@ func _init(p_location: Vector2i, p_owner: int) -> void:
 	super.initialize(p_location, p_owner)
 
 func add_station(p_stop: Vector2i) -> void:
-	assert(terminal_map.get_instance().get_ai_station(p_stop) != null)
+	assert(TerminalMap.get_instance().get_ai_station(p_stop) != null)
 	stations_in_network[p_stop] = true
 
 func month_tick() -> void:
@@ -49,7 +49,7 @@ func update_buy_orders() -> void:
 	
 	
 	for tile: Vector2i in stations_in_network:
-		var ai_station_obj: AiStation = terminal_map.get_instance().get_ai_station(tile)
+		var ai_station_obj: AiStation = TerminalMap.get_instance().get_ai_station(tile)
 		update_buy_orders_for_station(ai_station_obj, available_goods)
 	
 	#Cleans up any order still with 0 that weren't re-newed

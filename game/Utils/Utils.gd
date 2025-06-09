@@ -32,7 +32,7 @@ static func is_tile_open(coords: Vector2i, id: int) -> bool:
 	return val
 
 static func is_tile_taken(coords: Vector2i) -> bool:
-	var toReturn: bool = terminal_map.get_instance().get_terminal(coords) != null or !world_map.is_tile_traversable(coords)
+	var toReturn: bool = TerminalMap.get_instance().get_terminal(coords) != null or !world_map.is_tile_traversable(coords)
 	return toReturn
 
 static func just_has_rails(coords: Vector2i, id: int) -> bool:

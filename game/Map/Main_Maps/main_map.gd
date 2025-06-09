@@ -57,7 +57,6 @@ func initialize_game() -> void:
 		add_child(unit_map)
 		var cargo_cntrlr: cargo_controller = load("res://Singletons/cargo_controller.tscn").instantiate()
 		add_child(cargo_cntrlr)
-		terminal_map.new(self)
 		TerminalMap.create(self)
 		recipe.create_set_recipes()
 		rail_placer_obj.init_all_rails()
@@ -85,7 +84,7 @@ func start_test() -> void:
 	if Utils.is_ready() and is_testing():
 		await get_tree().process_frame
 		clear()
-		terminal_map.get_instance().clear()
+		TerminalMap.get_instance().clear()
 		create_testing_map()
 		testing.test()
 	elif is_testing():
@@ -173,7 +172,7 @@ func get_depot_direction(coords: Vector2i) -> int:
 func place_road_depot() -> void:
 	var tile: Vector2i = get_cell_position()
 	if DisplayServer.window_is_focused() and Utils.is_tile_taken(tile):
-		terminal_map.get_instance().create_terminal(RoadDepot.new(tile, unique_id))
+		TerminalMap.get_instance().create_terminal(RoadDepot.new(tile, unique_id))
 		RoadMap.get_instance().place_road_depot(tile)
 
 #Cargo
@@ -184,7 +183,7 @@ func get_depot_or_terminal(coords: Vector2i) -> Terminal:
 	var new_depot: Terminal = map_data.get_instance().get_depot(coords)
 	if new_depot != null:
 		return new_depot
-	return terminal_map.get_instance().get_terminal(coords)
+	return TerminalMap.get_instance().get_terminal(coords)
 
 #Trains
 @rpc("any_peer", "reliable", "call_local")
@@ -486,7 +485,7 @@ func make_cell_visible(coords: Vector2i) -> void:
 
 #Money Stuff
 func get_cash_of_firm(coords: Vector2i) -> int:
-	return terminal_map.get_instance().get_cash_of_firm(coords)
+	return TerminalMap.get_instance().get_cash_of_firm(coords)
 
 func get_money(id: int) -> float:
 	return MoneyController.get_instance().get_money(id)
