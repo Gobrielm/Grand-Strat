@@ -46,9 +46,7 @@ Broker::~Broker() {
     for (const auto& tile: connected_brokers) {
         Ref<Broker> broker = TerminalMap::get_instance() -> get_broker(tile);
         if (broker.is_null()) continue;
-        TerminalMap::get_instance() -> lock(tile);
         broker -> remove_connected_broker(this);
-        TerminalMap::get_instance() -> unlock(tile);
     }
 }
 
@@ -61,10 +59,12 @@ bool Broker::can_afford(int price) const {
 }
 
 Dictionary Broker::get_local_prices() const {
+    std::scoped_lock lock(m);
     return local_pricer -> get_local_prices();
 }
 
 float Broker::get_local_price(int type) const {
+    std::scoped_lock lock(m);
     return local_pricer->get_local_price(type);
 }
 
@@ -87,6 +87,7 @@ int Broker::get_desired_cargo_from_train(int type) const {
 
 //For buying
 bool Broker::is_price_acceptable(int type, float pricePer) const {
+    std::scoped_lock lock(m);
     return trade_orders.at(type)->get_limit_price() >= pricePer;
 }
 
@@ -94,6 +95,7 @@ void Broker::buy_cargo(int type, int amount, float price) {
     add_cargo_ignore_accepts(type, amount);
     int total = std::round(amount * price);
     remove_cash(total);
+    std::scoped_lock lock(m);
     change_in_cash -= total;
 }
 
@@ -101,46 +103,57 @@ int Broker::sell_cargo(int type, int amount, float price) {
     int transferred = transfer_cargo(type, amount);
     int total = std::round(price * transferred);
     add_cash(total);
+    std::scoped_lock lock(m);
     change_in_cash += total;
     return transferred;
 }
 
 int Broker::add_cargo_ignore_accepts(int type, int amount) { //Make sure 
+    m.lock();
     local_pricer -> add_supply(type, amount);
+    m.unlock();
     return FixedHold::add_cargo_ignore_accepts(type, amount);
 }
 
 int Broker::add_cargo(int type, int amount) { // If amount is ever negitive, it will break
     amount = FixedHold::add_cargo(type, amount);
+    std::scoped_lock lock(m);
     local_pricer -> add_supply(type, amount);
     return amount;
 }
 
 void Broker::place_order(int type, int amount, bool buy, float maxPrice) {
+    std::scoped_lock lock(m);
     trade_orders[type] = memnew(TradeOrder(type, amount, buy, maxPrice));
 }
 
 void Broker::edit_order(int type, int amount, bool buy, float maxPrice) {
+    m.lock();
     if (trade_orders.count(type)) {
         TradeOrder* order = trade_orders[type];
         order->change_buy(buy);
         order->change_amount(amount);
         order->set_max_price(maxPrice);
+        m.unlock();
     } else {
+        m.unlock();
         place_order(type, amount, buy, maxPrice);
     }
 }
 
 TradeOrder* Broker::get_order(int type) const {
+    std::scoped_lock lock(m);
     if (trade_orders.count(type) == 1) return trade_orders.at(type);
     return nullptr;
 }
 
 std::unordered_map<int, TradeOrder*> Broker::get_orders() {
+    std::scoped_lock lock(m);
     return trade_orders;
 }
 
 Dictionary Broker::get_orders_dict() {
+    std::scoped_lock lock(m);
     Dictionary d;
     for (const auto &[type, order]: trade_orders) {
         d[type] = order;
@@ -149,6 +162,7 @@ Dictionary Broker::get_orders_dict() {
 }
 
 void Broker::remove_order(int type) {
+    std::scoped_lock lock(m);
     if (trade_orders.count(type)) {
         memdelete(trade_orders[type]);
         trade_orders.erase(type);
@@ -156,14 +170,17 @@ void Broker::remove_order(int type) {
 }
 
 void Broker::add_connected_broker(Ref<Broker> broker) {
+    std::scoped_lock lock(m);
     connected_brokers.insert(broker->get_location());
 }
 
 void Broker::remove_connected_broker(const Ref<Broker> broker) {
+    std::scoped_lock lock(m);
     connected_brokers.erase(broker->get_location());
 }
 
 Dictionary Broker::get_connected_broker_locations() {
+    std::scoped_lock lock(m);
     Dictionary d;
     for (const auto &tile: connected_brokers) {
         d[tile] = true;
@@ -179,9 +196,7 @@ void Broker::distribute_from_order(const TradeOrder* order) {
     for (const auto& tile : connected_brokers) {
         Ref<Broker> broker = TerminalMap::get_instance() -> get_broker(tile);
         if (broker.is_null()) continue;
-        TerminalMap::get_instance() -> lock(tile);
         bool val = broker->does_accept(order->get_type());
-        TerminalMap::get_instance() -> unlock(tile);
 
         if (val) {
             distribute_to_order(broker, order);
@@ -194,16 +209,33 @@ void Broker::distribute_to_order(Ref<Broker> otherBroker, const TradeOrder* orde
     int type = order->get_type();
     float price1 = get_local_price(type);
 
-    TerminalMap::get_instance() -> lock(tile);
     float price2 = otherBroker->get_local_price(type);
-    TerminalMap::get_instance() -> unlock(tile);
     
     float price = std::max(price1, price2) - std::abs(price1 - price2) / 2.0f;
 
-    TerminalMap::get_instance() -> lock(tile);
     if (!order->is_price_acceptable(price) || !otherBroker->is_price_acceptable(type, price)) return;
     int desired = otherBroker->get_desired_cargo(type, price);
-    TerminalMap::get_instance() -> unlock(tile);
+
+    report_attempt_to_sell(type, std::min(desired, order->get_amount() * 3)); // Put a cap on how much one broker can desire
+
+    int amount = std::min(desired, order->get_amount()); 
+
+    if (amount > 0) {
+        amount = sell_cargo(type, amount, price);
+        otherBroker->buy_cargo(type, amount, price);
+    }
+}
+
+void Broker::distribute_to_order(Broker* otherBroker, const TradeOrder* order) {
+    int type = order->get_type();
+    float price1 = get_local_price(type);
+
+    float price2 = otherBroker->get_local_price(type);
+    
+    float price = std::max(price1, price2) - std::abs(price1 - price2) / 2.0f;
+
+    if (!order->is_price_acceptable(price) || !otherBroker->is_price_acceptable(type, price)) return;
+    int desired = otherBroker->get_desired_cargo(type, price);
 
     report_attempt_to_sell(type, std::min(desired, order->get_amount() * 3)); // Put a cap on how much one broker can desire
 
@@ -212,13 +244,12 @@ void Broker::distribute_to_order(Ref<Broker> otherBroker, const TradeOrder* orde
     if (amount > 0) {
         amount = sell_cargo(type, amount, price);
 
-        TerminalMap::get_instance() -> lock(tile);
         otherBroker->buy_cargo(type, amount, price);
-        TerminalMap::get_instance() -> unlock(tile);
     }
 }
 
 void Broker::report_attempt_to_sell(int type, int amount) {
+    std::scoped_lock lock(m);
     if (local_pricer) {
         local_pricer->add_demand(type, amount);
     }

@@ -58,6 +58,7 @@ class Broker : public FixedHold {
     virtual void distribute_cargo(); // abstract
     virtual void distribute_from_order(const TradeOrder* order);
     void distribute_to_order(Ref<Broker> otherBroker, const TradeOrder* order);
+    void distribute_to_order(Broker* otherBroker, const TradeOrder* order);
 
     void report_attempt_to_sell(int type, int amount);
 

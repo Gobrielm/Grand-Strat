@@ -59,10 +59,12 @@ int FixedHold::get_desired_cargo(int type) const {
 }
 
 void FixedHold::reset_accepts() {
+    std::scoped_lock lock(m);
     accepts.clear();
 }
 
 Dictionary FixedHold::get_accepts() const {
+    std::scoped_lock lock(m);
     Dictionary dict;
     for (const int& type : accepts) {
         dict[type] = true;
@@ -71,6 +73,7 @@ Dictionary FixedHold::get_accepts() const {
 }
 
 std::vector<bool> FixedHold::get_accepts_vector() const {
+    std::scoped_lock lock(m);
     std::vector<bool> v;
     v.resize(accepts.size());
     for (const int& type: accepts) {
@@ -80,10 +83,12 @@ std::vector<bool> FixedHold::get_accepts_vector() const {
 }
 
 void FixedHold::add_accept(int type) {
+    std::scoped_lock lock(m);
     accepts.insert(type);
 }
 
 void FixedHold::remove_accept(int type) {
+    std::scoped_lock lock(m);
     accepts.erase(type);
 }
 
@@ -92,5 +97,6 @@ bool FixedHold::does_accept(int type) const {
 }
 
 void FixedHold::clear_accepts() {
+    std::scoped_lock lock(m);
     accepts.clear();
 }

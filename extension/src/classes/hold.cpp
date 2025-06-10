@@ -57,11 +57,13 @@ void Hold::initialize(Vector2i new_location, int player_owner, int p_max_amount)
 
 int Hold::add_cargo(int type, int amount) {
     int amount_to_add = get_amount_to_add(type, amount);
+    std::scoped_lock lock(m);
     storage[type] += amount_to_add;
     return amount_to_add;
 }
 
 int Hold::get_cargo_amount(int type) const {
+    std::scoped_lock lock(m);
     if (storage.count(type) == 0) {
         ERR_PRINT("Storage has no such type: " + String::num_int64(type));
         return 0; // or return some error value like -1, depending on your logic
@@ -70,6 +72,7 @@ int Hold::get_cargo_amount(int type) const {
 }
 
 void Hold::remove_cargo(int type, int amount) {
+    std::scoped_lock lock(m);
     storage[type] -= amount;
     ERR_FAIL_COND_MSG(storage[type] < 0, "Storage went below zero! It is " + String::num(storage[type]));
 }
@@ -81,10 +84,11 @@ int Hold::transfer_cargo(int type, int amount) {
 }
 
 int Hold::get_amount_to_add(int type, int amount) const {
-    return std::min(max_amount - get_current_hold_total(), amount);
+    return std::min(get_max_storage() - get_current_hold_total(), amount);
 }
 
 Dictionary Hold::get_current_hold() const {
+    std::scoped_lock lock(m);
     Dictionary d;
     for (const auto &pair : storage) {
         d[pair.first] = pair.second;
@@ -93,6 +97,7 @@ Dictionary Hold::get_current_hold() const {
 }
 
 void Hold::set_current_hold(Dictionary hold) {
+    std::scoped_lock lock(m);
     Array keys = hold.keys();
     for (int i = 0; i < keys.size(); i++) {
         int type = keys[i];
@@ -101,6 +106,7 @@ void Hold::set_current_hold(Dictionary hold) {
 }
 
 int Hold::get_current_hold_total() const {
+    std::scoped_lock lock(m);
     int total = 0;
     for (const auto &pair : storage) {
         total += pair.second;
@@ -117,19 +123,22 @@ bool Hold::is_empty() const {
 }
 
 int Hold::get_max_storage() const {
+    std::scoped_lock lock(m);
     return max_amount;
 }
 
 void Hold::change_max_storage(int p_amount) {
+    std::scoped_lock lock(m);
     max_amount += p_amount;
 }
 
 void Hold::set_max_storage(int p_amount) {
+    std::scoped_lock lock(m);
     max_amount = p_amount;
 }
 
 bool Hold::does_accept(int type) const {
-    return get_current_hold_total() < max_amount;
+    return get_current_hold_total() < get_max_storage();
 }
 
 void Hold::set_number_of_goods(int p_num) {

@@ -31,8 +31,8 @@ public:
 
     virtual void initialize(Vector2i new_location);
 
-    const std::vector<int>& get_supply() const;
-    const std::vector<int>& get_demand() const;
+    std::vector<int> get_supply() const;
+    std::vector<int> get_demand() const;
 
     void add_cash(float amount) override;
     void remove_cash(float amount) override;

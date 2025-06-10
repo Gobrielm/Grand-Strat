@@ -1,6 +1,7 @@
 #pragma once
 
 #include <unordered_map>
+#include <mutex>
 #include <godot_cpp/classes/ref_counted.hpp>
 #include <godot_cpp/variant/dictionary.hpp>
 #include <godot_cpp/variant/array.hpp>
@@ -11,6 +12,7 @@ class MoneyController : public RefCounted {
     GDCLASS(MoneyController, RefCounted);
 
 private:
+    mutable std::mutex m;
     std::unordered_map<int, float> money;
     static Ref<MoneyController> singleton_instance;
     static const int INITIAL_AMOUNT_OF_MONEY;

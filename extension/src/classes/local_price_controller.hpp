@@ -43,10 +43,10 @@ class LocalPriceController: public RefCounted {
     int get_last_month_supply(int type) const;
 
 
-    const std::vector<int>& get_demand() const;
-    const std::vector<int>& get_supply() const;
-    const std::vector<int>& get_last_month_demand() const;
-    const std::vector<int>& get_last_month_supply() const;
+    std::vector<int> get_demand() const;
+    std::vector<int> get_supply() const;
+    std::vector<int> get_last_month_demand() const;
+    std::vector<int> get_last_month_supply() const;
 
 
     float get_local_price(int type) const;

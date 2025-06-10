@@ -202,12 +202,10 @@ Ref<FactoryTemplate> Province::find_urban_employment(BasePop* pop) const {
         
         if (fact.is_null()) continue;
         
-        TerminalMap::get_instance() -> lock(fact -> get_location());
         if (fact -> get_wage() > max_wage) {
             best_fact = fact;
             max_wage = fact -> get_wage();
         }
-        TerminalMap::get_instance() -> unlock(fact -> get_location());
     }
     return best_fact;
 }

@@ -42,6 +42,7 @@ void ConstructionSite::set_recipe(const Array recipe) {
 
 Array ConstructionSite::get_recipe() const {
     Dictionary in_d;
+    m.lock();
     for (const auto& [key, val]: inputs) {
         in_d[key] = val;
     }
@@ -49,6 +50,7 @@ Array ConstructionSite::get_recipe() const {
     for (const auto& [key, val]: outputs) {
         out_d[key] = val;
     }
+    m.unlock();
     Array a;
     a.push_back(in_d);
     a.push_back(out_d);
@@ -56,10 +58,12 @@ Array ConstructionSite::get_recipe() const {
 }
 
 bool ConstructionSite::has_recipe() const {
+    std::scoped_lock lock(m);
     return inputs.size() != 0 && outputs.size() != 0;
 }
 
 void ConstructionSite::destroy_recipe() {
+    std::scoped_lock lock(m);
     inputs.clear();
     outputs.clear();
 }
@@ -75,12 +79,14 @@ void ConstructionSite::create_construction_materials(const Dictionary d) {
 
 void ConstructionSite::create_construction_material(int type, int amount) {
     add_accept(type);
+    std::scoped_lock lock(m);
 	max_amounts[type] = amount;
 	construction_materials[type] = 50;
 }
 
 Dictionary ConstructionSite::get_construction_materials() const {
     Dictionary d;
+    std::scoped_lock lock(m);
     for (const auto& [key, val]: construction_materials) {
         d[key] = val;
     }

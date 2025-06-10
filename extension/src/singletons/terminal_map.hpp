@@ -29,7 +29,6 @@ private:
     TileMapLayer* cargo_map = nullptr;
 
     std::mutex m;
-    std::unordered_map<Vector2i, std::recursive_mutex, godot_helpers::Vector2iHasher> object_mutexs;
     std::unordered_map<Vector2i, Ref<Terminal>, godot_helpers::Vector2iHasher> cargo_map_terminals;
 
     std::vector<std::thread> month_threads;
@@ -85,10 +84,6 @@ public:
     Dictionary get_local_prices(const Vector2i &coords);
     Dictionary get_station_orders(const Vector2i &coords);
     Dictionary get_town_fulfillment(const Vector2i &coords);
-
-    //External Locks
-    void lock(const Vector2i coords); //If it returns false, then the terminal does not exist, Error
-    void unlock(const Vector2i& coords);
 
     //Getters
     Ref<Terminal> get_terminal(const Vector2i &coords);

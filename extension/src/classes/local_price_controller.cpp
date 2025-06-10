@@ -40,10 +40,10 @@ int LocalPriceController::get_supply(int type) const { return supply.at(type); }
 int LocalPriceController::get_last_month_demand(int type) const { return last_month_demand.at(type); }
 int LocalPriceController::get_last_month_supply(int type) const { return last_month_supply.at(type); }
 
-const std::vector<int>& LocalPriceController::get_demand() const { return demand; }
-const std::vector<int>& LocalPriceController::get_supply() const { return supply; }
-const std::vector<int>& LocalPriceController::get_last_month_demand() const { return last_month_demand; }
-const std::vector<int>& LocalPriceController::get_last_month_supply() const { return last_month_supply; }
+std::vector<int> LocalPriceController::get_demand() const { return demand; }
+std::vector<int> LocalPriceController::get_supply() const { return supply; }
+std::vector<int> LocalPriceController::get_last_month_demand() const { return last_month_demand; }
+std::vector<int> LocalPriceController::get_last_month_supply() const { return last_month_supply; }
 
 float LocalPriceController::get_local_price(int type) const {
     return local_prices.at(type);

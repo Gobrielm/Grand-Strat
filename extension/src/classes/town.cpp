@@ -64,33 +64,40 @@ void Town::initialize(Vector2i new_location) {
     local_pricer = memnew(LocalPriceController);
 }
 
-const std::vector<int>& Town::get_supply() const {
+std::vector<int> Town::get_supply() const {
+    std::scoped_lock lock(m);
     return local_pricer -> get_supply();
 }
 
-const std::vector<int>& Town::get_demand() const {
+std::vector<int> Town::get_demand() const {
+    std::scoped_lock lock(m);
    return local_pricer -> get_demand();
 }
 
 void Town::add_cash(float amount) {
+    std::scoped_lock lock(m);
     cash += amount;
 }
 
 void Town::remove_cash(float amount) {
+    std::scoped_lock lock(m);
     cash -= amount;
 }
 
 float Town::get_cash() const {
+    std::scoped_lock lock(m);
     return cash;
 }
 
 bool Town::is_price_acceptable(int type, float price) const {
+    std::scoped_lock lock(m);
     return local_pricer -> get_local_price(type) >= price;
 }
 
 int Town::get_desired_cargo(int type, float price) const {
     if (is_price_acceptable(type, price)) {
 		int amount_could_get = std::min(get_max_storage() - get_cargo_amount(type), get_amount_can_buy(price));
+        std::scoped_lock lock(m);
 		return std::min(local_pricer -> get_last_month_demand(type), amount_could_get);
     }
 	return 0;
@@ -106,6 +113,7 @@ Dictionary Town::get_fulfillment_dict() const {
 }
 
 float Town::get_fulfillment(int type) const {
+    std::scoped_lock lock(m);
     int supply = local_pricer->get_supply(type);
     int demand = local_pricer->get_demand(type);
     if (supply == 0)
@@ -114,15 +122,19 @@ float Town::get_fulfillment(int type) const {
 }
 
 void Town::add_factory(Ref<FactoryTemplate> fact) {
+    m.lock();
     if (!internal_factories.count(fact->get_player_owner()))
 		internal_factories[fact->get_player_owner()] = std::vector<Ref<FactoryTemplate>>();
 	internal_factories[fact->get_player_owner()].push_back(fact);
+    m.unlock();
 	fact->add_connected_broker(this);
 }
 
 Dictionary Town::get_last_month_supply() const {
     Dictionary d = {};
+    m.lock();
     const auto v = local_pricer -> get_last_month_supply();
+    m.unlock();
     for (int type = 0; type < v.size(); type++) {
         d[type] = v[type];
     }
@@ -131,7 +143,9 @@ Dictionary Town::get_last_month_supply() const {
 
 Dictionary Town::get_last_month_demand() const {
     Dictionary d = {};
+    m.lock();
     const auto v = local_pricer -> get_last_month_demand();
+    m.unlock();
     for (int type = 0; type < v.size(); type++) {
         d[type] = v[type];
     }
@@ -140,6 +154,7 @@ Dictionary Town::get_last_month_demand() const {
 
 //Pop stuff
 void Town::add_pop(BasePop* pop) {
+    std::scoped_lock lock(m);
     ERR_FAIL_COND_MSG(city_pops.count(pop -> get_pop_id()) != 0, "Pop of id has already been created");
     city_pops[pop -> get_pop_id()] = pop;
 }
@@ -182,6 +197,7 @@ void Town::sell_type(int type) {
 }
 
 int Town::get_total_pops() const {
+    std::scoped_lock lock(m);
     return city_pops.size();
 }
 
@@ -204,7 +220,7 @@ void Town::sell_to_other_brokers() {
     std::vector<int> supply = get_supply();
 	for (int type = 0; type < supply.size(); type++) {
 		TradeOrder* order = get_order(type);
-        if (order == nullptr) continue;
+        if (!order) continue;
         
 		distribute_from_order(order);
     }
@@ -215,7 +231,7 @@ void Town::distribute_from_order(const TradeOrder* order) {
 	for (const auto &[__, fact_vector]: internal_factories) {
 		for (Ref<FactoryTemplate> fact: fact_vector) {
 			if (fact->does_accept(order->get_type())) {
-                distribute_to_order(fact, order);
+                distribute_to_order(fact.ptr(), order); //Use ptr becuase it isn't in terminal_map
             }
         }
     }
@@ -223,9 +239,7 @@ void Town::distribute_from_order(const TradeOrder* order) {
 	for (const auto &tile: connected_brokers) {
         Ref<Broker> broker = TerminalMap::get_instance() -> get_broker(tile);
         if (broker.is_null()) continue;
-        TerminalMap::get_instance() -> lock(tile);
         bool does_accept = broker->does_accept(order->get_type());
-        TerminalMap::get_instance() -> unlock(tile);
 		if (does_accept) {
             distribute_to_order(broker, order);
         }
@@ -250,6 +264,8 @@ void Town::day_tick() {
 void Town::month_tick() {
     sell_to_pops();
     update_buy_orders();
+    m.lock();
     local_pricer -> adjust_prices();
+    m.unlock();
     set_max_storage(city_pops.size() * 5); // Update size according to number of pops
 }

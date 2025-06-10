@@ -75,6 +75,7 @@ float FactoryTemplate::get_max_price(int type) const {
 }
 
 bool FactoryTemplate::does_create(int type) const {
+    std::scoped_lock lock(m);
     return outputs.count(type);
 }
 
@@ -117,6 +118,7 @@ void FactoryTemplate::distribute_cargo() {
 }
 
 int FactoryTemplate::get_level() const {
+    std::scoped_lock lock(m);
     //TODO: Employment
 	//var employment: int = get_employement()
 	//if employment == 0:
@@ -140,31 +142,37 @@ void FactoryTemplate::upgrade() {
     int cost = get_cost_for_upgrade();
     if (get_cash() >= cost) {
         remove_cash(cost);
+        std::scoped_lock lock(m);
         level++;
         pops_needed = level;
     }
 }
 
 void FactoryTemplate::admin_upgrade() {
+    std::scoped_lock lock(m);
     //Make sure that thing calling does check
     level++;
     pops_needed = level;
 }
 
 void FactoryTemplate::update_income_array() {
+    m.lock();
     income_list.push_front(change_in_cash);
     if (income_list.size() == 27) {
         income_list.pop_back();
     }
+    m.unlock();
     change_in_cash = get_cash();
 }
 
 float FactoryTemplate::get_last_month_income() const {
+    std::scoped_lock lock(m);
     if (income_list.size() == 0) return 0;
     return income_list.front();
 }
 
 int FactoryTemplate::get_employement() const {
+    std::scoped_lock lock(m);
     return employees.size();
 }
 
@@ -183,8 +191,10 @@ float FactoryTemplate::get_wage() const {
 
 void FactoryTemplate::work_here(BasePop* pop) {
     if (is_hiring()) {
+        m.lock();
         int index = employees.empty() ? 0 : rand() % employees.size();
         employees.insert(employees.begin() + index, pop);
+        m.unlock();
         pop->employ(get_wage());
     }
 }
@@ -197,6 +207,7 @@ void FactoryTemplate::pay_employees() {
 }
 
 void FactoryTemplate::fire_employees() {
+    std::scoped_lock lock(m);
     int fired = 0;
     int to_fire = std::max((int)(employees.size() * 0.1), 100);
     while (fired < to_fire && !employees.empty()) {

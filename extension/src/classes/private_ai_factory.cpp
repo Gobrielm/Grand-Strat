@@ -26,11 +26,14 @@ void PrivateAiFactory::initialize(Vector2i new_location, Dictionary new_inputs, 
 
 //Orders
 void PrivateAiFactory::add_cash(float amount) {
+    std::scoped_lock lock(m);
     cash += amount;
 }
 void PrivateAiFactory::remove_cash(float amount) {
+    std::scoped_lock lock(m);
     cash -= amount;
 }
 float PrivateAiFactory::get_cash() const {
+    std::scoped_lock lock(m);
     return cash;
 }

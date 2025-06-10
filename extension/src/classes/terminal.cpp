@@ -15,22 +15,29 @@ void Terminal::_bind_methods() {
 }
 
 void Terminal::set_location(const Vector2i p_location) {
+    std::scoped_lock lock(m);
     location = p_location;
 }
+
 Vector2i Terminal::get_location() const {
+    std::scoped_lock lock(m);
     return location;
 }
 
 int Terminal::get_player_owner() const {
+    std::scoped_lock lock(m);
     return player_owner;
 }
 
 Ref<Terminal> Terminal::create(const Vector2i p_location, const int p_owner) {
+    // Static factory methods typically don't need locking unless accessing shared state.
     return Ref<Terminal>(memnew(Terminal(p_location, p_owner)));
 }
 
 void Terminal::initialize(const Vector2i p_location, int p_owner) {
+    std::scoped_lock lock(m);
     location = p_location;
     player_owner = p_owner;
 }
+
 

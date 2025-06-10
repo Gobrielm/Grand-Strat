@@ -41,15 +41,18 @@ Ref<MoneyController> MoneyController::get_instance() {
 
 void MoneyController::add_peer(int new_id) {
     ERR_FAIL_COND_MSG(money.count(new_id), "Peer already exists!");
+    std::scoped_lock lock(m);
     money[new_id] = INITIAL_AMOUNT_OF_MONEY;
 }
 
 void MoneyController::delete_peer(int id) {
     ERR_FAIL_COND_MSG(!money.count(id), "Peer doesn't exist!");
+    std::scoped_lock lock(m);
     money.erase(id);
 }
 
 void MoneyController::add_money_to_player(int id, float amount) {
+    std::scoped_lock lock(m);
     money[id] += amount;
     emit_signal("Update_Money_Gui", id, money[id]);
 }
@@ -59,6 +62,7 @@ void MoneyController::remove_money_from_player(int id, float amount) {
 }
 
 float MoneyController::get_money(int id) const {
+    std::scoped_lock lock(m);
     auto it = money.find(id);
     if (it != money.end()) {
         return it->second;
@@ -69,6 +73,7 @@ float MoneyController::get_money(int id) const {
 }
 
 Dictionary MoneyController::get_money_dictionary() const {
+    std::scoped_lock lock(m);
     Dictionary d;
     for (const auto &p: money) {
         d[p.first] = p.second;

@@ -31,7 +31,9 @@ bool Factory::check_recipe() {
 bool Factory::check_inputs() {
     bool toReturn = true;
     for (const auto& [type, amount]: inputs) {
+        m.lock();
         local_pricer -> add_demand(type, amount);
+        m.unlock();
         if (get_cargo_amount(type) < amount) {
             toReturn = false;
         }
@@ -59,5 +61,7 @@ void Factory::day_tick() {
 
 void Factory::month_tick() {
     FactoryTemplate::month_tick();
+    m.lock();
     local_pricer->adjust_prices();
+    m.unlock();
 }
