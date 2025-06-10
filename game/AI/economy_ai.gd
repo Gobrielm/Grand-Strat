@@ -110,12 +110,9 @@ func are_there_unconnected_stations() -> bool:
 		#Only survey owned ai_stations
 		if TerminalMap.get_instance().is_owned_ai_station(tile, id):
 			var stat: AiStation = TerminalMap.get_instance().get_ai_station(tile)
-			TerminalMap.get_instance().lock(tile)
 			if !stat.has_station_connection():
-				TerminalMap.get_instance().unlock(tile)
 				stored_tile = tile
 				return false
-			TerminalMap.get_instance().unlock(tile)
 	return false
 
 func place_station(center: Vector2i) -> void:

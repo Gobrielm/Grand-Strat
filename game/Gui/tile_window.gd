@@ -66,7 +66,7 @@ func set_biome(biome: String) -> void:
 
 @rpc("any_peer", "call_local")
 func request_resources_available(_coords: Vector2i) -> void:
-	var resource_dict: Dictionary = TerminalMap.get_instance().get_available_resources(_coords)
+	var resource_dict: Dictionary = Utils.cargo_values.get_available_resources(_coords)
 	set_resources_available.rpc_id(multiplayer.get_remote_sender_id(), resource_dict)
 
 @rpc("authority", "call_local")

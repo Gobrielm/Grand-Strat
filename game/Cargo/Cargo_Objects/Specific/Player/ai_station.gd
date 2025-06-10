@@ -23,11 +23,9 @@ func fetch_local_goods_needed() -> Array[TradeOrder]:
 	for tile: Vector2i in get_connected_broker_locations():
 		var broker: Broker = TerminalMap.get_instance().get_broker(tile)
 		if broker == null: continue
-		TerminalMap.get_instance().lock(tile)
 		for order: TradeOrder in broker.get_orders().values():
 			if order.is_buy_order():
 				toReturn.append(order)
-		TerminalMap.get_instance().unlock(tile)
 	return toReturn
 
 #Returns which types are available
@@ -36,11 +34,9 @@ func get_local_goods_available() -> Dictionary[int, bool]:
 	for tile: Vector2i in get_connected_broker_locations():
 		var broker: Broker = TerminalMap.get_instance().get_broker(tile)
 		if broker == null: continue
-		TerminalMap.get_instance().lock(tile)
 		for order: TradeOrder in broker.get_orders_dict().values():
 			if order.is_sell_order():
-				toReturn[order.type] = true
-		TerminalMap.get_instance().unlock(tile)
+				toReturn[order.get_type()] = true
 	return toReturn
 
 func update_orders() -> void:
@@ -53,7 +49,7 @@ func update_buy_orders() -> void:
 	#Sets all buy orders to amount of 0, but doesn't delete, waits for re-new
 	for order: TradeOrder in get_orders_dict().values():
 		if order.is_buy_order():
-			order.amount = 0
+			order.change_amount(0)
 	
 	
 	for tile: Vector2i in stations_in_network:
@@ -68,13 +64,13 @@ func update_buy_orders_for_station(ai_station_obj: AiStation, available_goods: D
 	var orders: Dictionary[int, TradeOrder] = ai_station_obj.get_orders()
 	for order: TradeOrder in orders.values():
 		#If other station wants it to sell and will pay higher than min price here
-		if order.is_sell_order() and available_goods.has(order.type) and ai_station_obj.get_local_price(order.type) > get_local_price(order.type) * TRADE_MARGINS:
+		if order.is_sell_order() and available_goods.has(order.get_type()) and ai_station_obj.get_local_price(order.get_type()) > get_local_price(order.type) * TRADE_MARGINS:
 			#Order exists and price is not adequete
-			add_amount_to_buy_order(order.type, order.amount, get_local_price(order.type) * TRADE_MARGINS)
+			add_amount_to_buy_order(order.get_type(), order.get_amount(), get_local_price(order.get_type()) * TRADE_MARGINS)
 
 func add_amount_to_buy_order(type: int, amount: int, p_market_price: float) -> void:
 	var this_order: TradeOrder = get_order(type)
-	var new_amount: int = amount if !this_order else this_order.amount + amount
+	var new_amount: int = amount if !this_order else this_order.get_amount() + amount
 	edit_order(type, new_amount, true, p_market_price)
 
 func clean_up_buy_orders() -> void:
@@ -93,7 +89,7 @@ func update_sell_orders() -> void:
 	var market: Dictionary[int, TradeOrder] = create_consolidated_market_for_desired_goods()
 	for type: int in market:
 		#PBUG:Makes the limit price slightly less than mp, limit_price should be irreleveant
-		edit_order(type, market[type].amount, false, market[type].max_price * 0.99)
+		edit_order(type, market[type].get_amount(), false, market[type].get_limit_price() * 0.99)
 
 func create_consolidated_market_for_desired_goods() -> Dictionary[int, TradeOrder]:
 	var amount_total: Dictionary[int, int] = {}
@@ -102,15 +98,13 @@ func create_consolidated_market_for_desired_goods() -> Dictionary[int, TradeOrde
 	for tile: Vector2i in get_connected_broker_locations():
 		var broker: Broker = TerminalMap.get_instance().get_broker(tile)
 		if broker == null: continue
-		TerminalMap.get_instance().lock(tile)
 		for order: TradeOrder in broker.get_orders_dict().values():
 			if order.is_buy_order():
 				if !amount_total.has(order.type):
-					amount_total[order.type] = 0
-					market_price[order.type] = 0.0
-				amount_total[order.type] += order.amount
-				market_price[order.type] += order.amount * broker.get_local_price(order.type)
-		TerminalMap.get_instance().unlock(tile)
+					amount_total[order.get_type()] = 0
+					market_price[order.get_type()] = 0.0
+				amount_total[order.get_type()] += order.get_amount()
+				market_price[order.get_type()] += order.get_amount() * broker.get_local_price(order.type)
 	
 	for type: int in amount_total:
 		market_price[type] /= amount_total[type]
