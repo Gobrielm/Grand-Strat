@@ -59,6 +59,5 @@ void Factory::day_tick() {
 
 void Factory::month_tick() {
     FactoryTemplate::month_tick();
-    
     local_pricer->adjust_prices();
 }

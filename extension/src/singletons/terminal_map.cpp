@@ -95,9 +95,10 @@ TerminalMap::~TerminalMap() {
         thread.join();
     }
     month_threads.clear();
-    for (auto &[__, mtx]: object_mutexs) {
-        delete (mtx);
-    }
+    object_mutexs.clear();
+    cargo_map_terminals.clear();
+    map = nullptr;
+    cargo_map = nullptr;
 }
 
 Ref<TerminalMap> TerminalMap::get_instance() { 
@@ -114,12 +115,11 @@ void TerminalMap::_on_day_tick_timeout() {
     m.unlock();
 
     for (const auto &[coords, terminal]: cargo_map_terminals) {
-        std::mutex* obj_mutex = object_mutexs[coords];
-        obj_mutex->lock();
+        lock(coords);
         if (terminal->has_method("day_tick")) {
             terminal->call("day_tick");
         }
-        obj_mutex->unlock();
+        unlock(coords);
     }
 
     m.lock();
@@ -129,27 +129,28 @@ void TerminalMap::_on_day_tick_timeout() {
 
 void TerminalMap::_on_month_tick_timeout() {
     //Clean up old threads
-    for (auto &thread: month_threads) {
-        thread.join();
-    }
-    month_threads.clear();
+    // for (auto &thread: month_threads) {
+    //     thread.join();
+    // }
+    // month_threads.clear();
 
-    auto start = cargo_map_terminals.begin();
+    // auto start = cargo_map_terminals.begin();
 
-    const int NUMBER_OF_THREADS = 4;
-    const int chunk_size = cargo_map_terminals.size() / NUMBER_OF_THREADS;
+    // const int NUMBER_OF_THREADS = 4;
+    // const int chunk_size = cargo_map_terminals.size() / NUMBER_OF_THREADS;
 
-    for (int i = 0; i < NUMBER_OF_THREADS; i++) {
-        auto end = start;
-        std::advance(end, chunk_size);
-        if (i == (NUMBER_OF_THREADS - 1)) {
-            end = cargo_map_terminals.end();
-        }
+    // for (int i = 0; i < NUMBER_OF_THREADS; i++) {
+    //     auto end = start;
+    //     std::advance(end, chunk_size);
+    //     if (i == (NUMBER_OF_THREADS - 1)) {
+    //         end = cargo_map_terminals.end();
+    //     }
         
-        std::thread thrd(&TerminalMap::_on_month_tick_timeout_helper, this, start, end);
-        month_threads.push_back(std::move(thrd));
-        start = end;
-    }
+    //     std::thread thrd(&TerminalMap::_on_month_tick_timeout_helper, this, start, end);
+    //     month_threads.push_back(std::move(thrd));
+    //     start = end;
+    // }
+    _on_month_tick_timeout_helper(cargo_map_terminals.begin(), cargo_map_terminals.end());
 }
 
 void TerminalMap::_on_month_tick_timeout_helper(MapType::iterator start, MapType::iterator end) {
@@ -158,13 +159,13 @@ void TerminalMap::_on_month_tick_timeout_helper(MapType::iterator start, MapType
             std::this_thread::sleep_for(std::chrono::milliseconds(2));
         }
         Vector2i coords = it -> first;
-        object_mutexs[coords]->lock();
+        lock(coords);
         Ref<Terminal> terminal = it -> second;
         
         if (terminal->has_method("month_tick")) {
             terminal->call("month_tick");
         }
-        object_mutexs[coords]->unlock();
+        unlock(coords);
     }
 }
 
@@ -182,10 +183,10 @@ TileMapLayer* TerminalMap::get_main_map() const {
 //Creators
 void TerminalMap::create_terminal(Ref<Terminal> p_terminal) {
     m.lock();
-    object_mutexs[p_terminal -> get_location()] = new (std::mutex);
+    object_mutexs[p_terminal -> get_location()];
     cargo_map_terminals[p_terminal -> get_location()] = p_terminal;
     m.unlock();
-    Ref<Broker> broker = get_terminal_as<Broker>(p_terminal -> get_location());
+    Ref<Broker> broker = get_broker(p_terminal -> get_location());
     if (broker.is_valid()) {
         add_connected_brokers(broker);
     }
@@ -197,7 +198,7 @@ void TerminalMap::add_connected_brokers(Ref<Broker> p_broker) {
         if (connected[i].get_type() != Variant::VECTOR2I) continue;
         Vector2i tile = connected[i];
         Ref<Broker> other = get_broker(tile);
-        if (!other.is_valid()) continue;
+        if (other.is_null()) continue;
         p_broker->add_connected_broker(other);
         other->add_connected_broker(p_broker);
     }
@@ -230,18 +231,18 @@ bool TerminalMap::is_owned_recipeless_construction_site(const Vector2i &coords) 
     Ref<ConstructionSite> construction_site =  get_terminal_as<ConstructionSite>(coords);
     if (construction_site.is_null()) return false;
     
-    object_mutexs[coords] -> lock();
+    lock(coords);
     toReturn = construction_site -> has_recipe();
-    object_mutexs[coords] -> unlock();
+    unlock(coords);
 
     return toReturn;
 }
 bool TerminalMap::is_building(const Vector2i &coords) {
     bool toReturn = false;
     if (!object_mutexs.count(coords)) return false;
-    object_mutexs[coords]->lock();
+    lock(coords);
     toReturn = get_terminal_as<ConstructionSite>(coords).is_valid() ||  get_terminal_as<Town>(coords).is_valid() ||  get_terminal_as<FactoryTemplate>(coords).is_valid();
-    object_mutexs[coords]->unlock();
+    unlock(coords);
     return toReturn;
 }
 bool TerminalMap::is_owned_building(const Vector2i &coords, int id) {
@@ -309,33 +310,33 @@ Dictionary TerminalMap::get_cargo_dict(const Vector2i &coords) {
 Array TerminalMap::get_construction_site_recipe(const Vector2i &coords) {
     Array toReturn = {};
     Ref<Terminal> temp = get_terminal(coords);
-    object_mutexs[coords]->lock();
+    lock(coords);
     Ref<ConstructionSite> construction_site = get_terminal_as<ConstructionSite>(coords);
     if (construction_site.is_valid()) {
         toReturn = construction_site->get_recipe();
     }
-    object_mutexs[coords]->unlock();
+    unlock(coords);
     return toReturn;
 }
 
 Dictionary TerminalMap::get_construction_materials(const Vector2i &coords) {
     Dictionary toReturn;
     if (is_owned_construction_site(coords)) {
-        object_mutexs[coords] -> lock();
+        lock(coords);
         toReturn = get_terminal_as<ConstructionSite>(coords) -> get_construction_materials();
-        object_mutexs[coords] -> unlock();
+        unlock(coords);
     }
     return toReturn;
 }
 
 int TerminalMap::get_cash_of_firm(const Vector2i &coords) {
     int toReturn;
-    object_mutexs[coords] -> lock();
+    lock(coords);
     Ref<Firm> firm = get_terminal_as<Firm>(coords);
     if (firm.is_valid()) {
         toReturn = firm->get_cash();
     }
-    object_mutexs[coords] -> unlock();
+    unlock(coords);
     return toReturn;
 }
 
@@ -343,9 +344,9 @@ Dictionary TerminalMap::get_local_prices(const Vector2i &coords) {
     Dictionary toReturn;
     Ref<Broker> broker = get_broker(coords);
     if (broker.is_valid()) {
-        object_mutexs[coords] -> lock();
+        lock(coords);
         toReturn = broker -> get_local_prices();
-        object_mutexs[coords] -> unlock();
+        unlock(coords);
     }
     return toReturn;
 }
@@ -353,9 +354,9 @@ Dictionary TerminalMap::get_local_prices(const Vector2i &coords) {
 Dictionary TerminalMap::get_station_orders(const Vector2i &coords) {
     Dictionary toReturn;
     if (is_station(coords)) {
-        object_mutexs[coords] -> lock();
+        lock(coords);
         toReturn = get_terminal_as<StationWOMethods>(coords) -> get_orders_dict();
-        object_mutexs[coords] -> unlock();
+        unlock(coords);
     }
     return toReturn;
 }
@@ -364,9 +365,9 @@ Dictionary TerminalMap::get_town_fulfillment(const Vector2i &coords) {
     Dictionary toReturn;
     Ref<Town> town = get_town(coords);
     if (town.is_valid()) {
-        object_mutexs[coords] -> lock();
+        lock(coords);
         toReturn = town -> get_fulfillment_dict();
-        object_mutexs[coords] -> unlock();
+        unlock(coords);
     }
     return toReturn;
 }
@@ -390,72 +391,82 @@ Ref<Town> TerminalMap::get_town(const Vector2i &coords) {
 
 template <typename T>
 Ref<T> TerminalMap::get_terminal_as(const Vector2i &coords, const std::function<bool(const Vector2i &)> &type_check) {
-    Ref<T> toReturn;
+    Ref<T> toReturn = Ref<T>(nullptr);
     m.lock();
     if (cargo_map_terminals.count(coords) == 1 && (!type_check || type_check(coords))) {
-        Ref<Terminal> base = cargo_map_terminals[coords];
-        T* cast_ptr = dynamic_cast<T*>(*base);
-        toReturn = Ref<T>(cast_ptr);
+        Ref<T> typed = cargo_map_terminals[coords];
+        if (typed.is_valid()) {
+            toReturn = typed;
+        }
     }
     m.unlock();
     return toReturn;
 }
 
 //External Locks
-void TerminalMap::lock(const Vector2i& coords) {
-    object_mutexs[coords]->lock();
+void TerminalMap::lock(const Vector2i coords) {
+    if (object_mutexs.count(coords) == 0) {
+        print_error("Error at " + coords);
+        return;
+    }
+
+    object_mutexs[coords].lock();
 }
 
 void TerminalMap::unlock(const Vector2i& coords) {
-    object_mutexs[coords]->unlock();
+    if (object_mutexs.count(coords) == 0) {
+        print_error("Error at " + coords);
+        return;
+    }
+    object_mutexs[coords].unlock();
 }
 
 //Action doers
 void TerminalMap::set_construction_site_recipe(const Vector2i &coords, const Array &selected_recipe) {
     if (is_owned_recipeless_construction_site(coords)) {
-        object_mutexs[coords] -> lock();
+        lock(coords);
         get_terminal_as<ConstructionSite>(coords) -> set_recipe(selected_recipe);
-        object_mutexs[coords] -> unlock();
+        unlock(coords);
     }
 }
 
 void TerminalMap::destroy_recipe(const Vector2i &coords) {
     if (is_owned_recipeless_construction_site(coords)) {
-        object_mutexs[coords] -> lock();
+        lock(coords);
         get_terminal_as<ConstructionSite>(coords) -> destroy_recipe();
-        object_mutexs[coords] -> unlock();
+        unlock(coords);
     }
 }
 
 void TerminalMap::transform_construction_site_to_factory(const Vector2i &coords) {
     if (is_owned_construction_site(coords)) {
-        object_mutexs[coords] -> lock();
+        lock(coords);
         Ref<ConstructionSite> old_site = get_terminal_as<ConstructionSite>(coords);
         
         cargo_map_terminals[coords] = create_factory(coords, old_site->get_player_owner(), old_site->get_recipe()[0], old_site->get_recipe()[1]);
 
-        object_mutexs[coords] -> unlock();
+        unlock(coords);
     }
 }
 
 void TerminalMap::edit_order_station(const Vector2i &coords, int type, int amount, bool buy, float max_price) {
     if (is_station(coords)) {
-        object_mutexs[coords] -> lock();
+        lock(coords);
 
         Ref<StationWOMethods> station = get_terminal_as<StationWOMethods>(coords);
         station -> edit_order(type, amount, buy, max_price);
 
-        object_mutexs[coords] -> unlock();
+        unlock(coords);
     }
 }
 
 void TerminalMap::remove_order_station(const Vector2i &coords, int type) {
     if (is_station(coords)) {
-        object_mutexs[coords] -> lock();
+        lock(coords);
 
         Ref<StationWOMethods> station = get_terminal_as<StationWOMethods>(coords);
         station -> remove_order(type);
 
-        object_mutexs[coords] -> unlock();
+        unlock(coords);
     }
 }

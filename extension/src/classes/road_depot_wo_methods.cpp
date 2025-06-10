@@ -69,7 +69,6 @@ void RoadDepotWOMethods::distribute_type(int type) {
 			distribute_type_to_broker(type, broker);
         }
     }
-
     for (const auto &tile: other_road_depots) {
         //Must be owned by same person
         Ref<RoadDepotWOMethods> road_depot = terminal_map -> get_terminal_as<RoadDepotWOMethods>(tile);

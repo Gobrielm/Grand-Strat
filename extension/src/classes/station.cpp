@@ -118,7 +118,9 @@ void StationWOMethods::refresh_accepts() {
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     for (const auto &tile : connected_brokers) {
         Ref<Broker> broker = terminal_map -> get_broker(tile);
-        add_accepts(broker);
+        if (broker.is_valid()) {
+            add_accepts(broker);
+        }
     }
 }
 

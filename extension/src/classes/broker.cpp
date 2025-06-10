@@ -37,6 +37,7 @@ Broker::Broker(): FixedHold() {}
 Broker::Broker(const Vector2i new_location, const int player_owner, const int p_max_amount): FixedHold(new_location, player_owner, p_max_amount) {}
 
 Broker::~Broker() {
+    print_line("Deconsturctor");
     for (auto& [key, ptr]: trade_orders) {
         memdelete(ptr);
     }

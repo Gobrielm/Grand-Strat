@@ -204,9 +204,8 @@ void Town::sell_to_other_brokers() {
     std::vector<int> supply = get_supply();
 	for (int type = 0; type < supply.size(); type++) {
 		TradeOrder* order = get_order(type);
-        if (order == nullptr) {
-            continue;
-        }
+        if (order == nullptr) continue;
+        
 		distribute_from_order(order);
     }
 }
@@ -223,11 +222,10 @@ void Town::distribute_from_order(const TradeOrder* order) {
 	//Distribute to stations, ports, or other brokers
 	for (const auto &tile: connected_brokers) {
         Ref<Broker> broker = TerminalMap::get_instance() -> get_broker(tile);
-
+        if (broker.is_null()) continue;
         TerminalMap::get_instance() -> lock(tile);
         bool does_accept = broker->does_accept(order->get_type());
         TerminalMap::get_instance() -> unlock(tile);
-        
 		if (does_accept) {
             distribute_to_order(broker, order);
         }

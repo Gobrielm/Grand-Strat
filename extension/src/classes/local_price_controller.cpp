@@ -23,7 +23,6 @@ std::vector<float> LocalPriceController::get_base_prices() {
     return base_prices;
 }
 
-
 void LocalPriceController::set_base_prices() {
     for (int i = 0; i < CargoInfo::get_instance() -> get_base_prices().size(); i++) {
         base_prices.push_back(0);
