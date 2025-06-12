@@ -34,6 +34,7 @@ func refresh_window() -> void:
 		request_current_prices.rpc_id(1, location)
 		request_current_cash.rpc_id(1, location)
 		request_current_pops.rpc_id(1, location)
+		request_factories.rpc_id(1, location)
 
 @rpc("any_peer", "call_local", "unreliable")
 func request_current_cargo(coords: Vector2i) -> void:
@@ -60,6 +61,19 @@ func request_current_pops(coords: Vector2i) -> void:
 	var _current_pops: int = (TerminalMap.get_instance().get_town(coords)).get_total_pops()
 	update_current_pops.rpc_id(multiplayer.get_remote_sender_id(), _current_pops)
 
+@rpc("any_peer", "call_local", "unreliable")
+func request_factories(coords: Vector2i) -> void:
+	var toUpdate: Array[Array] = []
+	var town: Town = TerminalMap.get_instance().get_town(coords)
+	if town != null:
+		for fact: FactoryTemplate in town.get_factories():
+			var details: Array = []
+			details.append(fact.get_level())				 #[0]
+			details.append(fact.get_cash())					 #[1]
+			details.append(fact.get_recipe_as_string())		 #[2]
+			toUpdate.push_back(details)
+	update_factories(toUpdate)
+
 @rpc("authority", "call_local", "unreliable")
 func update_current_cargo(new_current_cargo: Dictionary) -> void:
 	current_cargo = new_current_cargo
@@ -85,6 +99,21 @@ func update_current_pops(new_pops: int) -> void:
 	current_pops = new_pops
 	$Pops.text = "Pops: " + str(current_pops)
 
+@rpc("authority", "call_local", "unreliable")
+func update_factories(info: Array[Array]) -> void:
+	var fact_list: ItemList = $Factory_Node/Factory_List
+	var num: int = 0
+	for fact: Array in info:
+		var text: String = "Factory/Level: " + str(fact[0]) + " /Cash: " + str(fact[1]) + "/ "
+		text += fact[2]
+		if num < fact_list.item_count:
+			fact_list.set_item_text(num, text)
+		else:
+			fact_list.add_item(text, null, false)
+		
+		num += 1
+		
+
 func factory_window() -> void:
 	var cargo_list: ItemList = $Cargo_Node/Cargo_List
 	var names: Array = CargoInfo.get_instance().get_cargo_array()
@@ -101,10 +130,22 @@ func factory_window() -> void:
 
 func display_current_prices() -> void:
 	var price_list: ItemList = $Price_Node/Price_List
-	price_list.clear()
 	var names: Array = CargoInfo.get_instance().get_cargo_array()
+	var num: int = 0
 	for type: int in current_prices:
-		price_list.add_item(names[type] + ": " + str(current_prices[type]))
+		var text: String = names[type] + ": " + str(current_prices[type])
+		if num < price_list.item_count:
+			var prev: String = price_list.get_item_text(num).trim_prefix(names[type] + ": ")
+			price_list.set_item_text(num, text)
+			if prev.is_valid_float():
+				var prev_price: float = float(prev)
+				price_list.set_item_custom_fg_color(num, Color(1, 0, 0))
+				print("A")
+			else:
+				price_list.set_item_custom_fg_color(num, Color(1, 1, 1))
+		else:
+			price_list.add_item(text, null, false)
+		num += 1
 
 func get_selected_name() -> String:
 	var cargo_list: ItemList = $Cargo_Node/Cargo_List

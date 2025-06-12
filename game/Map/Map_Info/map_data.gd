@@ -187,3 +187,10 @@ func get_province_terminal_tiles(province: Province) -> Array:
 	toReturn = province.get_terminal_tiles()
 	mutex.unlock()
 	return toReturn
+
+func get_province_rand_tile(province: Province) -> Vector2i:
+	var toReturn: Vector2i
+	mutex.lock()
+	toReturn = province.get_random_tile()
+	mutex.unlock()
+	return toReturn

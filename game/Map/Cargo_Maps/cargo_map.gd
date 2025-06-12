@@ -44,34 +44,41 @@ func create_town(coords: Vector2i, prov_id: int) -> void:
 	TerminalMap.get_instance().create_terminal(new_town)
 
 func add_industries_to_towns() -> void:
-	var threads: Array = []
+	var threads: Array[Thread] = []
+	var start: float = Time.get_ticks_msec()
 	for province: Province in map_data.get_instance().get_provinces():
-		if threads.size() > 10:
-			threads.back().wait_to_finish()
-			threads.pop_back()
-		
+		if threads.size() > 8:
+			threads.front().wait_to_finish()
+			threads.pop_front()
 		for tile: Vector2i in map_data.get_instance().get_province_terminal_tiles(province):
 			var town: Town = TerminalMap.get_instance().get_town(tile)
 			if town != null:
-				var level: int = town.get_total_pops()
-				if level > 100:
-					var thread: Thread = Thread.new()
-					thread.start(place_random_group.bind(tile, province, level))
-					threads.push_back(thread)
-				else:
-					place_farms_near_town(tile, level)
+				var thread: Thread = Thread.new()
+				thread.start(place_industry_for_town.bind(town, province))
+				threads.push_back(thread)
 				break
 	for thread: Thread in threads:
 		thread.wait_to_finish()
+	var end: float = Time.get_ticks_msec()
+	print(str((end - start) / 1000) + " Seconds passed to create factories")
 
-func place_random_group(tile: Vector2i, province: Province, town_level: int) -> void:
+func place_industry_for_town(town: Town, province: Province) -> void:
+	var tile: Vector2i = town.get_location()
+	var level: int = town.get_total_pops()
+	if level > 100:
+		place_random_group(tile, province, level, CargoInfo.get_instance().get_cargo_type("grain"))
+		place_some_industries(tile, province, level)
+	else:
+		place_primary_near_middle(tile, level, CargoInfo.get_instance().get_cargo_type("grain"))
+
+func place_random_group(tile: Vector2i, province: Province, town_level: int, type: int) -> void:
 	tile = place_random_road_depot(tile)
 	if tile == Vector2i(0, 0): 
 		return
 	var tries: int = 0
 	var rand_tile: Vector2i
 	while true:
-		rand_tile = province.get_random_tile()
+		rand_tile = map_data.get_instance().get_province_rand_tile(province)
 		if rand_tile.distance_to(tile) < 10 and rand_tile.distance_to(tile) > 2:
 			break
 		tries += 1
@@ -84,28 +91,40 @@ func place_random_group(tile: Vector2i, province: Province, town_level: int) -> 
 		for cell: Vector2i in get_surrounding_cells(rand_tile):
 			if randi() % 2 == 0 and !Utils.is_tile_taken(cell):
 				@warning_ignore("integer_division")
-				place_random_industry(cell, town_level / 3)
-		connect_road_depots(province, tile, rand_tile)
+				place_primary_near_middle(cell, town_level, type)
+		connect_road_depots(tile, rand_tile)
 
-func connect_road_depots(province: Province, tile1: Vector2i, tile2: Vector2i) -> void:
-	#var tiles: Array[Vector2i] = []
-	#for tile: Vector2i in map_data.get_instance().get_province_terminal_tiles(province):
-		#if tile != tile1 and TerminalMap.get_instance().is_road_depot(tile):
-			#tiles.append(tile)
-	#for tile: Vector2i in tiles:
+func connect_road_depots(tile1: Vector2i, tile2: Vector2i) -> void:
 	RoadMap.get_instance().bfs_and_connect(tile1, tile2)
 
-func place_farms_near_town(middle: Vector2i, level: int) -> void:
+func place_primary_near_middle(middle: Vector2i, level: int, type: int) -> void:
 	var tiles: Array = Utils.world_map.thread_get_surrounding_cells(middle)
 	tiles.shuffle()
-	var num: int = 0
+	var num: int = randi() % 2 + 1
 	for tile: Vector2i in tiles:
 		if !Utils.is_tile_taken(tile):
 			@warning_ignore("integer_division")
-			create_factory(0, tile, get_primary_recipe_for_type(CargoInfo.get_instance().get_cargo_type("grain")), level / 3)
-			num += 1
-			if num == 3:
+			create_factory(0, tile, recipe.get_primary_recipe_for_type(type), level / num)
+			num -= 1
+			if num == 0:
 				break
+
+func place_some_industries(tile: Vector2i, province: Province, level: int) -> void:
+	var cargo_info: CargoInfo = CargoInfo.get_instance()
+	#var number_to_place: int = ceil((level - 100.0) / 100)
+	var resources: Dictionary = get_most_prominent_resources(province)
+	var factory_recipe: Array
+	if (resources.has(cargo_info.get_cargo_type("salt")) and resources.has(cargo_info.get_cargo_type("grain"))):
+		factory_recipe = recipe.get_secondary_recipe_for_types({cargo_info.get_cargo_type("salt"): true, cargo_info.get_cargo_type("grain"): true})
+	elif (resources.has(cargo_info.get_cargo_type("wood"))):
+		factory_recipe = recipe.get_secondary_recipe_for_types({cargo_info.get_cargo_type("wood"): true})
+	elif (resources.has(cargo_info.get_cargo_type("cotton"))):
+		factory_recipe = recipe.get_secondary_recipe_for_types({cargo_info.get_cargo_type("cotton"): true})
+	
+	if !factory_recipe.is_empty():
+		var town: Town = TerminalMap.get_instance().get_town(tile)
+		var fact: Factory = PrivateAiFactory.create(tile, factory_recipe[0], factory_recipe[1])
+		town.add_factory(fact)
 
 func place_random_road_depot(middle: Vector2i) -> Vector2i:
 	var tiles: Array = Utils.world_map.thread_get_surrounding_cells(middle)
@@ -122,20 +141,20 @@ func place_road_depot(tile: Vector2i) -> void:
 	add_terminal_to_province(road_depot)
 	TerminalMap.get_instance().create_terminal(road_depot)
 
-func place_random_industry(tile: Vector2i, mult: int) -> bool:
-	#var best_resource: int = cargo_values.get_best_resource(tile)
-	#if best_resource == -1:
-		#return false
-	var best_resource: int = 10 # Just place grain for now
-	create_factory(0, tile, get_primary_recipe_for_type(best_resource), mult)
-	return true
-
-func get_primary_recipe_for_type(type: int) -> Array:
-	for recipe_set: Array in recipe.get_set_recipes():
-		for output: int in recipe_set[1]:
-			if output == type:
-				return recipe_set
-	return []
+func get_most_prominent_resources(province: Province) -> Dictionary:
+	var d: Dictionary = {}
+	for tile: Vector2i in province.get_tiles():
+		var resources: Dictionary = cargo_values.get_available_resources(tile)
+		for type: int in resources:
+			var amount: int = resources[type]
+			if !d.has(type):
+				d[type] = 0
+			d[type] += amount
+	#var toReturn: priority_queue = priority_queue.new()
+	#for type: int in d:
+		#toReturn.insert_element(type, d[type])
+	
+	return d
 
 func create_factory(p_player_id: int, coords: Vector2i, obj_recipe: Array, mult: int) -> void:
 	var new_factory: Factory
@@ -193,7 +212,7 @@ func _on_cargo_values_finished_created_map_resources() -> void:
 		place_random_industries()
 
 func test() -> void:
-	create_factory(0, Vector2i(101, -117), get_primary_recipe_for_type(CargoInfo.get_instance().get_cargo_type("grain")), 1)
+	create_factory(0, Vector2i(101, -117), recipe.get_primary_recipe_for_type(CargoInfo.get_instance().get_cargo_type("grain")), 1)
 	place_random_road_depot(Vector2i(101, -117))
 	create_town(Vector2i(101, -114), 177)
 	place_random_road_depot(Vector2i(101, -114))

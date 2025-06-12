@@ -1,6 +1,7 @@
 #include "factory_template.hpp"
 #include "factory_local_price_controller.hpp"
 #include "base_pop.hpp"
+#include "../singletons/cargo_info.hpp"
 #include <godot_cpp/core/class_db.hpp>
 #include <algorithm>
 
@@ -13,6 +14,9 @@ void FactoryTemplate::_bind_methods() {
     ClassDB::bind_method(D_METHOD("get_min_price", "type"), &FactoryTemplate::get_min_price);
     ClassDB::bind_method(D_METHOD("get_max_price", "type"), &FactoryTemplate::get_max_price);
     ClassDB::bind_method(D_METHOD("does_create", "type"), &FactoryTemplate::does_create);
+
+    ClassDB::bind_method(D_METHOD("get_recipe_as_string"), &FactoryTemplate::get_recipe_as_string);
+    
 
     ClassDB::bind_method(D_METHOD("distribute_cargo"), &FactoryTemplate::distribute_cargo);
     ClassDB::bind_method(D_METHOD("get_level"), &FactoryTemplate::get_level);
@@ -106,6 +110,25 @@ void FactoryTemplate::add_outputs(int batch_size) {
     for (auto& [type, amount]: outputs) {
         add_cargo_ignore_accepts(type, amount * batch_size);
     }
+}
+
+String FactoryTemplate::get_recipe_as_string() const {
+    Ref<CargoInfo> cargo_info = CargoInfo::get_instance();
+    String x;
+    int i = 0;
+    for (const auto& [type, amount]: outputs) {
+        x += String::num(amount) + " " + cargo_info->get_cargo_name(type);
+        if (i < outputs.size() - 1) x += ", " ;
+        i++;
+    }
+    if (inputs.size() != 0) x += " -> ";
+    i = 0;
+    for (const auto& [type, amount]: inputs) {
+        x += String::num(amount) + " " + cargo_info->get_cargo_name(type);
+        if (i < inputs.size() - 1) x += ", " ;
+        i++;
+    }
+    return x;
 }
 
 void FactoryTemplate::distribute_cargo() {

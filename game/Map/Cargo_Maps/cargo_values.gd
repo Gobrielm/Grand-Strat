@@ -56,7 +56,7 @@ func get_best_resource(coords: Vector2i) -> int:
 
 func get_available_resources(coords: Vector2i) -> Dictionary:
 	var toReturn: Dictionary = {}
-	for type: int in get_child_count():
+	for type: int in CargoInfo.get_instance().amount_of_primary_goods:
 		var mag: int = get_tile_magnitude(coords, type)
 		if mag > 0:
 			toReturn[type] = mag

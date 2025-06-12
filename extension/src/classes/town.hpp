@@ -48,6 +48,7 @@ public:
     float get_fulfillment(int type) const;
     Dictionary get_fulfillment_dict() const;
     void add_factory(Ref<FactoryTemplate> fact);
+    Array get_factories() const;
     Dictionary get_last_month_supply() const;
     Dictionary get_last_month_demand() const;
 

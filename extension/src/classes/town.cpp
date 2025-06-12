@@ -14,7 +14,10 @@ void Town::_bind_methods() {
     ClassDB::bind_method(D_METHOD("get_desired_cargo", "type", "price"), &Town::get_desired_cargo);
 
     // Factory and Pop management
+    
     ClassDB::bind_method(D_METHOD("add_factory", "factory"), &Town::add_factory);
+    ClassDB::bind_method(D_METHOD("get_factories"), &Town::get_factories);
+
     ClassDB::bind_method(D_METHOD("add_pop", "pop"), &Town::add_pop);
     ClassDB::bind_method(D_METHOD("get_last_month_supply"), &Town::get_last_month_supply);
     ClassDB::bind_method(D_METHOD("get_last_month_demand"), &Town::get_last_month_demand);
@@ -138,6 +141,18 @@ void Town::add_factory(Ref<FactoryTemplate> fact) {
 	internal_factories[fact->get_player_owner()].push_back(fact);
     m.unlock();
 	fact->add_connected_broker(this);
+}
+
+Array Town::get_factories() const {
+    Array a;
+    m.lock();
+    for (const auto &[__, v]: internal_factories){
+        for (Ref<FactoryTemplate> f: v) {
+            a.push_back(f);
+        }
+    }   
+    m.unlock();
+    return a;
 }
 
 Dictionary Town::get_last_month_supply() const {

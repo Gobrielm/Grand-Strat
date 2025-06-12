@@ -69,3 +69,9 @@ func bsearch_insert(element: weighted_value, top: int, bot: int) -> void:
 		bsearch_insert(element, i, bot)
 	else:
 		backing_array.insert(i, element)
+
+func get_array_of_elements() -> Array:
+	var toReturn: Array = []
+	for element: weighted_value in backing_array:
+		toReturn.push_back(element.val)
+	return toReturn
