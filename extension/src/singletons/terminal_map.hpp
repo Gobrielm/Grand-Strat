@@ -84,6 +84,7 @@ public:
     Dictionary get_local_prices(const Vector2i &coords);
     Dictionary get_station_orders(const Vector2i &coords);
     Dictionary get_town_fulfillment(const Vector2i &coords);
+    bool is_tile_traversable(const Vector2i& coords, bool includeWater = true);
 
     //Getters
     Ref<Terminal> get_terminal(const Vector2i &coords);
@@ -95,12 +96,24 @@ public:
     template <typename T>
     Ref<T> get_terminal_as(const Vector2i &coords, const std::function<bool(const Vector2i &)> &type_check = nullptr);
    
-
     //Action doers
     void set_construction_site_recipe(const Vector2i &coords, const Array &selected_recipe);
     void destroy_recipe(const Vector2i &coords);
     void transform_construction_site_to_factory(const Vector2i &coords);
     void edit_order_station(const Vector2i &coords, int type, int amount, bool buy, float max_price);
     void remove_order_station(const Vector2i &coords, int type);
+
+    //Economy Testing Functions
+    float get_average_cash_of_road_depot() const;
+    float get_average_cash_of_factory() const;
+    float get_average_cash_of_town() const;
+    float get_average_cash_of_city_pop() const;
+    float get_average_factory_level() const;
+    int get_grain_demand() const;
+    int get_grain_supply() const;
+    int get_number_of_broke_pops() const;
+
+    template <typename T>
+    float get_average_cash_of_terminal() const;
 };
 

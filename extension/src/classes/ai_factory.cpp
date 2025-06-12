@@ -1,9 +1,7 @@
 
 #include "ai_factory.hpp"
 
-void AiFactory::_bind_methods() {
-
-}
+void AiFactory::_bind_methods() {}
 
 AiFactory::AiFactory(): Factory() {}
 
@@ -40,12 +38,12 @@ void AiFactory::change_sell_orders() {
 }
 
 void AiFactory::change_order(int type, bool buy) {
-    int amount = buy ? inputs[type]: outputs[type];
+    int amount = (buy ? inputs[type]: outputs[type]) * get_level();
     float price = get_local_price(type);
     float limit_price = buy ? price * 1.2: price * 0.8;
 
     if (get_cargo_amount(type) > get_max_storage() * MAX_AMOUNT_WANTED && outputs.count(type)) {
-        amount = amount * 2;
+        amount *= 2;
     }
     
     if (get_order(type) == nullptr) {
@@ -74,7 +72,7 @@ void AiFactory::consider_upgrade_primary() {
     }
 	total_diff /= amount;
 	//TODO: Consider changing constant
-	if (total_diff > -0.05 && get_cost_for_upgrade() < get_cash() * CASH_NEEDED_MULTIPLIER && rand() % 5 == 0) {
+	if (total_diff > -0.05 && get_cost_for_upgrade() * CASH_NEEDED_MULTIPLIER < get_cash()) {
         upgrade();
     }
 }

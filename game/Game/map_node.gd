@@ -54,6 +54,7 @@ func initialize_game() -> void:
 		#cargo_map.test()
 		#Then create pops which needs towns
 		map_data.get_instance().create_pops()
+		cargo_map.add_industries_to_towns()
 	enable_nation_picker()
 	
 
@@ -87,8 +88,7 @@ func _input(event: InputEvent) -> void:
 		elif state_machine.is_controlling_camera() and TerminalMap.get_instance().is_factory(cell_position):
 			factory_window.open_window(cell_position)
 		elif state_machine.is_controlling_camera() and TerminalMap.get_instance().is_town(cell_position):
-			factory_window.open_window(cell_position)
-			#town_window.open_window(cell_position)
+			town_window.open_window(cell_position)
 		elif state_machine.is_controlling_camera() and map_data.get_instance().is_owned_depot(cell_position, unique_id):
 			factory_window.open_window(cell_position)
 			#depot_window.open_window(cell_position)

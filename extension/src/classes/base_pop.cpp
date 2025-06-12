@@ -51,6 +51,9 @@ BasePop::BasePop(int p_home_prov_id, Variant p_culture) {
     wealth = INITIAL_WEALTH;
     income = 0.0;
     education_level = 0;
+    for (const auto &[type, __]: base_needs) {
+        fulfillment[type] = 0.0;
+    }
 }
 
 BasePop::~BasePop() {}
@@ -159,10 +162,11 @@ float BasePop::get_desired(int type, float price) const {
 	return 0;
 }
 
-void BasePop::buy_good(float amount, float price) {
+void BasePop::buy_good(int type, float amount, float price) {
     wealth -= amount * price;
+    fulfillment[type] = amount;
 	if (wealth < 0) //TODO, uh-oh
-        throw std::invalid_argument("Not enough money");
+        ERR_FAIL_MSG("Not enough money to buy good as pop");
 }
 
 int BasePop::get_education_level() const {
@@ -181,4 +185,8 @@ float BasePop::transfer_wealth() {
 
 Variant BasePop::get_culture() const {
     return culture;
+}
+
+float BasePop::get_average_fulfillment() const {
+    return fulfillment.at(10) / base_needs.at(10);
 }

@@ -26,6 +26,8 @@ class BasePop : public Object {
     int home_prov_id;
     Variant culture;
     float income;
+
+    std::unordered_map<int, float> fulfillment;
     
     protected:
     static void _bind_methods();
@@ -51,11 +53,12 @@ class BasePop : public Object {
     float get_expected_income() const;
     float get_sol() const;
     float get_desired(int type, float price) const;
-    void buy_good(float amount, float price);
+    void buy_good(int type, float amount, float price);
     int get_education_level() const;
     float get_wealth() const;
     float transfer_wealth();
     Variant get_culture() const;
+    float get_average_fulfillment() const;
 
     static BasePop* create(int p_home_prov_id = -1, Variant p_culture = 0);
 

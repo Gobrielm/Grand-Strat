@@ -37,7 +37,6 @@ Broker::Broker(): FixedHold() {}
 Broker::Broker(const Vector2i new_location, const int player_owner, const int p_max_amount): FixedHold(new_location, player_owner, p_max_amount) {}
 
 Broker::~Broker() {
-    print_line("Deconsturctor");
     for (auto& [key, ptr]: trade_orders) {
         memdelete(ptr);
     }
@@ -205,45 +204,24 @@ void Broker::distribute_from_order(const TradeOrder* order) {
 }
 
 void Broker::distribute_to_order(Ref<Broker> otherBroker, const TradeOrder* order) {
-    Vector2i tile = otherBroker -> get_location();
-    int type = order->get_type();
-    float price1 = get_local_price(type);
-
-    float price2 = otherBroker->get_local_price(type);
-    
-    float price = std::max(price1, price2) - std::abs(price1 - price2) / 2.0f;
-
-    if (!order->is_price_acceptable(price) || !otherBroker->is_price_acceptable(type, price)) return;
-    int desired = otherBroker->get_desired_cargo(type, price);
-
-    report_attempt_to_sell(type, std::min(desired, order->get_amount() * 3)); // Put a cap on how much one broker can desire
-
-    int amount = std::min(desired, order->get_amount()); 
-
-    if (amount > 0) {
-        amount = sell_cargo(type, amount, price);
-        otherBroker->buy_cargo(type, amount, price);
-    }
+    distribute_to_order(otherBroker.ptr(), order);
 }
 
 void Broker::distribute_to_order(Broker* otherBroker, const TradeOrder* order) {
     int type = order->get_type();
     float price1 = get_local_price(type);
-
+    
     float price2 = otherBroker->get_local_price(type);
     
     float price = std::max(price1, price2) - std::abs(price1 - price2) / 2.0f;
-
     if (!order->is_price_acceptable(price) || !otherBroker->is_price_acceptable(type, price)) return;
     int desired = otherBroker->get_desired_cargo(type, price);
 
     report_attempt_to_sell(type, std::min(desired, order->get_amount() * 3)); // Put a cap on how much one broker can desire
 
     int amount = std::min(desired, order->get_amount()); 
-
     if (amount > 0) {
         amount = sell_cargo(type, amount, price);
-
         otherBroker->buy_cargo(type, amount, price);
     }
 }

@@ -130,11 +130,11 @@ void StationWOMethods::refresh_accepts() {
 
 void StationWOMethods::add_accepts(Ref<Broker> broker) {
     int type = 0;
-    // TerminalMap::get_instance() -> lock(broker -> get_location());
     std::vector<bool> accepts_vector = broker->get_accepts_vector();
-    // TerminalMap::get_instance() -> unlock(broker -> get_location());
     for (bool status: accepts_vector) {
-        if (status) add_accept(type);
+        if (status) {
+            add_accept(type);
+        }
         type++;
     }
 }

@@ -20,7 +20,7 @@ class RoadDepotWOMethods : public StationWOMethods {
 
 private:
     std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> other_road_depots = {};
-    static constexpr int MAX_THROUGHPUT = 20;
+    static constexpr int MAX_THROUGHPUT = 20000;
     static constexpr int MAX_SUPPLY_DISTANCE = 10;
 
     int cargo_sent = 0;

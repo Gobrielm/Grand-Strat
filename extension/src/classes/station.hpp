@@ -37,7 +37,7 @@ public:
 
     virtual void initialize(Vector2i new_location, int player_owner) override;
 
-    float get_local_price(int type) const override;
+    virtual float get_local_price(int type) const override;
     void place_order(int type, int amount, bool buy, float max_price) override;
     void edit_order(int type, int amount, bool buy, float max_price) override;
     int get_orders_magnitude();

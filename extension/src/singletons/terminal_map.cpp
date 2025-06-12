@@ -1,4 +1,5 @@
 #include "terminal_map.hpp"
+#include "../classes/private_ai_factory.hpp"
 
 using namespace godot;
 
@@ -343,6 +344,16 @@ Dictionary TerminalMap::get_town_fulfillment(const Vector2i &coords) {
     return toReturn;
 }
 
+bool TerminalMap::is_tile_traversable(const Vector2i& coords, bool includeWater) {
+    std::scoped_lock lock(m);
+    Vector2i atlas = map -> get_cell_atlas_coords(coords);
+    std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> s = {Vector2i(-1, -1), Vector2i(5, 0), Vector2i(7, 0), Vector2i(3, 3)};
+    if (includeWater) s.insert(Vector2i(6, 0));
+
+    return (!s.count(atlas) && !cargo_map_terminals.count(coords));
+}
+
+
 //Internal Getters
 Ref<Terminal> TerminalMap::get_terminal(const Vector2i &coords) {
     return get_terminal_as<Terminal>(coords);
@@ -411,4 +422,91 @@ void TerminalMap::remove_order_station(const Vector2i &coords, int type) {
         station -> remove_order(type);
 
     }
+}
+
+
+float TerminalMap::get_average_cash_of_road_depot() const {
+    return get_average_cash_of_terminal<RoadDepotWOMethods>();
+}
+
+float TerminalMap::get_average_cash_of_factory() const {
+    return get_average_cash_of_terminal<PrivateAiFactory>();
+}
+
+float TerminalMap::get_average_cash_of_town() const {
+    return get_average_cash_of_terminal<Town>();
+}
+
+float TerminalMap::get_average_cash_of_city_pop() const {
+    double ave = 0;
+    int count = 0;
+    for (const auto &[__, terminal]: cargo_map_terminals) {
+        Ref<Town> typed = terminal;
+        if (typed.is_valid()) {
+            ave += typed -> get_total_wealth_of_pops();
+            count += typed -> get_total_pops();
+        }
+    }
+    return ave / count;
+}
+
+float TerminalMap::get_average_factory_level() const {
+    double ave = 0;
+    int count = 0;
+    for (const auto &[__, terminal]: cargo_map_terminals) {
+        Ref<Factory> typed = terminal;
+        if (typed.is_valid()) {
+            ave += typed -> get_level();
+            count++;
+        }
+    }
+    return ave / count;
+}
+
+int TerminalMap::get_grain_demand() const {
+    int total_demand = 0;
+    for (const auto &[__, terminal]: cargo_map_terminals) {
+        Ref<Town> typed = terminal;
+        if (typed.is_valid()) {
+            total_demand += int(typed -> get_last_month_demand().get(10, 0));
+        }
+    }
+    return total_demand;
+}
+
+
+int TerminalMap::get_grain_supply() const {
+    int total_supply = 0;
+    for (const auto &[__, terminal]: cargo_map_terminals) {
+        Ref<Town> typed = terminal;
+        if (typed.is_valid()) {
+            total_supply += int(typed -> get_last_month_supply().get(10, 0));
+        }
+    }
+    return total_supply;
+}
+
+int TerminalMap::get_number_of_broke_pops() const {
+    int count = 0;
+    for (const auto &[__, terminal]: cargo_map_terminals) {
+        Ref<Town> typed = terminal;
+        if (typed.is_valid()) {
+            count += int(typed -> get_number_of_broke_pops());
+        }
+    }
+    return count;
+}
+
+template <typename T>
+float TerminalMap::get_average_cash_of_terminal() const {
+    double ave = 0;
+    int count = 0;
+    for (const auto &[__, terminal]: cargo_map_terminals) {
+        Ref<T> typed = terminal;
+        if (typed.is_valid()) {
+            ave += typed -> get_cash();
+            count++;
+        }
+    }
+    return ave / count;
 }

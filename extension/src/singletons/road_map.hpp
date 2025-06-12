@@ -1,6 +1,7 @@
 #pragma once
 
 #include <unordered_map>
+#include <unordered_set>
 #include <godot_cpp/classes/tile_map_layer.hpp>
 #include <godot_cpp/classes/resource_loader.hpp>
 #include <godot_cpp/classes/tile_set_atlas_source.hpp>
@@ -13,6 +14,7 @@ class RoadMap : public TileMapLayer {
 
 private:
     static RoadMap* singleton_instance;
+    mutable std::mutex m;
     std::unordered_map<Vector2i, int, godot_helpers::Vector2iHasher> road_value;
     std::unordered_map<Vector2i, int, godot_helpers::Vector2iHasher> temp_road_value;
     Ref<TileSet> tile_set = nullptr;
@@ -36,4 +38,5 @@ public:
     int get_road_value(Vector2i location) const;
     int get_temp_road_value(Vector2i location) const;
     void place_road_depot(Vector2i location);
+    void bfs_and_connect(const Vector2i& tile1, const Vector2i& tile2);
 };

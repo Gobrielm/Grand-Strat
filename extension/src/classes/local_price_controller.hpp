@@ -10,6 +10,7 @@ class LocalPriceController: public RefCounted {
     
     static std::vector<float> base_prices;
     static constexpr float MARKET_CHANGE_RATE = 0.1f; //Higher the faster
+    static constexpr float TRADE_CHANGE_RATE = 0.05f; //Price changing from trades
 
     std::vector<int> demand;
     std::vector<int> last_month_demand;
@@ -32,6 +33,7 @@ class LocalPriceController: public RefCounted {
     static std::vector<float> get_base_prices();
     static void set_base_prices();
 
+    void move_price(int type, float price);
     void adjust_prices();
     float get_current_difference_from_base_price(int type);
 

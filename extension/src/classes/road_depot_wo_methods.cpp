@@ -82,6 +82,7 @@ void RoadDepotWOMethods::distribute_type(int type) {
 void RoadDepotWOMethods::distribute_type_to_broker(int type, Ref<Broker> broker) {
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     Vector2i tile = broker -> get_location();
+
     float price1 = get_local_price(type);
     float price2 = broker->get_local_price(type);
     
@@ -149,7 +150,8 @@ void RoadDepotWOMethods::remove_connected_broker(const Ref<Broker> broker) {
 }
 
 void RoadDepotWOMethods::add_connected_road_depot(RoadDepotWOMethods* new_road_depot) {
-    ERR_FAIL_COND_MSG(other_road_depots.count(new_road_depot -> get_location()) != 0, "Already has a road depot there");
+    // ERR_FAIL_COND_MSG(other_road_depots.count(new_road_depot -> get_location()) != 0, "Already has a road depot there");
+    if (other_road_depots.count(new_road_depot -> get_location()) != 0) return; 
     m.lock();
     other_road_depots.insert(new_road_depot -> get_location());
     m.unlock();
@@ -157,7 +159,8 @@ void RoadDepotWOMethods::add_connected_road_depot(RoadDepotWOMethods* new_road_d
 }
 
 void RoadDepotWOMethods::remove_connected_road_depot(const Ref<RoadDepotWOMethods> new_road_depot) {
-    ERR_FAIL_COND_MSG(other_road_depots.count(new_road_depot -> get_location()) == 0, "Never had a road depot there");
+    // ERR_FAIL_COND_MSG(other_road_depots.count(new_road_depot -> get_location()) == 0, "Dones't has a road depot there");
+    if (other_road_depots.count(new_road_depot -> get_location()) == 0) return; 
     m.lock();
     other_road_depots.erase(new_road_depot -> get_location());
     m.unlock();
@@ -165,7 +168,6 @@ void RoadDepotWOMethods::remove_connected_road_depot(const Ref<RoadDepotWOMethod
 }
 
 void RoadDepotWOMethods::add_accepts_from_depot(const Ref<RoadDepotWOMethods> road_depot) {
-    Vector2i tile = road_depot -> get_location();
     std::vector<bool> accepts = road_depot -> get_accepts_vector();
     for (int type = 0; type < accepts.size(); type++) {
         if (accepts[type]) {
@@ -194,7 +196,7 @@ void RoadDepotWOMethods::refresh_accepts() {
 
 float RoadDepotWOMethods::get_local_price(int type) const {
     std::scoped_lock lock(m);
-    return local_pricer -> get_local_price(type) * (1 + SERVICE_FEE);
+    return local_pricer -> get_local_price(type);
 }
 
 //Only called by brokers selling, Depot is buying
@@ -204,14 +206,13 @@ bool RoadDepotWOMethods::is_price_acceptable(int type, float pricePer) const {
 
 //Depot is buying
 bool RoadDepotWOMethods::is_price_acceptable_to_buy(int type, float pricePer) const {
-    return get_local_price(type) >= pricePer;
+    return get_local_price(type) >= pricePer * (1 + SERVICE_FEE);
 }
 
 //Depot is selling
 bool RoadDepotWOMethods::is_price_acceptable_to_sell(int type, float pricePer) const {
-    return get_local_price(type) <= pricePer;
+    return get_local_price(type) <= pricePer / (1 + SERVICE_FEE);
 }
-
 
 void RoadDepotWOMethods::search_for_and_add_road_depots() { //Constructor runs this before being added to TerminalMap
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
@@ -231,7 +232,7 @@ void RoadDepotWOMethods::search_for_and_add_road_depots() { //Constructor runs t
         curr = pq.top();
         pq.pop();
         Ref<RoadDepotWOMethods> road_depot = terminal_map -> get_terminal_as<RoadDepotWOMethods>(curr.val);
-        if (road_depot.is_valid() && road_depot.ptr() != this) {
+        if (road_depot.is_valid() && road_depot -> get_location() != get_location()) {
             add_connected_road_depot(road_depot.ptr());
             road_depot -> add_connected_road_depot(this);
         }
@@ -253,7 +254,10 @@ void RoadDepotWOMethods::search_for_and_add_road_depots() { //Constructor runs t
 
 int RoadDepotWOMethods::get_desired_cargo(int type, float pricePer) const {
     if (does_accept(type)) {
-        return std::min(get_max_storage() - get_cargo_amount(type), get_amount_can_buy(pricePer));
+        m.lock();
+        int demand = local_pricer -> get_last_month_demand(type);
+        m.unlock();
+        return std::min(get_max_storage() - get_cargo_amount(type), std::min(get_amount_can_buy(pricePer), demand));
     }
     return 0;
 }
@@ -294,6 +298,8 @@ void RoadDepotWOMethods::day_tick() {
 
 void RoadDepotWOMethods::month_tick() {
     refresh_accepts(); //Needs to happen monthly, since towns change orders
+    search_for_and_add_road_depots();//Can be optimized later by running only when roads are placed within x tiles
     std::scoped_lock lock(m);
     local_pricer -> adjust_prices();
+    
 }

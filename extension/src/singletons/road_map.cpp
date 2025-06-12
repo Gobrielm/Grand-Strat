@@ -1,4 +1,6 @@
 #include "road_map.hpp"
+#include "terminal_map.hpp"
+#include <queue>
 
 RoadMap* RoadMap::singleton_instance = nullptr;
 
@@ -14,6 +16,8 @@ void RoadMap::_bind_methods() {
     ClassDB::bind_method(D_METHOD("hover_road", "location"), &RoadMap::hover_road);
     ClassDB::bind_method(D_METHOD("hover_upgrade", "location"), &RoadMap::hover_upgrade);
     ClassDB::bind_method(D_METHOD("remove_hovers"), &RoadMap::remove_hovers);
+
+    ClassDB::bind_method(D_METHOD("bfs_and_connect", "tile1", "tile2"), &RoadMap::bfs_and_connect);
     
 }
 
@@ -79,34 +83,45 @@ RoadMap* RoadMap::get_instance() {
 }
 
 void RoadMap::hover_road(Vector2i location) {
+    m.lock();
     temp_road_value[location] = 1;
+    m.unlock();
     fix_tile(location, true);
 }
 
 void RoadMap::place_road(Vector2i location) {
+    m.lock();
     road_value[location] = 1;
+    m.unlock();
     fix_tile(location, true);
 }
 
 void RoadMap::upgrade_road(Vector2i location) {
+    m.lock();
     road_value[location] += 1;
+    m.unlock();
     fix_tile(location, true);
 }
 
 void RoadMap::hover_upgrade(Vector2i location) {
+    m.lock();
     temp_road_value[location] += 1;
+    m.unlock();
     fix_tile(location, true);
 }
 
 int RoadMap::get_road_value(Vector2i location) const {
+    std::scoped_lock lock(m);
     return road_value.count(location) == 0 ? 0: road_value.at(location);
 }
 
 int RoadMap::get_temp_road_value(Vector2i location) const {
+    std::scoped_lock lock(m);
     return temp_road_value.count(location) == 0 ? 0: temp_road_value.at(location);
 }
 
 void RoadMap::fix_tile(Vector2i center, bool repeating) {
+    
     Array tiles = get_surrounding_cells(center); //Starts at 2
     int offset = 4;
     int y = -1; //Also is 1 less than the number of connections
@@ -123,6 +138,7 @@ void RoadMap::fix_tile(Vector2i center, bool repeating) {
             connections.push_back(false);
         }
     }
+    if (get_cell_atlas_coords(center) == Vector2i(1, 5)) return;
     
 
     if (y == -1) {
@@ -145,6 +161,7 @@ void RoadMap::fix_tile(Vector2i center, bool repeating) {
         }
         current++;
     }
+    std::scoped_lock lock(m);
     set_cell(center, 0, Vector2i(index, y));
 }
 
@@ -152,10 +169,84 @@ void RoadMap::remove_hovers() {
     for (const auto &[tile, road_val]: temp_road_value) {
         temp_road_value.erase(tile);
         fix_tile(tile, true);
+        m.lock();
         erase_cell(tile);
+        m.unlock();
     }
 }
 
 void RoadMap::place_road_depot(Vector2i location) {
+    m.lock();
     set_cell(location, 0, Vector2i(1, 5));
+    m.unlock();
+    place_road(location);
+}
+
+void RoadMap::bfs_and_connect(const Vector2i& tile1, const Vector2i& tile2) {
+    std::queue<Vector2i> q1;
+    std::queue<Vector2i> q2;
+    std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> s1;
+    std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> s2;
+    std::unordered_map<Vector2i, Vector2i, godot_helpers::Vector2iHasher> tile_to_prev1;
+    std::unordered_map<Vector2i, Vector2i, godot_helpers::Vector2iHasher> tile_to_prev2;
+    q1.push(tile1);
+    q2.push(tile2);
+    s1.insert(tile1);
+    s2.insert(tile2);
+    Vector2i curr;
+    bool alternater = true;
+    bool found = false;
+    while (q1.size() != 0 && q2.size() != 0 && !found) {
+        if (s1.size() > 10000) return;
+        alternater = !alternater;
+        if (alternater) {
+            curr = q1.front();
+            q1.pop();
+        } else {
+            curr = q2.front();
+            q2.pop();
+        }
+        
+        Array tiles = get_surrounding_cells(curr);
+        for (int i = 0; i < tiles.size(); i++) {
+            if (tiles[i].get_type() != Variant::VECTOR2I) continue;
+            Vector2i tile = tiles[i];
+            if (!TerminalMap::get_instance() -> is_tile_traversable(tile, false)) continue;
+            if ((alternater && s1.count(tile)) || (!alternater && s2.count(tile))) continue;
+
+
+            if (alternater) {
+                q1.push(tile);
+                s1.insert(tile);
+                tile_to_prev1[tile] = curr;
+                if (s2.count(tile)) {
+                    found = true;
+                    curr = tile;
+                    break;
+                }
+            } else {
+                q2.push(tile);
+                s2.insert(tile);
+                tile_to_prev2[tile] = curr;
+                if (s1.count(tile)) {
+                    found = true;
+                    curr = tile;
+                    break;
+                }
+            }
+        }
+    }
+    if (found) {
+        Vector2i end = curr;
+        while (tile_to_prev1.count(curr)) {
+            place_road(curr);
+            curr = tile_to_prev1[curr];
+            
+        }
+        curr = end;
+        while (tile_to_prev2.count(curr)) {
+            place_road(curr);
+            curr = tile_to_prev2[curr];
+        }
+    }
 }

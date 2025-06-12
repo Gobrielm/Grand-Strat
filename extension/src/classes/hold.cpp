@@ -146,4 +146,4 @@ void Hold::set_number_of_goods(int p_num) {
 }
 
 int Hold::NUMBER_OF_GOODS = 52;
-const int Hold::DEFAULT_MAX_STORAGE = 50;
+const int Hold::DEFAULT_MAX_STORAGE = 50000;

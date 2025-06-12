@@ -53,6 +53,21 @@ float LocalPriceController::get_base_price(int type) const {
     return base_prices.at(type);
 }
 
+void LocalPriceController::move_price(int type, float price) { //Calling on failure
+    float base_price = get_base_price(type);
+    float current_diff_from_base = local_prices[type] / base_price;
+    float other_diff_from_base = price / base_price;
+
+    //Closer than 10% diff
+    if (abs(current_diff_from_base - other_diff_from_base) < 0.1) {
+        float change_of_price = (other_diff_from_base - current_diff_from_base) * TRADE_CHANGE_RATE; // Discrepancy_of_price
+
+        if (abs(change_of_price) > 0.01f) { //If bigger change than 1%
+            local_prices[type] = base_price * (current_diff_from_base + change_of_price); 
+        }
+    }
+}
+
 void LocalPriceController::adjust_prices() {
     int type = 0;
 	for (const auto& base_price: base_prices) {
@@ -68,7 +83,11 @@ void LocalPriceController::adjust_cargo_price(int type, float base_price) {
     float current_diff_from_base = local_prices[type] / base_price;
 
     float change_of_price = (diff_from_base - current_diff_from_base) * MARKET_CHANGE_RATE; // Discrepancy_of_price
-    
+        
+    if (get_demand(type) == get_supply(type) && get_demand(type) != 0) { //If supply matches demand don't change price
+        change_of_price = 0;
+    }
+
     if (abs(change_of_price) > 0.01f) {
         local_prices[type] = base_price * (current_diff_from_base + change_of_price); 
     }
@@ -83,7 +102,7 @@ void LocalPriceController::adjust_cargo_price(int type, float base_price) {
 float LocalPriceController::get_difference_from_base_price(int type, std::vector<int> &p_supply, std::vector<int> &p_demand) const { // Returns percentage diff + 1
     if (p_supply[type] == p_demand[type] && p_supply[type] == 0) {
         return 1;
-    }
+    } 
     //If no demand, then make price very cheap
     float diff_from_base = 1 + (p_demand[type] == 0 ? -1: float(p_demand[type] - p_supply[type]) / p_demand[type]);
     diff_from_base = std::min(diff_from_base, get_max_diff());

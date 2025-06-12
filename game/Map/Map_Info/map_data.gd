@@ -180,3 +180,10 @@ func add_province_to_country(prov: Province, country_id: int) -> void:
 
 func get_counties_provinces(country_id: int) -> Dictionary:
 	return country_id_to_province_ids[country_id]
+
+func get_province_terminal_tiles(province: Province) -> Array:
+	var toReturn: Array = []
+	mutex.lock()
+	toReturn = province.get_terminal_tiles()
+	mutex.unlock()
+	return toReturn

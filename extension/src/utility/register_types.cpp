@@ -28,6 +28,7 @@
 #include "../singletons/money_controller.hpp"
 #include "../singletons/road_map.hpp"
 #include "../singletons/terminal_map.hpp"
+#include "../singletons/data_collector.hpp"
 
 
 
@@ -66,6 +67,7 @@ void initialize_gdextension_types(ModuleInitializationLevel p_level)
 	GDREGISTER_CLASS(CargoInfo);
 	GDREGISTER_CLASS(RoadMap);
 	GDREGISTER_CLASS(TerminalMap);
+	GDREGISTER_CLASS(DataCollector);
 	StaticRegistry::initialize();
 	
 }

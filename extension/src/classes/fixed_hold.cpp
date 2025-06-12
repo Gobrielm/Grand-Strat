@@ -1,4 +1,5 @@
 #include "fixed_hold.hpp"
+#include "../singletons/cargo_info.hpp"
 #include <godot_cpp/core/class_db.hpp>
 
 using namespace godot;
@@ -73,11 +74,13 @@ Dictionary FixedHold::get_accepts() const {
 }
 
 std::vector<bool> FixedHold::get_accepts_vector() const {
-    std::scoped_lock lock(m);
     std::vector<bool> v;
-    v.resize(accepts.size());
-    for (const int& type: accepts) {
-        v[type] = true;
+    for (int type = 0; type < CargoInfo::get_instance() -> get_number_of_goods(); type++) {
+        if (does_accept(type)) {
+            v.push_back(true);
+        } else {
+            v.push_back(false);
+        }
     }
     return v;
 }
@@ -93,6 +96,7 @@ void FixedHold::remove_accept(int type) {
 }
 
 bool FixedHold::does_accept(int type) const {
+    std::scoped_lock lock(m);
     return accepts.count(type);
 }
 

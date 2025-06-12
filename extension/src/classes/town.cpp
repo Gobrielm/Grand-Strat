@@ -74,6 +74,15 @@ std::vector<int> Town::get_demand() const {
    return local_pricer -> get_demand();
 }
 
+int Town::get_supply(int type) const {
+    std::scoped_lock lock(m);
+    return local_pricer -> get_supply(type);
+}
+int Town::get_demand(int type) const {
+    std::scoped_lock lock(m);
+    return local_pricer -> get_demand(type);
+}
+
 void Town::add_cash(float amount) {
     std::scoped_lock lock(m);
     cash += amount;
@@ -89,6 +98,7 @@ float Town::get_cash() const {
     return cash;
 }
 
+//To Buy
 bool Town::is_price_acceptable(int type, float price) const {
     std::scoped_lock lock(m);
     return local_pricer -> get_local_price(type) >= price;
@@ -167,9 +177,9 @@ void Town::sell_to_pops() {
 }
 
 void Town::update_buy_orders() {
-    const auto v = get_demand();
+    const auto v = local_pricer -> get_last_month_demand();
     for (int type = 0; type < v.size(); type++) {
-        if (v[type == 0]) {
+        if (v[type] == 0) {
             remove_order(type);
             remove_accept(type);
         } else {
@@ -180,16 +190,16 @@ void Town::update_buy_orders() {
 }
 
 void Town::sell_type(int type) {
-    float amount_sold = 0.0;
-    float amount_wanted = 0.0;
+    double amount_sold = 0.0;
+    double amount_wanted = 0.0;
 	for (const auto &[__, pop]: city_pops) {
 		float price = get_local_price(type);
-		float amount = pop -> get_desired(type, price); //Float for each pop
+		double amount = pop -> get_desired(type, price); //Float for each pop
         amount_wanted += amount;
-        float available_in_market = float(get_cargo_amount(type)) - amount_sold;
+        double available_in_market = float(get_cargo_amount(type)) - amount_sold;
 		amount = std::min(amount, available_in_market);
 		amount_sold += amount;
-		pop->buy_good(amount, price);
+		pop->buy_good(type, amount, price);
 		add_cash(amount * price);
     }
     report_attempt_to_sell(type, round(amount_wanted)); //Each amount wanted by pops
@@ -215,14 +225,23 @@ Ref<FactoryTemplate> Town::find_employment(BasePop* pop) const {
 	return best_fact;
 }
 
+int Town::get_number_of_broke_pops() const {
+    int count = 0;
+    for (const auto& [__, pop]: city_pops) {
+        if (pop -> get_wealth() < 20) {
+            count++;
+        }
+    }
+    return count;
+}
+
 //Selling to brokers
 void Town::sell_to_other_brokers() {
     std::vector<int> supply = get_supply();
 	for (int type = 0; type < supply.size(); type++) {
-		TradeOrder* order = get_order(type);
-        if (!order) continue;
-        
+		TradeOrder* order = memnew(TradeOrder(type, get_cargo_amount(type), false, get_local_price(type)));
 		distribute_from_order(order);
+        memdelete(order);
     }
 }
 
@@ -254,6 +273,24 @@ std::vector<bool> Town::get_accepts_vector() const {
         v[type] = does_accept(type);
     }
     return v;
+}
+
+//Economy Stats
+
+float Town::get_total_wealth_of_pops() {
+    float total = 0.0;
+    for (const auto &[__, pop]: city_pops) {
+        total += pop -> get_wealth();
+    }
+    return total;
+}
+
+float Town::get_needs_met_of_pops() {
+    float total = 0.0;
+    for (const auto &[__, pop]: city_pops) {
+        total += pop -> get_average_fulfillment();
+    }
+    return total;
 }
 
 // Process Hooks

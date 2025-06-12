@@ -17,7 +17,7 @@ class Town : public Broker {
 private:
     std::unordered_map<int, std::vector<Ref<FactoryTemplate>>> internal_factories; //Not thread safe
     std::unordered_map<int, BasePop*> city_pops;
-    int cash = 1000;
+    int cash = 10000;
 
 protected:
     static void _bind_methods();
@@ -33,6 +33,9 @@ public:
 
     std::vector<int> get_supply() const;
     std::vector<int> get_demand() const;
+
+    int get_supply(int type) const;
+    int get_demand(int type) const;
 
     void add_cash(float amount) override;
     void remove_cash(float amount) override;
@@ -55,11 +58,16 @@ public:
     void sell_type(int type);
     int get_total_pops() const;
     Ref<FactoryTemplate> find_employment(BasePop* pop) const;
+    int get_number_of_broke_pops() const;
 
     //Selling to brokers
     void sell_to_other_brokers();
     void distribute_from_order(const TradeOrder* order) override;
     std::vector<bool> get_accepts_vector() const override;
+
+    //Economy Stats
+    float get_total_wealth_of_pops();
+    float get_needs_met_of_pops();
 
     // Process Hooks
     void day_tick();
