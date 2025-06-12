@@ -34,6 +34,7 @@ void RoadMap::_notification(int p_what) {
 
 RoadMap::RoadMap() {
     Ref<Texture2D> texture = ResourceLoader::get_singleton()->load("res://Map_Icons/roads.png");
+    Ref<Texture2D> texture_bridges = ResourceLoader::get_singleton()->load("res://Map_Icons/bridges.png");
     if (!texture.is_valid()) {
         UtilityFunctions::print("Failed to load tileset texture!");
         return;
@@ -48,8 +49,10 @@ RoadMap::RoadMap() {
     set_z_as_relative(true);
     set_y_sort_enabled(true);
 
+    Ref<TileSetAtlasSource> atlas_source = nullptr;
     atlas_source.instantiate();
-    int source_id = tile_set->add_source(atlas_source);
+    
+    tile_set->add_source(atlas_source);
     atlas_source -> set_texture_region_size(Vector2i(127, 128));
     atlas_source->set_texture(texture);
     atlas_source->set_texture_region_size(Vector2i(128, 128));
@@ -68,6 +71,31 @@ RoadMap::RoadMap() {
         if (i < 15) {
             atlas_source->create_tile(Vector2i(i, 1));
             atlas_source->create_tile(Vector2i(i, 3));
+        }
+       
+    }
+    Ref<TileSetAtlasSource> atlas_source2 = nullptr;
+    atlas_source2.instantiate();
+
+    tile_set->add_source(atlas_source2);
+    atlas_source2 -> set_texture_region_size(Vector2i(127, 128));
+    atlas_source2->set_texture(texture_bridges);
+    atlas_source2->set_texture_region_size(Vector2i(128, 128));
+    atlas_source2->set_separation(Vector2i(0, 64));
+    
+    atlas_source2->create_tile(Vector2i(0, 5)); //For all 6 tile
+    atlas_source2->create_tile(Vector2i(1, 5)); //For road depot
+    atlas_source2->create_tile(Vector2i(6, 0)); //For extra 0 tile
+
+    for (int i = 0; i < 20; i++) {
+         atlas_source2->create_tile(Vector2i(i, 2));
+        if (i < 6) {
+            atlas_source2->create_tile(Vector2i(i, 0));
+            atlas_source2->create_tile(Vector2i(i, 4));
+        }
+        if (i < 15) {
+            atlas_source2->create_tile(Vector2i(i, 1));
+            atlas_source2->create_tile(Vector2i(i, 3));
         }
        
     }
@@ -162,7 +190,11 @@ void RoadMap::fix_tile(Vector2i center, bool repeating) {
         current++;
     }
     std::scoped_lock lock(m);
-    set_cell(center, 0, Vector2i(index, y));
+    if (!TerminalMap::get_instance() -> is_tile_traversable(center)) {
+        set_cell(center, 1, Vector2i(index, y));
+    } else {
+        set_cell(center, 0, Vector2i(index, y));
+    }
 }
 
 void RoadMap::remove_hovers() {

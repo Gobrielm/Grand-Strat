@@ -18,7 +18,6 @@ private:
     std::unordered_map<Vector2i, int, godot_helpers::Vector2iHasher> road_value;
     std::unordered_map<Vector2i, int, godot_helpers::Vector2iHasher> temp_road_value;
     Ref<TileSet> tile_set = nullptr;
-    Ref<TileSetAtlasSource> atlas_source = nullptr;
     void fix_tile(Vector2i center, bool repeating = false);
 
 protected:
