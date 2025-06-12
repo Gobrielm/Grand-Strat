@@ -42,7 +42,7 @@ static func click_music() -> void:
 	background_music.click()
 
 static func is_music_playing() -> bool:
-	return background_music.get_province()
+	return background_music.get_status()
 
 static func turn_on_black_white_map() -> void:
 	cargo_map.material.set_shader_parameter("onoff", 1)

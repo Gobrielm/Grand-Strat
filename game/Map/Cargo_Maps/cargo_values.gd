@@ -162,7 +162,7 @@ func create_territory(start: Vector2i, provinces: TileMapLayer) -> Array:
 
 #Uses image to re-create provinces tilemaplayer, then remakes image to match tilemaplater
 func refresh_territories() -> void:
-	var map_data_obj: map_data = map_data.get_instance()
+	var province_manager: ProvinceManager = ProvinceManager.get_instance()
 	#Uses states for now, may change
 	var file: String = "res://Map/Map_Info/states.png"
 	var im_provinces: Image = load(file).get_image()
@@ -188,8 +188,8 @@ func refresh_territories() -> void:
 				province_id_to_color[current_prov_id] = color
 				current_prov_id += 1
 			#provinces.add_tile_to_province(tile, colors_to_province_id[color])
-			map_data_obj.create_new_if_empty(colors_to_province_id[color])
-			map_data_obj.add_tile_to_province(colors_to_province_id[color], tile)
+			province_manager.create_new_if_empty(colors_to_province_id[color])
+			province_manager.add_tile_to_province(colors_to_province_id[color], tile)
 
 	var new_image: Image = Image.create(1920, 919, false, Image.FORMAT_RGBA8)
 	for real_x: int in range(-609, 671):
@@ -201,7 +201,7 @@ func refresh_territories() -> void:
 			var tile: Vector2i = Vector2i(real_x, real_y)
 			if Utils.is_tile_water(tile):
 				continue
-			var prov_id: int = map_data_obj.get_province_id(tile)
+			var prov_id: int = province_manager.get_province_id(tile)
 			var color: Color = province_id_to_color[prov_id]
 			new_image.set_pixel(x, y, color)
 			if x != 0 and y != 0:
@@ -214,11 +214,11 @@ func refresh_territories() -> void:
 	new_image.save_png(file)
 
 func use_image_to_create_unique_province_colors() -> void:
-	var map_data_obj: map_data = map_data.get_instance()
+	var province_manager: ProvinceManager = ProvinceManager.get_instance()
 	var new_image: Image = Image.create(1920, 919, false, Image.FORMAT_RGBA8)
 	var colors: Dictionary[Color, bool] = {}
 	var prov_id_to_color: Dictionary[int, Color] = {}
-	for prov: Province in map_data_obj.get_provinces():
+	for prov: Province in province_manager.get_provinces():
 		var prov_id: int = prov.get_province_id()
 		for tile: Vector2i in prov.get_tiles():
 			@warning_ignore("integer_division")

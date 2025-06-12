@@ -53,7 +53,7 @@ func initialize_game() -> void:
 		cargo_map.place_resources(main_map)
 		#cargo_map.test()
 		#Then create pops which needs towns
-		map_data.get_instance().create_pops()
+		ProvinceManager.get_instance().create_pops()
 		cargo_map.add_industries_to_towns()
 	enable_nation_picker()
 	

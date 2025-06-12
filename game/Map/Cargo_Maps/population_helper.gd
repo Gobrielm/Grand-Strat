@@ -15,7 +15,7 @@ func create_population_map() -> void:
 	#save_population()
 	population.queue_free()
 
-func helper(x: int, y: int, tile: Vector2i, map_data_obj: map_data) -> void:
+func helper(x: int, y: int, tile: Vector2i, province_manager: ProvinceManager) -> void:
 	if Utils.is_tile_water(tile):
 		return
 	var color: Color = im_population.get_pixel(x, y)
@@ -54,7 +54,7 @@ func helper(x: int, y: int, tile: Vector2i, map_data_obj: map_data) -> void:
 			@warning_ignore("narrowing_conversion")
 			num = (randi() % 100) * multipler
 			other_num = 0
-	map_data_obj.add_population_to_province(tile, num)
+	province_manager.add_population_to_province(tile, num)
 	population.set_population(tile, other_num)
 	mutex.lock()
 	total += num
@@ -73,7 +73,7 @@ func save_population() -> void:
 
 #Uses image to re-create population tilemaplayer, then remakes image to match tilemaplater
 func refresh_population() -> void:
-	var map_data_obj: map_data = map_data.get_instance()
+	var province_manager: ProvinceManager = ProvinceManager.get_instance()
 	for real_x: int in range(-609, 671):
 		for real_y: int in range(-243, 282):
 			@warning_ignore("integer_division")
@@ -81,7 +81,7 @@ func refresh_population() -> void:
 			@warning_ignore("integer_division")
 			var y: int = (real_y + 243) * 7 / 4
 			var tile: Vector2i = Vector2i(real_x, real_y)
-			helper(x, y, tile, map_data_obj)
+			helper(x, y, tile, province_manager)
 
 	var new_image: Image = Image.create(1920, 919, false, Image.FORMAT_RGBA8)
 	for real_x: int in range(-609, 671):

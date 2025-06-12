@@ -31,7 +31,7 @@ func open_province_window() -> void:
 
 @rpc("any_peer", "call_local")
 func request_province_id(p_coords: Vector2i) -> void:
-	set_province_id.rpc_id(multiplayer.get_remote_sender_id(), map_data.get_instance().get_province_id(p_coords))
+	set_province_id.rpc_id(multiplayer.get_remote_sender_id(), ProvinceManager.get_instance().get_province_id(p_coords))
 
 @rpc("authority", "call_local")
 func set_province_id(id: int) -> void:
@@ -39,13 +39,13 @@ func set_province_id(id: int) -> void:
 
 @rpc("any_peer", "call_local")
 func request_province_pop(p_coords: Vector2i) -> void:
-	set_province_pop.rpc_id(multiplayer.get_remote_sender_id(), map_data.get_instance().get_province_population(p_coords))
+	set_province_pop.rpc_id(multiplayer.get_remote_sender_id(), ProvinceManager.get_instance().get_province_population(p_coords))
 
 @rpc("any_peer", "call_local")
 func request_province_pops(p_coords: Vector2i) -> void:
-	var map_data_obj: map_data = map_data.get_instance()
-	var prov_id: int = map_data_obj.get_province_id(p_coords)
-	var prov: Province = map_data_obj.get_province(prov_id)
+	var province_manager: ProvinceManager = ProvinceManager.get_instance()
+	var prov_id: int = province_manager.get_province_id(p_coords)
+	var prov: Province = province_manager.get_province(prov_id)
 	set_province_pops.rpc_id(multiplayer.get_remote_sender_id(), prov.count_pops())
 
 @rpc("authority", "call_local")

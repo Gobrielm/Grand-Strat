@@ -8,13 +8,13 @@ func _ready() -> void:
 	Utils.assign_cargo_map(self)
 
 func add_terminal_to_province(term: Terminal) -> void:
-	var map_dat: map_data = map_data.get_instance()
-	var prov: Province = map_dat.get_province(map_dat.get_province_id(term.get_location()))
+	var province_manager: ProvinceManager = ProvinceManager.get_instance()
+	var prov: Province = province_manager.get_province(province_manager.get_province_id(term.get_location()))
 	prov.add_terminal(term.get_location())
 
 func remove_terminal_from_province(coords: Vector2i) -> void:
-	var map_dat: map_data = map_data.get_instance()
-	var prov: Province = map_dat.get_province(map_dat.get_province_id(coords))
+	var province_manager: ProvinceManager = ProvinceManager.get_instance()
+	var prov: Province = province_manager.get_province(province_manager.get_province_id(coords))
 	prov.remove_terminal(coords)
 
 func transform_construction_site_to_factory(coords: Vector2i) -> void:
@@ -23,8 +23,7 @@ func transform_construction_site_to_factory(coords: Vector2i) -> void:
 	add_terminal_to_province(TerminalMap.get_instance().get_terminal(coords))
 
 func place_random_industries() -> void:
-	var map_data_singleton: map_data = map_data.get_instance()
-	for prov: Province in map_data_singleton.get_provinces():
+	for prov: Province in ProvinceManager.get_instance().get_provinces():
 		create_town_in_province(prov)
 		
 func create_town_in_province(prov: Province) -> void:
@@ -34,8 +33,8 @@ func create_town_in_province(prov: Province) -> void:
 
 func create_town(coords: Vector2i, prov_id: int) -> void:
 	const TOWN_THRESHOLD: int = 100000
-	var map_dat: map_data = map_data.get_instance()
-	if map_dat.get_population(prov_id) < TOWN_THRESHOLD:
+	var province_manager: ProvinceManager = ProvinceManager.get_instance()
+	if province_manager.get_population(prov_id) < TOWN_THRESHOLD:
 		return
 	var new_town: Town = Town.create(coords)
 	Utils.world_map.make_cell_invisible(coords)
@@ -44,21 +43,13 @@ func create_town(coords: Vector2i, prov_id: int) -> void:
 	TerminalMap.get_instance().create_terminal(new_town)
 
 func add_industries_to_towns() -> void:
-	var threads: Array[Thread] = []
 	var start: float = Time.get_ticks_msec()
-	for province: Province in map_data.get_instance().get_provinces():
-		if threads.size() > 8:
-			threads.front().wait_to_finish()
-			threads.pop_front()
-		for tile: Vector2i in map_data.get_instance().get_province_terminal_tiles(province):
+	for province: Province in ProvinceManager.get_instance().get_provinces():
+		for tile: Vector2i in province.get_terminal_tiles():
 			var town: Town = TerminalMap.get_instance().get_town(tile)
 			if town != null:
-				var thread: Thread = Thread.new()
-				thread.start(place_industry_for_town.bind(town, province))
-				threads.push_back(thread)
+				place_industry_for_town(town, province)
 				break
-	for thread: Thread in threads:
-		thread.wait_to_finish()
 	var end: float = Time.get_ticks_msec()
 	print(str((end - start) / 1000) + " Seconds passed to create factories")
 
@@ -78,7 +69,7 @@ func place_random_group(tile: Vector2i, province: Province, town_level: int, typ
 	var tries: int = 0
 	var rand_tile: Vector2i
 	while true:
-		rand_tile = map_data.get_instance().get_province_rand_tile(province)
+		rand_tile = province.get_random_tile()
 		if rand_tile.distance_to(tile) < 10 and rand_tile.distance_to(tile) > 2:
 			break
 		tries += 1

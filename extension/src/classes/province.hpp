@@ -15,6 +15,7 @@ using namespace godot;
 class Province : public Object {
     GDCLASS(Province, Object);
 
+    mutable std::mutex m;
     int province_id;
     int country_id = -1;
     int population;
@@ -48,10 +49,12 @@ class Province : public Object {
     int get_country_id() const;
     void set_country_id(int p_country_id);
     Array get_tiles() const;
+    const std::vector<Vector2i>& get_tiles_vector() const;
     Vector2i get_random_tile() const;
     void add_terminal(Vector2i tile);
     void remove_terminal(Vector2i tile);
     Array get_terminal_tiles() const;
+    const std::unordered_set<Vector2i, godot_helpers::Vector2iHasher>& get_terminal_tiles_set() const;
     void create_pops();
     int count_pops() const;
     Ref<FactoryTemplate> find_employment(BasePop* pop) const;

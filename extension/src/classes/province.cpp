@@ -66,10 +66,12 @@ int Province::get_population() const {
 }
 
 void Province::add_population(int population_to_add) {
+    std::scoped_lock lock(m);
     population += population_to_add;
 }
 
 void Province::set_population(int new_population) {
+    std::scoped_lock lock(m);
     population = new_population;
 }
 
@@ -78,29 +80,38 @@ int Province::get_province_id() const {
 }
 
 int Province::get_country_id() const {
+    std::scoped_lock lock(m);
     return country_id;
 }
 
 void Province::set_country_id(int p_country_id) {
+    std::scoped_lock lock(m);
     country_id = p_country_id;
 }
 
 Array Province::get_tiles() const {
     Array a;
+    std::scoped_lock lock(m);
     for (Vector2i tile: tiles) {
         a.append(tile);
     }
     return a;
 }
 
+const std::vector<Vector2i>& Province::get_tiles_vector() const {
+    return tiles;
+}
+
 //Used to pick a place for random industries, don't pick places with industries
 Vector2i Province::get_random_tile() const {
     std::vector<Vector2i> tiles_copy;
+    m.lock();
     for (Vector2i tile: tiles) {
         if (!terminal_tiles.count(tile)) {
             tiles_copy.push_back(tile);
         }
     }
+    m.unlock();
     if (tiles_copy.size() == 0) {
         return Vector2i(0, 0);
     } else if (tiles_copy.size() == 1) {
@@ -110,6 +121,7 @@ Vector2i Province::get_random_tile() const {
 }
 
 void Province::add_terminal(Vector2i tile) {
+    std::scoped_lock lock(m);
     if (terminal_tiles.count(tile) != 0) {
         ERR_FAIL_MSG("Already has a terminal there");
         return;
@@ -118,6 +130,7 @@ void Province::add_terminal(Vector2i tile) {
 }
 
 void Province::remove_terminal(Vector2i tile) { //BUG: Never gets called when deleting terminals
+    std::scoped_lock lock(m);
     if (terminal_tiles.count(tile) == 0) {
         ERR_FAIL_MSG("No terminal there");
         return;
@@ -126,39 +139,53 @@ void Province::remove_terminal(Vector2i tile) { //BUG: Never gets called when de
 }
 Array Province::get_terminal_tiles() const {
     Array a;
+    std::scoped_lock lock(m);
     for (const auto tile: terminal_tiles) {
         a.push_back(tile);
     }
     return a;
 }
 
+const std::unordered_set<Vector2i, godot_helpers::Vector2iHasher>& Province::get_terminal_tiles_set() const {
+    return terminal_tiles;
+}
+
 void Province::create_pops() {
     int number_of_rural_pops = floor(population * 0.8 / BasePop::get_people_per_pop());
 	int number_of_city_pops = floor(population * 0.2 / BasePop::get_people_per_pop());
+    m.lock();
 	for (int i = 0; i < number_of_rural_pops; i++) {
         pops.push_back(memnew(BasePop(province_id, 0)));
     }
+    m.unlock();
 		
 	std::vector<Vector2i> towns = get_town_tiles();
 	//If no cities, then turn rest of population into rural pops
 	if (towns.size() == 0) {
+        m.lock();
 		for (int i = 0; i < number_of_city_pops; i++) {
             pops.push_back(memnew(BasePop(province_id, 0)));
         }
+        m.unlock();
 		return;
     }
 	int index = 0;
 	for (int i = 0; i < number_of_city_pops; i++) {
         Ref<Town> town = TerminalMap::get_instance() -> get_town(towns[index]);
+        
         if (town.is_valid()) {
+            m.lock();
             town -> add_pop(memnew(BasePop(province_id, 0)));
+            m.unlock();
         }
+        
         index = (index + 1) % towns.size();
     }
 }
 
 std::vector<Vector2i> Province::get_town_tiles() const {
     std::vector<Vector2i> toReturn;
+    std::scoped_lock lock(m);
     for (const auto &tile: terminal_tiles) {
         if (TerminalMap::get_instance() -> is_town(tile)) {
             toReturn.push_back(tile);
@@ -168,6 +195,7 @@ std::vector<Vector2i> Province::get_town_tiles() const {
 }
 
 int Province::count_pops() const {
+    std::scoped_lock lock(m);
     return pops.size();
 }
 

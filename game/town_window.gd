@@ -16,6 +16,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	progress += delta
 	if progress > time_every_update:
+		progress = 0
 		refresh_window()
 
 func _on_close_requested() -> void:
@@ -27,7 +28,6 @@ func open_window(new_location: Vector2i) -> void:
 	popup()
 
 func refresh_window() -> void:
-	progress = 0
 	if location != null:
 		request_current_cargo.rpc_id(1, location)
 		request_current_name.rpc_id(1, location)
@@ -137,15 +137,23 @@ func display_current_prices() -> void:
 		if num < price_list.item_count:
 			var prev: String = price_list.get_item_text(num).trim_prefix(names[type] + ": ")
 			price_list.set_item_text(num, text)
+			var prev_price: float = 0.0
 			if prev.is_valid_float():
-				var prev_price: float = float(prev)
-				price_list.set_item_custom_fg_color(num, Color(1, 0, 0))
-				print("A")
-			else:
-				price_list.set_item_custom_fg_color(num, Color(1, 1, 1))
+				prev_price = float(prev)
+			set_color(num, current_prices[type], prev_price)
 		else:
 			price_list.add_item(text, null, false)
 		num += 1
+
+func set_color(num: int, price: float, prev_price: float = 0.0) -> void:
+	var price_list: ItemList = $Price_Node/Price_List
+	if prev_price == 0.0 or abs(price - prev_price) < 0.01:
+		price_list.set_item_custom_fg_color(num, Color(1, 1, 1))
+		return
+	if prev_price > price:
+		price_list.set_item_custom_fg_color(num, Color(1, 0, 0))
+	else:
+		price_list.set_item_custom_fg_color(num, Color(0, 1, 0))
 
 func get_selected_name() -> String:
 	var cargo_list: ItemList = $Cargo_Node/Cargo_List

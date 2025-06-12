@@ -50,6 +50,7 @@ func _ready() -> void:
 	Utils.assign_world_map(self)
 
 func initialize_game() -> void:
+	ProvinceManager.create()
 	map_data.new(self)
 	if unique_id == 1:
 		create_untraversable_tiles()
