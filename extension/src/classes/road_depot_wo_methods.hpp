@@ -21,7 +21,6 @@ class RoadDepotWOMethods : public StationWOMethods {
 private:
     std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> other_road_depots = {};
     static constexpr int MAX_THROUGHPUT = 20000;
-    static constexpr int MAX_SUPPLY_DISTANCE = 10;
 
     int cargo_sent = 0;
     float cash = 1000;
@@ -32,6 +31,8 @@ protected:
     static void _bind_methods();
 
 public:
+    static constexpr int MAX_SUPPLY_DISTANCE = 10;
+
     static Ref<RoadDepotWOMethods> create(const Vector2i new_location, const int player_owner);
     RoadDepotWOMethods();
     RoadDepotWOMethods(Vector2i new_location, int player_owner);

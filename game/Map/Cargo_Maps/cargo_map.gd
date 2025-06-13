@@ -3,6 +3,7 @@ extends TileMapLayer
 @onready var cargo_values: Node = $cargo_values
 
 var mutex: Mutex = Mutex.new()
+var ais: Array = []
 
 func _ready() -> void:
 	Utils.assign_cargo_map(self)
@@ -43,10 +44,9 @@ func create_town(coords: Vector2i, prov_id: int) -> void:
 	TerminalMap.get_instance().create_terminal(new_town)
 
 func add_industries_to_towns() -> void:
-	
 	for country_id: int in tile_ownership.get_instance().get_country_ids():
-		var infasturcture_ai: InfastructureAi = InfastructureAi.create(country_id, 0)
-		infasturcture_ai.run_until_nothing()
+		var ai: InfastructureAi = InfastructureAi.create(country_id, 0)
+		ai.connect_towns()
 	
 	#var start: float = Time.get_ticks_msec()
 	#for province: Province in ProvinceManager.get_instance().get_provinces():

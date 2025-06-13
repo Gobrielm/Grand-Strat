@@ -293,6 +293,7 @@ void RoadDepotWOMethods::remove_cash(float amount) {
 }
 
 bool RoadDepotWOMethods::is_connected_to_other_depot() const {
+    std::scoped_lock lock(m);
     return other_road_depots.size() != 0;
 }
 

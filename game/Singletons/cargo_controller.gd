@@ -41,7 +41,7 @@ func _on_month_tick_timeout() -> void:
 	DataCollector.get_instance().month_tick()
 	TerminalMap.get_instance()._on_month_tick_timeout()
 	end = Time.get_ticks_msec()
-	print(str((end - start) / 1000) + " Seconds passed for one month cycle")
+	#print(str((end - start) / 1000) + " Seconds passed for one month cycle")
 	Utils.unit_map._on_month_tick_timeout()
 
 func _process(delta: float) -> void:

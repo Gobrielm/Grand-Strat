@@ -85,7 +85,7 @@ public:
     Dictionary get_local_prices(const Vector2i &coords);
     Dictionary get_station_orders(const Vector2i &coords);
     Dictionary get_town_fulfillment(const Vector2i &coords);
-    bool is_tile_traversable(const Vector2i& coords, bool includeWater = true);
+    bool is_tile_traversable(const Vector2i& coords, bool is_water_untraversable = true);
     bool is_tile_available(const Vector2i& coords);
 
     //Getters
