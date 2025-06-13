@@ -2,6 +2,8 @@
 
 using namespace godot;
 
+void AiBase::_bind_methods() {}
+
 AiBase::AiBase() : country_id(-1), owner_id(-1), stored_tile(Vector2i(0, 0)) {}
 
 AiBase::AiBase(int p_country_id, int p_owner_id): country_id(p_country_id), owner_id(p_owner_id), stored_tile(Vector2i(0, 0)) {}

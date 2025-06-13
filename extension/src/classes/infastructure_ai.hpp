@@ -21,6 +21,8 @@ class InfastructureAi : public AiBase {
     AiActions check_for_unconnected_stations();
     int check_for_unconnected_buildings();
     int get_trade_weight(Vector2i tile);
+    bool is_tile_owned(Vector2i tile);
+    bool has_connected_station(Vector2i tile) const;
     
     template<typename Predicate>
     std::vector<Vector2i> bfs_to_closest(Vector2i start, Predicate closest);
@@ -30,7 +32,7 @@ protected:
     static void _bind_methods();
 
 public:
-    
+    static InfastructureAi* create(int p_country_id, int p_owner_id);
 
     InfastructureAi();
     InfastructureAi(int p_country_id, int p_owner_id);
@@ -42,5 +44,6 @@ public:
 
     AiActions decide_action();
     void month_tick();
+    void run_until_nothing();
 };
 

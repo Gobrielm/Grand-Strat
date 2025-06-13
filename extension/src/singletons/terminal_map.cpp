@@ -100,7 +100,9 @@ Ref<TerminalMap> TerminalMap::get_instance() {
     return singleton_instance;
 }
 
-void TerminalMap::assign_cargo_map(TileMapLayer* p_cargo_map) {}
+void TerminalMap::assign_cargo_map(TileMapLayer* p_cargo_map) {
+    cargo_map = p_cargo_map;
+}
 
 //Process hooks
 void TerminalMap::_on_day_tick_timeout() {
@@ -171,6 +173,10 @@ void TerminalMap::clear() {
 
 TileMapLayer* TerminalMap::get_main_map() const {
     return map;
+}
+
+TileMapLayer* TerminalMap::get_cargo_map() const {
+    return cargo_map;
 }
 
 //Creators
@@ -344,15 +350,21 @@ Dictionary TerminalMap::get_town_fulfillment(const Vector2i &coords) {
     return toReturn;
 }
 
-bool TerminalMap::is_tile_traversable(const Vector2i& coords, bool includeWater) {
+bool TerminalMap::is_tile_traversable(const Vector2i& coords, bool is_water_untraversable) {
     std::scoped_lock lock(m);
     Vector2i atlas = map -> get_cell_atlas_coords(coords);
     std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> s = {Vector2i(-1, -1), Vector2i(5, 0), Vector2i(7, 0), Vector2i(3, 3)};
-    if (includeWater) s.insert(Vector2i(6, 0));
+    if (is_water_untraversable) s.insert(Vector2i(6, 0));
 
-    return (!s.count(atlas) && !cargo_map_terminals.count(coords));
+    return (!s.count(atlas));
 }
 
+bool TerminalMap::is_tile_available(const Vector2i& coords) {
+    m.lock();
+    bool status = !cargo_map_terminals.count(coords);
+    m.unlock();
+    return status && is_tile_traversable(coords, true);
+}
 
 //Internal Getters
 Ref<Terminal> TerminalMap::get_terminal(const Vector2i &coords) {

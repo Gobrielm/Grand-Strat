@@ -129,3 +129,6 @@ func get_country_id(cell: Vector2i) -> int:
 		toReturn = tile_to_country_id[cell]
 	mutex.unlock()
 	return toReturn
+
+func get_country_ids() -> Array:
+	return country_id_to_tiles_owned.keys()

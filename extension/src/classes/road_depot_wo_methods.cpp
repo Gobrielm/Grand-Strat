@@ -292,6 +292,10 @@ void RoadDepotWOMethods::remove_cash(float amount) {
     }
 }
 
+bool RoadDepotWOMethods::is_connected_to_other_depot() const {
+    return other_road_depots.size() != 0;
+}
+
 void RoadDepotWOMethods::day_tick() {
     distribute_cargo();
 }

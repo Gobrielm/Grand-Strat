@@ -66,6 +66,8 @@ public:
     void add_cash(float amount) override; //Temporary for testing
     void remove_cash(float amount) override; //Temporary for testing
 
+    bool is_connected_to_other_depot() const;
+
     virtual void day_tick() override;
     virtual void month_tick();
 };

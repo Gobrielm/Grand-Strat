@@ -43,15 +43,20 @@ func create_town(coords: Vector2i, prov_id: int) -> void:
 	TerminalMap.get_instance().create_terminal(new_town)
 
 func add_industries_to_towns() -> void:
-	var start: float = Time.get_ticks_msec()
-	for province: Province in ProvinceManager.get_instance().get_provinces():
-		for tile: Vector2i in province.get_terminal_tiles():
-			var town: Town = TerminalMap.get_instance().get_town(tile)
-			if town != null:
-				place_industry_for_town(town, province)
-				break
-	var end: float = Time.get_ticks_msec()
-	print(str((end - start) / 1000) + " Seconds passed to create factories")
+	
+	for country_id: int in tile_ownership.get_instance().get_country_ids():
+		var infasturcture_ai: InfastructureAi = InfastructureAi.create(country_id, 0)
+		infasturcture_ai.run_until_nothing()
+	
+	#var start: float = Time.get_ticks_msec()
+	#for province: Province in ProvinceManager.get_instance().get_provinces():
+		#for tile: Vector2i in province.get_terminal_tiles():
+			#var town: Town = TerminalMap.get_instance().get_town(tile)
+			#if town != null:
+				#place_industry_for_town(town, province)
+				#break
+	#var end: float = Time.get_ticks_msec()
+	#print(str((end - start) / 1000) + " Seconds passed to create factories")
 
 func place_industry_for_town(town: Town, province: Province) -> void:
 	var tile: Vector2i = town.get_location()
@@ -78,7 +83,7 @@ func place_random_group(tile: Vector2i, province: Province, town_level: int, typ
 			break
 	
 	if rand_tile != Vector2i(0, 0):
-		place_road_depot(rand_tile)
+		place_road_depot(rand_tile, 0)
 		for cell: Vector2i in get_surrounding_cells(rand_tile):
 			if randi() % 2 == 0 and !Utils.is_tile_taken(cell):
 				@warning_ignore("integer_division")
@@ -122,13 +127,13 @@ func place_random_road_depot(middle: Vector2i) -> Vector2i:
 	tiles.shuffle()
 	for tile: Vector2i in tiles:
 		if !Utils.is_tile_taken(tile):
-			place_road_depot(tile)
+			place_road_depot(tile, 0)
 			return tile
 	return Vector2i(0, 0)
 
-func place_road_depot(tile: Vector2i) -> void:
+func place_road_depot(tile: Vector2i, owner_id: int) -> void:
 	RoadMap.get_instance().place_road_depot(tile)
-	var road_depot: RoadDepot = RoadDepot.new(tile, 0)
+	var road_depot: RoadDepot = RoadDepot.new(tile, owner_id)
 	add_terminal_to_province(road_depot)
 	TerminalMap.get_instance().create_terminal(road_depot)
 
