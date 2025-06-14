@@ -1,4 +1,6 @@
 #include "ai_base.hpp"
+#include "../singletons/province_manager.hpp"
+#include "../singletons/terminal_map.hpp"
 
 using namespace godot;
 
@@ -22,4 +24,14 @@ Vector2i AiBase::get_stored_tile() const {
 
 void AiBase::set_stored_tile(Vector2i tile) {
     stored_tile = tile;
+}
+
+bool AiBase::is_tile_owned(Vector2i tile) const {
+    Ref<ProvinceManager> province_manager = ProvinceManager::get_instance();
+    return province_manager -> get_province(province_manager -> get_province_id(tile)) -> get_country_id() == get_country_id();
+}   
+
+void AiBase::place_depot(Vector2i tile) {
+    TileMapLayer* cargo_map = TerminalMap::get_instance() -> get_cargo_map();
+    cargo_map->call("place_road_depot", tile, get_owner_id());
 }

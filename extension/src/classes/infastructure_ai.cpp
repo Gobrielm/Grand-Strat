@@ -117,13 +117,9 @@ std::vector<Vector2i> InfastructureAi::bfs_to_closest(Vector2i start, bool(*f)(V
     }
     return toReturn;
 }
-bool InfastructureAi::is_tile_owned(Vector2i tile) {
-    Ref<ProvinceManager> province_manager = ProvinceManager::get_instance();
-    return province_manager -> get_province(province_manager -> get_province_id(tile)) -> get_country_id() == get_country_id();
-}   
 
 void InfastructureAi::check_for_unconnected_stations() {
-Ref<ProvinceManager> province_manager = ProvinceManager::get_instance();
+    Ref<ProvinceManager> province_manager = ProvinceManager::get_instance();
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     std::unordered_set<int> prov_ids = province_manager->get_country_provinces(get_country_id());
     for (int prov_id: prov_ids) {

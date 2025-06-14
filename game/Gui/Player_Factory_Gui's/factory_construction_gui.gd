@@ -31,7 +31,7 @@ func request_recipe(coords: Vector2i) -> void:
 @rpc("any_peer", "call_local", "unreliable")
 func request_construction_materials(coords: Vector2i) -> void:
 	var new_needed_materials: Dictionary = TerminalMap.get_instance().get_construction_materials(coords)
-	var new_current_materials: Dictionary = TerminalMap.get_instance().get_hold(coords)
+	var new_current_materials: Dictionary = TerminalMap.get_instance().get_cargo_dict(coords)
 	set_construction_materials.rpc_id(multiplayer.get_remote_sender_id(), new_current_materials, new_needed_materials)
 
 @rpc("authority", "call_local", "unreliable")

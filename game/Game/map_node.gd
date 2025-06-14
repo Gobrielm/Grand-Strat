@@ -109,7 +109,8 @@ func _input(event: InputEvent) -> void:
 	elif event.is_action_pressed("debug_print") and state_machine.is_controlling_camera():
 		unit_creator_window.popup()
 	elif event.is_action_pressed("debug_ai_cycle") and state_machine.is_controlling_camera():
-		ai_manager.get_instance()._on_ai_timer_timeout()
+		cargo_map.ai.month_tick();
+		#ai_manager.get_instance()._on_ai_timer_timeout()
 
 #Factory
 func create_factory() -> void:

@@ -52,7 +52,7 @@ class LocalPriceController: public RefCounted {
 
 
     float get_local_price(int type) const;
-    float get_base_price(int type) const;
+    static float get_base_price(int type);
 
     Dictionary get_local_prices();
 

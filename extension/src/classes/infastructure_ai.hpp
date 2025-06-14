@@ -23,7 +23,6 @@ class InfastructureAi : public AiBase {
     void check_for_unconnected_stations();
     int check_for_unconnected_buildings();
     int get_trade_weight(Vector2i tile);
-    bool is_tile_owned(Vector2i tile);
     bool has_connected_station(Vector2i tile) const;
     
     std::vector<Vector2i> bfs_to_closest(Vector2i start, bool(*f)(Vector2i));

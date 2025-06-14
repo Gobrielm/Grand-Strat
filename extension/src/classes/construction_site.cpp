@@ -1,4 +1,4 @@
-
+#include "../singletons/cargo_info.hpp"
 #include "construction_site.hpp"
 
 void ConstructionSite::_bind_methods() {
@@ -11,7 +11,6 @@ void ConstructionSite::_bind_methods() {
     ClassDB::bind_method(D_METHOD("has_recipe"), &ConstructionSite::has_recipe);
     ClassDB::bind_method(D_METHOD("destroy_recipe"), &ConstructionSite::destroy_recipe);
     ClassDB::bind_method(D_METHOD("get_construction_materials"), &ConstructionSite::get_construction_materials);
-    ClassDB::bind_method(D_METHOD("create_construction_materials", "dictionary"), &ConstructionSite::create_construction_materials);
     
     ADD_SIGNAL(MethodInfo("Done_Building", PropertyInfo(Variant::OBJECT, "site")));
 }
@@ -37,7 +36,7 @@ void ConstructionSite::initialize(Vector2i new_location, int player_owner) {
 //Recipe
 void ConstructionSite::set_recipe(const Array recipe) {
     FactoryTemplate::initialize(get_location(), get_player_owner(), recipe[0], recipe[1]);
-	//create_construction_materials();
+	create_construction_materials();
 }
 
 Array ConstructionSite::get_recipe() const {
@@ -59,7 +58,7 @@ Array ConstructionSite::get_recipe() const {
 
 bool ConstructionSite::has_recipe() const {
     std::scoped_lock lock(m);
-    return inputs.size() != 0 && outputs.size() != 0;
+    return inputs.size() != 0 || outputs.size() != 0;
 }
 
 void ConstructionSite::destroy_recipe() {
@@ -69,19 +68,16 @@ void ConstructionSite::destroy_recipe() {
 }
 
 //Materials
-void ConstructionSite::create_construction_materials(const Dictionary d) {
-    Array keys = d.keys();
-    for (int i = 0; i < keys.size(); i++) {
-        int type = keys[i];
-        create_construction_material(type, d[type]);
-    }
+void ConstructionSite::create_construction_materials() {
+    Ref<CargoInfo> cargo_info = CargoInfo::get_instance();
+    create_construction_material(cargo_info->get_cargo_type("wood"), 1000);
 }
 
 void ConstructionSite::create_construction_material(int type, int amount) {
     add_accept(type);
     std::scoped_lock lock(m);
 	max_amounts[type] = amount;
-	construction_materials[type] = 50;
+	construction_materials[type] = amount;
 }
 
 Dictionary ConstructionSite::get_construction_materials() const {
@@ -101,6 +97,8 @@ bool ConstructionSite::is_finished_constructing() const {
     }
     return true;
 }
+
+void ConstructionSite::day_tick() {}
 
 void ConstructionSite::month_tick() {
     if (is_finished_constructing()) {

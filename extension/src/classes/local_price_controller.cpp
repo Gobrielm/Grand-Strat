@@ -49,7 +49,7 @@ float LocalPriceController::get_local_price(int type) const {
     return local_prices.at(type);
 }
 
-float LocalPriceController::get_base_price(int type) const {
+float LocalPriceController::get_base_price(int type) {
     return base_prices.at(type);
 }
 

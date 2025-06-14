@@ -26,7 +26,7 @@
 #include "../classes/private_ai_factory.hpp"
 #include "../classes/road_depot_wo_methods.hpp"
 #include "../classes/ai_base.hpp"
-#include "../classes/infastructure_ai.hpp"
+#include "../classes/company_ai.hpp"
 #include "../singletons/money_controller.hpp"
 #include "../singletons/road_map.hpp"
 #include "../singletons/terminal_map.hpp"
@@ -68,7 +68,7 @@ void initialize_gdextension_types(ModuleInitializationLevel p_level)
 	GDREGISTER_CLASS(PrivateAiFactory);
 	GDREGISTER_CLASS(RoadDepotWOMethods);
 	GDREGISTER_CLASS(AiBase);
-	GDREGISTER_CLASS(InfastructureAi);
+	GDREGISTER_CLASS(CompanyAi);
 	GDREGISTER_CLASS(CargoInfo);
 	GDREGISTER_CLASS(RoadMap);
 	GDREGISTER_CLASS(TerminalMap);

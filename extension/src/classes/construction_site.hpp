@@ -33,11 +33,12 @@ public:
     bool has_recipe() const;
 
     //Materials
-    void create_construction_materials(const Dictionary d);
+    void create_construction_materials();
     void create_construction_material(int type, int amount);
     Dictionary get_construction_materials() const;
     bool is_finished_constructing() const;
 
     // Process Hooks
+    virtual void day_tick();
     virtual void month_tick();
 };

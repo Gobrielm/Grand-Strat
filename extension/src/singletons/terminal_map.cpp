@@ -47,6 +47,8 @@ void TerminalMap::_bind_methods() {
     ClassDB::bind_method(D_METHOD("get_local_prices", "coords"), &TerminalMap::get_local_prices);
     ClassDB::bind_method(D_METHOD("get_station_orders", "coords"), &TerminalMap::get_station_orders);
     ClassDB::bind_method(D_METHOD("get_town_fulfillment", "coords"), &TerminalMap::get_town_fulfillment);
+    ClassDB::bind_method(D_METHOD("get_available_primary_recipes", "coords"), &TerminalMap::get_available_primary_recipes);
+    
 
     ClassDB::bind_method(D_METHOD("get_terminal", "coords"), &TerminalMap::get_terminal);
     ClassDB::bind_method(D_METHOD("get_broker", "coords"), &TerminalMap::get_broker);
@@ -102,6 +104,7 @@ Ref<TerminalMap> TerminalMap::get_instance() {
 
 void TerminalMap::assign_cargo_map(TileMapLayer* p_cargo_map) {
     cargo_map = p_cargo_map;
+    cargo_values = cargo_map->get_node<Node2D>("cargo_values");
 }
 
 //Process hooks
@@ -179,6 +182,10 @@ TileMapLayer* TerminalMap::get_cargo_map() const {
     return cargo_map;
 }
 
+Node2D* TerminalMap::get_cargo_values() const {
+    return cargo_values;
+}
+
 //Creators
 void TerminalMap::create_terminal(Ref<Terminal> p_terminal) {
     m.lock();
@@ -217,6 +224,18 @@ Ref<Factory> TerminalMap::create_factory(const Vector2i &p_location, int p_playe
 }
 
 //Checkers
+int TerminalMap::get_cargo_value_of_tile(const Vector2i &coords, int type) const {
+    return cargo_values->call("get_tile_magnitude", coords, type);
+}
+
+std::vector<int> TerminalMap::get_available_resources_of_tile(const Vector2i &coords) const {
+    std::vector<int> toReturn;
+    for (int type = 0; type < CargoInfo::get_instance()->get_amount_of_primary_goods(); type++) {
+        toReturn.push_back(get_cargo_value_of_tile(coords, type));
+    }
+    return toReturn;
+}
+
 bool TerminalMap::is_terminal(const Vector2i &coords) {
     return cargo_map_terminals.count(coords) == 1;
 }
@@ -225,11 +244,10 @@ bool TerminalMap::is_hold(const Vector2i &coords) {
     return get_terminal_as<Hold>(coords).is_valid();
 }
 bool TerminalMap::is_owned_recipeless_construction_site(const Vector2i &coords) {
-    bool toReturn = false;
     Ref<ConstructionSite> construction_site =  get_terminal_as<ConstructionSite>(coords);
     if (construction_site.is_null()) return false;
     
-    toReturn = construction_site -> has_recipe();
+    bool toReturn = !(construction_site -> has_recipe());
 
     return toReturn;
 }
@@ -298,7 +316,7 @@ Dictionary TerminalMap::get_cargo_dict(const Vector2i &coords) {
 
 
 Array TerminalMap::get_construction_site_recipe(const Vector2i &coords) {
-    Array toReturn = {};
+    Array toReturn;
     Ref<Terminal> temp = get_terminal(coords);
     Ref<ConstructionSite> construction_site = get_terminal_as<ConstructionSite>(coords);
     if (construction_site.is_valid()) {
@@ -364,6 +382,22 @@ bool TerminalMap::is_tile_available(const Vector2i& coords) {
     bool status = !cargo_map_terminals.count(coords);
     m.unlock();
     return status && is_tile_traversable(coords, true);
+}
+
+Array TerminalMap::get_available_primary_recipes(const Vector2i& coords) const {
+    std::vector<int> v = get_available_resources_of_tile(coords);
+    Array a;
+    for (int type = 0; type < v.size(); type++) {
+        if (v[type] != 0) { 
+            Dictionary d;
+            d[type] = 1;
+            Array a2;
+            a2.push_back(Dictionary());
+            a2.push_back(d);
+            a.push_back(a2);
+        }
+    }
+    return a;
 }
 
 //Internal Getters

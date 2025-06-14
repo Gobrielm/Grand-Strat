@@ -25,4 +25,7 @@ class AiBase : public Object {
     Vector2i get_stored_tile() const;
     void set_stored_tile(Vector2i tile);
 
+    //Utility Functions
+    bool is_tile_owned(Vector2i tile) const;
+    void place_depot(Vector2i tile);
 };

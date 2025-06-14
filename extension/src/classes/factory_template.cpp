@@ -2,6 +2,7 @@
 #include "factory_local_price_controller.hpp"
 #include "base_pop.hpp"
 #include "../singletons/cargo_info.hpp"
+#include "../singletons/terminal_map.hpp"
 #include <godot_cpp/core/class_db.hpp>
 #include <algorithm>
 
@@ -150,7 +151,20 @@ int FactoryTemplate::get_level() const {
     return level;
 }
 
-int FactoryTemplate::get_cost_for_upgrade() const {
+int FactoryTemplate::get_level_without_employment() const {
+    std::scoped_lock lock(m);
+    return level;
+}
+
+bool FactoryTemplate::is_max_level() const {
+    if (outputs.size() != 1 || (CargoInfo::get_instance()->is_cargo_primary((*outputs.begin()).first))) {
+        return false;
+    }
+
+    return level == TerminalMap::get_instance()->get_cargo_value_of_tile(get_location(), outputs.at(0));
+}
+
+int FactoryTemplate::get_cost_for_upgrade() {
     return COST_FOR_UPGRADE;
 }
 

@@ -27,6 +27,7 @@ private:
 
     TileMapLayer* map = nullptr;
     TileMapLayer* cargo_map = nullptr;
+    Node2D* cargo_values = nullptr;
 
     std::mutex m;
     std::unordered_map<Vector2i, Ref<Terminal>, godot_helpers::Vector2iHasher> cargo_map_terminals;
@@ -56,6 +57,7 @@ public:
     void clear();
     TileMapLayer* get_main_map() const;
     TileMapLayer* get_cargo_map() const;
+    Node2D* get_cargo_values() const;
 
     //Creators
     void create_terminal(Ref<Terminal> p_terminal);
@@ -63,6 +65,8 @@ public:
     Ref<Factory> create_factory(const Vector2i &p_location, int p_player_owner, const Dictionary &p_inputs, const Dictionary &p_outputs);
     
     //Checkers
+    int get_cargo_value_of_tile(const Vector2i &coords, int type) const;
+    std::vector<int> get_available_resources_of_tile(const Vector2i &coords) const;
     bool is_terminal(const Vector2i &coords);
     bool is_hold(const Vector2i &coords);
     bool is_owned_recipeless_construction_site(const Vector2i &coords);
@@ -87,6 +91,7 @@ public:
     Dictionary get_town_fulfillment(const Vector2i &coords);
     bool is_tile_traversable(const Vector2i& coords, bool is_water_untraversable = true);
     bool is_tile_available(const Vector2i& coords);
+    Array get_available_primary_recipes(const Vector2i& coords) const;
 
     //Getters
     Ref<Terminal> get_terminal(const Vector2i &coords);

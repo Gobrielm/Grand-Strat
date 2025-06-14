@@ -1,4 +1,4 @@
-
+#include "../singletons/terminal_map.hpp"
 #include "ai_factory.hpp"
 
 void AiFactory::_bind_methods() {}
@@ -67,11 +67,16 @@ void AiFactory::consider_upgrade_primary() {
     float total_diff = 0.0;
 	int amount = 0;
 	for (auto& [type, __]: outputs) {
+        int max_value = TerminalMap::get_instance() -> get_cargo_value_of_tile(get_location(), type);
+        if (max_value < get_level_without_employment()) {
+            return;
+        }
 		total_diff += local_pricer -> get_current_difference_from_base_price(type) - 1;
 		amount += 1;
     }
 	total_diff /= amount;
 	//TODO: Consider changing constant
+    
 	if (total_diff > -0.05 && get_cost_for_upgrade() * CASH_NEEDED_MULTIPLIER < get_cash()) {
         upgrade();
     }

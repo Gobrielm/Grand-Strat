@@ -58,7 +58,9 @@ public:
 
     // Level & Upgrades
     int get_level() const;
-    int get_cost_for_upgrade() const;
+    int get_level_without_employment() const;
+    bool is_max_level() const;
+    static int get_cost_for_upgrade();
     void check_for_upgrade();
     void upgrade();
     void admin_upgrade();
