@@ -1,10 +1,6 @@
 #include "road_depot_wo_methods.hpp"
 #include "../singletons/terminal_map.hpp"
 
-//TODO: Problems with road depots selling in between each other, and depots selling to towns and towns selling right back
-//Build a custom inherited local pricer that uses supply / demand to have its own local price, then just sell profitably, and will go in the right direction
-//Then 'island' depots can still trade and have local market, good for supply army method.
-
 void RoadDepotWOMethods::_bind_methods() {
     ClassDB::bind_static_method(get_class_static(), D_METHOD("create", "new_location", "player_owner"), &RoadDepotWOMethods::create);
     ClassDB::bind_method(D_METHOD("initialize", "new_location", "player_owner"), &RoadDepotWOMethods::initialize);
