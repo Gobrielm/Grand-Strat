@@ -32,9 +32,11 @@ private:
     std::mutex m;
     std::unordered_map<Vector2i, Ref<Terminal>, godot_helpers::Vector2iHasher> cargo_map_terminals;
 
+    std::thread day_thread;
     std::vector<std::thread> month_threads;
     bool day_tick_priority = false;
 
+    void _on_day_tick_timeout_helper();
     using MapType = std::unordered_map<Vector2i, Ref<Terminal>, godot_helpers::Vector2iHasher>;
     void _on_month_tick_timeout_helper(MapType::iterator start, MapType::iterator end);
 
@@ -47,6 +49,7 @@ public:
     TerminalMap(TileMapLayer* p_map = nullptr);
     ~TerminalMap();
 
+    static bool is_instance_created();
     static Ref<TerminalMap> get_instance();
     void assign_cargo_map(TileMapLayer* p_cargo_map);
 

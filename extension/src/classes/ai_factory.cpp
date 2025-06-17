@@ -51,7 +51,6 @@ void AiFactory::change_order(int type, bool buy) {
     } else {
         edit_order(type, amount, buy, limit_price);
     }
-    
 }
 
 //Upgrades

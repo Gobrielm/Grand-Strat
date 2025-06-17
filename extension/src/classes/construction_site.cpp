@@ -22,7 +22,7 @@ ConstructionSite::ConstructionSite(): FactoryTemplate() {
 ConstructionSite::~ConstructionSite() {}
 
 ConstructionSite::ConstructionSite(Vector2i new_location, int player_owner): FactoryTemplate(new_location, player_owner, {}, {}) {
-
+    local_pricer = memnew(LocalPriceController);
 }
 
 Ref<ConstructionSite> ConstructionSite::create(Vector2i new_location, int player_owner) {
@@ -98,6 +98,38 @@ bool ConstructionSite::is_finished_constructing() const {
     return true;
 }
 
+int ConstructionSite::get_max_storage() const {
+    print_error("USE TYPE IN MAX STORAGE");
+    return 0;
+}
+
+int ConstructionSite::get_max_storage(int type) const {
+    std::scoped_lock lock(m);
+    return max_amounts.at(type);
+}
+
+//Is buying
+bool ConstructionSite::is_price_acceptable(int type, float pricePer) const {
+    return get_local_price(type) * (MAX_TRADE_MARGIN) >= pricePer;
+}
+//To buy
+int ConstructionSite::get_desired_cargo(int type, float pricePer) const {
+    return get_desired_cargo_from_train(type, pricePer);
+}
+
+int ConstructionSite::get_desired_cargo_from_train(int type, float pricePer) const {
+    if (does_accept(type)) {
+        return std::min(get_max_storage(type) - get_cargo_amount(type), get_amount_can_buy(pricePer));
+    }
+    return 0;
+}
+
+void ConstructionSite::report_price(int type, float price) {
+    std::scoped_lock lock(m);
+    local_pricer -> move_price(type, price);
+}
+
+//Tickers
 void ConstructionSite::day_tick() {}
 
 void ConstructionSite::month_tick() {

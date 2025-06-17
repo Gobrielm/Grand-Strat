@@ -52,8 +52,23 @@ void RoadDepotWOMethods::initialize(Vector2i new_location, int player_owner) {
 void RoadDepotWOMethods::distribute_cargo() {
     cargo_sent = 0;
     for (const auto &[type, __]: storage) {
+        report_demand_of_brokers(type);
+        report_demand_of_depots(type);
+        if (get_cargo_amount(type) == 0 || cargo_sent == MAX_THROUGHPUT) continue;
         distribute_type(type); //Continue even if amount is 0 because demand needs to be checked
     }	
+}
+
+void RoadDepotWOMethods::report_demand_of_depots(int type) {
+    for (const auto& tile : other_road_depots) {
+        Ref<RoadDepotWOMethods> road_depot = TerminalMap::get_instance() -> get_terminal_as<RoadDepotWOMethods>(tile);
+        if (road_depot.is_null()) continue;
+
+        if (road_depot->does_accept(type)) {
+            float price = get_local_price(type);
+            report_attempt_to_sell(type, road_depot->get_desired_cargo(type, price));
+        }
+    }
 }
 
 void RoadDepotWOMethods::distribute_type(int type) {
@@ -62,8 +77,7 @@ void RoadDepotWOMethods::distribute_type(int type) {
     for (const auto &tile: connected_brokers) {
         Ref<Broker> broker = terminal_map->get_broker(tile);
         if (broker.is_null()) continue;
-        bool val = broker -> does_accept(type) && broker -> get_player_owner() == get_player_owner();
-        if (val) {
+        if (broker -> does_accept(type)) {
 			distribute_type_to_broker(type, broker);
         }
     }
@@ -71,9 +85,8 @@ void RoadDepotWOMethods::distribute_type(int type) {
         //Must be owned by same person
         Ref<RoadDepotWOMethods> road_depot = terminal_map -> get_terminal_as<RoadDepotWOMethods>(tile);
         if (road_depot.is_null()) continue;
-        bool val = road_depot -> does_accept(type) && road_depot -> get_player_owner() == get_player_owner();
 
-		if (val) {
+		if (road_depot -> does_accept(type)) {
             distribute_type_to_road_depot(type, road_depot);
         }
     }
@@ -84,8 +97,9 @@ void RoadDepotWOMethods::distribute_type_to_broker(int type, Ref<Broker> broker)
     Vector2i tile = broker -> get_location();
 
     float price1 = get_local_price(type);
+    broker->report_price(type, price1);
     float price2 = broker->get_local_price(type);
-    
+
     float price = std::max(price1, price2) - std::abs(price1 - price2) / 2.0f;
 
     if (!is_price_acceptable_to_sell(type, price) || !broker->is_price_acceptable(type, price)) return;
@@ -206,12 +220,12 @@ bool RoadDepotWOMethods::is_price_acceptable(int type, float pricePer) const {
 
 //Depot is buying
 bool RoadDepotWOMethods::is_price_acceptable_to_buy(int type, float pricePer) const {
-    return get_local_price(type) >= pricePer * (1 + SERVICE_FEE);
+    return (get_local_price(type) * MAX_TRADE_MARGIN) >= (pricePer * (1 + SERVICE_FEE));
 }
 
 //Depot is selling
 bool RoadDepotWOMethods::is_price_acceptable_to_sell(int type, float pricePer) const {
-    return get_local_price(type) <= pricePer / (1 + SERVICE_FEE);
+    return (get_local_price(type) / MAX_TRADE_MARGIN) <= (pricePer / (1 + SERVICE_FEE));
 }
 
 void RoadDepotWOMethods::search_for_and_add_road_depots() { //Constructor runs this before being added to TerminalMap
@@ -224,6 +238,7 @@ void RoadDepotWOMethods::search_for_and_add_road_depots() { //Constructor runs t
     std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> s;
     s.insert(get_location());
     RoadMap* road_map = RoadMap::get_instance();
+
     auto push = [&pq](Vector2i tile, int weight) -> void {pq.push(godot_helpers::weighted_value<Vector2i>(tile, weight));};
 
     push(get_location(), 0);
@@ -235,6 +250,7 @@ void RoadDepotWOMethods::search_for_and_add_road_depots() { //Constructor runs t
         if (road_depot.is_valid() && road_depot -> get_location() != get_location()) {
             add_connected_road_depot(road_depot.ptr());
             road_depot -> add_connected_road_depot(this);
+            continue; //Cannot go beyond road depots
         }
         Array tiles = road_map -> get_surrounding_cells(curr.val);
         for (int i = 0; i < tiles.size(); i++) {
@@ -243,8 +259,8 @@ void RoadDepotWOMethods::search_for_and_add_road_depots() { //Constructor runs t
             if (!s.count(tile)) {
                 s.insert(tile);
                 int road_val = road_map -> get_road_value(tile);
-                float weight = (road_val == 0 ? 2: road_val) + curr.weight;
-                if (weight <= float(MAX_SUPPLY_DISTANCE)) {
+                int weight = (road_val == 0 ? 11: 1) + curr.weight; //Use only roads
+                if (weight <= (MAX_SUPPLY_DISTANCE)) {
                     push(tile, weight);
                 }
             }

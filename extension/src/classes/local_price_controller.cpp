@@ -59,13 +59,10 @@ void LocalPriceController::move_price(int type, float price) { //Calling on fail
     float other_diff_from_base = price / base_price;
 
     //Closer than 10% diff
-    if (abs(current_diff_from_base - other_diff_from_base) < 0.1) {
-        float change_of_price = (other_diff_from_base - current_diff_from_base) * TRADE_CHANGE_RATE; // Discrepancy_of_price
+    float change_of_price = (other_diff_from_base - current_diff_from_base); // Discrepancy_of_price
 
-        if (abs(change_of_price) > 0.01f) { //If bigger change than 1%
-            local_prices[type] = base_price * (current_diff_from_base + change_of_price); 
-        }
-    }
+    change_of_price = std::min(TRADE_CHANGE_RATE, change_of_price); // Can only change as fast as the change rate
+    local_prices[type] = base_price * (current_diff_from_base + change_of_price); 
 }
 
 void LocalPriceController::adjust_prices() {

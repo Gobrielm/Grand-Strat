@@ -6,6 +6,8 @@ using namespace godot;
 Ref<TerminalMap> TerminalMap::singleton_instance = nullptr;
 
 void TerminalMap::_bind_methods() {
+
+    ClassDB::bind_static_method(get_class_static(), D_METHOD("is_instance_created"), &TerminalMap::is_instance_created);
     ClassDB::bind_static_method(get_class_static(), D_METHOD("get_instance"), &TerminalMap::get_instance);
     ClassDB::bind_static_method(get_class_static(), D_METHOD("create", "p_map"), &TerminalMap::initialize_singleton);
     // Initialization
@@ -97,6 +99,10 @@ TerminalMap::~TerminalMap() {
     cargo_map_terminals.clear();
 }
 
+bool TerminalMap::is_instance_created() {
+    return singleton_instance != nullptr;
+}
+
 Ref<TerminalMap> TerminalMap::get_instance() { 
     ERR_FAIL_COND_V_MSG(singleton_instance == nullptr, nullptr, "Terminal Map has not been created yet");
     return singleton_instance;
@@ -109,6 +115,11 @@ void TerminalMap::assign_cargo_map(TileMapLayer* p_cargo_map) {
 
 //Process hooks
 void TerminalMap::_on_day_tick_timeout() {
+    if (day_thread.joinable()) day_thread.join();
+    day_thread = std::thread(&TerminalMap::_on_day_tick_timeout_helper, this);
+}
+
+void TerminalMap::_on_day_tick_timeout_helper() {
     m.lock();
     day_tick_priority = true;
     m.unlock();

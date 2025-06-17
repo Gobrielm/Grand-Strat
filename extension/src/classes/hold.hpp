@@ -37,7 +37,7 @@ public:
     bool is_full() const;
     bool is_empty() const;
 
-    int get_max_storage() const;
+    virtual int get_max_storage() const;
     void change_max_storage(int p_amount);
     void set_max_storage(int p_amount);
     bool does_accept(int type) const;

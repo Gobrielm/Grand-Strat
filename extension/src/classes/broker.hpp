@@ -17,10 +17,11 @@ class Broker : public FixedHold {
 
     protected:
     static void _bind_methods();
-
-    public:
     std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> connected_brokers;
     LocalPriceController* local_pricer = nullptr;
+    const float MAX_TRADE_MARGIN = 1.05f;
+
+    public:
 
     static Ref<Broker> create(const Vector2i new_location, const int player_owner, const int p_max_amount = DEFAULT_MAX_STORAGE);
 
@@ -35,6 +36,7 @@ class Broker : public FixedHold {
 
     virtual int get_desired_cargo(int type, float pricePer) const;
     int get_desired_cargo_from_train(int type) const;
+    void report_demand_of_brokers(int type);
 
     virtual bool is_price_acceptable(int type, float pricePer) const;
 
@@ -61,6 +63,7 @@ class Broker : public FixedHold {
     void distribute_to_order(Broker* otherBroker, const TradeOrder* order);
 
     void report_attempt_to_sell(int type, int amount);
+    virtual void report_price(int type, float price);
 
     
 };

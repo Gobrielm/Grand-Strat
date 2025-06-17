@@ -138,6 +138,7 @@ void FactoryTemplate::distribute_cargo() {
         if (order && order->is_sell_order()) {
             distribute_from_order(order);
         }
+        report_demand_of_brokers(type);
     }
 }
 

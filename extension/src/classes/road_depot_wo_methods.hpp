@@ -40,6 +40,7 @@ public:
 
     virtual void initialize(Vector2i new_location, int player_owner) override;
     void distribute_cargo() override;
+    void report_demand_of_depots(int type);
     void distribute_type(int type);
     void distribute_type_to_road_depot(int type, Ref<RoadDepotWOMethods> road_depot);
     void distribute_type_to_broker(int type, Ref<Broker> broker);

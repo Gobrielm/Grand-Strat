@@ -13,29 +13,27 @@ using namespace godot;
 
 class CompanyAi : public AiBase {
     GDCLASS(CompanyAi, AiBase);
-    int cargo_type; //Cargo the Company produces
-
-    //Utilities
-    RoadMap* road_map;
-    TileMapLayer* cargo_map;
-
-    Vector2i* find_town_for_investment();
-    Vector2i* find_tile_for_new_building(const Vector2i &town_tile);
-    float get_build_score_for_tile(const Vector2i &tile) const;
-    bool does_have_building_in_area_already(const Vector2i &center);
-    bool does_have_money_for_investment();
-    void build_factory(const Vector2i &factory_tile, const Vector2i &town_tile);
-    void connect_factory(const Vector2i &factory_tile, const Vector2i &town_tile);
 
 protected:
     static void _bind_methods();
 
+    virtual bool does_have_money_for_investment();
+
+    //Utilities
+    RoadMap* road_map;
+    TileMapLayer* cargo_map;
+    //Utility Functions
+    bool is_tile_adjacent(const Vector2i &tile, const Vector2i &target) const;
+    bool is_tile_adjacent(const Vector2i &tile, bool(*f)(const Vector2i&)) const;
+    bool is_tile_adjacent_to_depot(const Vector2i &tile) const;
+    Vector2i get_random_adjacent_tile(const Vector2i &center) const;
+    int get_cargo_value_of_tile(const Vector2i &tile, int type) const;
+    int get_cargo_value_of_tile(const Vector2i &tile, String cargo_name) const;
+
 public:
-    static CompanyAi* create(int p_country_id, int p_owner_id, int p_cargo_type);
-
     CompanyAi();
-    CompanyAi(int p_country_id, int p_owner_id, int p_cargo_type);
+    CompanyAi(int p_country_id, int p_owner_id);
 
-    void month_tick();
+    virtual void month_tick();
 };
 

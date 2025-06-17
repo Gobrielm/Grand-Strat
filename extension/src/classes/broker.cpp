@@ -84,6 +84,18 @@ int Broker::get_desired_cargo_from_train(int type) const {
     return 0;
 }
 
+void Broker::report_demand_of_brokers(int type) {
+    for (const auto& tile : connected_brokers) {
+        Ref<Broker> broker = TerminalMap::get_instance() -> get_broker(tile);
+        if (broker.is_null()) continue;
+
+        if (broker->does_accept(type)) {
+            float price = get_local_price(type);
+            report_attempt_to_sell(type, broker->get_desired_cargo(type, price));
+        }
+    }
+}
+
 //For buying
 bool Broker::is_price_acceptable(int type, float pricePer) const {
     std::scoped_lock lock(m);
@@ -192,12 +204,13 @@ void Broker::distribute_cargo() {
 }
 
 void Broker::distribute_from_order(const TradeOrder* order) {
+    if (get_cargo_amount(order->get_type()) == 0) return;
+
     for (const auto& tile : connected_brokers) {
         Ref<Broker> broker = TerminalMap::get_instance() -> get_broker(tile);
         if (broker.is_null()) continue;
-        bool val = broker->does_accept(order->get_type());
 
-        if (val) {
+        if (broker->does_accept(order->get_type())) {
             distribute_to_order(broker, order);
         }
     }
@@ -209,15 +222,15 @@ void Broker::distribute_to_order(Ref<Broker> otherBroker, const TradeOrder* orde
 
 void Broker::distribute_to_order(Broker* otherBroker, const TradeOrder* order) {
     int type = order->get_type();
+    Ref<ConstructionSite> site = TerminalMap::get_instance()->get_terminal_as<ConstructionSite>(otherBroker->get_location());
+
     float price1 = get_local_price(type);
-    
+    otherBroker->report_price(type, price1);
     float price2 = otherBroker->get_local_price(type);
-    
     float price = std::max(price1, price2) - std::abs(price1 - price2) / 2.0f;
+
     if (!order->is_price_acceptable(price) || !otherBroker->is_price_acceptable(type, price)) return;
     int desired = otherBroker->get_desired_cargo(type, price);
-
-    report_attempt_to_sell(type, std::min(desired, order->get_amount() * 3)); // Put a cap on how much one broker can desire
 
     int amount = std::min(desired, order->get_amount()); 
     if (amount > 0) {
@@ -232,3 +245,5 @@ void Broker::report_attempt_to_sell(int type, int amount) {
         local_pricer->add_demand(type, amount);
     }
 }
+
+void Broker::report_price(int type, float price) {}

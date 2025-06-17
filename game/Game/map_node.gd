@@ -59,6 +59,8 @@ func initialize_game() -> void:
 	
 
 func _input(event: InputEvent) -> void:
+	if !TerminalMap.is_instance_created():
+		return
 	var cell_position: Vector2i = get_cell_position()
 	main_map.update_hover()
 	camera.update_coord_label(cell_position)
@@ -109,7 +111,7 @@ func _input(event: InputEvent) -> void:
 	elif event.is_action_pressed("debug_print") and state_machine.is_controlling_camera():
 		unit_creator_window.popup()
 	elif event.is_action_pressed("debug_ai_cycle") and state_machine.is_controlling_camera():
-		cargo_map.ai.month_tick();
+		cargo_map.ai_cycle()
 		#ai_manager.get_instance()._on_ai_timer_timeout()
 
 #Factory

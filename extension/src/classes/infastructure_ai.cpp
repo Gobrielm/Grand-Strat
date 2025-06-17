@@ -200,7 +200,7 @@ void InfastructureAi::connect_towns() {
 
         std::vector<Vector2i> v = bfs_to_closest(town->get_location(), lbda);
 
-        if (v.size() != 0 && v.size() <= (RoadDepotWOMethods::MAX_SUPPLY_DISTANCE + 1)) {
+        if (v.size() != 0 && v.size() <= (RoadDepotWOMethods::MAX_SUPPLY_DISTANCE + 1)) { //Doesn't work with supply
 
             if (!terminal_map->is_terminal(v.back())) {
                 cargo_map->call("place_road_depot", v.back(), get_owner_id());
@@ -268,7 +268,7 @@ void InfastructureAi::connect_factory(Ref<Factory> factory) {
 
     std::vector<Vector2i> v = bfs_to_closest(tile, lbda);
 
-    if (v.size() != 0 && v.size() <= (RoadDepotWOMethods::MAX_SUPPLY_DISTANCE + 1)) {
+    if (v.size() != 0 && v.size() <= (RoadDepotWOMethods::MAX_SUPPLY_DISTANCE + 1)) { //Doesn't work with supply
 
         if (!terminal_map->is_terminal(v.back())) {
             cargo_map->call("place_road_depot", v.back(), get_owner_id());

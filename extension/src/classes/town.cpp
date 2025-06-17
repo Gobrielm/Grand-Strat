@@ -104,7 +104,7 @@ float Town::get_cash() const {
 //To Buy
 bool Town::is_price_acceptable(int type, float price) const {
     std::scoped_lock lock(m);
-    return local_pricer -> get_local_price(type) >= price;
+    return (local_pricer -> get_local_price(type) * MAX_TRADE_MARGIN) >= price;
 }
 
 int Town::get_desired_cargo(int type, float price) const {
@@ -254,6 +254,8 @@ int Town::get_number_of_broke_pops() const {
 void Town::sell_to_other_brokers() {
     std::vector<int> supply = get_supply();
 	for (int type = 0; type < supply.size(); type++) {
+        report_demand_of_brokers(type);
+        if (get_cargo_amount(type) == 0) continue;
 		TradeOrder* order = memnew(TradeOrder(type, get_cargo_amount(type), false, get_local_price(type)));
 		distribute_from_order(order);
         memdelete(order);

@@ -37,8 +37,17 @@ public:
     void create_construction_material(int type, int amount);
     Dictionary get_construction_materials() const;
     bool is_finished_constructing() const;
+    int get_max_storage() const override;
+    int get_max_storage(int type) const;
+
+    //Overrides
+    bool is_price_acceptable(int type, float pricePer) const override;
+    int get_desired_cargo(int type, float pricePer) const override;
+    int get_desired_cargo_from_train(int type, float pricePer) const;
+
+    void report_price(int type, float price) override;
 
     // Process Hooks
-    virtual void day_tick();
-    virtual void month_tick();
+    virtual void day_tick() override;
+    virtual void month_tick() override;
 };
