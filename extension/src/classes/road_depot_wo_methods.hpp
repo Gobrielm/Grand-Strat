@@ -19,7 +19,7 @@ class RoadDepotWOMethods : public StationWOMethods {
     GDCLASS(RoadDepotWOMethods, StationWOMethods)
 
 private:
-    std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> other_road_depots = {};
+    std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> other_road_depots;
     static constexpr int MAX_THROUGHPUT = 20000;
 
     int cargo_sent = 0;

@@ -42,17 +42,12 @@ float StationWOMethods::get_local_price(int type) const {
     float market_price = 0.0;
 
     for (const auto &tile : connected_brokers) {
-        Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
-        Ref<Broker> broker = terminal_map -> get_broker(tile);
-        // terminal_map -> lock(tile);
+        Ref<Broker> broker = TerminalMap::get_instance()->get_broker(tile);
         const TradeOrder* order = broker->get_order(type);
-        // terminal_map -> unlock(tile);
         if (order == nullptr) continue;
 
         amount_total += order->get_amount();
-        // terminal_map -> lock(tile);
         market_price += order->get_amount() * broker->get_local_price(type);
-        // terminal_map -> unlock(tile);
     }
     float max_price = CargoInfo::get_instance() -> get_base_prices().at(type) * LocalPriceController::MAX_DIFF;
     return amount_total == 0 ? max_price : market_price / amount_total;

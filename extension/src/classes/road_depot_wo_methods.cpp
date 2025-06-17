@@ -35,9 +35,7 @@ RoadDepotWOMethods::~RoadDepotWOMethods() {
         Ref<RoadDepotWOMethods> road_depot = terminal_map -> get_terminal_as<RoadDepotWOMethods>(tile);
         if (road_depot.is_null()) continue;
 
-        // terminal_map -> lock(tile);
         road_depot -> remove_connected_road_depot(this);
-        // terminal_map -> unlock(tile);
     }
 }
 

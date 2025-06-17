@@ -115,7 +115,7 @@ void ProvinceManager::create_pops() {
     for (auto &thread: pop_threads) {
         thread.join();
     }
-    
+
     auto end_time = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = end_time - start_time;
     print_line("Pop creation took " + String::num_scientific(elapsed.count()) + " seconds");

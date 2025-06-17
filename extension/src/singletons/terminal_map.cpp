@@ -120,19 +120,25 @@ void TerminalMap::_on_day_tick_timeout() {
 }
 
 void TerminalMap::_on_day_tick_timeout_helper() {
+    auto start_time = std::chrono::high_resolution_clock::now();
     m.lock();
     day_tick_priority = true;
     m.unlock();
-
+    int road_depot_count = 0;
     for (const auto &[coords, terminal]: cargo_map_terminals) {
         if (terminal->has_method("day_tick")) {
             terminal->call("day_tick");
         }
+        Ref<RoadDepotWOMethods> depot = Ref<RoadDepotWOMethods>(terminal);
+        if (depot.is_valid()) road_depot_count++;
     }
-
+    print_line(String::num_int64(road_depot_count) + " were simulated.");
     m.lock();
     day_tick_priority = false;
     m.unlock();
+    auto end_time = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = end_time - start_time;
+    print_line("Day tick took " + String::num_scientific(elapsed.count()) + " seconds");
 }
 
 void TerminalMap::_on_month_tick_timeout() {

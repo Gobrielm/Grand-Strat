@@ -1,5 +1,6 @@
 #pragma once
 
+#include <godot_cpp/classes/weak_ref.hpp>
 #include "fixed_hold.hpp"
 #include "trade_order.hpp"
 #include "terminal.hpp"
@@ -8,6 +9,8 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <memory>
+
+using namespace godot;
 
 class Broker : public FixedHold {
     GDCLASS(Broker, FixedHold);
