@@ -48,6 +48,7 @@ public:
 
     void refresh_other_road_depots();
     std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> get_reachable_road_depots();
+    bool is_road_depot_valid(Ref<RoadDepot> road_depot) const;
 
     static float get_fee();
     float get_cash() const override; //Temporary for testing

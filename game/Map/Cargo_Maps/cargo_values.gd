@@ -103,14 +103,9 @@ func place_resources(_map: TileMapLayer) -> void:
 	var helper: RefCounted = load("res://Map/Cargo_Maps/cargo_values_helper.gd").new(map)
 	var resource_array: Array = helper.create_resource_array()
 	assert(resource_array != null or resource_array.is_empty(), "Resources generated improperly")
-	var threads: Array = []
 	
 	for i: int in get_child_count():
-		var thread: Thread = Thread.new()
-		threads.append(thread)
-		thread.start(autoplace_resource.bind(resource_array[i], i, MAX_RESOURCES[i]))
-	for thread: Thread in threads:
-		thread.wait_to_finish()
+		autoplace_resource(resource_array[i], i, MAX_RESOURCES[i])
 	finished_created_map_resources.emit()
 
 func create_provinces_and_pop() -> void:
@@ -125,7 +120,7 @@ func autoplace_resource(tiles: Dictionary, type: int, max_resouces: int) -> void
 		
 		var mag: int = randi() % 4 + tiles[cell]
 		set_resource_locally(type, cell, get_atlas_for_magnitude(mag))
-		call_deferred("set_resource_rpc", type, cell, get_atlas_for_magnitude(mag))
+		set_resource_rpc(type, cell, get_atlas_for_magnitude(mag))
 		count += mag
 		if count > max_resouces and max_resouces != -1:
 			return

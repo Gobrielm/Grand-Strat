@@ -208,9 +208,9 @@ void Broker::distribute_cargo() {
 }
 
 void Broker::distribute_from_order(const TradeOrder* order) {
-    if (get_cargo_amount(order->get_type()) == 0) return;
     std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> s;
     for (const auto& tile : connected_brokers) {
+        if (get_cargo_amount(order->get_type()) == 0) return;
         Ref<Broker> broker = TerminalMap::get_instance() -> get_broker(tile);
         if (broker.is_null()) continue;
         s.insert(tile);
@@ -219,6 +219,7 @@ void Broker::distribute_from_order(const TradeOrder* order) {
         }
     }
     for (const auto& tile: connected_stations) {
+        if (get_cargo_amount(order->get_type()) == 0) return;
         Ref<RoadDepot> road_depot = TerminalMap::get_instance() -> get_terminal_as<RoadDepot>(tile);
         if (road_depot.is_null()) continue;
         

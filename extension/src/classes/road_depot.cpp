@@ -1,5 +1,7 @@
 #include "road_depot.hpp"
 #include "broker.hpp"
+#include "town.hpp"
+#include "factory_template.hpp"
 #include "../singletons/road_map.hpp"
 #include "../singletons/cargo_info.hpp"
 #include "../singletons/terminal_map.hpp"
@@ -114,7 +116,9 @@ std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> RoadDepot::get_reach
         pq.pop();
         Ref<RoadDepot> road_depot = terminal_map -> get_terminal_as<RoadDepot>(curr.val);
         if (road_depot.is_valid() && curr.val != get_location() && road_depot->get_player_owner() == get_player_owner()) { //Only add for same player/ai
-            toReturn.insert(curr.val);
+            if (is_road_depot_valid(road_depot)) {
+                toReturn.insert(curr.val);
+            }
             // continue; //Cannot go beyond road depots
         }
         Array tiles = road_map -> get_surrounding_cells(curr.val);
@@ -133,6 +137,53 @@ std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> RoadDepot::get_reach
     }
     return toReturn;
 }
+
+bool RoadDepot::is_road_depot_valid(Ref<RoadDepot> road_depot) const {
+    std::unordered_set<int> supplies_needed; // Supplies this depot needs
+    std::unordered_set<int> supplies_provided; // Supplies this depot needs
+    
+    Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
+    for (Vector2i tile: connected_brokers) {
+        Ref<Town> town = terminal_map->get_terminal_as<Town>(tile);
+        if (town.is_valid()) return true; 
+
+        Ref<Broker> broker = terminal_map -> get_terminal_as<Broker>(tile);
+        if (broker.is_null()) continue;
+        int type = 0;
+        for (bool valid: broker->get_accepts_vector()) {
+            if (valid) supplies_needed.insert(type);
+            type++;
+        }
+
+        Ref<FactoryTemplate> fact = terminal_map->get_terminal_as<FactoryTemplate>(tile);
+
+        for (const auto& [type, __]: fact->outputs) {
+            supplies_provided.insert(type);
+        }
+    }
+
+    for (Vector2i tile: road_depot -> connected_brokers) {
+        if (connected_brokers.count(tile)) continue; // If it has the same broker then ignore it
+        Ref<Town> town = terminal_map->get_terminal_as<Town>(tile);
+        if (town.is_valid()) return true; 
+
+        Ref<Broker> broker = terminal_map -> get_terminal_as<Broker>(tile);
+        if (broker.is_null()) continue;
+        int type = 0;
+        for (bool valid: broker->get_accepts_vector()) {
+            if (valid && supplies_provided.count(type)) return true; // If other depot can accepts what this provides
+            type++;
+        }
+
+        Ref<FactoryTemplate> fact = terminal_map->get_terminal_as<FactoryTemplate>(tile);
+
+        for (const auto& [type, __]: fact->outputs) {
+            if (supplies_needed.count(type)) return true;  // If other depot makes what this depot needs
+        }
+    }
+    return false;
+}
+
 
 float RoadDepot::get_fee() {
     return FEE;

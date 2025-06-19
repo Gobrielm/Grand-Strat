@@ -57,7 +57,10 @@ func start_threads_on_grid(x_min: int, x_max: int, y_min: int, y_max: int, n: in
 			thread.start(create_part_of_array.bind(x_start, x_end, y_start, y_end, toReturn))
 			threads.append(thread)
 	
-	toReturn[0] = get_tiles_for_clay()
+	var dict: Dictionary = get_tiles_for_clay()
+	mutex.lock()
+	toReturn[0] = dict
+	mutex.unlock()
 	
 	for thread: Thread in threads:
 		thread.wait_to_finish()
@@ -68,15 +71,11 @@ func get_tiles_for_clay() -> Dictionary:
 		if is_tile_river(tile):
 			for cell: Vector2i in map.get_surrounding_cells(tile):
 				if !is_tile_water(cell):
-					mutex.lock()
 					toReturn[cell] = 1
-					mutex.unlock()
 	for tile: Vector2i in map.get_used_cells_by_id(0, Vector2i(5, 0)):
 		for cell: Vector2i in map.get_surrounding_cells(tile):
 			if get_tile_elevation(map.get_cell_atlas_coords(cell)) == 0:
-				mutex.lock()
 				toReturn[cell] = 1
-				mutex.unlock()
 	
 	return toReturn
 
@@ -186,11 +185,14 @@ func add_basic_resource(resource_array: Array , tile: Vector2i) -> void:
 		if is_dense_forest(atlas):
 			update_resource_array(8, tile, 3, resource_array)
 	elif is_plains(atlas) or atlas == Vector2i(3, 0):
-		update_resource_array(10, tile, 1, resource_array)
-		update_resource_array(11, tile, 1, resource_array)
+		update_resource_array(10, tile, 4, resource_array)
+		update_resource_array(11, tile, 4, resource_array)
 		if is_lush_plains(atlas):
-			update_resource_array(10, tile, 3, resource_array)
-			update_resource_array(11, tile, 3, resource_array)
+			update_resource_array(10, tile, 7, resource_array)
+			update_resource_array(11, tile, 7, resource_array)
+	elif atlas == Vector2i(0, 2):
+		update_resource_array(10, tile, 2, resource_array)
+		update_resource_array(11, tile, 2, resource_array)
 	
 	if is_desert(atlas) and is_tile_within_4_tiles_of_water(tile):
 		update_resource_array(1, tile, 1, resource_array)
