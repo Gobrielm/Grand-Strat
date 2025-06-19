@@ -117,7 +117,6 @@ bool BasePop::will_work_here(Ref<FactoryTemplate> fact) const {
 
 void BasePop::work_here(Ref<FactoryTemplate> work) {
     work -> work_here(this);
-    UtilityFunctions::print("I started working");
 }
 
 void BasePop::pay_wage(float wage) {

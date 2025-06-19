@@ -31,15 +31,32 @@ int Firm::get_amount_can_buy(const float amount_per) const {
 }
 
 void Firm::add_cash(float amount) {
-    MoneyController::get_instance()->add_money_to_player(get_player_owner(), amount);
+    if (get_player_owner() == 0) {
+        m.lock();
+        cash += amount;
+        m.unlock();
+    } else {
+        MoneyController::get_instance()->add_money_to_player(get_player_owner(), amount);
+    }
 }
 
 void Firm::remove_cash(float amount) {
-    add_cash(-amount);
+    if (get_player_owner() == 0) {
+        m.lock();
+        cash -= amount;
+        m.unlock();
+    } else {
+        add_cash(-amount);
+    }
 }
 
 float Firm::get_cash() const {
-    return MoneyController::get_instance()->get_money(get_player_owner());
+    if (get_player_owner() == 0) {
+        std::scoped_lock lock(m);
+        return cash;
+    } else {
+        return MoneyController::get_instance()->get_money(get_player_owner());
+    }
 }
 
 float Firm::transfer_cash(float amount) {

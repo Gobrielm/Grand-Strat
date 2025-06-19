@@ -6,7 +6,7 @@ using namespace godot;
 
 Ref<ProvinceManager> ProvinceManager::singleton_instance = nullptr;
 
-ProvinceManager::ProvinceManager() {}
+ProvinceManager::ProvinceManager(): thread_pool(std::thread::hardware_concurrency()) {}
 
 void ProvinceManager::_bind_methods() {
     ClassDB::bind_static_method("ProvinceManager", D_METHOD("create"), &ProvinceManager::create);
@@ -34,6 +34,8 @@ void ProvinceManager::_bind_methods() {
     // Country to province mapping
     ClassDB::bind_method(D_METHOD("add_province_to_country", "province", "country_id"), &ProvinceManager::add_province_to_country);
     ClassDB::bind_method(D_METHOD("get_countries_provinces", "country_id"), &ProvinceManager::get_countries_provinces);
+
+    ClassDB::bind_method(D_METHOD("month_tick"), &ProvinceManager::month_tick);
 }
 
 void ProvinceManager::create() {
@@ -181,4 +183,31 @@ std::unordered_set<int> ProvinceManager::get_country_provinces(int country_id) c
         }
     }
     return s;
+}
+
+void ProvinceManager::month_tick() {
+    if (month_thread.joinable()) {
+        month_thread.join();
+    }
+    month_thread = std::thread(&ProvinceManager::month_tick_helper, this);
+}
+
+void ProvinceManager::month_tick_helper() {
+    std::atomic<size_t> counter = provinces.size();
+    std::condition_variable done_cv;
+    std::mutex done_mutex;
+
+    for (const auto& [_, province] : provinces) {
+        thread_pool.submit([&, province]() {
+            province->month_tick();
+            if (--counter == 0) {
+                std::lock_guard<std::mutex> lock(done_mutex);
+                done_cv.notify_one();
+            }
+        });
+    }
+
+    // Wait until all tasks are done
+    std::unique_lock<std::mutex> lock(done_mutex);
+    done_cv.wait(lock, [&]() { return counter == 0; });
 }

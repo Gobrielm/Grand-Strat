@@ -52,14 +52,20 @@ void InitialBuilder::build_factory_type(int type, Province* province) {
             if (cargo_val != 0 && rand() % chance == 0) {
                 //Need to check if this factory will be cutoff, then check neighboors
                 if (will_any_factory_be_cut_off(tile)) continue;
-                Array recipe;
-                recipe.push_back(Dictionary());
-                Dictionary d;
-                d[type] = 1;
-
-                recipe.push_back(d);
                 int mult = std::min(rand() % 5, cargo_val);
-                cargo_map->call("create_factory", get_owner_id(), tile, recipe, mult);
+                
+                if (type == 10) {
+                    cargo_map->call("create_wheat_farm", tile, get_owner_id(), mult);
+                } else {
+                    Array recipe;
+                    recipe.push_back(Dictionary());
+                    Dictionary d;
+                    d[type] = 1;
+
+                    recipe.push_back(d);
+                    cargo_map->call("create_factory", get_owner_id(), tile, recipe, mult);
+                }
+                
                 levels_placed += mult;
                 if (levels_placed > num_of_levels_to_place) {
                     break;

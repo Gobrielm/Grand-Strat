@@ -88,13 +88,19 @@ func create_factory(p_player_id: int, coords: Vector2i, obj_recipe: Array, mult:
 	var new_factory: Factory
 	if p_player_id > 0:
 		new_factory =  Factory.create(coords, p_player_id, obj_recipe[0], obj_recipe[1])
-	elif p_player_id < 0:
-		new_factory =  AiFactory.create(coords, p_player_id, obj_recipe[0], obj_recipe[1])
 	else:
-		new_factory = PrivateAiFactory.create(coords, obj_recipe[0], obj_recipe[1])
+		new_factory =  AiFactory.create(coords, p_player_id, obj_recipe[0], obj_recipe[1])
 	for i: int in range(1, mult):
 		new_factory.admin_upgrade()
 	call_thread_safe("call_set_tile_rpc", coords, get_atlas_cell(obj_recipe))
+	add_terminal_to_province(new_factory)
+	TerminalMap.get_instance().create_terminal(new_factory)
+
+func create_wheat_farm(coords: Vector2i, p_player_id: int, mult: int) -> void:
+	var new_factory: Factory = WheatFarm.create(coords, p_player_id)
+	for i: int in range(1, mult):
+		new_factory.admin_upgrade()
+	call_thread_safe("call_set_tile_rpc", coords, Vector2i(4, 0))
 	add_terminal_to_province(new_factory)
 	TerminalMap.get_instance().create_terminal(new_factory)
 

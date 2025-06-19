@@ -27,6 +27,10 @@ private:
 protected:
     static void _bind_methods();
 
+    bool can_factory_upgrade() const;
+    bool is_primary_factory() const;
+    int get_primary_type_production() const;
+
 public:
     std::unordered_map<int, int> inputs;
     std::unordered_map<int, int> outputs;
@@ -68,6 +72,8 @@ public:
     float get_last_month_income() const;
 
     // Employment
+    int get_pops_needed() const;
+    void set_pops_needed(int num);
     int get_employement() const;
     bool is_hiring() const;
     bool is_firing() const;

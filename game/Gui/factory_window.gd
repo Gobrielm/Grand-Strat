@@ -60,7 +60,7 @@ func request_current_level(coords: Vector2i) -> void:
 	var broker: Broker = TerminalMap.get_instance().get_broker(coords)
 	var _current_level: int = 0
 	if broker is FactoryTemplate:
-		_current_level = (TerminalMap.get_instance().get_broker(coords) as FactoryTemplate).get_level()
+		_current_level = (TerminalMap.get_instance().get_broker(coords) as FactoryTemplate).get_level_without_employment()
 	update_current_level.rpc_id(multiplayer.get_remote_sender_id(), _current_level)
 
 @rpc("authority", "call_local", "unreliable")

@@ -1,6 +1,5 @@
 #include "terminal_map.hpp"
 #include "road_map.hpp"
-#include "../classes/private_ai_factory.hpp"
 #include "../classes/terminal.hpp"
 #include "../classes/station.hpp"
 #include "../classes/broker.hpp"
@@ -522,7 +521,7 @@ float TerminalMap::get_average_cash_of_road_depot() const {
 }
 
 float TerminalMap::get_average_cash_of_factory() const {
-    return get_average_cash_of_terminal<PrivateAiFactory>();
+    return get_average_cash_of_terminal<Factory>();
 }
 
 float TerminalMap::get_average_cash_of_town() const {

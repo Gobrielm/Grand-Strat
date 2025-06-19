@@ -29,7 +29,6 @@ void Province::_bind_methods() {
     ClassDB::bind_method(D_METHOD("create_pops"), &Province::create_pops);
     ClassDB::bind_method(D_METHOD("count_pops"), &Province::count_pops);
 
-    ClassDB::bind_method(D_METHOD("day_tick"), &Province::day_tick);
     ClassDB::bind_method(D_METHOD("month_tick"), &Province::month_tick);
 }
     
@@ -240,21 +239,34 @@ int Province::count_pops() const {
     return pops.size();
 }
 
+void Province::find_employment_for_pops() {
+    Ref<FactoryTemplate> work;
+
+    for (BasePop* pop: pops) {
+        if (pop -> is_seeking_employment()) {
+            if (work.is_valid() && pop->will_work_here(work)) {
+                pop -> work_here(work);
+            } else {
+                work = find_employment(pop);
+                if (work.is_valid()) {
+                    pop -> work_here(work);
+                }
+            }
+        }
+    }
+}
+
 Ref<FactoryTemplate> Province::find_employment(BasePop* pop) const {
     float max_wage = 0.0;
-    Ref<FactoryTemplate> best_fact = nullptr;
+    Ref<FactoryTemplate> best_fact = Ref<FactoryTemplate>(nullptr);
     
-    if (dynamic_cast<TownPop*>(pop)) {
-        best_fact = find_urban_employment(pop);
-    } else if (dynamic_cast<RuralPop*>(pop)) {
-        for (const auto tile: terminal_tiles) {
-            Ref<FactoryTemplate> fact = TerminalMap::get_instance() -> get_terminal_as<FactoryTemplate>(tile);
-            if (fact.is_valid() && pop -> will_work_here(fact) && fact -> get_wage() > max_wage) {
-                best_fact = fact;
-                max_wage = fact -> get_wage();
-            }
- 
+    for (const auto tile: terminal_tiles) {
+        Ref<FactoryTemplate> fact = TerminalMap::get_instance() -> get_terminal_as<FactoryTemplate>(tile);
+        if (fact.is_valid() && pop -> will_work_here(fact) && fact -> get_wage() > max_wage) {
+            best_fact = fact;
+            max_wage = fact -> get_wage();
         }
+
     }
 	return best_fact;
 }
@@ -279,17 +291,6 @@ Ref<FactoryTemplate> Province::find_urban_employment(BasePop* pop) const {
     return best_fact;
 }
 
-void Province::day_tick() {
-
-}
-
 void Province::month_tick() {
-    for (BasePop* pop: pops) {
-        if (pop -> is_seeking_employment()) {
-            Ref<FactoryTemplate> work = find_employment(pop);
-            if (work.is_valid()) {
-                pop -> work_here(work);
-            }
-        }
-    }
+    find_employment_for_pops();
 }

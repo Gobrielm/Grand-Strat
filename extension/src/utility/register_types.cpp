@@ -23,7 +23,7 @@
 #include "../classes/construction_site.hpp"
 #include "../classes/factory.hpp"
 #include "../classes/ai_factory.hpp"
-#include "../classes/private_ai_factory.hpp"
+#include "../classes/Specific_Buildings/wheat_farm.hpp"
 #include "../classes/road_depot.hpp"
 #include "../classes/ai_base.hpp"
 #include "../classes/company_ai.hpp"
@@ -67,7 +67,7 @@ void initialize_gdextension_types(ModuleInitializationLevel p_level)
 	GDREGISTER_CLASS(ConstructionSite);
 	GDREGISTER_CLASS(Factory);
 	GDREGISTER_CLASS(AiFactory);
-	GDREGISTER_CLASS(PrivateAiFactory);
+	GDREGISTER_CLASS(WheatFarm);
 	GDREGISTER_CLASS(RoadDepot);
 	GDREGISTER_CLASS(AiBase);
 	GDREGISTER_CLASS(CompanyAi);

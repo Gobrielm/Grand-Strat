@@ -7,6 +7,7 @@
 #include <godot_cpp/variant/dictionary.hpp>
 #include <godot_cpp/variant/array.hpp>
 #include "../classes/province.hpp"
+#include "../utility/thread_pool.hpp"
 
 using namespace godot;
 
@@ -19,6 +20,10 @@ class ProvinceManager : public RefCounted {
     std::unordered_map<int, Province*> provinces;
     std::unordered_map<Vector2i, int, godot_helpers::Vector2iHasher> tiles_to_province_id;
     std::unordered_map<int, std::unordered_set<int>> country_id_to_province_ids;
+
+    void month_tick_helper();
+    std::thread month_thread;
+    ThreadPool thread_pool;
 
 protected:
     static void _bind_methods();
@@ -54,4 +59,6 @@ public:
     void add_province_to_country(Province* prov, int country_id);
     Dictionary get_countries_provinces(int country_id) const;
     std::unordered_set<int> get_country_provinces(int country_id) const;
+
+    void month_tick();
 };

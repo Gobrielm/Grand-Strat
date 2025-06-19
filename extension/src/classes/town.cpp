@@ -42,6 +42,8 @@ void Town::_bind_methods() {
 Town::Town(): Broker(Vector2i(0, 0), 0) {
     set_max_storage(DEFAULT_MAX_STORAGE);
     local_pricer = memnew(LocalPriceController);
+    remove_cash(get_cash());
+    add_cash(INITIAL_CASH);
 }
 
 Town::~Town() {
@@ -84,21 +86,6 @@ int Town::get_supply(int type) const {
 int Town::get_demand(int type) const {
     std::scoped_lock lock(m);
     return local_pricer -> get_demand(type);
-}
-
-void Town::add_cash(float amount) {
-    std::scoped_lock lock(m);
-    cash += amount;
-}
-
-void Town::remove_cash(float amount) {
-    std::scoped_lock lock(m);
-    cash -= amount;
-}
-
-float Town::get_cash() const {
-    std::scoped_lock lock(m);
-    return cash;
 }
 
 //To Buy

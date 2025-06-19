@@ -17,7 +17,7 @@ class Town : public Broker {
 private:
     std::unordered_map<int, std::vector<Ref<FactoryTemplate>>> internal_factories; //Not thread safe
     std::unordered_map<int, BasePop*> city_pops;
-    int cash = 10000;
+    float INITIAL_CASH = 10000;
 
 protected:
     static void _bind_methods();
@@ -36,10 +36,6 @@ public:
 
     int get_supply(int type) const;
     int get_demand(int type) const;
-
-    void add_cash(float amount) override;
-    void remove_cash(float amount) override;
-    float get_cash() const override; 
 
     bool is_price_acceptable(int type, float price) const override;
     int get_desired_cargo(int type, float price) const override;

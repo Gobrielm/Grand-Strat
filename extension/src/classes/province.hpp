@@ -61,10 +61,10 @@ class Province : public Object {
     const std::unordered_set<Vector2i, godot_helpers::Vector2iHasher>& get_terminal_tiles_set() const;
     void create_pops();
     int count_pops() const;
+    void find_employment_for_pops();
     Ref<FactoryTemplate> find_employment(BasePop* pop) const;
     Ref<FactoryTemplate> find_urban_employment(BasePop* pop) const;
 
-    void day_tick();
     void month_tick();
     
 

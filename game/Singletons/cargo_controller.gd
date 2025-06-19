@@ -42,6 +42,7 @@ var end: float = 0.0
 
 func _on_month_tick_timeout() -> void:
 	DataCollector.get_instance().month_tick()
+	ProvinceManager.get_instance().month_tick()
 	TerminalMap.get_instance()._on_month_tick_timeout()
 	Utils.unit_map._on_month_tick_timeout()
 

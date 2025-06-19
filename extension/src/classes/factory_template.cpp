@@ -20,7 +20,7 @@ void FactoryTemplate::_bind_methods() {
     
 
     ClassDB::bind_method(D_METHOD("distribute_cargo"), &FactoryTemplate::distribute_cargo);
-    ClassDB::bind_method(D_METHOD("get_level"), &FactoryTemplate::get_level);
+    ClassDB::bind_method(D_METHOD("get_level_without_employment"), &FactoryTemplate::get_level_without_employment);
     ClassDB::bind_method(D_METHOD("upgrade"), &FactoryTemplate::upgrade);
     ClassDB::bind_method(D_METHOD("admin_upgrade"), &FactoryTemplate::admin_upgrade);
 
@@ -67,6 +67,7 @@ void FactoryTemplate::initialize(Vector2i new_location, int player_owner, Dictio
     }
     local_pricer = memnew(FactoryLocalPriceController);
     pops_needed = 1;
+    level = 1;
 }
 
 float FactoryTemplate::get_min_price(int type) const {
@@ -143,13 +144,11 @@ void FactoryTemplate::distribute_cargo() {
 }
 
 int FactoryTemplate::get_level() const {
-    std::scoped_lock lock(m);
-    //TODO: Employment
-	//var employment: int = get_employement()
-	//if employment == 0:
-	//  return 0
-	//return round(level * employment / employment_total)
-    return level;
+	int employment = get_employement();
+	if (employment == 0) {
+        return 0;
+    }
+	return round(get_level_without_employment() * employment / get_pops_needed());
 }
 
 int FactoryTemplate::get_level_without_employment() const {
@@ -158,11 +157,11 @@ int FactoryTemplate::get_level_without_employment() const {
 }
 
 bool FactoryTemplate::is_max_level() const {
-    if (outputs.size() != 1 || (CargoInfo::get_instance()->is_cargo_primary((*outputs.begin()).first))) {
-        return false;
+    if (is_primary_factory()) {
+        return level == TerminalMap::get_instance()->get_cargo_value_of_tile(get_location(), get_primary_type_production());
     }
 
-    return level == TerminalMap::get_instance()->get_cargo_value_of_tile(get_location(), outputs.at(0));
+    return false;
 }
 
 int FactoryTemplate::get_cost_for_upgrade() {
@@ -178,19 +177,36 @@ void FactoryTemplate::check_for_upgrade() {
 
 void FactoryTemplate::upgrade() {
     int cost = get_cost_for_upgrade();
-    if (get_cash() >= cost) {
+    if (get_cash() >= cost && can_factory_upgrade()) {
         remove_cash(cost);
         std::scoped_lock lock(m);
+        pops_needed += pops_needed / level;
         level++;
-        pops_needed = level;
     }
 }
 
 void FactoryTemplate::admin_upgrade() {
-    std::scoped_lock lock(m);
-    //Make sure that thing calling does check
-    level++;
-    pops_needed = level;
+    if (can_factory_upgrade()) {
+        std::scoped_lock lock(m);
+        pops_needed += pops_needed / level;
+        level++;
+    }
+    
+}
+
+bool FactoryTemplate::can_factory_upgrade() const {
+    if (is_primary_factory()) {
+        return TerminalMap::get_instance()->get_cargo_value_of_tile(get_location(), get_primary_type_production()) > level;
+    }
+    return true;
+}
+
+bool FactoryTemplate::is_primary_factory() const {
+    return outputs.size() == 1 && CargoInfo::get_instance()->is_cargo_primary(get_primary_type_production());
+}
+
+int FactoryTemplate::get_primary_type_production() const {
+    return (*outputs.begin()).first;
 }
 
 void FactoryTemplate::update_income_array() {
@@ -209,29 +225,49 @@ float FactoryTemplate::get_last_month_income() const {
     return income_list.front();
 }
 
+int FactoryTemplate::get_pops_needed() const {
+    std::scoped_lock lock(m);
+    return pops_needed;
+}
+
+void FactoryTemplate::set_pops_needed(int num) {
+    std::scoped_lock lock(m);
+    pops_needed = num;
+}
+
 int FactoryTemplate::get_employement() const {
     std::scoped_lock lock(m);
     return employees.size();
 }
 
 bool FactoryTemplate::is_hiring() const {
-    return (pops_needed - get_employement() >= 0) && (get_last_month_income() * 0.9 > 0);
+    return (get_pops_needed() - get_employement() >= 0);
 }
 
 bool FactoryTemplate::is_firing() const {
-    return get_employement() != 0 && get_last_month_income() < 0;
+    return get_employement() != 0;
 }
 
 float FactoryTemplate::get_wage() const {
-    float available = get_last_month_income() * 0.9f;
-    return available / pops_needed;
+    float available = 0;
+    for (const auto &[type, amount]: inputs) {
+        available -= get_local_price(type) * amount;
+    }
+    for (const auto &[type, amount]: outputs) {
+        available += get_local_price(type) * amount;
+    }
+    available *= 30;
+
+    return available / get_pops_needed();
 }
 
 void FactoryTemplate::work_here(BasePop* pop) {
     if (is_hiring()) {
         m.lock();
         int index = employees.empty() ? 0 : rand() % employees.size();
-        employees.insert(employees.begin() + index, pop);
+        auto i = employees.begin();
+        std::advance(i, index);
+        employees.insert(i, pop);
         m.unlock();
         pop->employ(get_wage());
     }

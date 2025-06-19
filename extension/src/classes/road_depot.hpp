@@ -51,9 +51,6 @@ public:
     bool is_road_depot_valid(Ref<RoadDepot> road_depot) const;
 
     static float get_fee();
-    float get_cash() const override; //Temporary for testing
-    void add_cash(float amount) override; //Temporary for testing
-    void remove_cash(float amount) override; //Temporary for testing
 
     bool is_connected_to_other_depot() const;
 

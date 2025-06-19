@@ -189,36 +189,6 @@ float RoadDepot::get_fee() {
     return FEE;
 }
 
-float RoadDepot::get_cash() const {
-    if (get_player_owner() == 0) {
-        return cash;
-    } else {
-        return Firm::get_cash();
-    }
-}
-
-//For Testing
-
-void RoadDepot::add_cash(float amount) {
-    if (get_player_owner() == 0) {
-        m.lock();
-        cash += amount;
-        m.unlock();
-    } else {
-        Firm::add_cash(amount);
-    }
-}
-
-void RoadDepot::remove_cash(float amount) {
-    if (get_player_owner() == 0) {
-        m.lock();
-        cash -= amount;
-        m.unlock();
-    } else {
-        Firm::remove_cash(amount);
-    }
-}
-
 bool RoadDepot::is_connected_to_other_depot() const {
     std::scoped_lock lock(m);
     return connected_brokers.size() != 0;
