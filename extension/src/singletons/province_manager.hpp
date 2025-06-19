@@ -3,11 +3,11 @@
 #include <unordered_map>
 #include <mutex>
 #include <thread>
+#include <condition_variable>
 #include <godot_cpp/classes/ref_counted.hpp>
 #include <godot_cpp/variant/dictionary.hpp>
 #include <godot_cpp/variant/array.hpp>
 #include "../classes/province.hpp"
-#include "../utility/thread_pool.hpp"
 
 using namespace godot;
 
@@ -22,15 +22,21 @@ class ProvinceManager : public RefCounted {
     std::unordered_map<int, std::unordered_set<int>> country_id_to_province_ids;
 
     void month_tick_helper();
-    std::thread month_thread;
-    ThreadPool thread_pool;
+    std::vector<std::thread> worker_threads;
+    std::vector<Province*> provinces_to_process;
+    std::condition_variable condition;
+    std::atomic<bool> stop = false;
+
+    std::atomic<int> jobs_remaining = 0;
+    std::condition_variable jobs_done_cv;
+    std::mutex jobs_done_mutex;
 
 protected:
     static void _bind_methods();
 
 public:
     ProvinceManager();
-    
+    ~ProvinceManager();
     static void create();
     static Ref<ProvinceManager> get_instance();
 
@@ -61,4 +67,5 @@ public:
     std::unordered_set<int> get_country_provinces(int country_id) const;
 
     void month_tick();
+    void thread_processor();
 };

@@ -78,13 +78,16 @@ void TerminalMap::initialize_singleton(TileMapLayer* p_map) {
     ERR_FAIL_COND_MSG(singleton_instance != nullptr, "Cannot create multiple instances of singleton!");
     singleton_instance.instantiate();
     singleton_instance -> map = p_map;
+    
 }
 
 TerminalMap::TerminalMap(TileMapLayer* p_map) {
     map = p_map;
+    for (int i = 0; i < 4; i++) {
+        worker_threads.push_back(std::thread(&TerminalMap::thread_processor, this));
+    }
+
     Dictionary needs;
-
-
     Ref<CargoInfo> cargo_info = CargoInfo::get_instance(); //TODO: Should be expanded and moved elsewhere
     needs[cargo_info -> get_cargo_type("grain")] = 1;
     needs[cargo_info -> get_cargo_type("wood")] = 0.3;
@@ -121,75 +124,164 @@ void TerminalMap::assign_cargo_map(TileMapLayer* p_cargo_map) {
     cargo_values = cargo_map->get_node<Node2D>("cargo_values");
 }
 
-//Process hooks
 void TerminalMap::_on_day_tick_timeout() {
-    if (day_thread.joinable()) day_thread.join();
-    day_thread = std::thread(&TerminalMap::_on_day_tick_timeout_helper, this);
-}
+    std::unique_lock<std::mutex> lock(day_jobs_done_mutex);
+    day_jobs_cv.wait(lock, [this](){ // Sleeps and waits for jobs to be done 
+        return day_jobs == 0; 
+    });
 
-void TerminalMap::_on_day_tick_timeout_helper() {
-    auto start_time = std::chrono::high_resolution_clock::now();
-    m.lock();
-    day_tick_priority = true;
-    m.unlock();
-    for (const auto &[coords, terminal]: cargo_map_terminals) {
-        if (terminal->has_method("day_tick")) {
-            terminal->call("day_tick");
-        }
-    }
-    m.lock();
-    day_tick_priority = false;
-    m.unlock();
-    auto end_time = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> elapsed = end_time - start_time;
-    // print_line("Day tick took " + String::num_scientific(elapsed.count()) + " seconds");
+    day_tick_helper();
 }
 
 void TerminalMap::_on_month_tick_timeout() {
-    RoadMap::get_instance()->month_tick();
-    // Clean up old threads
-    for (auto &thread: month_threads) {
-        thread.join();
+    std::unique_lock<std::mutex> lock(month_jobs_done_mutex);
+    month_jobs_cv.wait(lock, [this](){ // Sleeps and waits for jobs to be done 
+        return month_jobs == 0; 
+    });
+    month_end = std::chrono::high_resolution_clock::now();
+    month_tick_helper();
+}
+
+
+void TerminalMap::day_tick_helper() {
+    {
+        std::lock_guard<std::mutex> lock(m);
+        for (const auto &[__, terminal]: cargo_map_terminals) {
+            if (terminal->has_method("day_tick")) {
+                day_tick_work.push_back(terminal);
+            }
+        }
+        day_jobs  = day_tick_work.size();
+    }
+    
+    condition.notify_all();
+}
+
+void TerminalMap::month_tick_helper() {
+    {
+        std::lock_guard<std::mutex> lock(m);
+        for (const auto &[__, terminal]: cargo_map_terminals) {
+            if (terminal->has_method("month_tick")) {
+                month_tick_work.push_back(terminal);
+            }
+        }
+        month_jobs  = month_tick_work.size();
     }
     std::chrono::duration<double> elapsed = month_end - month_start;
     print_line("Month tick took " + String::num_scientific(elapsed.count()) + " seconds");
-    month_threads.clear();
-
-    auto start = cargo_map_terminals.begin();
     month_start = std::chrono::high_resolution_clock::now();
-    const int NUMBER_OF_THREADS = 4;
-    const int chunk_size = cargo_map_terminals.size() / NUMBER_OF_THREADS;
-
-    for (int i = 0; i < NUMBER_OF_THREADS; i++) {
-        auto end = start;
-        std::advance(end, chunk_size);
-        if (i == (NUMBER_OF_THREADS - 1)) {
-            end = cargo_map_terminals.end();
-        }
-        
-        std::thread thrd(&TerminalMap::_on_month_tick_timeout_helper, this, start, end);
-        month_threads.push_back(std::move(thrd));
-        start = end;
-    }
-    // _on_month_tick_timeout_helper(cargo_map_terminals.begin(), cargo_map_terminals.end());
+    condition.notify_all();
 }
 
-void TerminalMap::_on_month_tick_timeout_helper(MapType::iterator start, MapType::iterator end) {
-    for (auto it = start; it != end; it++) {
-        while (day_tick_priority) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(2));
+//MultiThreading and Process Hooks
+void TerminalMap::thread_processor() {
+    while (!stop) {
+        Ref<Terminal> to_process = Ref<Terminal>(nullptr);
+        bool day_tick = false;
+        {
+            std::unique_lock<std::mutex> lock(m);
+            condition.wait(lock, [this]() {
+                return !day_tick_work.empty() || !month_tick_work.empty() || stop;
+            });
+
+            if (stop && day_tick_work.empty() && month_tick_work.empty()) {
+                return; // Exit thread
+            }
+
+            if (!day_tick_work.empty()) {
+                day_tick = true;
+                to_process = day_tick_work.back();
+                day_tick_work.pop_back();
+
+                if (--day_jobs == 0) {
+                    std::lock_guard<std::mutex> lock(day_jobs_done_mutex);
+                    day_jobs_cv.notify_one();  // Wake main thread
+                }
+            } else {
+                day_tick = false;
+                to_process = month_tick_work.back();
+                month_tick_work.pop_back();
+                
+                if (--month_jobs == 0) {
+                    std::lock_guard<std::mutex> lock(month_jobs_done_mutex);
+                    month_jobs_cv.notify_one();  // Wake main thread
+                }
+            }
         }
-        Vector2i coords = it -> first;
-        Ref<Terminal> terminal = it -> second;
-        
-        if (terminal->has_method("month_tick")) {
-            terminal->call("month_tick");
+        if (day_tick) {
+            to_process->call("day_tick");
+        } else {
+            to_process->call("month_tick");
         }
     }
-    m.lock();
-    month_end = std::chrono::high_resolution_clock::now();
-    m.unlock();
 }
+
+
+
+// void TerminalMap::_on_day_tick_timeout() {
+//     if (day_thread.joinable()) day_thread.join();
+//     day_thread = std::thread(&TerminalMap::_on_day_tick_timeout_helper, this);
+// }
+
+// void TerminalMap::_on_day_tick_timeout_helper() {
+//     auto start_time = std::chrono::high_resolution_clock::now();
+//     day_tick_priority = true;
+//     for (const auto &[coords, terminal]: cargo_map_terminals) {
+//         if (terminal->has_method("day_tick")) {
+//             terminal->call("day_tick");
+//         }
+//     }
+//     day_tick_priority = false;
+//     auto end_time = std::chrono::high_resolution_clock::now();
+//     std::chrono::duration<double> elapsed = end_time - start_time;
+//     // print_line("Day tick took " + String::num_scientific(elapsed.count()) + " seconds");
+// }
+
+// void TerminalMap::_on_month_tick_timeout() {
+//     RoadMap::get_instance()->month_tick();
+//     // Clean up old threads
+//     for (auto &thread: month_threads) {
+//         thread.join();
+//     }
+//     std::chrono::duration<double> elapsed = month_end - month_start;
+//     print_line("Month tick took " + String::num_scientific(elapsed.count()) + " seconds");
+//     month_threads.clear();
+
+//     auto start = cargo_map_terminals.begin();
+//     month_start = std::chrono::high_resolution_clock::now();
+//     const int NUMBER_OF_THREADS = 4;
+//     const int chunk_size = cargo_map_terminals.size() / NUMBER_OF_THREADS;
+
+//     for (int i = 0; i < NUMBER_OF_THREADS; i++) {
+//         auto end = start;
+//         std::advance(end, chunk_size);
+//         if (i == (NUMBER_OF_THREADS - 1)) {
+//             end = cargo_map_terminals.end();
+//         }
+        
+//         std::thread thrd(&TerminalMap::_on_month_tick_timeout_helper, this, start, end);
+//         month_threads.push_back(std::move(thrd));
+//         start = end;
+//     }
+//     // _on_month_tick_timeout_helper(cargo_map_terminals.begin(), cargo_map_terminals.end());
+// }
+
+// void TerminalMap::_on_month_tick_timeout_helper(MapType::iterator start, MapType::iterator end) {
+//     for (auto it = start; it != end; it++) {
+//         while (day_tick_priority) {
+//             std::this_thread::sleep_for(std::chrono::milliseconds(2));
+//         }
+//         Vector2i coords = it -> first;
+//         Ref<Terminal> terminal = it -> second;
+        
+//         if (terminal->has_method("month_tick")) {
+//             terminal->call("month_tick");
+//         }
+//     }
+//     m.lock();
+//     month_end = std::chrono::high_resolution_clock::now();
+//     m.unlock();
+// }
 
 void TerminalMap::clear() {
     m.lock();

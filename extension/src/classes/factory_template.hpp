@@ -17,8 +17,8 @@ private:
     static const int COST_FOR_UPGRADE;
     static const int DEFAULT_BATCH_SIZE;
 
-    int level = 1;
-    int pops_needed = 1;
+    std::atomic<int> level = 1;
+    std::atomic<int> pops_needed = 1;
     float change_in_cash = 0.0;
 
     std::list<int> income_list;

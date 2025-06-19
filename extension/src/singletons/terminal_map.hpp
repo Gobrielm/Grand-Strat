@@ -7,6 +7,7 @@
 
 #include <mutex>
 #include <thread>
+#include <condition_variable>
 
 #include "../utility/vector2i_hash.hpp"
 #include "../classes/construction_site.hpp"
@@ -36,13 +37,31 @@ private:
 
     std::thread day_thread;
     std::vector<std::thread> month_threads;
-    bool day_tick_priority = false;
+
+    // Threads
+    std::vector<std::thread> worker_threads;
+    std::vector<Ref<Terminal>> day_tick_work;
+    std::vector<Ref<Terminal>> month_tick_work;
+    std::condition_variable condition;
+    std::atomic<bool> stop = false;
+    std::atomic<int> day_jobs = 0;
+    std::atomic<int> month_jobs = 0;
+    std::condition_variable day_jobs_cv;
+    std::condition_variable month_jobs_cv;
+    std::mutex day_jobs_done_mutex;
+    std::mutex month_jobs_done_mutex;
+
+    void day_tick_helper();
+    void month_tick_helper();
+
+    void thread_processor();
+
     std::chrono::time_point<std::chrono::high_resolution_clock> month_start;
     std::chrono::time_point<std::chrono::high_resolution_clock> month_end;
 
-    void _on_day_tick_timeout_helper();
-    using MapType = std::unordered_map<Vector2i, Ref<Terminal>, godot_helpers::Vector2iHasher>;
-    void _on_month_tick_timeout_helper(MapType::iterator start, MapType::iterator end);
+    // void _on_day_tick_timeout_helper();
+    // using MapType = std::unordered_map<Vector2i, Ref<Terminal>, godot_helpers::Vector2iHasher>;
+    // void _on_month_tick_timeout_helper(MapType::iterator start, MapType::iterator end);
 
 protected:
     static void _bind_methods();

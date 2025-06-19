@@ -6,7 +6,15 @@ using namespace godot;
 
 Ref<ProvinceManager> ProvinceManager::singleton_instance = nullptr;
 
-ProvinceManager::ProvinceManager(): thread_pool(std::thread::hardware_concurrency()) {}
+ProvinceManager::ProvinceManager() {
+    for (int i = 0; i < 6; i++) {
+        worker_threads.push_back(std::thread(&ProvinceManager::thread_processor, this));
+    }
+}
+
+ProvinceManager::~ProvinceManager() {
+    stop = true;
+}
 
 void ProvinceManager::_bind_methods() {
     ClassDB::bind_static_method("ProvinceManager", D_METHOD("create"), &ProvinceManager::create);
@@ -186,28 +194,50 @@ std::unordered_set<int> ProvinceManager::get_country_provinces(int country_id) c
 }
 
 void ProvinceManager::month_tick() {
-    if (month_thread.joinable()) {
-        month_thread.join();
-    }
-    month_thread = std::thread(&ProvinceManager::month_tick_helper, this);
+    std::unique_lock<std::mutex> lock(jobs_done_mutex);
+    jobs_done_cv.wait(lock, [this](){ // Sleeps and waits for jobs to be done 
+        return jobs_remaining == 0; 
+    });
+
+    month_tick_helper();
 }
 
 void ProvinceManager::month_tick_helper() {
-    std::atomic<size_t> counter = provinces.size();
-    std::condition_variable done_cv;
-    std::mutex done_mutex;
-
-    for (const auto& [_, province] : provinces) {
-        thread_pool.submit([&, province]() {
-            province->month_tick();
-            if (--counter == 0) {
-                std::lock_guard<std::mutex> lock(done_mutex);
-                done_cv.notify_one();
-            }
-        });
+    {
+        std::lock_guard<std::mutex> lock(m);
+        for (const auto &[__, province]: provinces) {
+            provinces_to_process.push_back(province);
+        }
+        jobs_remaining  = provinces_to_process.size();
     }
+    
+    condition.notify_all();
+}   
 
-    // Wait until all tasks are done
-    std::unique_lock<std::mutex> lock(done_mutex);
-    done_cv.wait(lock, [&]() { return counter == 0; });
+void ProvinceManager::thread_processor() {
+    while (!stop) {
+        Province* to_process = nullptr;
+
+        {
+            std::unique_lock<std::mutex> lock(m);
+            condition.wait(lock, [this]() {
+                return !provinces_to_process.empty() || stop;
+            });
+
+            if (stop && provinces_to_process.empty()) {
+                return; // Exit thread
+            }
+
+            // Get one province to process
+            to_process = provinces_to_process.back();
+            provinces_to_process.pop_back();
+
+            if (--jobs_remaining == 0) {
+                std::lock_guard<std::mutex> lock(jobs_done_mutex);
+                jobs_done_cv.notify_one();  // Wake main thread
+            }
+        }
+
+        to_process->month_tick();
+    }
 }

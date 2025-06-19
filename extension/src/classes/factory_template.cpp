@@ -152,7 +152,6 @@ int FactoryTemplate::get_level() const {
 }
 
 int FactoryTemplate::get_level_without_employment() const {
-    std::scoped_lock lock(m);
     return level;
 }
 
@@ -179,7 +178,6 @@ void FactoryTemplate::upgrade() {
     int cost = get_cost_for_upgrade();
     if (get_cash() >= cost && can_factory_upgrade()) {
         remove_cash(cost);
-        std::scoped_lock lock(m);
         pops_needed += pops_needed / level;
         level++;
     }
@@ -187,7 +185,6 @@ void FactoryTemplate::upgrade() {
 
 void FactoryTemplate::admin_upgrade() {
     if (can_factory_upgrade()) {
-        std::scoped_lock lock(m);
         pops_needed += pops_needed / level;
         level++;
     }
@@ -226,12 +223,10 @@ float FactoryTemplate::get_last_month_income() const {
 }
 
 int FactoryTemplate::get_pops_needed() const {
-    std::scoped_lock lock(m);
     return pops_needed;
 }
 
 void FactoryTemplate::set_pops_needed(int num) {
-    std::scoped_lock lock(m);
     pops_needed = num;
 }
 
