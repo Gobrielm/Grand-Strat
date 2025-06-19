@@ -1,5 +1,7 @@
-#include "../singletons/cargo_info.hpp"
 #include "construction_site.hpp"
+#include "../singletons/cargo_info.hpp"
+#include <godot_cpp/core/class_db.hpp>
+#include <mutex>
 
 void ConstructionSite::_bind_methods() {
     ClassDB::bind_static_method(get_class_static(), D_METHOD("create", "new_location", "player_owner"), &ConstructionSite::create);
@@ -16,7 +18,6 @@ void ConstructionSite::_bind_methods() {
 }
 
 ConstructionSite::ConstructionSite(): FactoryTemplate() {
-
 }
 
 ConstructionSite::~ConstructionSite() {}

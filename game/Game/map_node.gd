@@ -56,7 +56,6 @@ func initialize_game() -> void:
 		ProvinceManager.get_instance().create_pops()
 		cargo_map.add_industries_to_towns()
 	enable_nation_picker()
-	
 
 func _input(event: InputEvent) -> void:
 	if !TerminalMap.is_instance_created():

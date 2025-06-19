@@ -3,6 +3,7 @@
 #include "../singletons/road_map.hpp"
 #include "../singletons/money_controller.hpp"
 #include "../singletons/province_manager.hpp"
+#include "../singletons/cargo_info.hpp"
 
 void CompanyAi::_bind_methods() {}
 

@@ -173,7 +173,7 @@ func get_depot_direction(coords: Vector2i) -> int:
 func place_road_depot() -> void:
 	var tile: Vector2i = get_cell_position()
 	if DisplayServer.window_is_focused() and Utils.is_tile_taken(tile):
-		TerminalMap.get_instance().create_terminal(RoadDepot.new(tile, unique_id))
+		TerminalMap.get_instance().create_terminal(RoadDepot.create(tile, unique_id))
 		RoadMap.get_instance().place_road_depot(tile)
 
 #Cargo

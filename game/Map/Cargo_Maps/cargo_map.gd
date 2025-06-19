@@ -54,70 +54,6 @@ func ai_cycle() -> void:
 	for ai: ProspectorAi in ais:
 		ai.month_tick()
 
-func place_industry_for_town(town: Town, province: Province) -> void:
-	var tile: Vector2i = town.get_location()
-	var level: int = town.get_total_pops()
-	if level > 100:
-		place_random_group(tile, province, level, CargoInfo.get_instance().get_cargo_type("grain"))
-		place_some_industries(tile, province, level)
-	else:
-		place_primary_near_middle(tile, level, CargoInfo.get_instance().get_cargo_type("grain"))
-
-func place_random_group(tile: Vector2i, province: Province, town_level: int, type: int) -> void:
-	tile = place_random_road_depot(tile)
-	if tile == Vector2i(0, 0): 
-		return
-	var tries: int = 0
-	var rand_tile: Vector2i
-	while true:
-		rand_tile = province.get_random_tile()
-		if rand_tile.distance_to(tile) < 10 and rand_tile.distance_to(tile) > 2:
-			break
-		tries += 1
-		if tries > 10:
-			rand_tile = Vector2i(0, 0)
-			break
-	
-	if rand_tile != Vector2i(0, 0):
-		place_road_depot(rand_tile, 0)
-		for cell: Vector2i in get_surrounding_cells(rand_tile):
-			if randi() % 2 == 0 and !Utils.is_tile_taken(cell):
-				@warning_ignore("integer_division")
-				place_primary_near_middle(cell, town_level, type)
-		connect_road_depots(tile, rand_tile)
-
-func connect_road_depots(tile1: Vector2i, tile2: Vector2i) -> void:
-	RoadMap.get_instance().bfs_and_connect(tile1, tile2)
-
-func place_primary_near_middle(middle: Vector2i, level: int, type: int) -> void:
-	var tiles: Array = Utils.world_map.thread_get_surrounding_cells(middle)
-	tiles.shuffle()
-	var num: int = randi() % 2 + 1
-	for tile: Vector2i in tiles:
-		if !Utils.is_tile_taken(tile):
-			@warning_ignore("integer_division")
-			create_factory(0, tile, recipe.get_primary_recipe_for_type(type), level / num)
-			num -= 1
-			if num == 0:
-				break
-
-func place_some_industries(tile: Vector2i, province: Province, level: int) -> void:
-	var cargo_info: CargoInfo = CargoInfo.get_instance()
-	#var number_to_place: int = ceil((level - 100.0) / 100)
-	var resources: Dictionary = get_most_prominent_resources(province)
-	var factory_recipe: Array
-	if (resources.has(cargo_info.get_cargo_type("salt")) and resources.has(cargo_info.get_cargo_type("grain"))):
-		factory_recipe = recipe.get_secondary_recipe_for_types({cargo_info.get_cargo_type("salt"): true, cargo_info.get_cargo_type("grain"): true})
-	elif (resources.has(cargo_info.get_cargo_type("wood"))):
-		factory_recipe = recipe.get_secondary_recipe_for_types({cargo_info.get_cargo_type("wood"): true})
-	elif (resources.has(cargo_info.get_cargo_type("cotton"))):
-		factory_recipe = recipe.get_secondary_recipe_for_types({cargo_info.get_cargo_type("cotton"): true})
-	
-	if !factory_recipe.is_empty():
-		var town: Town = TerminalMap.get_instance().get_town(tile)
-		var fact: Factory = PrivateAiFactory.create(tile, factory_recipe[0], factory_recipe[1])
-		town.add_factory(fact)
-
 func place_random_road_depot(middle: Vector2i) -> Vector2i:
 	var tiles: Array = Utils.world_map.thread_get_surrounding_cells(middle)
 	tiles.shuffle()
@@ -129,7 +65,7 @@ func place_random_road_depot(middle: Vector2i) -> Vector2i:
 
 func place_road_depot(tile: Vector2i, owner_id: int) -> void:
 	RoadMap.get_instance().place_road_depot(tile)
-	var road_depot: RoadDepot = RoadDepot.new(tile, owner_id)
+	var road_depot: RoadDepot = RoadDepot.create(tile, owner_id)
 	add_terminal_to_province(road_depot)
 	TerminalMap.get_instance().create_terminal(road_depot)
 

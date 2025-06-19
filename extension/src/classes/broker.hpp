@@ -1,9 +1,9 @@
 #pragma once
 
-#include <godot_cpp/classes/weak_ref.hpp>
 #include "fixed_hold.hpp"
 #include "trade_order.hpp"
 #include "terminal.hpp"
+#include "road_depot.hpp"
 #include "local_price_controller.hpp"
 #include "../utility/vector2i_hash.hpp"
 #include <unordered_map>
@@ -21,6 +21,7 @@ class Broker : public FixedHold {
     protected:
     static void _bind_methods();
     std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> connected_brokers;
+    std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> connected_stations;
     LocalPriceController* local_pricer = nullptr;
     const float MAX_TRADE_MARGIN = 1.05f;
 
@@ -39,7 +40,6 @@ class Broker : public FixedHold {
 
     virtual int get_desired_cargo(int type, float pricePer) const;
     int get_desired_cargo_from_train(int type) const;
-    void report_demand_of_brokers(int type);
 
     virtual bool is_price_acceptable(int type, float pricePer) const;
 
@@ -60,12 +60,18 @@ class Broker : public FixedHold {
     virtual void remove_connected_broker(const Ref<Broker> broker);
     Dictionary get_connected_broker_locations();
 
+    void add_connected_station(const Vector2i p_location);
+    void remove_connected_station(const Vector2i p_location);
+
+    int get_number_of_connected_terminals() const;
+
     virtual void distribute_cargo(); // abstract
     virtual void distribute_from_order(const TradeOrder* order);
-    void distribute_to_order(Ref<Broker> otherBroker, const TradeOrder* order);
-    void distribute_to_order(Broker* otherBroker, const TradeOrder* order);
+    void distribute_to_road_depot_brokers(Ref<RoadDepot> road_depot, const TradeOrder* order, std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> &s);
+    void distribute_to_order(Ref<Broker> otherBroker, const TradeOrder* order, Ref<RoadDepot> road_depot = nullptr);
 
     void report_attempt_to_sell(int type, int amount);
+    void report_demand_of_brokers(int type);
     virtual void report_price(int type, float price);
 
     

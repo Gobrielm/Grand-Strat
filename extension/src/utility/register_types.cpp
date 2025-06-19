@@ -24,7 +24,7 @@
 #include "../classes/factory.hpp"
 #include "../classes/ai_factory.hpp"
 #include "../classes/private_ai_factory.hpp"
-#include "../classes/road_depot_wo_methods.hpp"
+#include "../classes/road_depot.hpp"
 #include "../classes/ai_base.hpp"
 #include "../classes/company_ai.hpp"
 #include "../classes/prospector_ai.hpp"
@@ -68,7 +68,7 @@ void initialize_gdextension_types(ModuleInitializationLevel p_level)
 	GDREGISTER_CLASS(Factory);
 	GDREGISTER_CLASS(AiFactory);
 	GDREGISTER_CLASS(PrivateAiFactory);
-	GDREGISTER_CLASS(RoadDepotWOMethods);
+	GDREGISTER_CLASS(RoadDepot);
 	GDREGISTER_CLASS(AiBase);
 	GDREGISTER_CLASS(CompanyAi);
 	GDREGISTER_CLASS(ProspectorAi);

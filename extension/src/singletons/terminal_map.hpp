@@ -8,14 +8,16 @@
 #include <mutex>
 #include <thread>
 
-#include "../classes/terminal.hpp"
-#include "../classes/station.hpp"
-#include "../classes/broker.hpp"
+#include "../utility/vector2i_hash.hpp"
 #include "../classes/construction_site.hpp"
-#include "../classes/Factory.hpp"
-#include "../classes/ai_factory.hpp"
-#include "../classes/town.hpp"
-#include "../classes/road_depot_wo_methods.hpp"
+
+class Terminal;
+class Broker;
+class Factory;
+class Town;
+class StationWOMethods;
+class RoadDepot;
+
 
 using namespace godot;
 
@@ -35,6 +37,8 @@ private:
     std::thread day_thread;
     std::vector<std::thread> month_threads;
     bool day_tick_priority = false;
+    std::chrono::time_point<std::chrono::high_resolution_clock> month_start;
+    std::chrono::time_point<std::chrono::high_resolution_clock> month_end;
 
     void _on_day_tick_timeout_helper();
     using MapType = std::unordered_map<Vector2i, Ref<Terminal>, godot_helpers::Vector2iHasher>;
@@ -65,6 +69,8 @@ public:
     //Creators
     void create_terminal(Ref<Terminal> p_terminal);
     void add_connected_brokers(Ref<Broker> p_broker);
+    void add_connected_stations(Ref<RoadDepot> road_depot);
+    void find_stations(Ref<Broker> broker);
     Ref<Factory> create_factory(const Vector2i &p_location, int p_player_owner, const Dictionary &p_inputs, const Dictionary &p_outputs);
     
     //Checkers
@@ -104,7 +110,17 @@ public:
     Ref<Town> get_town(const Vector2i &coords);
 
     template <typename T>
-    Ref<T> get_terminal_as(const Vector2i &coords, const std::function<bool(const Vector2i &)> &type_check = nullptr);
+    Ref<T> get_terminal_as(const Vector2i &coords, const std::function<bool(const Vector2i &)> &type_check = nullptr) {
+        std::scoped_lock lock(m);
+        Ref<T> toReturn = Ref<T>(nullptr);
+        if (cargo_map_terminals.count(coords) == 1 && (!type_check || type_check(coords))) {
+            Ref<T> typed = cargo_map_terminals[coords];
+            if (typed.is_valid()) {
+                toReturn = typed;
+            }
+        }
+        return toReturn;
+    }
    
     //Action doers
     void set_construction_site_recipe(const Vector2i &coords, const Array &selected_recipe);
@@ -112,6 +128,7 @@ public:
     void transform_construction_site_to_factory(const Vector2i &coords);
     void edit_order_station(const Vector2i &coords, int type, int amount, bool buy, float max_price);
     void remove_order_station(const Vector2i &coords, int type);
+    void refresh_road_depots(const std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> &s);
 
     //Economy Testing Functions
     float get_average_cash_of_road_depot() const;

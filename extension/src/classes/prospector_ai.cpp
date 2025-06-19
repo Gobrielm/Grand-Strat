@@ -1,4 +1,8 @@
+#include <queue>
 #include "prospector_ai.hpp"
+#include "factory_template.hpp"
+#include "factory.hpp"
+#include "town.hpp"
 #include "../singletons/terminal_map.hpp"
 #include "../singletons/road_map.hpp"
 #include "../singletons/money_controller.hpp"

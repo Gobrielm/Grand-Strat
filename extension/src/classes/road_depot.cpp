@@ -1,8 +1,5 @@
 #include "road_depot.hpp"
-#include "firm.hpp"
-#include "trade_order.hpp"
-#include "local_price_controller.hpp"
-#include "station.hpp"
+#include "broker.hpp"
 #include "../singletons/road_map.hpp"
 #include "../singletons/cargo_info.hpp"
 #include "../singletons/terminal_map.hpp"
@@ -10,7 +7,9 @@
 #include <godot_cpp/core/class_db.hpp>
 
 void RoadDepot::_bind_methods() {
+    ClassDB::bind_static_method(get_class_static(), D_METHOD("create", "new_location", "player_owner"), &RoadDepot::create);
 
+    ClassDB::bind_method(D_METHOD("month_tick"), &RoadDepot::month_tick);
 }
 
 Ref<RoadDepot> RoadDepot::create(const Vector2i new_location, const int player_owner) {
@@ -26,16 +25,18 @@ RoadDepot::~RoadDepot() {
 }
 
 void RoadDepot::add_connected_broker(Ref<Broker> broker) {
+    std::scoped_lock lock(m);
     connected_brokers.insert(broker->get_location());
 }
 
 void RoadDepot::remove_connected_broker(const Ref<Broker> broker) {
+    std::scoped_lock lock(m);
     connected_brokers.erase(broker->get_location());
 }
 
 void RoadDepot::add_connected_road_depot(const Vector2i road_depot_tile) {
     // ERR_FAIL_COND_MSG(other_road_depots.count(new_road_depot -> get_location()) != 0, "Already has a road depot there");
-    if (other_road_depots.count(road_depot_tile) != 0) return; 
+    if (other_road_depots.count(road_depot_tile) == 1) return; 
     m.lock();
     other_road_depots.insert(road_depot_tile);
     m.unlock();
@@ -49,32 +50,11 @@ void RoadDepot::remove_connected_road_depot(const Vector2i road_depot_tile) {
     m.unlock();
 }
 
-std::vector<Ref<Broker>> RoadDepot::get_available_brokers_smart(int type, const Vector2i& source) {
-    Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
-    std::vector<Ref<Broker>> toReturn = get_available_local_brokers_smart(type, source);
-
-    for (const auto &tile: other_road_depots) {
-        Ref<RoadDepot> road_depot = terminal_map->get_terminal_as<RoadDepot>(tile);
-        if (road_depot.is_valid()) {
-            for (Ref<Broker> broker: road_depot->get_available_local_brokers_smart(type, source)) {
-                toReturn.push_back(broker);
-            }
-        }
-    }
-
-    return toReturn;
-}
-
-bool RoadDepot::is_tile_adjacent(Vector2i tile1, Vector2i tile2) const {
-    Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
-    TileMapLayer* main_map = terminal_map->get_main_map();
-    return main_map->get_surrounding_cells(tile1).has(tile2);
-}
 
 std::vector<Ref<Broker>> RoadDepot::get_available_brokers(int type) {
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     std::vector<Ref<Broker>> toReturn = get_available_local_brokers(type);
-
+    
     for (const auto &tile: other_road_depots) {
         Ref<RoadDepot> road_depot = terminal_map->get_terminal_as<RoadDepot>(tile);
         if (road_depot.is_valid()) {
@@ -90,7 +70,6 @@ std::vector<Ref<Broker>> RoadDepot::get_available_brokers(int type) {
 std::vector<Ref<Broker>> RoadDepot::get_available_local_brokers(int type) {
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     std::vector<Ref<Broker>> toReturn;
-
     for (const auto &tile: connected_brokers) {
         Ref<Broker> broker = terminal_map->get_broker(tile);
         if (broker.is_valid() && broker->does_accept(type)) {
@@ -98,18 +77,6 @@ std::vector<Ref<Broker>> RoadDepot::get_available_local_brokers(int type) {
         }
     }
 
-    return toReturn;
-}
-
-std::vector<Ref<Broker>> RoadDepot::get_available_local_brokers_smart(int type, const Vector2i& source) {
-    Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
-    std::vector<Ref<Broker>> toReturn;
-    for (const auto &tile: connected_brokers) {
-        Ref<Broker> broker = terminal_map->get_broker(tile);
-        if (broker.is_valid() && !is_tile_adjacent(broker->get_location(), source)) {
-            toReturn.push_back(broker);
-        }
-    }
     return toReturn;
 }
 
@@ -126,7 +93,7 @@ void RoadDepot::refresh_other_road_depots() {
     }
 }
 
-std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> RoadDepot::get_reachable_road_depots() { //Constructor runs this before being added to TerminalMap
+std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> RoadDepot::get_reachable_road_depots() {
     std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> toReturn;
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     std::priority_queue<
@@ -146,9 +113,9 @@ std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> RoadDepot::get_reach
         curr = pq.top();
         pq.pop();
         Ref<RoadDepot> road_depot = terminal_map -> get_terminal_as<RoadDepot>(curr.val);
-        if (road_depot.is_valid() && curr.val != get_location()) {
+        if (road_depot.is_valid() && curr.val != get_location() && road_depot->get_player_owner() == get_player_owner()) { //Only add for same player/ai
             toReturn.insert(curr.val);
-            continue; //Cannot go beyond road depots
+            // continue; //Cannot go beyond road depots
         }
         Array tiles = road_map -> get_surrounding_cells(curr.val);
         for (int i = 0; i < tiles.size(); i++) {
@@ -206,6 +173,4 @@ bool RoadDepot::is_connected_to_other_depot() const {
     return connected_brokers.size() != 0;
 }
 
-void RoadDepot::month_tick() {
-    refresh_other_road_depots();
-}
+void RoadDepot::month_tick() {}

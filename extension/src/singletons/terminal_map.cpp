@@ -1,5 +1,14 @@
 #include "terminal_map.hpp"
+#include "road_map.hpp"
 #include "../classes/private_ai_factory.hpp"
+#include "../classes/terminal.hpp"
+#include "../classes/station.hpp"
+#include "../classes/broker.hpp"
+#include "../classes/Factory.hpp"
+#include "../classes/ai_factory.hpp"
+#include "../classes/town.hpp"
+#include "../classes/road_depot.hpp"
+
 
 using namespace godot;
 
@@ -124,32 +133,31 @@ void TerminalMap::_on_day_tick_timeout_helper() {
     m.lock();
     day_tick_priority = true;
     m.unlock();
-    int road_depot_count = 0;
     for (const auto &[coords, terminal]: cargo_map_terminals) {
         if (terminal->has_method("day_tick")) {
             terminal->call("day_tick");
         }
-        Ref<RoadDepotWOMethods> depot = Ref<RoadDepotWOMethods>(terminal);
-        if (depot.is_valid()) road_depot_count++;
     }
-    print_line(String::num_int64(road_depot_count) + " were simulated.");
     m.lock();
     day_tick_priority = false;
     m.unlock();
     auto end_time = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = end_time - start_time;
-    print_line("Day tick took " + String::num_scientific(elapsed.count()) + " seconds");
+    // print_line("Day tick took " + String::num_scientific(elapsed.count()) + " seconds");
 }
 
 void TerminalMap::_on_month_tick_timeout() {
+    RoadMap::get_instance()->month_tick();
     // Clean up old threads
     for (auto &thread: month_threads) {
         thread.join();
     }
+    std::chrono::duration<double> elapsed = month_end - month_start;
+    print_line("Month tick took " + String::num_scientific(elapsed.count()) + " seconds");
     month_threads.clear();
 
     auto start = cargo_map_terminals.begin();
-
+    month_start = std::chrono::high_resolution_clock::now();
     const int NUMBER_OF_THREADS = 4;
     const int chunk_size = cargo_map_terminals.size() / NUMBER_OF_THREADS;
 
@@ -169,11 +177,7 @@ void TerminalMap::_on_month_tick_timeout() {
 
 void TerminalMap::_on_month_tick_timeout_helper(MapType::iterator start, MapType::iterator end) {
     for (auto it = start; it != end; it++) {
-        while (true) {
-            m.lock();
-            bool do_break = !day_tick_priority;
-            m.unlock();
-            if (do_break) break;
+        while (day_tick_priority) {
             std::this_thread::sleep_for(std::chrono::milliseconds(2));
         }
         Vector2i coords = it -> first;
@@ -183,6 +187,9 @@ void TerminalMap::_on_month_tick_timeout_helper(MapType::iterator start, MapType
             terminal->call("month_tick");
         }
     }
+    m.lock();
+    month_end = std::chrono::high_resolution_clock::now();
+    m.unlock();
 }
 
 void TerminalMap::clear() {
@@ -211,6 +218,11 @@ void TerminalMap::create_terminal(Ref<Terminal> p_terminal) {
     Ref<Broker> broker = get_broker(p_terminal -> get_location());
     if (broker.is_valid()) {
         add_connected_brokers(broker);
+        find_stations(broker);
+    }
+    Ref<RoadDepot> road_depot = get_terminal_as<RoadDepot>(p_terminal -> get_location());
+    if (road_depot.is_valid()) {
+        add_connected_stations(road_depot);
     }
 }
 
@@ -223,6 +235,30 @@ void TerminalMap::add_connected_brokers(Ref<Broker> p_broker) {
         if (other.is_null()) continue;
         p_broker->add_connected_broker(other);
         other->add_connected_broker(p_broker);
+    }
+}
+
+void TerminalMap::add_connected_stations(Ref<RoadDepot> road_depot) {
+    Array tiles = map->get_surrounding_cells(road_depot->get_location());
+    for (int i = 0; i < tiles.size(); i++) {
+        Vector2i tile = tiles[i];
+        Ref<Broker> broker = get_broker(tile);
+        if (broker.is_valid()) {
+            broker->add_connected_station(road_depot->get_location());
+            road_depot->add_connected_broker(broker);
+        }
+    }
+}
+
+void TerminalMap::find_stations(Ref<Broker> broker) {
+    Array tiles = map->get_surrounding_cells(broker->get_location());
+    for (int i = 0; i < tiles.size(); i++) {
+        Vector2i tile = tiles[i];
+        Ref<RoadDepot> road_depot = get_terminal_as<RoadDepot>(tile);
+        if (road_depot.is_valid()) {
+            broker->add_connected_station(tile);
+            road_depot->add_connected_broker(broker);
+        }
     }
 }
 
@@ -290,7 +326,7 @@ bool TerminalMap::is_station(const Vector2i &coords) {
     return get_terminal_as<StationWOMethods>(coords).is_valid();
 }
 bool TerminalMap::is_road_depot(const Vector2i &coords) {
-    return get_terminal_as<RoadDepotWOMethods>(coords).is_valid();
+    return get_terminal_as<RoadDepot>(coords).is_valid();
 }
 bool TerminalMap::is_owned_station(const Vector2i &coords, int player_id) {
     Ref<StationWOMethods> temp = get_terminal_as<StationWOMethods>(coords);
@@ -434,19 +470,6 @@ Ref<Town> TerminalMap::get_town(const Vector2i &coords) {
     return get_terminal_as<Town>(coords);
 }
 
-template <typename T>
-Ref<T> TerminalMap::get_terminal_as(const Vector2i &coords, const std::function<bool(const Vector2i &)> &type_check) {
-    std::scoped_lock lock(m);
-    Ref<T> toReturn = Ref<T>(nullptr);
-    if (cargo_map_terminals.count(coords) == 1 && (!type_check || type_check(coords))) {
-        Ref<T> typed = cargo_map_terminals[coords];
-        if (typed.is_valid()) {
-            toReturn = typed;
-        }
-    }
-    return toReturn;
-}
-
 //Action doers
 void TerminalMap::set_construction_site_recipe(const Vector2i &coords, const Array &selected_recipe) {
     if (is_owned_recipeless_construction_site(coords)) {
@@ -483,13 +506,19 @@ void TerminalMap::remove_order_station(const Vector2i &coords, int type) {
 
         Ref<StationWOMethods> station = get_terminal_as<StationWOMethods>(coords);
         station -> remove_order(type);
+    }
+}
 
+void TerminalMap::refresh_road_depots(const std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> &s) {
+    for (auto it = s.begin(); it != s.end(); it++) {
+        Ref<RoadDepot> road_depot = get_terminal_as<RoadDepot>(*it);
+        if (road_depot.is_valid()) road_depot -> refresh_other_road_depots();
     }
 }
 
 
 float TerminalMap::get_average_cash_of_road_depot() const {
-    return get_average_cash_of_terminal<RoadDepotWOMethods>();
+    return get_average_cash_of_terminal<RoadDepot>();
 }
 
 float TerminalMap::get_average_cash_of_factory() const {
@@ -531,7 +560,7 @@ int TerminalMap::get_grain_demand() const {
     for (const auto &[__, terminal]: cargo_map_terminals) {
         Ref<Town> typed = terminal;
         if (typed.is_valid()) {
-            total_demand += int(typed -> get_last_month_demand().get(10, 0));
+            total_demand += int(typed -> get_last_month_demand().get(CargoInfo::get_instance()->get_cargo_type("grain"), 0));
         }
     }
     return total_demand;
@@ -543,7 +572,7 @@ int TerminalMap::get_grain_supply() const {
     for (const auto &[__, terminal]: cargo_map_terminals) {
         Ref<Town> typed = terminal;
         if (typed.is_valid()) {
-            total_supply += int(typed -> get_last_month_supply().get(10, 0));
+            total_supply += int(typed -> get_last_month_supply().get(CargoInfo::get_instance()->get_cargo_type("grain"), 0));
         }
     }
     return total_supply;

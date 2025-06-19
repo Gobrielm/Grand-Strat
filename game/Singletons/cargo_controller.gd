@@ -4,6 +4,7 @@ static var singleton_instance: cargo_controller
 
 var map_node: Node
 var clock: clock_singleton = clock_singleton.get_instance()
+var paused: bool = false
 var ticks: float = 0.0
 var game_speed: int = 1
 var day_thread: Thread = Thread.new()
@@ -24,6 +25,9 @@ func _ready() -> void:
 func change_speed(p_speed: int) -> void:
 	game_speed = p_speed
 
+func change_pause(p_pause: bool) -> void:
+	paused = p_pause
+
 func get_game_speed() -> int:
 	return clock_singleton.get_instance().get_game_speed()
 
@@ -37,14 +41,13 @@ var start: float = 0.0
 var end: float = 0.0
 
 func _on_month_tick_timeout() -> void:
-	start = Time.get_ticks_msec()
 	DataCollector.get_instance().month_tick()
 	TerminalMap.get_instance()._on_month_tick_timeout()
-	end = Time.get_ticks_msec()
-	#print(str((end - start) / 1000) + " Seconds passed for one month cycle")
 	Utils.unit_map._on_month_tick_timeout()
 
 func _process(delta: float) -> void:
+	if paused:
+		return
 	ticks += delta * (game_speed * 6) # * 6
 	
 	if train_manager.has_instance():

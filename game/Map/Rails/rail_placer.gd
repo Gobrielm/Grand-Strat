@@ -151,7 +151,7 @@ func place_road_depot(coords: Vector2i, player_id: int) -> void:
 			return
 	var rail_layer: TileMapLayer = get_rail_layer(0)
 	rail_layer.set_cell(coords, 0, Vector2i(0, 3))
-	var road_depot: RoadDepot = RoadDepot.new(coords, player_id)
+	var road_depot: RoadDepot = RoadDepot.create(coords, player_id)
 	TerminalMap.get_instance().create_terminal(road_depot)
 
 func is_already_built(coords: Vector2i, new_orientation: int) -> bool:

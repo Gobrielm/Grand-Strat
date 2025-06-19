@@ -119,6 +119,7 @@ void RoadMap::hover_road(Vector2i location) {
 
 void RoadMap::place_road(Vector2i location) {
     m.lock();
+    tiles_changed_this_month.insert(location);
     road_value[location] = 1;
     m.unlock();
     fix_tile(location, true);
@@ -126,6 +127,7 @@ void RoadMap::place_road(Vector2i location) {
 
 void RoadMap::upgrade_road(Vector2i location) {
     m.lock();
+    tiles_changed_this_month.insert(location);
     road_value[location] += 1;
     m.unlock();
     fix_tile(location, true);
@@ -209,6 +211,7 @@ void RoadMap::remove_hovers() {
 
 void RoadMap::place_road_depot(Vector2i location) {
     m.lock();
+    depots_to_refresh.insert(location);
     set_cell(location, 0, Vector2i(1, 5));
     m.unlock();
     place_road(location);
@@ -279,6 +282,46 @@ void RoadMap::bfs_and_connect(const Vector2i& tile1, const Vector2i& tile2) {
         while (tile_to_prev2.count(curr)) {
             place_road(curr);
             curr = tile_to_prev2[curr];
+        }
+    }
+}
+
+void RoadMap::month_tick() {
+    if (tiles_changed_this_month.size() != 0) {
+        refresh_road_depots();
+        TerminalMap::get_instance()->refresh_road_depots(depots_to_refresh);
+        depots_to_refresh.clear();
+    }
+}
+
+void RoadMap::refresh_road_depots() {
+    Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
+    std::queue<Vector2i> q;
+    std::unordered_map<Vector2i, int, godot_helpers::Vector2iHasher> dist_tracker;
+    for (Vector2i tile: tiles_changed_this_month) {
+        q.push(tile);
+        dist_tracker[tile] = 0;
+    }
+    tiles_changed_this_month.clear();
+
+    Vector2i curr;
+    while (q.size() != 0) {
+        curr = q.front();
+        q.pop();
+
+        if (get_cell_atlas_coords(curr) == Vector2i(1, 5)) {
+            depots_to_refresh.insert(curr);
+        }
+        
+        Array tiles = get_surrounding_cells(curr);
+        for (int i = 0; i < tiles.size(); i++) {
+            Vector2i tile = tiles[i];
+            if (!dist_tracker.count(tile) && terminal_map->is_tile_traversable(tile)) {
+                dist_tracker[tile] = dist_tracker[curr] + 1;
+                if (dist_tracker[tile] <= RoadDepot::MAX_SUPPLY_DISTANCE) {
+                    q.push(tile);
+                }
+            }
         }
     }
 }

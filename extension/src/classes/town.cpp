@@ -111,7 +111,7 @@ int Town::get_desired_cargo(int type, float price) const {
     if (is_price_acceptable(type, price)) {
 		int amount_could_get = std::min(get_max_storage() - get_cargo_amount(type), get_amount_can_buy(price));
         std::scoped_lock lock(m);
-		return std::min(local_pricer -> get_last_month_demand(type), amount_could_get);
+		return std::min(int(ceil(local_pricer -> get_last_month_demand(type) / 25)), amount_could_get); // While buy a bit more than last month just to fill storage
     }
 	return 0;
 }

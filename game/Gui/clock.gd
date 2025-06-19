@@ -4,6 +4,7 @@ static var singleton_instance: clock_singleton
 
 #TODO: Add second clock instead
 
+var paused: bool = false
 var day: int = 1 #1 indexed
 var month: int = 1 #1 indexed
 var year: int = 1845
@@ -64,7 +65,7 @@ func _on_game_speed_drag_ended(value_changed: bool) -> void:
 
 @rpc("any_peer", "call_local", "unreliable")
 func request_change_speed(speed: int) -> void:
-	cargo_controller.get_instance().change_speed(speed )
+	cargo_controller.get_instance().change_speed(speed)
 	update_clock.rpc(speed)
 
 @rpc("authority", "call_local", "unreliable")
@@ -73,3 +74,20 @@ func update_clock(speed: int) -> void:
 
 func get_game_speed() -> int:
 	return $game_speed.value
+
+func _on_pause_pressed() -> void:
+	update_clock_pause(!paused)
+	request_change_pause.rpc_id(1, paused)
+
+@rpc("any_peer", "call_local", "unreliable")
+func request_change_pause(paused: bool) -> void:
+	cargo_controller.get_instance().change_pause(paused)
+	update_clock_pause.rpc(paused)
+
+@rpc("authority", "call_local", "unreliable")
+func update_clock_pause(pause: bool) -> void:
+	paused = pause
+	if paused:
+		$pause.icon = preload("res://Gui/Icons/go.png")
+	else:
+		$pause.icon = preload("res://Gui/Icons/pause.png")

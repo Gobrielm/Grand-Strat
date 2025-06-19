@@ -1,6 +1,8 @@
 #pragma once
 
 #include <unordered_map>
+#include <godot_cpp/variant/array.hpp>
+#include <godot_cpp/variant/dictionary.hpp>
 
 #include "factory_template.hpp"
 

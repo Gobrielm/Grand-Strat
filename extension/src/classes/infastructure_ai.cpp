@@ -1,5 +1,7 @@
+#include <queue>
 #include "infastructure_ai.hpp"
 #include "factory.hpp"
+#include "town.hpp"
 #include "../singletons/province_manager.hpp"
 #include "../singletons/terminal_map.hpp"
 #include "../singletons/road_map.hpp"
@@ -125,7 +127,7 @@ void InfastructureAi::check_for_unconnected_stations() {
     for (int prov_id: prov_ids) {
         Province* province = province_manager->get_province(prov_id);
         for (const Vector2i& tile: province->get_terminal_tiles_set()) {
-            if (terminal_map -> is_road_depot(tile) && !(terminal_map -> get_terminal_as<RoadDepotWOMethods>(tile)->is_connected_to_other_depot())) {
+            if (terminal_map -> is_road_depot(tile) && !(terminal_map -> get_terminal_as<RoadDepot>(tile)->is_connected_to_other_depot())) {
                 set_stored_tile(tile);
             }
         }
@@ -200,7 +202,7 @@ void InfastructureAi::connect_towns() {
 
         std::vector<Vector2i> v = bfs_to_closest(town->get_location(), lbda);
 
-        if (v.size() != 0 && v.size() <= (RoadDepotWOMethods::MAX_SUPPLY_DISTANCE + 1)) { //Doesn't work with supply
+        if (v.size() != 0 && v.size() <= (RoadDepot::MAX_SUPPLY_DISTANCE + 1)) { //Doesn't work with supply
 
             if (!terminal_map->is_terminal(v.back())) {
                 cargo_map->call("place_road_depot", v.back(), get_owner_id());
@@ -268,7 +270,7 @@ void InfastructureAi::connect_factory(Ref<Factory> factory) {
 
     std::vector<Vector2i> v = bfs_to_closest(tile, lbda);
 
-    if (v.size() != 0 && v.size() <= (RoadDepotWOMethods::MAX_SUPPLY_DISTANCE + 1)) { //Doesn't work with supply
+    if (v.size() != 0 && v.size() <= (RoadDepot::MAX_SUPPLY_DISTANCE + 1)) { //Doesn't work with supply
 
         if (!terminal_map->is_terminal(v.back())) {
             cargo_map->call("place_road_depot", v.back(), get_owner_id());

@@ -17,6 +17,8 @@ private:
     mutable std::mutex m;
     std::unordered_map<Vector2i, int, godot_helpers::Vector2iHasher> road_value;
     std::unordered_map<Vector2i, int, godot_helpers::Vector2iHasher> temp_road_value;
+    std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> tiles_changed_this_month;
+    std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> depots_to_refresh;
     Ref<TileSet> tile_set = nullptr;
     void fix_tile(Vector2i center, bool repeating = false);
 
@@ -38,4 +40,7 @@ public:
     int get_temp_road_value(Vector2i location) const;
     void place_road_depot(Vector2i location);
     void bfs_and_connect(const Vector2i& tile1, const Vector2i& tile2);
+
+    void month_tick();
+    void refresh_road_depots();
 };

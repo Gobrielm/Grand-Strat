@@ -65,6 +65,10 @@ int Province::get_population() const {
     return population;
 }
 
+int Province::get_number_of_city_pops() const {
+    return number_of_city_pops;
+}
+
 void Province::add_population(int population_to_add) {
     std::scoped_lock lock(m);
     population += population_to_add;
@@ -100,6 +104,38 @@ Array Province::get_tiles() const {
 
 const std::vector<Vector2i>& Province::get_tiles_vector() const {
     return tiles;
+}
+
+std::vector<Vector2i> Province::get_town_centered_tiles() const { //Assumes one town
+    Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
+    std::vector<Vector2i> v;
+    Vector2i town_tile;
+    for (Vector2i tile: get_terminal_tiles_set()) {
+        if (terminal_map->is_town(tile)) {
+            town_tile = tile;
+            break;
+        }
+    }
+    if (town_tile == Vector2i(0, 0)) {
+        ERR_FAIL_V_MSG(v, "No town in province");
+    }
+    std::priority_queue<godot_helpers::weighted_value<Vector2i>,
+    std::vector<godot_helpers::weighted_value<Vector2i>>, /*vector on backend*/
+    std::greater<godot_helpers::weighted_value<Vector2i>> /*Smallest in front*/
+    > pq;
+
+    auto push = [&pq](Vector2i tile, int weight) -> void {pq.push(godot_helpers::weighted_value<Vector2i>(tile, weight));};
+
+    for (Vector2i tile: get_tiles_vector()) {
+        push(tile, tile.distance_to(town_tile));
+    }
+
+    while (pq.size() != 0) {
+        v.push_back(pq.top().val);
+        pq.pop();
+    }
+
+    return v;
 }
 
 //Used to pick a place for random industries, don't pick places with industries
@@ -146,13 +182,17 @@ Array Province::get_terminal_tiles() const {
     return a;
 }
 
+bool Province::has_town() const {
+    return get_town_tiles().size() != 0;
+}
+
 const std::unordered_set<Vector2i, godot_helpers::Vector2iHasher>& Province::get_terminal_tiles_set() const {
     return terminal_tiles;
 }
 
 void Province::create_pops() {
     int number_of_rural_pops = floor(population * 0.8 / BasePop::get_people_per_pop());
-	int number_of_city_pops = floor(population * 0.2 / BasePop::get_people_per_pop());
+	number_of_city_pops = floor(population * 0.2 / BasePop::get_people_per_pop());
     m.lock();
 	for (int i = 0; i < number_of_rural_pops; i++) {
         pops.push_back(memnew(BasePop(province_id, 0)));
@@ -166,6 +206,7 @@ void Province::create_pops() {
 		for (int i = 0; i < number_of_city_pops; i++) {
             pops.push_back(memnew(BasePop(province_id, 0)));
         }
+        number_of_city_pops = 0;
         m.unlock();
 		return;
     }

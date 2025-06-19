@@ -1,6 +1,7 @@
-[gd_scene load_steps=3 format=3 uid="uid://bfl6pobogj82x"]
+[gd_scene load_steps=4 format=3 uid="uid://bfl6pobogj82x"]
 
 [ext_resource type="Script" uid="uid://cd6ko3ulcjh4q" path="res://Gui/clock.gd" id="1_c2xsj"]
+[ext_resource type="Texture2D" uid="uid://cjfm7fagmg17s" path="res://Gui/Icons/pause.png" id="2_5dn2f"]
 
 [sub_resource type="LabelSettings" id="LabelSettings_cwi0k"]
 font_size = 30
@@ -40,4 +41,15 @@ max_value = 6.0
 value = 1.0
 tick_count = 6
 
+[node name="pause" type="Button" parent="."]
+layout_mode = 0
+offset_left = 204.0
+offset_top = 8.0
+offset_right = 262.0
+offset_bottom = 66.0
+scale = Vector2(0.5, 0.5)
+icon = ExtResource("2_5dn2f")
+flat = true
+
 [connection signal="drag_ended" from="game_speed" to="." method="_on_game_speed_drag_ended"]
+[connection signal="pressed" from="pause" to="." method="_on_pause_pressed"]

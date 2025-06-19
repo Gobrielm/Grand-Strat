@@ -1,8 +1,11 @@
 #include "initial_builder.hpp"
 #include <algorithm>
 #include <random>
+#include <queue>
 #include "../singletons/province_manager.hpp"
 #include "../singletons/terminal_map.hpp"
+#include "../singletons/cargo_info.hpp"
+#include "../singletons/road_map.hpp"
 
 void InitialBuilder::_bind_methods() {
     ClassDB::bind_static_method(get_class_static(), D_METHOD("create", "p_country_id"), &InitialBuilder::create);
@@ -28,20 +31,27 @@ void InitialBuilder::build_initital_factories() {
     
     for (const int &prov_id: prov_ids) {
         Province* province = province_manager->get_province(prov_id);
-        build_factory_type(CargoInfo::get_instance()->get_cargo_type("grain"), province);
-        build_factory_type(CargoInfo::get_instance()->get_cargo_type("wood"), province);
+        if (province->has_town()) {
+            build_factory_type(CargoInfo::get_instance()->get_cargo_type("grain"), province);
+            build_factory_type(CargoInfo::get_instance()->get_cargo_type("wood"), province);
+        }
     }
     build_and_connect_depots();
 }
 
 void InitialBuilder::build_factory_type(int type, Province* province) {
+    int tile_count = province->get_tiles_vector().size();
+    int num_of_levels_to_place = get_levels_to_build(type, province);
+    int levels_placed = 0;
+    int chance = tile_count / num_of_levels_to_place; //Chances way higher to emphasize closer tiles
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
-    for (const Vector2i &tile: province->get_tiles_vector()) {
+    for (const Vector2i &tile: province->get_town_centered_tiles()) {
         if (TerminalMap::get_instance()->is_tile_available(tile)) {
             int cargo_val = get_cargo_value_of_tile(tile, type);
-            int chance = 10;
 
             if (cargo_val != 0 && rand() % chance == 0) {
+                //Need to check if this factory will be cutoff, then check neighboors
+                if (will_any_factory_be_cut_off(tile)) continue;
                 Array recipe;
                 recipe.push_back(Dictionary());
                 Dictionary d;
@@ -50,9 +60,51 @@ void InitialBuilder::build_factory_type(int type, Province* province) {
                 recipe.push_back(d);
                 int mult = std::min(rand() % 5, cargo_val);
                 cargo_map->call("create_factory", get_owner_id(), tile, recipe, mult);
+                levels_placed += mult;
+                if (levels_placed > num_of_levels_to_place) {
+                    break;
+                }
             }
         }
     }
+}
+
+int InitialBuilder::get_levels_to_build(int type, Province* province) const {
+    int num_pop = province->get_number_of_city_pops();
+    if (type == CargoInfo::get_instance()->get_cargo_type("grain")) {
+        return std::max(1, num_pop / 30);
+    } else if (type == CargoInfo::get_instance()->get_cargo_type("wood")) {
+        return std::max(1, num_pop / 100);
+    }
+    return 0;
+}
+
+bool InitialBuilder::will_any_factory_be_cut_off(const Vector2i &fact_to_place) const {
+    Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
+    Array tiles = terminal_map->get_main_map()->get_surrounding_cells(fact_to_place);
+    int available_tiles = 0; //Cehcks to see if fact to place can place
+    for (int i = 0; i < tiles.size(); i++) {
+        Vector2i tile = tiles[i];
+        Ref<Broker> broker = terminal_map->get_broker(tile);
+        if (broker.is_valid() && will_factory_by_cut_off(tile)) return true; // Checks factories that will be blocked
+        if (terminal_map->is_tile_available(tile)) {
+            available_tiles++;
+        }
+    }
+    return available_tiles == 0;
+}
+
+bool InitialBuilder::will_factory_by_cut_off(const Vector2i &factory_tile) const { // Assuming one free tile will be taken
+    Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
+    Array tiles = terminal_map->get_main_map()->get_surrounding_cells(factory_tile);
+    int free_tiles = 0;
+    for (int i = 0; i < tiles.size(); i++) {
+        Vector2i tile = tiles[i];
+        if (terminal_map->is_tile_available(tile)) {
+            free_tiles++;
+        }
+    }
+    return free_tiles <= 1;
 }
 
 void InitialBuilder::build_and_connect_depots() {

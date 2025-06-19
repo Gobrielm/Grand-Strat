@@ -1,8 +1,8 @@
 #include "broker.hpp"
+#include "road_depot.hpp"
 #include "../singletons/terminal_map.hpp"
 #include <algorithm>
 #include <cmath>
-#include <cassert>
 
 
 void Broker::_bind_methods() {
@@ -82,18 +82,6 @@ int Broker::get_desired_cargo_from_train(int type) const {
         return std::min(get_max_storage() - get_cargo_amount(type), get_amount_can_buy(get_local_price(type)));
     }
     return 0;
-}
-
-void Broker::report_demand_of_brokers(int type) {
-    for (const auto& tile : connected_brokers) {
-        Ref<Broker> broker = TerminalMap::get_instance() -> get_broker(tile);
-        if (broker.is_null()) continue;
-
-        if (broker->does_accept(type)) {
-            float price = get_local_price(type);
-            report_attempt_to_sell(type, broker->get_desired_cargo(type, price));
-        }
-    }
 }
 
 //For buying
@@ -199,30 +187,58 @@ Dictionary Broker::get_connected_broker_locations() {
     return d;
 }
 
+void Broker::add_connected_station(const Vector2i p_location) {
+    std::scoped_lock lock(m);
+    connected_stations.insert(p_location);
+}
+
+void Broker::remove_connected_station(const Vector2i p_location) {
+    std::scoped_lock lock(m);
+    if (connected_stations.count(p_location)) {
+        connected_stations.erase(p_location);
+    }
+}
+
+int Broker::get_number_of_connected_terminals() const {
+    return connected_brokers.size() + connected_stations.size();
+}
+
 void Broker::distribute_cargo() {
-    assert(false && "Default Implementation");
+    ERR_FAIL_MSG("DEFAULT IMPLEMENTATION");
 }
 
 void Broker::distribute_from_order(const TradeOrder* order) {
     if (get_cargo_amount(order->get_type()) == 0) return;
-
+    std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> s;
     for (const auto& tile : connected_brokers) {
         Ref<Broker> broker = TerminalMap::get_instance() -> get_broker(tile);
         if (broker.is_null()) continue;
-
+        s.insert(tile);
         if (broker->does_accept(order->get_type())) {
             distribute_to_order(broker, order);
         }
     }
+    for (const auto& tile: connected_stations) {
+        Ref<RoadDepot> road_depot = TerminalMap::get_instance() -> get_terminal_as<RoadDepot>(tile);
+        if (road_depot.is_null()) continue;
+        
+        distribute_to_road_depot_brokers(road_depot, order, s);
+    }
+    
 }
 
-void Broker::distribute_to_order(Ref<Broker> otherBroker, const TradeOrder* order) {
-    distribute_to_order(otherBroker.ptr(), order);
+void Broker::distribute_to_road_depot_brokers(Ref<RoadDepot> road_depot, const TradeOrder* order, std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> &s) {
+    std::vector<Ref<Broker>> other_brokers = road_depot->get_available_brokers(order->get_type());
+    for (auto broker: other_brokers) {
+        if (!s.count(broker->get_location())) {
+            s.insert(broker->get_location());
+            distribute_to_order(broker, order, road_depot);
+        }
+    }
 }
 
-void Broker::distribute_to_order(Broker* otherBroker, const TradeOrder* order) {
+void Broker::distribute_to_order(Ref<Broker> otherBroker, const TradeOrder* order, Ref<RoadDepot> road_depot) { 
     int type = order->get_type();
-    Ref<ConstructionSite> site = TerminalMap::get_instance()->get_terminal_as<ConstructionSite>(otherBroker->get_location());
 
     float price1 = get_local_price(type);
     otherBroker->report_price(type, price1);
@@ -236,6 +252,9 @@ void Broker::distribute_to_order(Broker* otherBroker, const TradeOrder* order) {
     if (amount > 0) {
         amount = sell_cargo(type, amount, price);
         otherBroker->buy_cargo(type, amount, price);
+        if (road_depot.is_valid()) {
+            road_depot->add_cash(transfer_cash(amount * price * road_depot->get_fee()));
+        }
     }
 }
 
@@ -243,6 +262,33 @@ void Broker::report_attempt_to_sell(int type, int amount) {
     std::scoped_lock lock(m);
     if (local_pricer) {
         local_pricer->add_demand(type, amount);
+    }
+}
+
+void Broker::report_demand_of_brokers(int type) {
+    float price = get_local_price(type);
+    std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> s;
+    
+    for (const auto& tile : connected_brokers) {
+        Ref<Broker> broker = TerminalMap::get_instance() -> get_broker(tile);
+        if (broker.is_null()) continue;
+        s.insert(tile);
+        if (broker->does_accept(type)) {
+            report_attempt_to_sell(type, broker->get_desired_cargo(type, price));
+        }
+    }
+
+    for (const auto& tile: connected_stations) {
+        Ref<RoadDepot> road_depot = TerminalMap::get_instance() -> get_terminal_as<RoadDepot>(tile);
+        if (road_depot.is_null()) continue;
+        
+        std::vector<Ref<Broker>> other_brokers = road_depot->get_available_brokers(type);
+        for (auto broker: other_brokers) {
+            if (!s.count(broker->get_location())) {
+                s.insert(broker->get_location());
+                report_attempt_to_sell(type, broker->get_desired_cargo(type, price));
+            }
+        }
     }
 }
 
