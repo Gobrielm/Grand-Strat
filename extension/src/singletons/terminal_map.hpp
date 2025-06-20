@@ -6,9 +6,11 @@
 #include <godot_cpp/variant/array.hpp>
 
 #include <mutex>
+#include <shared_mutex>
 #include <thread>
 #include <condition_variable>
 
+#include "terminal_map_utility/terminal_map_thread_pool.hpp"
 #include "../utility/vector2i_hash.hpp"
 #include "../classes/construction_site.hpp"
 
@@ -32,17 +34,24 @@ private:
     TileMapLayer* cargo_map = nullptr;
     Node2D* cargo_values = nullptr;
 
-    std::mutex m;
+    mutable std::shared_mutex cargo_map_mutex;
+    mutable std::mutex m;
     std::unordered_map<Vector2i, Ref<Terminal>, godot_helpers::Vector2iHasher> cargo_map_terminals;
 
-    std::thread day_thread;
-    std::vector<std::thread> month_threads;
+    TerminalMapThreadPool* thread_pool = nullptr;
 
     // Threads
-    std::vector<std::thread> worker_threads;
-    std::vector<Ref<Terminal>> day_tick_work;
+    std::thread day_queue_thread;
+    std::mutex day_tick_mutex;
+    std::condition_variable day_tick_cv;
+    bool day_tick_requested = false;
+
+    std::vector<std::thread> day_worker_threads;
+    std::vector<std::thread> month_worker_threads;
+    std::list<Ref<Terminal>> day_tick_work;
     std::vector<Ref<Terminal>> month_tick_work;
-    std::condition_variable condition;
+    std::condition_variable new_day_work;
+    std::condition_variable new_month_work;
     std::atomic<bool> stop = false;
     std::atomic<int> day_jobs = 0;
     std::atomic<int> month_jobs = 0;
@@ -54,14 +63,8 @@ private:
     void day_tick_helper();
     void month_tick_helper();
 
-    void thread_processor();
-
-    std::chrono::time_point<std::chrono::high_resolution_clock> month_start;
-    std::chrono::time_point<std::chrono::high_resolution_clock> month_end;
-
-    // void _on_day_tick_timeout_helper();
-    // using MapType = std::unordered_map<Vector2i, Ref<Terminal>, godot_helpers::Vector2iHasher>;
-    // void _on_month_tick_timeout_helper(MapType::iterator start, MapType::iterator end);
+    void day_thread_processor();
+    void month_thread_processor();
 
 protected:
     static void _bind_methods();
@@ -79,6 +82,10 @@ public:
     //Process hooks
     void _on_day_tick_timeout();
     void _on_month_tick_timeout();
+
+    //Process hook utility
+    std::vector<Ref<Terminal>> get_terminals_for_day_tick() const;
+    std::vector<Ref<Terminal>> get_terminals_for_month_tick() const;
 
     void clear();
     TileMapLayer* get_main_map() const;
@@ -130,8 +137,8 @@ public:
 
     template <typename T>
     Ref<T> get_terminal_as(const Vector2i &coords, const std::function<bool(const Vector2i &)> &type_check = nullptr) {
-        std::scoped_lock lock(m);
         Ref<T> toReturn = Ref<T>(nullptr);
+        std::unique_lock lock(cargo_map_mutex);
         if (cargo_map_terminals.count(coords) == 1 && (!type_check || type_check(coords))) {
             Ref<T> typed = cargo_map_terminals[coords];
             if (typed.is_valid()) {

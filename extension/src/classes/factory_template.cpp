@@ -144,11 +144,12 @@ void FactoryTemplate::distribute_cargo() {
 }
 
 int FactoryTemplate::get_level() const {
-	int employment = get_employement();
-	if (employment == 0) {
-        return 0;
-    }
-	return round(get_level_without_employment() * employment / get_pops_needed());
+	// int employment = get_employement();
+	// if (employment == 0) {
+    //     return 0;
+    // }
+	// return round(get_level_without_employment() * employment / get_pops_needed());
+    return get_level_without_employment();
 }
 
 int FactoryTemplate::get_level_without_employment() const {

@@ -7,7 +7,7 @@ using namespace godot;
 Ref<ProvinceManager> ProvinceManager::singleton_instance = nullptr;
 
 ProvinceManager::ProvinceManager() {
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < 4; i++) {
         worker_threads.push_back(std::thread(&ProvinceManager::thread_processor, this));
     }
 }
@@ -198,7 +198,6 @@ void ProvinceManager::month_tick() {
     jobs_done_cv.wait(lock, [this](){ // Sleeps and waits for jobs to be done 
         return jobs_remaining == 0; 
     });
-
     month_tick_helper();
 }
 
@@ -235,6 +234,7 @@ void ProvinceManager::thread_processor() {
             if (--jobs_remaining == 0) {
                 std::lock_guard<std::mutex> lock(jobs_done_mutex);
                 jobs_done_cv.notify_one();  // Wake main thread
+                print_line("Province month done");
             }
         }
 

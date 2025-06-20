@@ -82,9 +82,12 @@ void TerminalMap::initialize_singleton(TileMapLayer* p_map) {
 }
 
 TerminalMap::TerminalMap(TileMapLayer* p_map) {
+    thread_pool = new TerminalMapThreadPool;
     map = p_map;
-    for (int i = 0; i < 4; i++) {
-        worker_threads.push_back(std::thread(&TerminalMap::thread_processor, this));
+    day_queue_thread = std::thread(&TerminalMap::day_tick_helper, this);
+    day_worker_threads.push_back(std::thread(&TerminalMap::day_thread_processor, this));
+    for (int i = 0; i < 3; i++) {
+        month_worker_threads.push_back(std::thread(&TerminalMap::month_thread_processor, this));
     }
 
     Dictionary needs;
@@ -103,10 +106,7 @@ TerminalMap::TerminalMap(TileMapLayer* p_map) {
 
 TerminalMap::~TerminalMap() {
     //Clean up old threads
-    for (auto &thread: month_threads) {
-        thread.join();
-    }
-    month_threads.clear();
+    stop = true;
     cargo_map_terminals.clear();
 }
 
@@ -129,8 +129,8 @@ void TerminalMap::_on_day_tick_timeout() {
     day_jobs_cv.wait(lock, [this](){ // Sleeps and waits for jobs to be done 
         return day_jobs == 0; 
     });
-
-    day_tick_helper();
+    day_tick_requested = true;
+    day_tick_cv.notify_all();
 }
 
 void TerminalMap::_on_month_tick_timeout() {
@@ -138,28 +138,35 @@ void TerminalMap::_on_month_tick_timeout() {
     month_jobs_cv.wait(lock, [this](){ // Sleeps and waits for jobs to be done 
         return month_jobs == 0; 
     });
-    month_end = std::chrono::high_resolution_clock::now();
+
     month_tick_helper();
 }
 
 
 void TerminalMap::day_tick_helper() {
-    {
-        std::lock_guard<std::mutex> lock(m);
-        for (const auto &[__, terminal]: cargo_map_terminals) {
-            if (terminal->has_method("day_tick")) {
-                day_tick_work.push_back(terminal);
+    while (!stop) {
+        std::unique_lock<std::mutex> lock(day_tick_mutex);
+        day_tick_cv.wait(lock, [this](){
+            return day_tick_requested || stop;
+        });
+
+        {
+            std::shared_lock lock(cargo_map_mutex);
+            for (const auto &[__, terminal]: cargo_map_terminals) {
+                if (terminal->has_method("day_tick")) {
+                    day_tick_work.push_front(terminal);
+                }
             }
+            day_jobs = day_tick_work.size();
         }
-        day_jobs  = day_tick_work.size();
+        day_tick_requested = false;
+        new_day_work.notify_all();
     }
-    
-    condition.notify_all();
 }
 
 void TerminalMap::month_tick_helper() {
     {
-        std::lock_guard<std::mutex> lock(m);
+        std::shared_lock lock(cargo_map_mutex);
         for (const auto &[__, terminal]: cargo_map_terminals) {
             if (terminal->has_method("month_tick")) {
                 month_tick_work.push_back(terminal);
@@ -167,126 +174,85 @@ void TerminalMap::month_tick_helper() {
         }
         month_jobs  = month_tick_work.size();
     }
-    std::chrono::duration<double> elapsed = month_end - month_start;
-    print_line("Month tick took " + String::num_scientific(elapsed.count()) + " seconds");
-    month_start = std::chrono::high_resolution_clock::now();
-    condition.notify_all();
+    new_month_work.notify_all();
 }
 
 //MultiThreading and Process Hooks
-void TerminalMap::thread_processor() {
+void TerminalMap::day_thread_processor() {
     while (!stop) {
         Ref<Terminal> to_process = Ref<Terminal>(nullptr);
-        bool day_tick = false;
         {
             std::unique_lock<std::mutex> lock(m);
-            condition.wait(lock, [this]() {
-                return !day_tick_work.empty() || !month_tick_work.empty() || stop;
+            new_day_work.wait(lock, [this]() {
+                return !day_tick_work.empty() || stop;
             });
 
-            if (stop && day_tick_work.empty() && month_tick_work.empty()) {
+            if (stop && day_tick_work.empty()) {
                 return; // Exit thread
             }
 
-            if (!day_tick_work.empty()) {
-                day_tick = true;
-                to_process = day_tick_work.back();
-                day_tick_work.pop_back();
+            to_process = day_tick_work.back();
+            day_tick_work.pop_back();
 
-                if (--day_jobs == 0) {
-                    std::lock_guard<std::mutex> lock(day_jobs_done_mutex);
-                    day_jobs_cv.notify_one();  // Wake main thread
-                }
-            } else {
-                day_tick = false;
-                to_process = month_tick_work.back();
-                month_tick_work.pop_back();
-                
-                if (--month_jobs == 0) {
-                    std::lock_guard<std::mutex> lock(month_jobs_done_mutex);
-                    month_jobs_cv.notify_one();  // Wake main thread
-                }
+            if (--day_jobs == 0) {
+                std::lock_guard<std::mutex> lock(day_jobs_done_mutex);
+                day_jobs_cv.notify_one();  // Wake main thread
             }
         }
-        if (day_tick) {
-            to_process->call("day_tick");
-        } else {
-            to_process->call("month_tick");
-        }
+        to_process->call("day_tick");
     }
 }
 
+void TerminalMap::month_thread_processor() {
+    while (!stop) {
+        Ref<Terminal> to_process = Ref<Terminal>(nullptr);
+        {
+            std::unique_lock<std::mutex> lock(m);
+            new_month_work.wait(lock, [this]() {
+                return !month_tick_work.empty() || stop;
+            });
 
+            if (stop && month_tick_work.empty()) {
+                return; // Exit thread
+            }
 
-// void TerminalMap::_on_day_tick_timeout() {
-//     if (day_thread.joinable()) day_thread.join();
-//     day_thread = std::thread(&TerminalMap::_on_day_tick_timeout_helper, this);
-// }
+            to_process = month_tick_work.back();
+            month_tick_work.pop_back();
 
-// void TerminalMap::_on_day_tick_timeout_helper() {
-//     auto start_time = std::chrono::high_resolution_clock::now();
-//     day_tick_priority = true;
-//     for (const auto &[coords, terminal]: cargo_map_terminals) {
-//         if (terminal->has_method("day_tick")) {
-//             terminal->call("day_tick");
-//         }
-//     }
-//     day_tick_priority = false;
-//     auto end_time = std::chrono::high_resolution_clock::now();
-//     std::chrono::duration<double> elapsed = end_time - start_time;
-//     // print_line("Day tick took " + String::num_scientific(elapsed.count()) + " seconds");
-// }
+            if (--month_jobs == 0) {
+                std::lock_guard<std::mutex> lock(month_jobs_done_mutex);
+                month_jobs_cv.notify_one();  // Wake main thread
+            }
+        }
+        to_process->call("month_tick");
+    }
+}
 
-// void TerminalMap::_on_month_tick_timeout() {
-//     RoadMap::get_instance()->month_tick();
-//     // Clean up old threads
-//     for (auto &thread: month_threads) {
-//         thread.join();
-//     }
-//     std::chrono::duration<double> elapsed = month_end - month_start;
-//     print_line("Month tick took " + String::num_scientific(elapsed.count()) + " seconds");
-//     month_threads.clear();
+std::vector<Ref<Terminal>> TerminalMap::get_terminals_for_day_tick() const {
+    std::vector<Ref<Terminal>> v;
+    std::shared_lock lock(cargo_map_mutex);
+    for (const auto &[__, terminal]: cargo_map_terminals) {
+        if (terminal->has_method("day_tick")) {
+            v.push_back(terminal);
+        }
+    }
+    return v;
+}
 
-//     auto start = cargo_map_terminals.begin();
-//     month_start = std::chrono::high_resolution_clock::now();
-//     const int NUMBER_OF_THREADS = 4;
-//     const int chunk_size = cargo_map_terminals.size() / NUMBER_OF_THREADS;
-
-//     for (int i = 0; i < NUMBER_OF_THREADS; i++) {
-//         auto end = start;
-//         std::advance(end, chunk_size);
-//         if (i == (NUMBER_OF_THREADS - 1)) {
-//             end = cargo_map_terminals.end();
-//         }
-        
-//         std::thread thrd(&TerminalMap::_on_month_tick_timeout_helper, this, start, end);
-//         month_threads.push_back(std::move(thrd));
-//         start = end;
-//     }
-//     // _on_month_tick_timeout_helper(cargo_map_terminals.begin(), cargo_map_terminals.end());
-// }
-
-// void TerminalMap::_on_month_tick_timeout_helper(MapType::iterator start, MapType::iterator end) {
-//     for (auto it = start; it != end; it++) {
-//         while (day_tick_priority) {
-//             std::this_thread::sleep_for(std::chrono::milliseconds(2));
-//         }
-//         Vector2i coords = it -> first;
-//         Ref<Terminal> terminal = it -> second;
-        
-//         if (terminal->has_method("month_tick")) {
-//             terminal->call("month_tick");
-//         }
-//     }
-//     m.lock();
-//     month_end = std::chrono::high_resolution_clock::now();
-//     m.unlock();
-// }
+std::vector<Ref<Terminal>> TerminalMap::get_terminals_for_month_tick() const {
+    std::vector<Ref<Terminal>> v;
+    std::shared_lock lock(cargo_map_mutex);
+    for (const auto &[__, terminal]: cargo_map_terminals) {
+        if (terminal->has_method("month_tick")) {
+            v.push_back(terminal);
+        }
+    }
+    return v;
+}
 
 void TerminalMap::clear() {
-    m.lock();
+    std::unique_lock lock(cargo_map_mutex);
     cargo_map_terminals.clear();
-    m.unlock();
 }
 
 TileMapLayer* TerminalMap::get_main_map() const {
@@ -303,9 +269,11 @@ Node2D* TerminalMap::get_cargo_values() const {
 
 //Creators
 void TerminalMap::create_terminal(Ref<Terminal> p_terminal) {
-    m.lock();
-    cargo_map_terminals[p_terminal -> get_location()] = p_terminal;
-    m.unlock();
+    {
+        std::unique_lock lock(cargo_map_mutex);
+        cargo_map_terminals[p_terminal->get_location()] = p_terminal;
+    }
+
     Ref<Broker> broker = get_broker(p_terminal -> get_location());
     if (broker.is_valid()) {
         add_connected_brokers(broker);
@@ -381,6 +349,7 @@ std::vector<int> TerminalMap::get_available_resources_of_tile(const Vector2i &co
 }
 
 bool TerminalMap::is_terminal(const Vector2i &coords) {
+    std::shared_lock lock(cargo_map_mutex);
     return cargo_map_terminals.count(coords) == 1;
 }
 
@@ -397,12 +366,16 @@ bool TerminalMap::is_owned_recipeless_construction_site(const Vector2i &coords) 
 }
 bool TerminalMap::is_building(const Vector2i &coords) {
     bool toReturn = false;
-    if (!cargo_map_terminals.count(coords)) return false;
+    {
+        std::shared_lock lock(cargo_map_mutex);
+        if (!cargo_map_terminals.count(coords)) return false;
+    }
     toReturn = get_terminal_as<ConstructionSite>(coords).is_valid() ||  get_terminal_as<Town>(coords).is_valid() ||  get_terminal_as<FactoryTemplate>(coords).is_valid();
     return toReturn;
 }
 bool TerminalMap::is_owned_building(const Vector2i &coords, int id) {
     if (is_building(coords)) {
+        std::shared_lock lock(cargo_map_mutex);
         return cargo_map_terminals[coords] -> get_player_owner() == id;
     }
     return false;
@@ -522,9 +495,11 @@ bool TerminalMap::is_tile_traversable(const Vector2i& coords, bool is_water_untr
 }
 
 bool TerminalMap::is_tile_available(const Vector2i& coords) {
-    m.lock();
-    bool status = !cargo_map_terminals.count(coords);
-    m.unlock();
+    bool status;
+    {
+        std::shared_lock lock(cargo_map_mutex);
+        status = !cargo_map_terminals.count(coords);
+    }
     return status && is_tile_traversable(coords, true);
 }
 
@@ -578,6 +553,7 @@ void TerminalMap::transform_construction_site_to_factory(const Vector2i &coords)
     if (is_owned_construction_site(coords)) {
         
         Ref<ConstructionSite> old_site = get_terminal_as<ConstructionSite>(coords);
+        std::unique_lock lock(cargo_map_mutex);
         cargo_map_terminals[coords] = create_factory(coords, old_site->get_player_owner(), old_site->get_recipe()[0], old_site->get_recipe()[1]);
 
     }
@@ -623,6 +599,7 @@ float TerminalMap::get_average_cash_of_town() const {
 float TerminalMap::get_average_cash_of_city_pop() const {
     double ave = 0;
     int count = 0;
+    std::shared_lock lock(cargo_map_mutex);
     for (const auto &[__, terminal]: cargo_map_terminals) {
         Ref<Town> typed = terminal;
         if (typed.is_valid()) {
@@ -636,6 +613,7 @@ float TerminalMap::get_average_cash_of_city_pop() const {
 float TerminalMap::get_average_factory_level() const {
     double ave = 0;
     int count = 0;
+    std::shared_lock lock(cargo_map_mutex);
     for (const auto &[__, terminal]: cargo_map_terminals) {
         Ref<Factory> typed = terminal;
         if (typed.is_valid()) {
@@ -648,6 +626,7 @@ float TerminalMap::get_average_factory_level() const {
 
 int TerminalMap::get_grain_demand() const {
     int total_demand = 0;
+    std::shared_lock lock(cargo_map_mutex);
     for (const auto &[__, terminal]: cargo_map_terminals) {
         Ref<Town> typed = terminal;
         if (typed.is_valid()) {
@@ -660,6 +639,7 @@ int TerminalMap::get_grain_demand() const {
 
 int TerminalMap::get_grain_supply() const {
     int total_supply = 0;
+    std::shared_lock lock(cargo_map_mutex);
     for (const auto &[__, terminal]: cargo_map_terminals) {
         Ref<Town> typed = terminal;
         if (typed.is_valid()) {
@@ -671,6 +651,7 @@ int TerminalMap::get_grain_supply() const {
 
 int TerminalMap::get_number_of_broke_pops() const {
     int count = 0;
+    std::shared_lock lock(cargo_map_mutex);
     for (const auto &[__, terminal]: cargo_map_terminals) {
         Ref<Town> typed = terminal;
         if (typed.is_valid()) {
@@ -684,6 +665,7 @@ template <typename T>
 float TerminalMap::get_average_cash_of_terminal() const {
     double ave = 0;
     int count = 0;
+    std::shared_lock lock(cargo_map_mutex);
     for (const auto &[__, terminal]: cargo_map_terminals) {
         Ref<T> typed = terminal;
         if (typed.is_valid()) {
