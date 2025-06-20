@@ -1,7 +1,12 @@
 #include "../singletons/terminal_map.hpp"
 #include "ai_factory.hpp"
 
-void AiFactory::_bind_methods() {}
+void AiFactory::_bind_methods() {
+    ClassDB::bind_static_method(get_class_static(), D_METHOD("create", "new_location", "player_owner", "new_inputs", "new_outputs"), &AiFactory::create);
+
+    ClassDB::bind_method(D_METHOD("day_tick"), &AiFactory::day_tick);
+    ClassDB::bind_method(D_METHOD("month_tick"), &AiFactory::month_tick);
+}
 
 AiFactory::AiFactory(): Factory() {}
 

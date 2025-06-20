@@ -32,8 +32,7 @@ func refresh_window() -> void:
 		request_current_cargo.rpc_id(1, location)
 		request_current_name.rpc_id(1, location)
 		request_current_prices.rpc_id(1, location)
-		request_current_cash.rpc_id(1, location)
-		request_current_level.rpc_id(1, location)
+		request_current_basic_labels.rpc_id(1, location)
 
 @rpc("any_peer", "call_local", "unreliable")
 func request_current_cargo(coords: Vector2i) -> void:
@@ -51,9 +50,15 @@ func request_current_prices(coords: Vector2i) -> void:
 	update_current_prices.rpc_id(multiplayer.get_remote_sender_id(), dict)
 
 @rpc("any_peer", "call_local", "unreliable")
-func request_current_cash(coords: Vector2i) -> void:
+func request_current_basic_labels(coords: Vector2i) -> void:
+	var broker: Broker = TerminalMap.get_instance().get_broker(coords)
 	var _current_cash: int = TerminalMap.get_instance().get_cash_of_firm(coords)
+	var level: int = 0
+	if broker is FactoryTemplate:
+		level = (TerminalMap.get_instance().get_broker(coords) as FactoryTemplate).get_level_without_employment()
 	update_current_cash.rpc_id(multiplayer.get_remote_sender_id(), _current_cash)
+	update_current_level.rpc_id(multiplayer.get_remote_sender_id(), level)
+	update_connected_status.rpc_id(multiplayer.get_remote_sender_id(), broker.get_number_of_connected_terminals())
 
 @rpc("any_peer", "call_local", "unreliable")
 func request_current_level(coords: Vector2i) -> void:
@@ -87,6 +92,10 @@ func update_current_prices(new_prices: Dictionary) -> void:
 func update_current_level(new_level: int) -> void:
 	current_level = new_level
 	$Level.text = "Level: " + str(current_level)
+
+@rpc("authority", "call_local", "unreliable")
+func update_connected_status(connections: int) -> void:
+	$Connected.text = "Connections: " + str(connections);
 
 func factory_window() -> void:
 	var cargo_list: ItemList = $Cargo_Node/Cargo_List

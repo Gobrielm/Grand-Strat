@@ -35,6 +35,6 @@ public:
 
 
     // Process Hooks
-    virtual void day_tick();
-    virtual void month_tick();
+    virtual void day_tick() override;
+    virtual void month_tick() override;
 };

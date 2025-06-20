@@ -4,6 +4,9 @@
 
 void WheatFarm::_bind_methods() {
     ClassDB::bind_static_method(get_class_static(), D_METHOD("create", "coords", "p_player_id"), &WheatFarm::create);
+
+    ClassDB::bind_method(D_METHOD("day_tick"), &WheatFarm::day_tick);
+    ClassDB::bind_method(D_METHOD("month_tick"), &WheatFarm::month_tick);
 }
 
 WheatFarm::WheatFarm(): AiFactory() {}
@@ -20,4 +23,11 @@ Dictionary WheatFarm::get_input_dict() {
     Dictionary d;
     d[CargoInfo::get_instance()->get_cargo_type("grain")] = 1;
     return d;
+}
+
+void WheatFarm::day_tick() {
+    AiFactory::day_tick();
+}
+void WheatFarm::month_tick() {
+    AiFactory::month_tick();
 }

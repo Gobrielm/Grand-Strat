@@ -1,4 +1,5 @@
 #include "province_manager.hpp"
+#include "terminal_map.hpp"
 #include <godot_cpp/core/class_db.hpp>
 #include <chrono>
 
@@ -10,6 +11,7 @@ ProvinceManager::ProvinceManager() {
     for (int i = 0; i < 4; i++) {
         worker_threads.push_back(std::thread(&ProvinceManager::thread_processor, this));
     }
+    month_tick_checker = std::thread(&ProvinceManager::month_tick_check, this);
 }
 
 ProvinceManager::~ProvinceManager() {
@@ -56,7 +58,7 @@ Ref<ProvinceManager> ProvinceManager::get_instance() {
 }
 
 void ProvinceManager::create_new_if_empty(int province_id) {
-    std::scoped_lock lock(m);
+    std::unique_lock lock(province_mutex);
     if (provinces.find(province_id) == provinces.end()) {
         provinces[province_id] = memnew(Province(province_id));
     }
@@ -64,7 +66,7 @@ void ProvinceManager::create_new_if_empty(int province_id) {
 
 void ProvinceManager::add_tile_to_province(int province_id, Vector2i tile) {
     ERR_FAIL_COND(tiles_to_province_id.count(tile));
-    std::scoped_lock lock(m);
+    std::unique_lock lock(province_mutex);
     tiles_to_province_id[tile] = province_id;
     provinces[province_id]->add_tile(tile);
 }
@@ -146,18 +148,18 @@ Array ProvinceManager::get_provinces() const {
 }
 
 bool ProvinceManager::is_tile_a_province(Vector2i tile) const {
-    std::scoped_lock lock(m);
+    std::shared_lock lock(province_mutex);
     return tiles_to_province_id.count(tile);
 }
 
 int ProvinceManager::get_province_id(Vector2i tile) const {
-    std::scoped_lock lock(m);
+    std::shared_lock lock(province_mutex);
     auto it = tiles_to_province_id.find(tile);
     return it != tiles_to_province_id.end() ? it->second : -1;
 }
 
 Province* ProvinceManager::get_province(int id) const {
-    std::scoped_lock lock(m);
+    std::shared_lock lock(province_mutex);
     auto it = provinces.find(id);
     return it != provinces.end() ? it->second : nullptr;
 }
@@ -194,16 +196,38 @@ std::unordered_set<int> ProvinceManager::get_country_provinces(int country_id) c
 }
 
 void ProvinceManager::month_tick() {
-    std::unique_lock<std::mutex> lock(jobs_done_mutex);
-    jobs_done_cv.wait(lock, [this](){ // Sleeps and waits for jobs to be done 
-        return jobs_remaining == 0; 
-    });
-    month_tick_helper();
+    TerminalMap::get_instance()->pause_time();
+    {
+        std::lock_guard<std::mutex> lock(month_tick_checker_mutex);
+        month_tick_check_requested = true;
+    }
+    month_tick_checker_cv.notify_one();
+}
+
+void ProvinceManager::month_tick_check() {
+    while (!stop) {
+        {
+            std::unique_lock<std::mutex> lock(month_tick_checker_mutex); // Waits for month tick
+            month_tick_checker_cv.wait(lock, [this](){
+                return month_tick_check_requested || stop;
+            });
+            month_tick_check_requested = false;
+            TerminalMap::get_instance()->unpause_time();
+        }
+
+        {   
+            std::unique_lock<std::mutex> lock(jobs_done_mutex);
+            jobs_done_cv.wait(lock, [this](){ // Sleeps and waits for jobs to be done 
+                return jobs_remaining == 0; 
+            });
+        }
+        month_tick_helper();
+    }
 }
 
 void ProvinceManager::month_tick_helper() {
     {
-        std::lock_guard<std::mutex> lock(m);
+        std::shared_lock lock(province_mutex);
         for (const auto &[__, province]: provinces) {
             provinces_to_process.push_back(province);
         }
@@ -230,14 +254,11 @@ void ProvinceManager::thread_processor() {
             // Get one province to process
             to_process = provinces_to_process.back();
             provinces_to_process.pop_back();
-
-            if (--jobs_remaining == 0) {
-                std::lock_guard<std::mutex> lock(jobs_done_mutex);
-                jobs_done_cv.notify_one();  // Wake main thread
-                print_line("Province month done");
-            }
         }
-
         to_process->month_tick();
+
+        if (--jobs_remaining == 0) {
+            jobs_done_cv.notify_one();  // Wake main thread
+        }
     }
 }

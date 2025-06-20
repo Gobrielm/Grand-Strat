@@ -77,7 +77,7 @@ func _input(event: InputEvent) -> void:
 			main_map.place_road_depot()
 	elif event.is_action_released("click"):
 		if state_machine.is_controlling_camera() and TerminalMap.get_instance().is_road_depot(cell_position):
-			factory_window.open_window(cell_position)
+			pass
 		elif state_machine.is_controlling_camera() and TerminalMap.get_instance().is_owned_station(cell_position, unique_id):
 			station_window.open_window(cell_position)
 		elif state_machine.is_controlling_camera() and TerminalMap.get_instance().is_station(cell_position):

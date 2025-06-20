@@ -19,9 +19,8 @@ class RoadDepot : public Firm {
 private:
     std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> other_road_depots;
     static constexpr int MAX_THROUGHPUT = 20000;
-    static constexpr float FEE = 0.05f;
+    static constexpr float FEE = 0.02f;
     int cargo_sent = 0;
-    float cash = 1000;
 
 protected:
     std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> connected_brokers;

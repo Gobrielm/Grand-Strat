@@ -20,6 +20,7 @@ void TerminalMap::_bind_methods() {
     ClassDB::bind_static_method(get_class_static(), D_METHOD("create", "p_map"), &TerminalMap::initialize_singleton);
     // Initialization
     ClassDB::bind_method(D_METHOD("assign_cargo_map", "p_cargo_map"), &TerminalMap::assign_cargo_map);
+    ClassDB::bind_method(D_METHOD("assign_cargo_controller", "p_cargo_controller"), &TerminalMap::assign_cargo_controller);
 
     // Process hooks
     ClassDB::bind_method(D_METHOD("_on_day_tick_timeout"), &TerminalMap::_on_day_tick_timeout);
@@ -78,17 +79,11 @@ void TerminalMap::initialize_singleton(TileMapLayer* p_map) {
     ERR_FAIL_COND_MSG(singleton_instance != nullptr, "Cannot create multiple instances of singleton!");
     singleton_instance.instantiate();
     singleton_instance -> map = p_map;
+    singleton_instance->thread_pool = new TerminalMapThreadPool;
     
 }
 
-TerminalMap::TerminalMap(TileMapLayer* p_map) {
-    thread_pool = new TerminalMapThreadPool;
-    map = p_map;
-    day_queue_thread = std::thread(&TerminalMap::day_tick_helper, this);
-    day_worker_threads.push_back(std::thread(&TerminalMap::day_thread_processor, this));
-    for (int i = 0; i < 3; i++) {
-        month_worker_threads.push_back(std::thread(&TerminalMap::month_thread_processor, this));
-    }
+TerminalMap::TerminalMap() {
 
     Dictionary needs;
     Ref<CargoInfo> cargo_info = CargoInfo::get_instance(); //TODO: Should be expanded and moved elsewhere
@@ -106,8 +101,8 @@ TerminalMap::TerminalMap(TileMapLayer* p_map) {
 
 TerminalMap::~TerminalMap() {
     //Clean up old threads
-    stop = true;
     cargo_map_terminals.clear();
+    delete thread_pool;
 }
 
 bool TerminalMap::is_instance_created() {
@@ -124,127 +119,40 @@ void TerminalMap::assign_cargo_map(TileMapLayer* p_cargo_map) {
     cargo_values = cargo_map->get_node<Node2D>("cargo_values");
 }
 
+void TerminalMap::assign_cargo_controller(Node* p_cargo_controller) {
+    cargo_controller = p_cargo_controller;
+}
+
 void TerminalMap::_on_day_tick_timeout() {
-    std::unique_lock<std::mutex> lock(day_jobs_done_mutex);
-    day_jobs_cv.wait(lock, [this](){ // Sleeps and waits for jobs to be done 
-        return day_jobs == 0; 
-    });
-    day_tick_requested = true;
-    day_tick_cv.notify_all();
+    thread_pool->day_tick();
 }
 
 void TerminalMap::_on_month_tick_timeout() {
-    std::unique_lock<std::mutex> lock(month_jobs_done_mutex);
-    month_jobs_cv.wait(lock, [this](){ // Sleeps and waits for jobs to be done 
-        return month_jobs == 0; 
-    });
-
-    month_tick_helper();
-}
-
-
-void TerminalMap::day_tick_helper() {
-    while (!stop) {
-        std::unique_lock<std::mutex> lock(day_tick_mutex);
-        day_tick_cv.wait(lock, [this](){
-            return day_tick_requested || stop;
-        });
-
-        {
-            std::shared_lock lock(cargo_map_mutex);
-            for (const auto &[__, terminal]: cargo_map_terminals) {
-                if (terminal->has_method("day_tick")) {
-                    day_tick_work.push_front(terminal);
-                }
-            }
-            day_jobs = day_tick_work.size();
-        }
-        day_tick_requested = false;
-        new_day_work.notify_all();
-    }
-}
-
-void TerminalMap::month_tick_helper() {
-    {
-        std::shared_lock lock(cargo_map_mutex);
-        for (const auto &[__, terminal]: cargo_map_terminals) {
-            if (terminal->has_method("month_tick")) {
-                month_tick_work.push_back(terminal);
-            }
-        }
-        month_jobs  = month_tick_work.size();
-    }
-    new_month_work.notify_all();
-}
-
-//MultiThreading and Process Hooks
-void TerminalMap::day_thread_processor() {
-    while (!stop) {
-        Ref<Terminal> to_process = Ref<Terminal>(nullptr);
-        {
-            std::unique_lock<std::mutex> lock(m);
-            new_day_work.wait(lock, [this]() {
-                return !day_tick_work.empty() || stop;
-            });
-
-            if (stop && day_tick_work.empty()) {
-                return; // Exit thread
-            }
-
-            to_process = day_tick_work.back();
-            day_tick_work.pop_back();
-
-            if (--day_jobs == 0) {
-                std::lock_guard<std::mutex> lock(day_jobs_done_mutex);
-                day_jobs_cv.notify_one();  // Wake main thread
-            }
-        }
-        to_process->call("day_tick");
-    }
-}
-
-void TerminalMap::month_thread_processor() {
-    while (!stop) {
-        Ref<Terminal> to_process = Ref<Terminal>(nullptr);
-        {
-            std::unique_lock<std::mutex> lock(m);
-            new_month_work.wait(lock, [this]() {
-                return !month_tick_work.empty() || stop;
-            });
-
-            if (stop && month_tick_work.empty()) {
-                return; // Exit thread
-            }
-
-            to_process = month_tick_work.back();
-            month_tick_work.pop_back();
-
-            if (--month_jobs == 0) {
-                std::lock_guard<std::mutex> lock(month_jobs_done_mutex);
-                month_jobs_cv.notify_one();  // Wake main thread
-            }
-        }
-        to_process->call("month_tick");
-    }
+    thread_pool->month_tick();
 }
 
 std::vector<Ref<Terminal>> TerminalMap::get_terminals_for_day_tick() const {
     std::vector<Ref<Terminal>> v;
-    std::shared_lock lock(cargo_map_mutex);
-    for (const auto &[__, terminal]: cargo_map_terminals) {
-        if (terminal->has_method("day_tick")) {
-            v.push_back(terminal);
+    {
+        std::shared_lock lock(cargo_map_mutex);
+        for (const auto &[__, terminal]: cargo_map_terminals) {
+            if (terminal->has_method("day_tick")) {
+                v.push_back(terminal);
+            }
         }
     }
+    
     return v;
 }
 
 std::vector<Ref<Terminal>> TerminalMap::get_terminals_for_month_tick() const {
     std::vector<Ref<Terminal>> v;
-    std::shared_lock lock(cargo_map_mutex);
-    for (const auto &[__, terminal]: cargo_map_terminals) {
-        if (terminal->has_method("month_tick")) {
-            v.push_back(terminal);
+    {
+        std::shared_lock lock(cargo_map_mutex);
+        for (const auto &[__, terminal]: cargo_map_terminals) {
+            if (terminal->has_method("month_tick")) {
+                v.push_back(terminal);
+            }
         }
     }
     return v;
@@ -267,19 +175,33 @@ Node2D* TerminalMap::get_cargo_values() const {
     return cargo_values;
 }
 
+ //Time
+void TerminalMap::pause_time() {
+    m.lock();
+    cargo_controller->call("backend_pause");
+    m.unlock();
+}
+
+void TerminalMap::unpause_time() {
+    m.lock();
+    cargo_controller->call("backend_unpause");
+    m.unlock();
+}
+
 //Creators
 void TerminalMap::create_terminal(Ref<Terminal> p_terminal) {
+    Vector2i location = p_terminal->get_location();
     {
         std::unique_lock lock(cargo_map_mutex);
-        cargo_map_terminals[p_terminal->get_location()] = p_terminal;
+        cargo_map_terminals[location] = p_terminal;
     }
 
-    Ref<Broker> broker = get_broker(p_terminal -> get_location());
+    Ref<Broker> broker = get_broker(location);
     if (broker.is_valid()) {
         add_connected_brokers(broker);
         find_stations(broker);
     }
-    Ref<RoadDepot> road_depot = get_terminal_as<RoadDepot>(p_terminal -> get_location());
+    Ref<RoadDepot> road_depot = get_terminal_as<RoadDepot>(location);
     if (road_depot.is_valid()) {
         add_connected_stations(road_depot);
     }

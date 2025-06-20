@@ -137,9 +137,9 @@ void FactoryTemplate::distribute_cargo() {
     for (const auto& [type, __]: outputs) {
         TradeOrder* order = get_order(type);
         if (order && order->is_sell_order()) {
+            report_demand_of_brokers(type);
             distribute_from_order(order);
         }
-        report_demand_of_brokers(type);
     }
 }
 

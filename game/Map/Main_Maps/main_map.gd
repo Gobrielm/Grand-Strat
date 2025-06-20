@@ -59,6 +59,7 @@ func initialize_game() -> void:
 		var cargo_cntrlr: cargo_controller = load("res://Singletons/cargo_controller.tscn").instantiate()
 		add_child(cargo_cntrlr)
 		TerminalMap.create(self)
+		TerminalMap.get_instance().assign_cargo_controller(cargo_cntrlr)
 		recipe.create_set_recipes()
 		rail_placer_obj.init_all_rails()
 		$player_camera/CanvasLayer/Desync_Label.visible = true

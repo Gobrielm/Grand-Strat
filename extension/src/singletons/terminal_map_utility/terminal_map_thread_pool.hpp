@@ -19,12 +19,16 @@ class TerminalMapThreadPool {
 
     std::mutex m;
 
-    // Threads
-    std::thread day_queue_thread;
-    std::mutex day_tick_mutex;
-    std::condition_variable day_tick_cv;
-    bool day_tick_requested = false;
+    std::thread day_tick_checker; //used to check if next day is ready without blocking
+    std::mutex day_tick_checker_mutex;
+    std::condition_variable day_tick_checker_cv;
+    bool day_tick_check_requested = false;
+    std::thread month_tick_checker; //used to check if next month is ready without blocking
+    std::mutex month_tick_checker_mutex;
+    std::condition_variable month_tick_checker_cv;
+    bool month_tick_check_requested = false;
 
+    // Threads
     std::vector<std::thread> day_worker_threads;
     std::vector<std::thread> month_worker_threads;
     std::list<Ref<Terminal>> day_tick_work;
@@ -38,6 +42,9 @@ class TerminalMapThreadPool {
     std::condition_variable month_jobs_cv;
     std::mutex day_jobs_done_mutex;
     std::mutex month_jobs_done_mutex;
+
+    void day_tick_check();
+    void month_tick_check();
 
     void day_tick_helper();
     void month_tick_helper();

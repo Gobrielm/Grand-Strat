@@ -56,7 +56,6 @@ void RoadDepot::remove_connected_road_depot(const Vector2i road_depot_tile) {
 std::vector<Ref<Broker>> RoadDepot::get_available_brokers(int type) {
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     std::vector<Ref<Broker>> toReturn = get_available_local_brokers(type);
-    
     for (const auto &tile: other_road_depots) {
         Ref<RoadDepot> road_depot = terminal_map->get_terminal_as<RoadDepot>(tile);
         if (road_depot.is_valid()) {

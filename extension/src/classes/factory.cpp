@@ -4,6 +4,9 @@ void Factory::_bind_methods() {
     ClassDB::bind_static_method(get_class_static(), D_METHOD("create", "new_location", "player_owner", "new_inputs", "new_outputs"), &Factory::create);
     ClassDB::bind_method(D_METHOD("initialize", "new_location", "player_owner", "new_inputs", "new_outputs"), &Factory::initialize);
 
+    ClassDB::bind_method(D_METHOD("day_tick"), &Factory::day_tick);
+    ClassDB::bind_method(D_METHOD("month_tick"), &Factory::month_tick);
+
 }
 
 

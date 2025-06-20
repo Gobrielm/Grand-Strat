@@ -6,7 +6,8 @@ RoadMap* RoadMap::singleton_instance = nullptr;
 
 void RoadMap::_bind_methods() {
     ClassDB::bind_static_method(get_class_static(), D_METHOD("get_instance"), &RoadMap::get_instance);
-    
+
+    ClassDB::bind_method(D_METHOD("month_tick"), &RoadMap::month_tick);
     ClassDB::bind_method(D_METHOD("place_road_depot", "location"), &RoadMap::place_road_depot);
 
     ClassDB::bind_method(D_METHOD("place_road", "location"), &RoadMap::place_road);

@@ -2,9 +2,11 @@
 #include "../terminal_map.hpp"
 
 TerminalMapThreadPool::TerminalMapThreadPool() {
-    day_queue_thread = std::thread(&TerminalMapThreadPool::day_tick_helper, this);
     day_worker_threads.push_back(std::thread(&TerminalMapThreadPool::day_thread_processor, this));
-    for (int i = 0; i < 3; i++) {
+    day_worker_threads.push_back(std::thread(&TerminalMapThreadPool::day_thread_processor, this));
+    day_tick_checker = std::thread(&TerminalMapThreadPool::day_tick_check, this);
+    month_tick_checker = std::thread(&TerminalMapThreadPool::month_tick_check, this);
+    for (int i = 0; i < 5; i++) {
         month_worker_threads.push_back(std::thread(&TerminalMapThreadPool::month_thread_processor, this));
     }
     terminal_map = TerminalMap::get_instance().ptr();
@@ -17,40 +19,69 @@ TerminalMapThreadPool::~TerminalMapThreadPool() {
 //Public calls
 
 void TerminalMapThreadPool::day_tick() {
-    std::unique_lock<std::mutex> lock(day_jobs_done_mutex);
-    day_jobs_cv.wait(lock, [this](){ // Sleeps and waits for jobs to be done 
-        return day_jobs == 0; 
-    });
-    day_tick_requested = true;
-    day_tick_cv.notify_all();
+    terminal_map->pause_time();
+    day_tick_check_requested = true;
+    day_tick_checker_cv.notify_one();
+}
+
+void TerminalMapThreadPool::day_tick_check() {
+    while (!stop) {
+        {
+            std::unique_lock<std::mutex> lock(day_tick_checker_mutex); // Waits for day tick here
+            day_tick_checker_cv.wait(lock, [this](){
+                return day_tick_check_requested || stop;
+            });
+            day_tick_check_requested = false;
+            terminal_map->unpause_time();
+        }
+
+        std::unique_lock<std::mutex> lock(day_jobs_done_mutex);
+        day_jobs_cv.wait(lock, [this](){ // Waits for last day ticks jobs to be done
+            return day_jobs == 0; 
+        });
+        
+        day_tick_helper();
+    }
 }
 
 void TerminalMapThreadPool::month_tick() {
-    std::unique_lock<std::mutex> lock(month_jobs_done_mutex);
-    month_jobs_cv.wait(lock, [this](){ // Sleeps and waits for jobs to be done 
-        return month_jobs == 0; 
-    });
+    terminal_map->pause_time();
+    month_tick_check_requested = true;
+    month_tick_checker_cv.notify_one();
+}
 
-    month_tick_helper();
+void TerminalMapThreadPool::month_tick_check() {
+    while (!stop) {
+        {
+            std::unique_lock<std::mutex> lock(month_tick_checker_mutex); // Waits for day tick here
+            month_tick_checker_cv.wait(lock, [this](){
+                return month_tick_check_requested || stop;
+            });
+            month_tick_check_requested = false;
+            terminal_map->unpause_time();
+        }
+
+
+        {
+            std::unique_lock<std::mutex> lock(month_jobs_done_mutex);
+            month_jobs_cv.wait(lock, [this](){ // Sleeps and waits for jobs to be done 
+                return month_jobs == 0; 
+            });
+        }
+        
+
+        month_tick_helper();
+    }
 }
 
 //Private helpers
 
 void TerminalMapThreadPool::day_tick_helper() {
-    while (!stop) {
-        std::unique_lock<std::mutex> lock(day_tick_mutex);
-        day_tick_cv.wait(lock, [this](){
-            return day_tick_requested || stop;
-        });
-
-        for (const auto &terminal: terminal_map->get_terminals_for_day_tick()) {
-            day_tick_work.push_front(terminal);
-        }
-        day_jobs = day_tick_work.size();
-        
-        day_tick_requested = false;
-        new_day_work.notify_all();
+    for (const auto &terminal: terminal_map->get_terminals_for_day_tick()) {
+         day_tick_work.push_front(terminal);
     }
+    day_jobs = day_tick_work.size();
+    new_day_work.notify_all();
 }
 
 void TerminalMapThreadPool::month_tick_helper() {
@@ -77,12 +108,12 @@ void TerminalMapThreadPool::day_thread_processor() {
             to_process = day_tick_work.back();
             day_tick_work.pop_back();
 
-            if (--day_jobs == 0) {
-                std::lock_guard<std::mutex> lock(day_jobs_done_mutex);
-                day_jobs_cv.notify_one();  // Wake main thread
-            }
         }
         to_process->call("day_tick");
+
+        if (--day_jobs == 0) {
+            day_jobs_cv.notify_one();  // Wake main thread
+        }
     }
 }
 
@@ -101,13 +132,12 @@ void TerminalMapThreadPool::month_thread_processor() {
 
             to_process = month_tick_work.back();
             month_tick_work.pop_back();
-
-            if (--month_jobs == 0) {
-                std::lock_guard<std::mutex> lock(month_jobs_done_mutex);
-                month_jobs_cv.notify_one();  // Wake main thread
-            }
         }
         to_process->call("month_tick");
+
+        if (--month_jobs == 0) {
+            month_jobs_cv.notify_one();  // Wake main thread
+        }
     }
 }
 

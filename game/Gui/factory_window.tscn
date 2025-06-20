@@ -82,4 +82,12 @@ offset_right = 466.0
 offset_bottom = 28.0
 text = "Level: "
 
+[node name="Connected" type="Label" parent="."]
+anchors_preset = -1
+offset_left = 151.0
+offset_top = 2.0
+offset_right = 216.0
+offset_bottom = 25.0
+text = "Connected: 1"
+
 [connection signal="close_requested" from="." to="." method="_on_close_requested"]

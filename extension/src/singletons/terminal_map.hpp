@@ -33,6 +33,7 @@ private:
     TileMapLayer* map = nullptr;
     TileMapLayer* cargo_map = nullptr;
     Node2D* cargo_values = nullptr;
+    Node* cargo_controller = nullptr;
 
     mutable std::shared_mutex cargo_map_mutex;
     mutable std::mutex m;
@@ -40,44 +41,19 @@ private:
 
     TerminalMapThreadPool* thread_pool = nullptr;
 
-    // Threads
-    std::thread day_queue_thread;
-    std::mutex day_tick_mutex;
-    std::condition_variable day_tick_cv;
-    bool day_tick_requested = false;
-
-    std::vector<std::thread> day_worker_threads;
-    std::vector<std::thread> month_worker_threads;
-    std::list<Ref<Terminal>> day_tick_work;
-    std::vector<Ref<Terminal>> month_tick_work;
-    std::condition_variable new_day_work;
-    std::condition_variable new_month_work;
-    std::atomic<bool> stop = false;
-    std::atomic<int> day_jobs = 0;
-    std::atomic<int> month_jobs = 0;
-    std::condition_variable day_jobs_cv;
-    std::condition_variable month_jobs_cv;
-    std::mutex day_jobs_done_mutex;
-    std::mutex month_jobs_done_mutex;
-
-    void day_tick_helper();
-    void month_tick_helper();
-
-    void day_thread_processor();
-    void month_thread_processor();
-
 protected:
     static void _bind_methods();
 
 public:
     static void initialize_singleton(TileMapLayer* p_map);
 
-    TerminalMap(TileMapLayer* p_map = nullptr);
+    TerminalMap();
     ~TerminalMap();
 
     static bool is_instance_created();
     static Ref<TerminalMap> get_instance();
     void assign_cargo_map(TileMapLayer* p_cargo_map);
+    void assign_cargo_controller(Node* p_cargo_controller);
 
     //Process hooks
     void _on_day_tick_timeout();
@@ -91,6 +67,10 @@ public:
     TileMapLayer* get_main_map() const;
     TileMapLayer* get_cargo_map() const;
     Node2D* get_cargo_values() const;
+
+    //Time
+    void pause_time();
+    void unpause_time();
 
     //Creators
     void create_terminal(Ref<Terminal> p_terminal);
@@ -138,11 +118,13 @@ public:
     template <typename T>
     Ref<T> get_terminal_as(const Vector2i &coords, const std::function<bool(const Vector2i &)> &type_check = nullptr) {
         Ref<T> toReturn = Ref<T>(nullptr);
-        std::unique_lock lock(cargo_map_mutex);
-        if (cargo_map_terminals.count(coords) == 1 && (!type_check || type_check(coords))) {
-            Ref<T> typed = cargo_map_terminals[coords];
-            if (typed.is_valid()) {
-                toReturn = typed;
+        {
+            std::unique_lock lock(cargo_map_mutex);
+            if (cargo_map_terminals.count(coords) == 1 && (!type_check || type_check(coords))) {
+                Ref<T> typed = cargo_map_terminals[coords];
+                if (typed.is_valid()) {
+                    toReturn = typed;
+                }
             }
         }
         return toReturn;

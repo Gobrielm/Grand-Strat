@@ -7,7 +7,8 @@ var clock: clock_singleton = clock_singleton.get_instance()
 var paused: bool = false
 var ticks: float = 0.0
 var game_speed: int = 1
-var day_thread: Thread = Thread.new()
+var m: Mutex = Mutex.new()
+var threads_request_pause: int = 0
 
 @export var SECONDS_IN_DAY: int = 1
 
@@ -23,10 +24,29 @@ func _ready() -> void:
 	pass
 
 func change_speed(p_speed: int) -> void:
+	m.lock()
 	game_speed = p_speed
+	m.unlock()
 
 func change_pause(p_pause: bool) -> void:
+	m.lock()
 	paused = p_pause
+	m.unlock()
+
+func backend_pause() -> void:
+	m.lock()
+	threads_request_pause += 1
+	m.unlock()
+	change_pause(true)
+
+func backend_unpause() -> void:
+	m.lock()
+	threads_request_pause -= 1
+	var status: bool = threads_request_pause == 0
+	if threads_request_pause < 0: push_error("Backend Pause requests are unsynced")
+	m.unlock()
+	if status:
+		change_pause(false)
 
 func get_game_speed() -> int:
 	return clock_singleton.get_instance().get_game_speed()
@@ -43,6 +63,7 @@ var end: float = 0.0
 func _on_month_tick_timeout() -> void:
 	DataCollector.get_instance().month_tick()
 	ProvinceManager.get_instance().month_tick()
+	RoadMap.get_instance().month_tick()
 	TerminalMap.get_instance()._on_month_tick_timeout()
 	Utils.unit_map._on_month_tick_timeout()
 

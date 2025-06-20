@@ -25,7 +25,7 @@ void Broker::_bind_methods() {
     ClassDB::bind_method(D_METHOD("remove_connected_broker", "broker"), &Broker::remove_connected_broker);
     ClassDB::bind_method(D_METHOD("get_orders_dict"), &Broker::get_orders_dict);
     ClassDB::bind_method(D_METHOD("get_connected_broker_locations"), &Broker::get_connected_broker_locations);
-
+    ClassDB::bind_method(D_METHOD("get_number_of_connected_terminals"), &Broker::get_number_of_connected_terminals);
 }
 
 Ref<Broker> Broker::create(const Vector2i new_location, const int player_owner, const int p_max_amount) {
@@ -209,6 +209,7 @@ void Broker::distribute_cargo() {
 
 void Broker::distribute_from_order(const TradeOrder* order) {
     std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> s;
+
     for (const auto& tile : connected_brokers) {
         if (get_cargo_amount(order->get_type()) == 0) return;
         Ref<Broker> broker = TerminalMap::get_instance() -> get_broker(tile);
@@ -240,7 +241,6 @@ void Broker::distribute_to_road_depot_brokers(Ref<RoadDepot> road_depot, const T
 
 void Broker::distribute_to_order(Ref<Broker> otherBroker, const TradeOrder* order, Ref<RoadDepot> road_depot) { 
     int type = order->get_type();
-
     float price1 = get_local_price(type);
     otherBroker->report_price(type, price1);
     float price2 = otherBroker->get_local_price(type);
@@ -269,6 +269,7 @@ void Broker::report_attempt_to_sell(int type, int amount) {
 void Broker::report_demand_of_brokers(int type) {
     float price = get_local_price(type);
     std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> s;
+    s.insert(get_location());
     
     for (const auto& tile : connected_brokers) {
         Ref<Broker> broker = TerminalMap::get_instance() -> get_broker(tile);
@@ -284,7 +285,7 @@ void Broker::report_demand_of_brokers(int type) {
         if (road_depot.is_null()) continue;
         
         std::vector<Ref<Broker>> other_brokers = road_depot->get_available_brokers(type);
-        for (auto broker: other_brokers) {
+        for (const auto &broker: other_brokers) {
             if (!s.count(broker->get_location())) {
                 s.insert(broker->get_location());
                 report_attempt_to_sell(type, broker->get_desired_cargo(type, price));

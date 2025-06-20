@@ -82,7 +82,10 @@ func _on_pause_pressed() -> void:
 @rpc("any_peer", "call_local", "unreliable")
 func request_change_pause(is_paused: bool) -> void:
 	cargo_controller.get_instance().change_pause(is_paused)
-	update_clock_pause.rpc(is_paused)
+	sync_clock_pause(is_paused)
+
+func sync_clock_pause(pause: bool) -> void:
+	update_clock_pause.rpc(pause)
 
 @rpc("authority", "call_local", "unreliable")
 func update_clock_pause(pause: bool) -> void:

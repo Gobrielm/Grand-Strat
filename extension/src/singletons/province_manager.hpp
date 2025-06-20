@@ -2,6 +2,7 @@
 
 #include <unordered_map>
 #include <mutex>
+#include <shared_mutex>
 #include <thread>
 #include <condition_variable>
 #include <godot_cpp/classes/ref_counted.hpp>
@@ -16,10 +17,19 @@ class ProvinceManager : public RefCounted {
 
 
     mutable std::mutex m;
+    mutable std::shared_mutex province_mutex;
     static Ref<ProvinceManager> singleton_instance;
     std::unordered_map<int, Province*> provinces;
     std::unordered_map<Vector2i, int, godot_helpers::Vector2iHasher> tiles_to_province_id;
     std::unordered_map<int, std::unordered_set<int>> country_id_to_province_ids;
+
+
+    std::thread month_tick_checker; //used to check if next day is ready without blocking
+    std::mutex month_tick_checker_mutex;
+    std::condition_variable month_tick_checker_cv;
+    bool month_tick_check_requested = false;
+
+    void month_tick_check();
 
     void month_tick_helper();
     std::vector<std::thread> worker_threads;
