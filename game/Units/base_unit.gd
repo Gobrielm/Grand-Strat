@@ -13,6 +13,13 @@ func convert_to_client_array_for_army() -> Array:
 	#TODO: Add more stuff
 	return [manpower, morale, experience, org.get_organization()]
 
+func get_client_dict_for_army() -> Dictionary:
+	return {
+		"manpower": manpower, 
+		"morale": morale, "experience": experience, 
+		"org": org.get_organization()
+	}
+
 func update_stats(unit_info: Array) -> void:
 	manpower = unit_info[0]
 	morale = unit_info[1]
@@ -76,6 +83,8 @@ var combat_arm: int
 #The actual type line infantry, mechanized infantry, ect. the x atlas
 var specific_type: int
 
+var can_fight: bool = true
+
 func get_max_manpower() -> int:
 	return max_manpower
 
@@ -138,3 +147,9 @@ func set_atlas_coord(atlas_coords: Vector2i) -> void:
 
 func get_atlas_coord() -> Vector2i:
 	return Vector2i(specific_type, combat_arm)
+
+func can_unit_fight() -> bool:
+	return can_fight
+
+func set_can_fight(_can_fight: bool) -> void:
+	can_fight = _can_fight

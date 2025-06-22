@@ -487,17 +487,6 @@ func create_route_from_tile_to_prev(start: Vector2i, destination: Vector2i, tile
 		current = tile_to_prev[current]
 	return route
 
-func unit_battle(attacker: army, defender: army) -> void:
-	var result: int = battle_script.unit_battle(attacker, defender)
-	if result == 0:
-		armies_to_kill[defender.get_army_id()] = true
-	elif result == 1:
-		armies_to_retreat[defender.get_army_id()] = true
-	elif result == 2:
-		armies_to_kill[attacker.get_army_id()] = true
-	elif result == 3:
-		armies_to_retreat[attacker.get_army_id()] = true
-
 # === Army Selecting === 
 
 func get_selected_army() -> army:
@@ -617,15 +606,49 @@ func highlight_dest() -> void:
 func _process(delta: float) -> void:
 	process_gui()
 	for location: Vector2i in army_locations:
+		if will_battle_occur(location):
+			unit_battle(location)
+		
+		
 		var army_stack: Array = army_locations[location]
 		for army_id: int in army_stack:
-			var army_obj: army = army_data[army_id]
 			if armies_to_kill.has(army_id) or armies_to_retreat.has(army_id):
 				continue
+			var army_obj: army = army_data[army_id]
 			update_army_progress(army_obj, delta)
 			
 	retreat_units()
 	clean_up_killed_units()
+
+func will_battle_occur(tile: Vector2i) -> bool:
+	var army_stack: Array = army_locations[tile]
+	var attackers: Array = attacking_army_locations[tile]
+	return army_stack.size() != 0 and attackers.size() != 0
+
+enum combat_results {
+	DEF_LOSS = 1,
+	ATK_LOSS = 2,
+	STALEMATE = -1,
+}
+
+func unit_battle(tile: Vector2i) -> void:
+	var defenders: Array = army_locations[tile]
+	var attackers: Array = attacking_army_locations[tile]
+	var result: combat_results = battle_script.battle_tick(attackers, defenders)
+	if result == combat_results.DEF_LOSS:
+		decide_army_loss_result(defenders)
+	elif result == combat_results.ATK_LOSS:
+		decide_army_loss_result(attackers)
+
+func decide_army_loss_result(armies: Array[army]) -> void:
+	for army_obj: army in armies:
+		var info: Dictionary = army_obj.get_army_client_dict()
+		if info["manpower"] == 0:
+			# Queue Army for deletion
+			armies_to_kill[army_obj.get_army_id()] = true
+		else:
+			# Queue army for retreation
+			armies_to_retreat[army_obj.get_army_id()] = true
 
 func update_army_progress(army_obj: army, delta: float) -> void:
 	army_obj.update_progress(delta)

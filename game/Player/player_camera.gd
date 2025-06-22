@@ -16,11 +16,11 @@ func _process(_delta: float) -> void:
 		state_machine.hovering_over_gui_inactive()
 	if Input.is_action_pressed("pan_left") and !state_machine.is_gui_pressed():
 		position.x -= 5 / zoom.x
-	elif Input.is_action_pressed("pan_right") and !state_machine.is_gui_pressed():
+	if Input.is_action_pressed("pan_right") and !state_machine.is_gui_pressed():
 		position.x += 5 / zoom.x
-	elif Input.is_action_pressed("pan_down") and !state_machine.is_gui_pressed():
+	if Input.is_action_pressed("pan_down") and !state_machine.is_gui_pressed():
 		position.y -= 5 / zoom.x
-	elif Input.is_action_pressed("pan_up") and !state_machine.is_gui_pressed():
+	if Input.is_action_pressed("pan_up") and !state_machine.is_gui_pressed():
 		position.y += 5 / zoom.x
 	if Input.is_action_just_released("zoom_in") and zoom.x < 2 and !state_machine.is_gui_pressed():
 		zoom.x += 0.05

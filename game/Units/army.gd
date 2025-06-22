@@ -153,6 +153,25 @@ func get_army_client_array() -> Array:
 	toReturn.append(get_destination())
 	return toReturn
 
+func get_army_client_dict() -> Dictionary:
+	var stats: Dictionary = {
+		"manpower": 0, 
+		"morale": 0, "experience": 0, 
+		"org": 0, "dest": get_destination()
+	}
+	
+	if get_units().size() == 0:
+		return stats
+	
+	for unit: base_unit in get_units():
+		var unit_dict: Dictionary = unit.get_client_dict_for_army()
+		for key: String in unit_dict:
+			stats[key] += unit_dict[key]
+	#Gets averages for morale and org
+	stats["manpower"] /= units.size()
+	stats["morale"] /= units.size()
+	return stats
+
 # == Interative Unit Functions == 
 func add_experience(multiple: float) -> void:
 	for unit: base_unit in get_units():
