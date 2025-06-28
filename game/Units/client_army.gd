@@ -7,9 +7,9 @@ func _init(p_player_id: int, p_location: Vector2i, p_army_id: int) -> void:
 
 
 ##Unit array = [manpower, morale, experience, org.get_organization(), dest]
-func update_stats(army_info: Array) -> void:
-	if army_info[4]:
-		route = [army_info[4]]
+func update_stats(info_dict: Dictionary) -> void:
+	if info_dict["dest"]:
+		route = [info_dict["dest"]]
 
 func refresh_unit(index: int, unit_array: Array) -> void:
 	var base_units: Array[base_unit] = get_units()

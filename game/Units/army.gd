@@ -137,21 +137,8 @@ func get_units_client_arrays() -> Array:
 func get_army_client_array() -> Array:
 	if get_units().size() == 0:
 		return [0, 0, 0, 0, null]
-	var toReturn: Array = get_units()[0].convert_to_client_array_for_army()
-	#Skip the first since we started with it
-	var skip: bool = true
-	for unit: base_unit in get_units():
-		if !skip:
-			var unit_array: Array = unit.convert_to_client_array_for_army()
-			for index: int in unit_array.size():
-				toReturn[index] += unit_array[index]
-		else:
-			skip = false
-	#Gets averages for morale and org
-	toReturn[1] /= units.size()
-	toReturn[3] /= units.size()
-	toReturn.append(get_destination())
-	return toReturn
+	var temp: Dictionary = get_army_client_dict()
+	return [temp["manpower"], temp["morale"], temp["experience"], temp["org"], temp["dest"]]
 
 func get_army_client_dict() -> Dictionary:
 	var stats: Dictionary = {
@@ -168,7 +155,7 @@ func get_army_client_dict() -> Dictionary:
 		for key: String in unit_dict:
 			stats[key] += unit_dict[key]
 	#Gets averages for morale and org
-	stats["manpower"] /= units.size()
+	stats["org"] /= units.size()
 	stats["morale"] /= units.size()
 	return stats
 

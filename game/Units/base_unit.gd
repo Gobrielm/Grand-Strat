@@ -109,7 +109,7 @@ func add_morale(amount: int) -> void:
 	if morale > 100:
 		morale = 100
 
-func remove_morale(amount: int) -> void:
+func remove_morale(amount: float) -> void:
 	morale -= round(amount / float(cohesion) * 20)
 	if morale < 0:
 		morale = 0

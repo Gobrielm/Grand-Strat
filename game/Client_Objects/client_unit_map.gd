@@ -92,15 +92,15 @@ func request_refresh(_tile: Vector2i) -> void:
 	pass
 
 @rpc("authority", "call_local", "unreliable")
-func refresh_army(army_id: int, info_array: Array) -> void:
-	get_army(army_id).update_stats(info_array)
+func refresh_army(army_id: int, info_dict: Dictionary) -> void:
+	get_army(army_id).update_stats(info_dict)
 	move_control(army_id, get_army(army_id).get_location())
 	var node: Node = get_control_node(army_id)
 	var morale_bar: ProgressBar = node.get_node("MoraleBar")
-	morale_bar.value = info_array[1]
+	morale_bar.value = info_dict["morale"]
 
 	var manpower_label: RichTextLabel = node.get_node("Manpower_Label")
-	manpower_label.text = "[center]" + str(info_array[0]) + "[/center]"
+	manpower_label.text = "[center]" + str(info_dict["manpower"]) + "[/center]"
 
 	var name_label: Label = node.get_node("Label")
 	name_label.text = str(get_army(army_id))
@@ -222,7 +222,7 @@ func create_army_from_object(new_army: army) -> void:
 	army_data[new_army.army_id] = new_army
 
 	create_label(new_army.get_army_id(), coords, str(new_army))
-	refresh_army(new_army.get_army_id(), new_army.get_army_client_array())
+	refresh_army(new_army.get_army_id(), new_army.get_army_client_dict())
 	create_army.rpc(coords, -1, player_id, army_locations[coords].back())
 
 func get_unit_class(type: int) -> GDScript:

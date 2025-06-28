@@ -7,9 +7,9 @@ func show_army(army_obj: army) -> void:
 
 func update_army(army_obj: army) -> void:
 	if army_obj != null:
-		var army_info_array: Array = army_obj.get_army_client_array()
-		$stat_label.text = "Manpower: " + str(army_info_array[0]) + '\n' + "Morale: " + str(army_info_array[1]) + '\n' + "Organization: " + str(army_info_array[3])
-		$destination_label.text = "destination:\n" + str(army_info_array[4])
+		var army_info_dict: Dictionary = army_obj.get_army_client_dict()
+		$stat_label.text = "Manpower: " + str(army_info_dict["manpower"]) + '\n' + "Morale: " + str(army_info_dict["morale"]) + '\n' + "Organization: " + str(army_info_dict["org"])
+		$destination_label.text = "destination:\n" + str(army_info_dict["dest"])
 
 func update_unit_list(army_obj: army) -> void:
 	if army_obj != null:

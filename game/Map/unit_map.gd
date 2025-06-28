@@ -123,19 +123,19 @@ func request_refresh(tile: Vector2i) -> void:
 func refresh_all_armies(armies: Array[int], sender_id: int) -> void:
 	for army_id: int in armies:
 		var army_obj: army = army_data[army_id]
-		refresh_army.rpc_id(sender_id, army_id, army_obj.get_army_client_array())
+		refresh_army.rpc_id(sender_id, army_id, army_obj.get_army_client_dict())
 
 @rpc("authority", "call_local", "unreliable")
-func refresh_army(army_id: int, info_array: Array) -> void:
+func refresh_army(army_id: int, info_dict: Dictionary) -> void:
 	var node: Node = get_control_node(army_id)
 	var coords: Vector2i = get_army(army_id).get_location()
 	move_control(army_id, coords)
 	
 	var morale_bar: ProgressBar = node.get_node("MoraleBar")
-	morale_bar.value = info_array[1]
+	morale_bar.value = info_dict["morale"]
 
 	var manpower_label: RichTextLabel = node.get_node("Manpower_Label")
-	manpower_label.text = "[center]" + str(info_array[0]) + "[/center]"
+	manpower_label.text = "[center]" + str(info_dict["manpower"]) + "[/center]"
 	refresh_units_in_army(army_id)
 
 func refresh_units_in_army(army_id: int) -> void:
@@ -257,7 +257,7 @@ func create_army_locally(coords: Vector2i, type: int, player_id: int) -> void:
 	new_army.add_unit(unit_class.new())
 
 	create_label(new_army.get_army_id(), coords, str(new_army))
-	refresh_army(new_army.get_army_id(), new_army.get_army_client_array())
+	refresh_army(new_army.get_army_id(), new_army.get_army_client_dict())
 
 func create_army_from_object(new_army: army) -> void:
 	var coords: Vector2i = new_army.get_location()
@@ -266,7 +266,7 @@ func create_army_from_object(new_army: army) -> void:
 	army_data[new_army.army_id] = new_army
 
 	create_label(new_army.get_army_id(), coords, str(new_army))
-	refresh_army(new_army.get_army_id(), new_army.get_army_client_array())
+	refresh_army(new_army.get_army_id(), new_army.get_army_client_dict())
 	create_army.rpc(coords, -1, player_id, army_locations[coords].back())
 
 func get_unit_class(type: int) -> GDScript:
@@ -620,7 +620,15 @@ func _process(delta: float) -> void:
 	retreat_units()
 	clean_up_killed_units()
 
+func _on_month_tick_timeout() -> void:
+	for army_obj: army in army_data.values():
+		regen_tick(army_obj)
+		attrition_tick(army_obj)
+		prepare_refresh_army(army_obj)
+
 func will_battle_occur(tile: Vector2i) -> bool:
+	if !attacking_army_locations.has(tile):
+		return false
 	var army_stack: Array = army_locations[tile]
 	var attackers: Array = attacking_army_locations[tile]
 	return army_stack.size() != 0 and attackers.size() != 0
@@ -661,8 +669,8 @@ func update_army_progress(army_obj: army, delta: float) -> void:
 			prepare_refresh_army(army_obj)
 
 func prepare_refresh_army(army_obj: army) -> void:
-	var info_array: Array = army_obj.get_army_client_array()
-	refresh_army.rpc(army_obj.get_army_id(), info_array)
+	var info_dict: Dictionary = army_obj.get_army_client_dict()
+	refresh_army.rpc(army_obj.get_army_id(), info_dict)
 
 func retreat_units() -> void:
 	for army_id: int in armies_to_retreat:
@@ -729,16 +737,12 @@ func clean_up_node(node: Node) -> void:
 		child.queue_free()
 	node.queue_free()
 
-func _on_month_tick_timeout() -> void:
-	for army_obj: army in army_data.values():
-		regen_tick(army_obj)
-
 func regen_tick(army_obj: army) -> void:
 	var multiple: int = 1
 	army_obj.add_experience(multiple)
 	manpower_and_morale_tick(army_obj)
 	army_obj.use_supplies()
-	refresh_army.rpc(army_obj.get_army_id(), army_obj.get_army_client_array())
+	refresh_army.rpc(army_obj.get_army_id(), army_obj.get_army_client_dict())
 
 func manpower_and_morale_tick(army_obj: army) -> void:
 	#Works on each unit individually since they all regen differently
@@ -755,3 +759,34 @@ func manpower_and_morale_tick(army_obj: army) -> void:
 			unit.add_morale(5)
 		else:
 			unit.remove_morale(10)
+
+func attrition_tick(army_obj: army) -> void:
+	var army_size: int = army_obj.get_units().size()
+	var tile: Vector2i = army_obj.get_location()
+	var base_supplies: int = get_supplies_of_tile(tile)
+	var available_supplies: int = base_supplies - army_size
+	var base_attrition_for_unit: float = 0
+	if available_supplies < 0:
+		base_attrition_for_unit = (available_supplies * -1.0) / army_size
+	
+	for unit: base_unit in army_obj.get_units():
+		unit.remove_manpower(round(base_attrition_for_unit * unit.get_manpower()))
+		unit.remove_morale(base_attrition_for_unit * unit.get_morale())
+
+func get_supplies_of_tile(tile: Vector2i) -> int:
+	var supply: int = 20
+	if map.is_hilly(tile):
+		supply -= 5
+	elif map.is_mountainous(tile):
+		supply -= 10
+	
+	if map.is_water(tile):
+		supply -= 5
+	elif map.is_forested(tile):
+		supply -= 3
+	elif map.is_desert(tile):
+		supply -= 10
+	
+	return supply
+	
+	
