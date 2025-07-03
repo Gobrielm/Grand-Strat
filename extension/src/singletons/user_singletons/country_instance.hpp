@@ -3,8 +3,6 @@
 #include <unordered_map>
 #include <mutex>
 #include <godot_cpp/classes/ref_counted.hpp>
-#include <godot_cpp/variant/dictionary.hpp>
-#include <godot_cpp/variant/array.hpp>
 
 using namespace godot;
 
@@ -15,7 +13,7 @@ private:
     const int id;
     int player_id;
     float money;
-
+    
 protected:
     static void _bind_methods();
 
@@ -31,5 +29,7 @@ public:
     bool has_enough_money(int amount) const;
 
     void assign_player_id(int p_player_id);
+
+
     
 };

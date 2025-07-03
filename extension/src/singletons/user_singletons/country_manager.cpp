@@ -22,6 +22,7 @@ Ref<CountryManager> CountryManager::get_instance() {
 
 void CountryManager::add_country(int new_id) {
     countries[new_id] = Country::create_instance(new_id);
+    countries[new_id]->add_money(INITIAL_AMOUNT_OF_MONEY);
 }
 void CountryManager::delete_country(int id) {
     countries.erase(id);

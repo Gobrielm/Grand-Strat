@@ -8,11 +8,6 @@ func convert_to_client_array() -> Array:
 	#TODO: Add more stuff
 	return [manpower, morale, experience, org.convert_to_client_array(), get_atlas_coord()]
 
-##return [manpower, morale, experience, org.get_organization(), atlas_inof]
-func convert_to_client_array_for_army() -> Array:
-	#TODO: Add more stuff
-	return [manpower, morale, experience, org.get_organization()]
-
 func get_client_dict_for_army() -> Dictionary:
 	return {
 		"manpower": manpower, 

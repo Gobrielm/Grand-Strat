@@ -4,7 +4,7 @@ void Country::_bind_methods() {
 
 }
 
-Country::Country(int p_id): id(p_id) {}
+Country::Country(int p_id): id(p_id), money(0) {}
 
 Ref<Country> Country::create_instance(int p_id) {
     return Ref<Country>(memnew(Country(p_id)));
