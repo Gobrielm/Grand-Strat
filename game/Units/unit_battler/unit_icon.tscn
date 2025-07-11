@@ -1,0 +1,25 @@
+[gd_scene load_steps=5 format=3 uid="uid://dl52a0gbwvbk7"]
+
+[ext_resource type="Texture2D" uid="uid://cqdkw6b4bmsk5" path="res://Map_Icons/icon.svg" id="1_0aola"]
+[ext_resource type="Script" uid="uid://g7cr2gx1f4l1" path="res://Units/unit_battler/unit_icon.gd" id="2_5rflo"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_5rflo"]
+size = Vector2(128, 128)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_bm32q"]
+size = Vector2(128, 128)
+
+[node name="unit_icon" type="Sprite2D"]
+texture = ExtResource("1_0aola")
+region_rect = Rect2(65.5, 56, 10, 10)
+script = ExtResource("2_5rflo")
+
+[node name="MainBody" type="Area2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="MainBody"]
+shape = SubResource("RectangleShape2D_5rflo")
+
+[node name="Area2D2" type="Area2D" parent="."]
+
+[node name="unit_range_collision_shape" type="CollisionShape2D" parent="Area2D2"]
+shape = SubResource("RectangleShape2D_bm32q")

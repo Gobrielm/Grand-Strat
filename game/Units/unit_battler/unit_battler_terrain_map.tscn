@@ -1,0 +1,18 @@
+[gd_scene load_steps=5 format=3 uid="uid://b6kbnbf8hsos7"]
+
+[ext_resource type="Texture2D" uid="uid://bcjt7ibwidr5k" path="res://Units/unit_battler/atlas.png" id="1_2pwu0"]
+[ext_resource type="Script" uid="uid://dycf45dpxltw3" path="res://Units/unit_battler/unit_battler_terrain_map.gd" id="2_6agkp"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_6agkp"]
+texture = ExtResource("1_2pwu0")
+texture_region_size = Vector2i(128, 128)
+0:0/0 = 0
+1:0/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_4bmro"]
+tile_size = Vector2i(128, 128)
+sources/0 = SubResource("TileSetAtlasSource_6agkp")
+
+[node name="unit_battler_terrain_map" type="TileMapLayer"]
+tile_set = SubResource("TileSet_4bmro")
+script = ExtResource("2_6agkp")

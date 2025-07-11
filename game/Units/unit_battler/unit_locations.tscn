@@ -1,0 +1,23 @@
+[gd_scene load_steps=5 format=3 uid="uid://dq6ggek10lpwv"]
+
+[ext_resource type="Texture2D" uid="uid://cu6gtw4s5yi8j" path="res://Map_Icons/unit_models.png" id="1_o5ktf"]
+[ext_resource type="Script" uid="uid://bwhx8s2dii6f3" path="res://Units/unit_battler/unit_locations.gd" id="2_xcsqq"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_p8b6t"]
+texture = ExtResource("1_o5ktf")
+margins = Vector2i(0, 64)
+separation = Vector2i(0, 64)
+texture_region_size = Vector2i(128, 128)
+0:4/0 = 0
+0:3/0 = 0
+0:0/0 = 0
+0:1/0 = 0
+0:2/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_dty3b"]
+tile_size = Vector2i(128, 128)
+sources/0 = SubResource("TileSetAtlasSource_p8b6t")
+
+[node name="unit_locations" type="TileMapLayer"]
+tile_set = SubResource("TileSet_dty3b")
+script = ExtResource("2_xcsqq")
