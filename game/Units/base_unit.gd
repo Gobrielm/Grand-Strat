@@ -144,7 +144,7 @@ func get_atlas_coord() -> Vector2i:
 	return Vector2i(specific_type, combat_arm)
 
 func can_unit_fight() -> bool:
-	return can_fight
+	return manpower != 0 and morale != 0
 
 func set_can_fight(_can_fight: bool) -> void:
 	can_fight = _can_fight

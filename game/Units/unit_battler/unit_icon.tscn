@@ -1,4 +1,4 @@
-[gd_scene load_steps=5 format=3 uid="uid://dl52a0gbwvbk7"]
+[gd_scene load_steps=6 format=3 uid="uid://dl52a0gbwvbk7"]
 
 [ext_resource type="Texture2D" uid="uid://cqdkw6b4bmsk5" path="res://Map_Icons/icon.svg" id="1_0aola"]
 [ext_resource type="Script" uid="uid://g7cr2gx1f4l1" path="res://Units/unit_battler/unit_icon.gd" id="2_5rflo"]
@@ -9,9 +9,10 @@ size = Vector2(128, 128)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_bm32q"]
 size = Vector2(128, 128)
 
-[node name="unit_icon" type="Sprite2D"]
-texture = ExtResource("1_0aola")
-region_rect = Rect2(65.5, 56, 10, 10)
+[sub_resource type="CircleShape2D" id="CircleShape2D_5rflo"]
+radius = 640.0
+
+[node name="unit_icon" type="Node2D"]
 script = ExtResource("2_5rflo")
 
 [node name="MainBody" type="Area2D" parent="."]
@@ -23,3 +24,60 @@ shape = SubResource("RectangleShape2D_5rflo")
 
 [node name="unit_range_collision_shape" type="CollisionShape2D" parent="Area2D2"]
 shape = SubResource("RectangleShape2D_bm32q")
+
+[node name="AwareRange" type="Area2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="AwareRange"]
+shape = SubResource("CircleShape2D_5rflo")
+
+[node name="UI" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -64.0
+offset_top = -48.0
+offset_right = 64.0
+offset_bottom = 80.0
+grow_horizontal = 2
+grow_vertical = 2
+pivot_offset = Vector2(64, 64)
+
+[node name="MoralBar" type="ProgressBar" parent="UI"]
+modulate = Color(0, 1, 0, 1)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -64.0
+offset_top = 64.0
+offset_right = 64.0
+offset_bottom = 91.0
+step = 1.0
+value = 1.0
+show_percentage = false
+
+[node name="ManpowerLabel" type="Label" parent="UI"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -64.0
+offset_top = 64.0
+offset_right = 64.0
+offset_bottom = 91.0
+text = "1000"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="sprite" type="Sprite2D" parent="."]
+texture = ExtResource("1_0aola")
+
+[node name="Line2D" type="Line2D" parent="sprite"]
+points = PackedVector2Array(0, 0, 0, -500)

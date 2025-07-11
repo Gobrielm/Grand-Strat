@@ -10,8 +10,6 @@ var defending_armies: Array[army] = []
 var deployed_def_units: Array[base_unit] = []
 var deployed_atk_units: Array[base_unit] = []
 
-var unit_icon_scene: PackedScene = preload("res://Units/unit_battler/unit_icon.tscn")
-
 var atk_frontline: FrontLine
 var def_frontline: FrontLine
 
@@ -31,48 +29,46 @@ func set_cw(p_cw: int) -> void:
 func start_battle() -> void:
 	atk_frontline = FrontLine.create_with_nums(15, cw)
 	def_frontline = FrontLine.create_with_nums(-15, cw)
-	deploy_atk_units()
-	deploy_def_units()
+	add_child(atk_frontline)
+	add_child(def_frontline)
+	deploy_units(atk_frontline, attacking_armies)
+	deploy_units(def_frontline, defending_armies)
 	atk_frontline.set_up_units()
 	def_frontline.set_up_units()
+	atk_frontline.pt1 = Vector2(-cw * 64, 0)
+	atk_frontline.pt2 = Vector2(cw * 64, 0)
+	def_frontline.pt1 = Vector2(-cw * 64, 0)
+	def_frontline.pt2 = Vector2(cw * 64, 0)
+	atk_frontline.assign_dest_for_units()
+	def_frontline.assign_dest_for_units()
 
-func deploy_atk_units() -> void:
-	for army_obj: army in attacking_armies:
-		for unit: base_unit in army_obj.get_units():
+func deploy_units(frontline: FrontLine, armies: Array[army]) -> void:
+	for army_obj: army in armies:
+		var units: Array[base_unit] = army_obj.get_units().duplicate()
+		units.shuffle()
+		for unit: base_unit in units:
 			if unit.can_unit_fight():
-				deploy_atk_unit(unit, army_obj.get_player_id())
-				if deployed_atk_units.size() == cw * 2:
+				frontline.deploy_unit(unit, army_obj.get_player_id())
+				if frontline.is_line_full():
 					return
 
-func deploy_def_units() -> void:
-	for army_obj: army in defending_armies:
-		for unit: base_unit in army_obj.get_units():
-			if unit.can_unit_fight():
-				deploy_def_unit(unit, army_obj.get_player_id())
-				if deployed_def_units.size() == cw * 2:
-					return
+func remove_def_unit(unit: unit_icon) -> void:
+	remove_child(unit)
+	unit.queue_free()
+	var i: int = deployed_def_units.find(unit.internal_unit)
+	deployed_def_units.remove_at(i)
 
-func deploy_atk_unit(unit: base_unit, id: int) -> void:
-	deployed_atk_units.append(unit)
-	var unit_icon_obj: unit_icon = unit_icon_scene.instantiate()
-	unit_icon_obj.assign_unit(unit)
-	unit_icon_obj.assign_id(id)
-	add_child(unit_icon_obj)
-	atk_frontline.add_unit(unit_icon_obj)
-
-func deploy_def_unit(unit: base_unit, id: int) -> void:
-	deployed_def_units.append(unit)
-	var unit_icon_obj: unit_icon = unit_icon_scene.instantiate()
-	unit_icon_obj.assign_unit(unit)
-	unit_icon_obj.assign_id(id)
-	add_child(unit_icon_obj)
-	def_frontline.add_unit(unit_icon_obj)
+func remove_atk_unit(unit: unit_icon) -> void:
+	remove_child(unit)
+	unit.queue_free()
+	var i: int = deployed_atk_units.find(unit.internal_unit)
+	deployed_atk_units.remove_at(i)
 
 func day_tick() -> void:
 	atk_frontline.day_tick()
 	def_frontline.day_tick()
 	
-	if atk_frontline.can_move():
-		atk_frontline.move_line(Vector2(0, -128))
-	if def_frontline.can_move():
-		def_frontline.move_line(Vector2(0, 128))
+	#if atk_frontline.can_move():
+		#atk_frontline.move_line(Vector2(0, -128))
+	#if def_frontline.can_move():
+		#def_frontline.move_line(Vector2(0, 128))
