@@ -1,18 +1,34 @@
-[gd_scene load_steps=5 format=3 uid="uid://b6kbnbf8hsos7"]
+[gd_scene load_steps=5 format=4 uid="uid://b6kbnbf8hsos7"]
 
 [ext_resource type="Texture2D" uid="uid://bcjt7ibwidr5k" path="res://Units/unit_battler/atlas.png" id="1_2pwu0"]
 [ext_resource type="Script" uid="uid://dycf45dpxltw3" path="res://Units/unit_battler/unit_battler_terrain_map.gd" id="2_6agkp"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_6agkp"]
 texture = ExtResource("1_2pwu0")
-texture_region_size = Vector2i(128, 128)
+separation = Vector2i(16, 0)
+texture_region_size = Vector2i(128, 144)
 0:0/0 = 0
 1:0/0 = 0
+2:0/0 = 0
+1:1/0 = 0
+0:1/0 = 0
+0:2/0 = 0
+1:2/0 = 0
+2:2/0 = 0
+2:1/0 = 0
+0:3/0 = 0
+1:3/0 = 0
+2:3/0 = 0
+0:4/0 = 0
+1:4/0 = 0
+2:4/0 = 0
 
 [sub_resource type="TileSet" id="TileSet_4bmro"]
 tile_size = Vector2i(128, 128)
 sources/0 = SubResource("TileSetAtlasSource_6agkp")
 
 [node name="unit_battler_terrain_map" type="TileMapLayer"]
+tile_map_data = PackedByteArray("AAD+//7/AAAAAAEAAAD///7/AAABAAAAAAAAAP7/AAAAAAAAAAAAAP//AAAAAAQAAAD/////AAAAAAQAAAD+////AAAAAAQAAAD+//3/AAAAAAAAAAD///3/AAAAAAAAAAAAAP3/AAAAAAAAAAA=")
 tile_set = SubResource("TileSet_4bmro")
+occlusion_enabled = false
 script = ExtResource("2_6agkp")
