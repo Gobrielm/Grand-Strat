@@ -1,1 +1,0 @@
-class_name Adv_FrontLine extends Brigade
