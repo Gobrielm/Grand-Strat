@@ -13,6 +13,7 @@ var action: Action = Action.none
 var id: int
 var internal_unit: base_unit = null
 var route: Array[Vector2] = []
+var rotation_target: float = 0
 var stuck_counter: int = 0
 const STUCK_CONST: int = 10 # Number of ticks of collisions til unit reroutes 
 
@@ -57,8 +58,8 @@ func is_reteating() -> bool:
 func is_friendly_with(p_id: int) -> bool:
 	return p_id == id
 
-func set_range(unit_range: int) -> void:
-	var size: int = 128 * (unit_range + 1)
+func set_range(unit_range: float) -> void:
+	var size: float = 128 * (unit_range + 1)
 	var new_shape: Shape2D = CircleShape2D.new()
 	new_shape.radius = size
 	$Area2D2/unit_range_collision_shape.shape = new_shape
@@ -70,10 +71,17 @@ func set_route(final_pos: Vector2) -> void:
 func process(delta: float) -> void:
 	detect_units()
 	
+	if (float(internal_unit.get_manpower()) / internal_unit.get_max_manpower()) < 0.1:
+		set_retreat()
+		create_route()
+	
 	if can_detect_enemy() and is_defending():
 		var closest: unit_icon = get_closest_enemy_detected()
 		fix_angle(closest.global_position)
-		return
+		if enemy_is_advancing(closest):
+			set_attack()
+			annouce_attack()
+	
 	
 	if !route.is_empty() and !can_unit_attack():
 		advance_unit(delta)
@@ -94,19 +102,40 @@ func detect_units() -> void:
 		else:
 			detected_enemies.push_back(unit)
 
+func enemy_is_advancing(closest: unit_icon) -> bool:
+	for unit: unit_icon in closest.get_units_in_range():
+		if unit == self:
+			return true
+	return false
+
+func annouce_attack() -> void:
+	for unit: unit_icon in get_units_in_range():
+		if unit.is_friendly_with(id):
+			unit.set_attack()
+
 func advance_unit(delta: float) -> void:
+	var current_angle: float = $sprite.rotation_degrees
+	var angle_to_target: float = angle_diff_deg(current_angle, rotation_target)
+
+	var rotation_speed: int = 60 # Degrees per "second"
+	var max_step: float = rotation_speed * delta
+
+	if abs(angle_to_target) > 2:
+		$sprite.rotation_degrees += clamp(angle_to_target, -max_step, max_step)
+	
+	# Rotation done
 	var target: Vector2 = route.front()
 	var unit_vect: Vector2 = (target - position).normalized()
 	var mult: float = delta / get_physics_process_delta_time()
 	var speed_vect: Vector2 = unit_vect * internal_unit.get_speed() * mult
 	velocity = speed_vect
-	var stored_pos: Vector2 = position
 	var collided: bool = move_and_slide()
 	
 	if position.distance_to(target) < (speed_vect.length() / 2) or unit_vect.length() < 0.01:
-		fix_angle(route.pop_front())
-	else:
-		fix_angle(route.front())
+		#fix_angle()
+		route.pop_front()
+	#else:
+		#fix_angle(route.front())
 	
 	if collided:
 		stuck_counter += 1
@@ -114,12 +143,16 @@ func advance_unit(delta: float) -> void:
 			stuck_counter = 0
 			create_route()
 
+func angle_diff_deg(a: float, b: float) -> float:
+	var diff: float = fmod((b - a) + 180, 360) - 180
+	return diff
 
 func fix_angle(pos_to_face: Vector2) -> void:
 	var pos: Vector2 = pos_to_face - global_position
 	if pos.length() < 20:
 		return
 	var angle: float = -pos.angle_to(Vector2(0, -1))
+	rotation_target = Utils.round(angle, 2)
 	$sprite.rotation = Utils.round(angle, 2)
 
 func can_detect_enemy() -> bool:
@@ -135,13 +168,8 @@ func can_unit_attack() -> bool:
 func attack_nearest_unit() -> void:
 	var enemy: unit_icon = get_closest_enemy_in_range()
 	var internal_enemy: base_unit = enemy.internal_unit
-	internal_enemy.remove_manpower(internal_unit.get_fire_damage())
-	internal_enemy.remove_morale(internal_unit.get_shock_damage())
+	internal_unit.attack_unit(internal_enemy)
 	fix_angle(enemy.global_position)
-	
-	if internal_enemy.can_unit_fight():
-		internal_unit.remove_manpower(internal_enemy.get_fire_damage())
-		internal_unit.remove_morale(internal_enemy.get_shock_damage())
 	
 	enemy.update_labels()
 	update_labels()
@@ -190,6 +218,7 @@ func create_route() -> void:
 	var wv: weighted_value = sampled_points.pop_top_weighted_val()
 	if wv.weight > 0:
 		route.append(wv.val)
+		rotation_target = (route.front() - global_position).angle() * 180 / PI + 90
 
 func score_target_location_inf(target: Node2D) -> float:
 	var score: float = 0
@@ -208,10 +237,10 @@ func get_cohesion_score_inf(detected_units: Array[unit_icon]) -> float:
 	var score: float = 0
 	
 	for unit: unit_icon in detected_units:
-		if unit.is_friendly_with(id):
-			score += 0.3
-	if is_leader(detected_units):
-		score += 1
+		if unit.is_friendly_with(id) and unit.internal_unit is infantry:
+			score += 0.8
+	#if is_leader(detected_units):
+		#score += 1
 	return score
 
 func get_outnumbed_score(detected_units: Array[unit_icon]) -> float:
@@ -225,8 +254,8 @@ func get_outnumbed_score(detected_units: Array[unit_icon]) -> float:
 		else:
 			e_num += 1
 	if e_num != 0:
-		var diff: int = f_num - e_num
-		score += diff / 2.0 + 0.2
+		var diff: int = f_num - e_num + 1
+		score += diff / 4.0
 	
 	return score
 
@@ -241,10 +270,12 @@ func get_attacking_score(units_in_range: Array[unit_icon]) -> float:
 			f_num += 1
 	
 	if e_num != 0:
-		var diff: int = f_num - e_num
+		var diff: int = f_num - e_num + 1
 		score += diff / 2.0 + 0.5
 	if is_attacking():
 		score *= 2
+	if is_reteating():
+		score *= -2
 	return score
 
 func get_position_score(target: Vector2, detected_units: Array[unit_icon]) -> float:
@@ -263,11 +294,28 @@ func get_position_score(target: Vector2, detected_units: Array[unit_icon]) -> fl
 		else:
 			score += max(min(y_mov / 128, 2), -0.5)
 	
+	var x_mov: float = target.x - position.x
+	
+	if abs(position.x - otherside_com.x) > 400: # If distance is large enough
+		if position.x > otherside_com.x:
+			score += max(min(-x_mov / 300, 0.7), -0.3) 
+		else:
+			score += max(min(x_mov / 300, 0.7), -0.3)
+	
+	if is_reteating():
+		score *= -2
+	
 	if enemies_are_detected(detected_units):
 		if terrain_map.is_hilly(tile_pos):
 			score += 0.7
 		elif terrain_map.is_forested(tile_pos):
 			score += 0.4
+		
+		if is_attacking():
+			var closest: Vector2 = get_closest_enemy(detected_units).position
+			var current_dist: float = position.distance_to(closest)
+			var this_dist: float = target.distance_to(closest)
+			score += max(min((current_dist - this_dist) / 128, 2), -0.5) * 1.2
 	
 	return score
 
@@ -298,7 +346,7 @@ func get_cohesion_score_cav(detected_units: Array[unit_icon]) -> float:
 	
 	for unit: unit_icon in detected_units:
 		if unit.is_friendly_with(id) and unit.internal_unit is calvary:
-			score += 0.3
+			score += 0.8
 	
 	return score
 

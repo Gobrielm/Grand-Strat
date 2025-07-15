@@ -26,35 +26,41 @@ func update_stats(unit_info: Array) -> void:
 static func get_cost() -> int:
 	return 0
 
-#Max manpower the unit has
-var max_manpower: int
 
-#How much manpower the unit has
-var manpower: int
+var max_manpower: int			#Max manpower the unit has
+var manpower: int				#How much manpower the unit has
 
-#Max morale
-const max_morale: int = 100
-#The desire for the unit to fight
-var morale: int
+const max_morale: int = 100		#Max morale
+var morale: int					#The desire for the unit to fight
 
-#How fast a unit can move
-var speed: int
+var speed: int					#How fast a unit can move
 
-var unit_range: int
+var unit_range: float
 
-#The amount of supplies the unit has
-var org: organization
 
-#The morale damage a unit does
-var shock: float
+var org: organization			#The amount of supplies the unit has
 
-#The general damage
-var firepower: float
 
-#Morale defense, defense in general
-var cohesion: int
-#The disipline and skill of the unit
-var experience: int
+var shock: float				#The morale damage a unit does
+var firepower: float			#The general damage
+
+var cohesion: int				#Morale defense, defense in general
+
+var experience: int				#The disipline and skill of the unit
+
+
+var experience_gain: int		#The rate at which a unit gains experience
+var battle_multiple: int		#The bonus to experience_gain when in battle
+
+#The specification, infantry, cav, ect. the y atlas
+#Infantry, Calvary, officer, engineer, artillery, 
+var combat_arm: int
+#The actual type line infantry, mechanized infantry, ect. the x atlas
+var specific_type: int
+
+var can_fight: bool = true
+
+# === Levels ===
 
 func get_level() -> int:
 	var experience_array: Array[int] = [-1, 200, 500, 1000, 2000, 5000]
@@ -67,18 +73,7 @@ func get_level_as_string() -> String:
 	var experience_names: Array[String] = ["Inexperienced", "Trained", "Experienced", "Expert", "Verteran", "Elite"]
 	return experience_names[get_level()]
 
-#The rate at which a unit gains experience
-var experience_gain: int
-#The bonus to experience_gain when in battle
-var battle_multiple: int
-
-#The specification, infantry, cav, ect. the y atlas
-#Infantry, Calvary, officer, engineer, artillery, 
-var combat_arm: int
-#The actual type line infantry, mechanized infantry, ect. the x atlas
-var specific_type: int
-
-var can_fight: bool = true
+# === Manpower ===
 
 func get_max_manpower() -> int:
 	return max_manpower
@@ -96,6 +91,8 @@ func remove_manpower(amount: int) -> void:
 	if manpower < 0:
 		manpower = 0
 
+# === Morale ===
+
 func get_morale() -> int:
 	return morale
 
@@ -109,20 +106,25 @@ func remove_morale(amount: float) -> void:
 	if morale < 0:
 		morale = 0
 
+# Others
+
 func get_speed() -> int:
 	return speed
 
-func get_unit_range() -> int:
+func get_unit_range() -> float:
 	return unit_range
 
 #TODO: Add more variables
 func get_shock_damage() -> int:
-	var expierence_mult: float = (float(experience) / 1000) + 1
-	return round((shock / 200 * expierence_mult) * (manpower + 100))
+	var mult: Array = [1, 1.1, 1.2, 1.3, 1.4, 1.5]
+	var level: int = get_level()
+	return round((shock / 2000 * mult[level]) * (manpower + 100))
+
 #TODO: Add more variables
 func get_fire_damage() -> int:
-	var expierence_mult: float = (float(experience) / 1000) + 1
-	return round((firepower / 200 * expierence_mult) * (manpower + 100))
+	var mult: Array = [1, 1.1, 1.2, 1.3, 1.4, 1.5]
+	var level: int = get_level()
+	return round((firepower / 2000 * mult[level]) * (manpower + 100))
 
 func get_organization_object() -> organization:
 	return org
@@ -148,3 +150,14 @@ func can_unit_fight() -> bool:
 
 func set_can_fight(_can_fight: bool) -> void:
 	can_fight = _can_fight
+
+func attack_unit(unit: base_unit) -> void:
+	add_battle_experience()
+	unit.add_battle_experience()
+	
+	unit.remove_manpower(get_fire_damage())
+	unit.remove_morale(get_shock_damage())
+	
+	if unit.can_unit_fight():
+		remove_manpower(unit.get_fire_damage())
+		remove_morale(unit.get_shock_damage())

@@ -15,7 +15,7 @@ func _init() -> void:
 	org = organization.new(supply_neeeded)
 	
 	speed = 80
-	unit_range = 1
+	unit_range = 0.5
 	shock = 100
 	firepower = 25
 	cohesion = 40
