@@ -13,6 +13,20 @@ var deployed_atk_units: Array[base_unit] = []
 var atk_brigade: Brigade
 var def_brigade: Brigade
 
+var ticks: float = 0
+const SECONDS_IN_DAY: int = 1
+
+func _process(delta: float) -> void:
+	delta *= 4
+	ticks += delta
+	if atk_brigade != null:
+		atk_brigade.process(delta)
+	if def_brigade != null:
+		def_brigade.process(delta)
+	if ticks >= SECONDS_IN_DAY:
+		day_tick()
+		ticks = 0
+
 func _ready() -> void:
 	pass
 
@@ -26,6 +40,9 @@ func set_cw(p_cw: int) -> void:
 	cw = p_cw
 	terrain_map.set_cw(p_cw)
 
+func get_other_side_com(moving_up: bool) -> Vector2:
+	return def_brigade.get_unit_center_of_mass() if moving_up else atk_brigade.get_unit_center_of_mass()
+
 func start_battle() -> void:
 	atk_brigade = Brigade.new(cw, true)
 	def_brigade = Brigade.new(cw, false)
@@ -35,6 +52,7 @@ func start_battle() -> void:
 	add_child(def_brigade)
 	deploy_units(atk_brigade, attacking_armies)
 	deploy_units(def_brigade, defending_armies)
+	atk_brigade.order_attack()
 
 func deploy_units(brigade: Brigade, armies: Array[army]) -> void:
 	for army_obj: army in armies:

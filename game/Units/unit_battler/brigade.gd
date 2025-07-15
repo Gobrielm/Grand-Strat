@@ -29,6 +29,18 @@ func deploy_unit(unit: base_unit, id: int) -> void:
 		return
 	unit_icon_obj.set_up(terrain_map.map_to_local(tile))
 
+func order_attack() -> void:
+	for unit: unit_icon in units:
+		unit.set_attack()
+
+func order_defend() -> void:
+	for unit: unit_icon in units:
+		unit.set_defend()
+
+func order_retreat() -> void:
+	for unit: unit_icon in units:
+		unit.set_retreat()
+
 func add_unit(unit_to_add: unit_icon) -> void:
 	units.append(unit_to_add)
 
@@ -44,11 +56,26 @@ func get_size_of_units() -> int:
 	return units.size()
 
 func is_full() -> bool:
-	return get_size_of_units() > cw
+	@warning_ignore("integer_division")
+	return get_size_of_units() >= (cw / 2)
+
+func get_unit_center_of_mass() -> Vector2:
+	var com: Vector2 = Vector2(0, 0)
+	for unit: unit_icon in units:
+		com += unit.position
+	com /= units.size()
+	return com
 
 func day_tick() -> void:
 	for unit: unit_icon in units:
 		if unit.can_unit_fight():
 			unit.day_tick()
+		else:
+			remove_unit(unit)
+
+func process(delta: float) -> void:
+	for unit: unit_icon in units:
+		if unit.can_unit_fight():
+			unit.process(delta)
 		else:
 			remove_unit(unit)

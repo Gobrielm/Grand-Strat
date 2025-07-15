@@ -13,14 +13,13 @@ radius = 128.0
 radius = 640.0
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_vgi4w"]
-size = Vector2(64, 254)
+size = Vector2(64, 190)
 
-[node name="unit_icon" type="Node2D"]
+[node name="unit_icon" type="CharacterBody2D"]
 script = ExtResource("2_5rflo")
 
-[node name="MainBody" type="Area2D" parent="."]
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="MainBody"]
+[node name="MainBody" type="CollisionShape2D" parent="."]
+visible = false
 shape = SubResource("CircleShape2D_bm32q")
 debug_color = Color(0, 0.6, 0.701961, 0)
 
@@ -33,6 +32,7 @@ debug_color = Color(1, 0, 0, 0.556863)
 [node name="AwareRange" type="Area2D" parent="."]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="AwareRange"]
+visible = false
 shape = SubResource("CircleShape2D_5rflo")
 
 [node name="UI" type="Control" parent="."]
@@ -94,8 +94,9 @@ points = PackedVector2Array(0, 0, -1, -638)
 [node name="CollisionRay" type="Area2D" parent="sprite"]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="sprite/CollisionRay"]
-position = Vector2(0, -194)
+visible = false
+position = Vector2(0, -162)
 shape = SubResource("RectangleShape2D_vgi4w")
 
 [node name="Target" type="Node2D" parent="sprite/CollisionRay"]
-position = Vector2(0, -256)
+position = Vector2(0, -192)

@@ -3,7 +3,10 @@ extends TileMapLayer
 var cw: int = 0
 var taken_tiles: Dictionary[Vector2i, bool] = {}
 
-const depth_one_side: int = 15
+const depth_one_side: int = 18
+
+func get_pixel_length_y() -> int:
+	return depth_one_side * tile_set.tile_size.y
 
 func set_cw(p_cw: int) -> void:
 	cw = p_cw
