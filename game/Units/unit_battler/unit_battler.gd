@@ -43,6 +43,9 @@ func set_cw(p_cw: int) -> void:
 func get_other_side_com(moving_up: bool) -> Vector2:
 	return def_brigade.get_unit_center_of_mass() if moving_up else atk_brigade.get_unit_center_of_mass()
 
+func get_other_side_brigade(moving_up: bool) -> Brigade:
+	return def_brigade if moving_up else atk_brigade
+
 func start_battle() -> void:
 	atk_brigade = Brigade.new(cw, true)
 	def_brigade = Brigade.new(cw, false)

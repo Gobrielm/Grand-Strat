@@ -14,5 +14,7 @@ wait_time = 0.25
 autostart = true
 
 [node name="player_camera" parent="." instance=ExtResource("3_sasra")]
+offset = Vector2(0, 2000)
+zoom = Vector2(0.3, 0.3)
 
 [connection signal="timeout" from="Timer" to="." method="_on_timer_timeout"]

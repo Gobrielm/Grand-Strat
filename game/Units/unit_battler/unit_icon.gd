@@ -22,6 +22,13 @@ var detected_enemies: Array[unit_icon] = []
 
 var terrain_map: TileMapLayer
 
+# Utility
+func get_number_of_friendlies() -> int:
+	return (get_parent() as Brigade).get_size_of_units()
+
+func get_number_of_enemies() -> int:
+	return get_parent().get_parent().get_other_side_brigade(moving_up).get_size_of_units()
+
 func assign_id(p_id: int) -> void:
 	id = p_id
 
@@ -132,10 +139,7 @@ func advance_unit(delta: float) -> void:
 	var collided: bool = move_and_slide()
 	
 	if position.distance_to(target) < (speed_vect.length() / 2) or unit_vect.length() < 0.01:
-		#fix_angle()
 		route.pop_front()
-	#else:
-		#fix_angle(route.front())
 	
 	if collided:
 		stuck_counter += 1
@@ -256,6 +260,11 @@ func get_outnumbed_score(detected_units: Array[unit_icon]) -> float:
 	if e_num != 0:
 		var diff: int = f_num - e_num + 1
 		score += diff / 4.0
+		var ratio: float = (f_num + 1.0) / (e_num)
+		var act_ratio: float = float(get_number_of_friendlies()) / get_number_of_enemies()
+		var ratio_diff: float = ratio - act_ratio
+		if ratio_diff < -0.2:
+			score *= 2
 	
 	return score
 
@@ -273,7 +282,7 @@ func get_attacking_score(units_in_range: Array[unit_icon]) -> float:
 		var diff: int = f_num - e_num + 1
 		score += diff / 2.0 + 0.5
 	if is_attacking():
-		score *= 2
+		score *= 1.7
 	if is_reteating():
 		score *= -2
 	return score

@@ -118,13 +118,13 @@ func get_unit_range() -> float:
 func get_shock_damage() -> int:
 	var mult: Array = [1, 1.1, 1.2, 1.3, 1.4, 1.5]
 	var level: int = get_level()
-	return round((shock / 2000 * mult[level]) * (manpower + 100))
+	return round((shock / 1.7 * mult[level]) * max((float(manpower) / max_manpower), 0.2))
 
 #TODO: Add more variables
 func get_fire_damage() -> int:
 	var mult: Array = [1, 1.1, 1.2, 1.3, 1.4, 1.5]
 	var level: int = get_level()
-	return round((firepower / 2000 * mult[level]) * (manpower + 100))
+	return round((firepower / 2 * mult[level]) * max((float(manpower) / max_manpower), 0.2))
 
 func get_organization_object() -> organization:
 	return org

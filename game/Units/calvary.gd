@@ -16,7 +16,7 @@ func _init() -> void:
 	
 	speed = 80
 	unit_range = 0.5
-	shock = 100
+	shock = 60
 	firepower = 25
 	cohesion = 40
 	experience_gain = 3

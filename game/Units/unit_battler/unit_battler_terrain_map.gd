@@ -5,6 +5,9 @@ var taken_tiles: Dictionary[Vector2i, bool] = {}
 
 const depth_one_side: int = 18
 
+func _physics_process(_delta: float) -> void:
+	clear_any_free_spaces()
+
 func get_pixel_length_y() -> int:
 	return depth_one_side * tile_set.tile_size.y
 
@@ -63,21 +66,31 @@ func get_next_open_cell(moving_up: bool) -> Variant:
 	@warning_ignore("integer_division")
 	for x: int in range(-cw / 2, ceil(cw / 2.0)):
 		var tile: Vector2i = Vector2i(x, y)
-		if is_tile_free(tile):
-			for cell: Vector2i in get_surrounding_cells(tile):
-				taken_tiles[cell] = true
+		if !taken_tiles.has(tile):
 			taken_tiles[tile] = true
 			return tile
 	return null
 
-func is_tile_free(tile: Vector2i) -> bool:
-	var area_checker: Area2D = $CollisionAreaChecker
-	area_checker.position = map_to_local(tile)
-	for area: Area2D in area_checker.get_overlapping_areas():
-		if is_area_unit_mainbody(area):
-			return false
-	return !taken_tiles.has(tile)
+func clear_any_free_spaces() -> void:
+	for tile: Vector2i in taken_tiles:
+		if is_tile_free(tile):
+			taken_tiles.erase(tile)
 
-func is_area_unit_mainbody(area: Area2D) -> bool:
-	var parent: Variant = area.get_parent() 
-	return area.name == "MainBody" and parent is unit_icon
+func is_tile_free(tile: Vector2i) -> bool:
+	return !is_space_taken(Transform2D(0, map_to_local(tile)))
+
+func is_space_taken(transformation: Transform2D) -> bool:
+	var space_state: PhysicsDirectSpaceState2D = get_world_2d().direct_space_state
+	var shape: Shape2D = $CollisionAreaChecker/CollisionShape2D.shape
+	var ex_transform: Transform2D = transformation  # Includes rotation and position
+	
+	var arg: PhysicsShapeQueryParameters2D = PhysicsShapeQueryParameters2D.new()
+	arg.shape = shape
+	arg.transform = ex_transform
+	arg.margin = 0.01
+	var results: Array[Dictionary] = space_state.intersect_shape(arg, 10)
+	
+	for hit: Dictionary in results:
+		if hit.collider is unit_icon:
+			return true
+	return false

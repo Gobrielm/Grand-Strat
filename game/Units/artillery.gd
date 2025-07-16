@@ -14,8 +14,8 @@ func _init() -> void:
 	supply_neeeded[CargoInfo.get_instance().get_cargo_type("artillery")] = 1
 	org = organization.new(supply_neeeded)
 	
-	speed = 10
-	unit_range = 2
+	speed = 20
+	unit_range = 2.5
 	shock = 40
 	firepower = 100
 	cohesion = 15
