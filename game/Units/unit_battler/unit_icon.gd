@@ -22,6 +22,8 @@ var detected_enemies: Array[unit_icon] = []
 
 var terrain_map: TileMapLayer
 
+var statistics: Dictionary[String, int] = {}
+
 # Utility
 func get_number_of_friendlies() -> int:
 	return (get_parent() as Brigade).get_size_of_units()
@@ -39,6 +41,10 @@ func assign_unit(p_unit: base_unit) -> void:
 	internal_unit = p_unit
 	set_range(p_unit.get_unit_range())
 	update_labels()
+	statistics.casualties = 0
+	statistics.inf_killed = 0
+	statistics.cav_killed = 0
+	statistics.art_killed = 0
 
 func set_up(p_position: Vector2) -> void:
 	position = p_position
@@ -172,11 +178,33 @@ func can_unit_attack() -> bool:
 func attack_nearest_unit() -> void:
 	var enemy: unit_icon = get_closest_enemy_in_range()
 	var internal_enemy: base_unit = enemy.internal_unit
+	add_stats(internal_enemy)
+	enemy.add_stats(internal_unit)
 	internal_unit.attack_unit(internal_enemy)
+	remove_stats(internal_enemy)
+	enemy.remove_stats(internal_unit)
 	fix_angle(enemy.global_position)
 	
 	enemy.update_labels()
 	update_labels()
+
+func add_stats(internal_enemy: base_unit) -> void:
+	statistics.casualties += internal_unit.get_manpower()
+	if internal_enemy is infantry:
+		statistics.inf_killed += internal_enemy.get_manpower()
+	elif internal_enemy is calvary:
+		statistics.cav_killed += internal_enemy.get_manpower()
+	else:
+		statistics.art_killed += internal_enemy.get_manpower()
+
+func remove_stats(internal_enemy: base_unit) -> void:
+	statistics.casualties -= internal_unit.get_manpower()
+	if internal_enemy is infantry:
+		statistics.inf_killed -= internal_enemy.get_manpower()
+	elif internal_enemy is calvary:
+		statistics.cav_killed -= internal_enemy.get_manpower()
+	else:
+		statistics.art_killed -= internal_enemy.get_manpower()
 
 func get_closest_enemy_in_range() -> unit_icon:
 	return get_closest_enemy(get_units_in_range())

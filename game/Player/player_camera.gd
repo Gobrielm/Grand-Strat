@@ -73,28 +73,35 @@ func update_desync_label(amount: int) -> void:
 
 func _on_station_button_pressed() -> void:
 	state_machine.station_button_toggled()
+	unpress_all_buttons()
 
 func _on_track_button_pressed() -> void:
 	state_machine.many_track_button_toggled()
+	unpress_all_buttons()
 
 func _on_depot_button_pressed() -> void:
 	state_machine.depot_button_toggled()
+	unpress_all_buttons()
 
 func _on_single_track_button_pressed() -> void:
 	state_machine.track_button_toggled()
+	unpress_all_buttons()
 
 func _on_factory_button_pressed() -> void:
 	state_machine.factory_button_toggled()
+	unpress_all_buttons()
+
+func _on_road_depot_button_pressed() -> void:
+	state_machine.building_road_depot_toggled()
+	unpress_all_buttons()
+
+func _on_roads_button_pressed() -> void:
+	state_machine.roads_button_toggled()
+	unpress_all_buttons()
 
 func _on_start_or_ready_pressed() -> void:
 	Utils.world_map.get_parent().disable_nation_picker()
 	$nation_picker/start_or_ready.visible = false
-
-func _on_road_depot_button_pressed() -> void:
-	state_machine.building_road_depot_toggled()
-
-func _on_roads_button_pressed() -> void:
-	state_machine.roads_button_toggled()
 
 func _on_music_pressed() -> void:
 	Utils.click_music()
@@ -102,4 +109,3 @@ func _on_music_pressed() -> void:
 		$CanvasLayer2/Music.icon = preload("res://Gui/Icons/no.png")
 	else:
 		$CanvasLayer2/Music.icon = preload("res://Gui/Icons/go.png")
-		

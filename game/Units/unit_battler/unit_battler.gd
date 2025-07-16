@@ -13,19 +13,32 @@ var deployed_atk_units: Array[base_unit] = []
 var atk_brigade: Brigade
 var def_brigade: Brigade
 
+var is_battle_over: bool = false
+
 var ticks: float = 0
 const SECONDS_IN_DAY: int = 1
 
 func _process(delta: float) -> void:
 	delta *= 4
 	ticks += delta
-	if atk_brigade != null:
-		atk_brigade.process(delta)
-	if def_brigade != null:
-		def_brigade.process(delta)
+	if !is_battle_over:
+		process_brigades(delta)
+	
 	if ticks >= SECONDS_IN_DAY:
 		day_tick()
 		ticks = 0
+
+func process_brigades(delta: float) -> void:
+	if atk_brigade != null:
+		if atk_brigade.is_empty():
+			end_battle(false)
+			return
+		atk_brigade.process(delta)
+	if def_brigade != null:
+		if def_brigade.is_empty():
+			end_battle(true)
+			return
+		def_brigade.process(delta)
 
 func _ready() -> void:
 	pass
@@ -78,6 +91,25 @@ func remove_atk_unit(unit: unit_icon) -> void:
 	unit.queue_free()
 	var i: int = deployed_atk_units.find(unit.internal_unit)
 	deployed_atk_units.remove_at(i)
+
+func end_battle(atk_win: bool) -> void:
+	is_battle_over = true
+	atk_brigade.count_remaining_units()
+	def_brigade.count_remaining_units()
+	if atk_win and atk_brigade.get_player_ids().has(multiplayer.get_unique_id()):
+		show_win(atk_brigade.statistics)
+	elif !atk_win and def_brigade.get_player_ids().has(multiplayer.get_unique_id()):
+		show_win(def_brigade.statistics)
+	elif !atk_win and atk_brigade.get_player_ids().has(multiplayer.get_unique_id()):
+		show_loss(atk_brigade.statistics)
+	else:
+		show_loss(def_brigade.statistics)
+
+func show_win(stats: Dictionary[String, int]) -> void:
+	$battle_results_window.show_win(stats)
+
+func show_loss(stats: Dictionary[String, int]) -> void:
+	$battle_results_window.show_loss(stats)
 
 func day_tick() -> void:
 	atk_brigade.day_tick()

@@ -4,7 +4,7 @@ func _ready() -> void:
 	randomize()
 	$Unit_battler.set_cw(16)
 	var army1: army = army.new(1, Vector2i(0, 0))
-	army1.add_unit(infantry.new())
+	army1.add_unit(calvary.new())
 	#for i: int in range(0, 10):
 		#var num: int = randi() % 3
 		#if num == 0:
@@ -26,7 +26,6 @@ func _ready() -> void:
 		#else:
 			#army2.add_unit(artillery.new())
 	$Unit_battler.add_def_army(army2)
-	
 	$Unit_battler.start_battle()
 
 
