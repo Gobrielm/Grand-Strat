@@ -44,7 +44,7 @@ void DataCollector::month_tick() {
 }
 
 void DataCollector::write_data_to_file() {
-    std::ofstream file("data.csv");
+    std::ofstream file("data.txt");
     file << "Month,";
     for (int i = 1; i < road_depot_data_points.size(); i++) {
         file << i << ", ";

@@ -4,6 +4,7 @@ void CountryManager::_bind_methods() {
 
 }
 
+
 CountryManager::CountryManager(const Array& peers) {
     for (int i = 0; i < peers.size(); i++) {
         add_country(peers[i]);
@@ -32,3 +33,5 @@ Ref<Country> CountryManager::get_country(int p_id) const {
     ERR_FAIL_COND_V_MSG(countries.count(p_id) == 0, nullptr, "Country of id" + godot::String::num(p_id) + " does not exist.");
     return countries.at(p_id);
 }
+
+Ref<CountryManager> CountryManager::singleton_instance = nullptr;

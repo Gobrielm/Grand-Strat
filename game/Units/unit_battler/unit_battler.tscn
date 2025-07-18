@@ -1,8 +1,7 @@
-[gd_scene load_steps=5 format=3 uid="uid://dtbr4yqt88j1c"]
+[gd_scene load_steps=4 format=3 uid="uid://dtbr4yqt88j1c"]
 
 [ext_resource type="Script" uid="uid://chs1qfev1mvmb" path="res://Units/unit_battler/unit_battler.gd" id="1_8pdpb"]
 [ext_resource type="PackedScene" uid="uid://b6kbnbf8hsos7" path="res://Units/unit_battler/unit_battler_terrain_map.tscn" id="2_w1pwr"]
-[ext_resource type="Texture2D" uid="uid://cqdkw6b4bmsk5" path="res://Map_Icons/icon.svg" id="3_4b2aa"]
 [ext_resource type="PackedScene" uid="uid://b6rfa55aamk7s" path="res://Units/unit_battler/battle_results_window.tscn" id="4_w1pwr"]
 
 [node name="Unit_battler" type="Control"]
@@ -17,9 +16,6 @@ grow_vertical = 2
 script = ExtResource("1_8pdpb")
 
 [node name="unit_battler_terrain_map" parent="." instance=ExtResource("2_w1pwr")]
-
-[node name="Sprite2D" type="Sprite2D" parent="."]
-texture = ExtResource("3_4b2aa")
 
 [node name="battle_results_window" parent="." instance=ExtResource("4_w1pwr")]
 visible = false

@@ -1,5 +1,6 @@
 extends Camera2D
 var last_mouse_position: Vector2
+
 @onready var coords_label: Label = $CanvasLayer/Coordinate_Label
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
@@ -16,12 +17,16 @@ func _process(_delta: float) -> void:
 		state_machine.hovering_over_gui_inactive()
 	if Input.is_action_pressed("pan_left") and !state_machine.is_gui_pressed():
 		position.x -= 5 / zoom.x
+		adjust_camera()
 	if Input.is_action_pressed("pan_right") and !state_machine.is_gui_pressed():
 		position.x += 5 / zoom.x
+		adjust_camera()
 	if Input.is_action_pressed("pan_down") and !state_machine.is_gui_pressed():
 		position.y -= 5 / zoom.x
+		adjust_camera()
 	if Input.is_action_pressed("pan_up") and !state_machine.is_gui_pressed():
 		position.y += 5 / zoom.x
+		adjust_camera()
 	if Input.is_action_just_released("zoom_in") and zoom.x < 2 and !state_machine.is_gui_pressed():
 		zoom.x += 0.05
 		zoom.y += 0.05
@@ -32,8 +37,25 @@ func _process(_delta: float) -> void:
 		var instant_mouse_movement: Vector2 = last_mouse_position - get_viewport().get_mouse_position()
 		position.x += 1 / zoom.x * instant_mouse_movement.x
 		position.y += 1 / zoom.y * instant_mouse_movement.y
+		adjust_camera()
 	last_mouse_position = get_viewport().get_mouse_position()
 	update_resolution()
+
+func adjust_camera() -> void:
+	set_position_smoothing_enabled(true)
+	if position.x > 63936:
+		position.x = -58014
+		set_position_smoothing_enabled(false)
+	elif position.x < -58015:
+		position.x = 63935
+		set_position_smoothing_enabled(false)
+	if position.y < -26680:
+		position.y = 31023
+		set_position_smoothing_enabled(false)
+	elif position.y > 31024:
+		position.y = -26679
+		set_position_smoothing_enabled(false)
+	#call_deferred("set_position_smoothing_enabled", true)
 
 func update_resolution() -> void:
 	var viewport_size: Vector2 = get_viewport_rect().size
