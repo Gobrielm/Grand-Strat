@@ -50,10 +50,10 @@ Province::Province(int p_prov_id) {
     population = 0;
 }
 Province::~Province() {
-    for (BasePop* pop: pops) {
+    for (const auto &[__, pop]: rural_pops) {
         memdelete(pop);
     }
-    pops.clear();
+    rural_pops.clear();
 }
 
 void Province::add_tile(Vector2i coords) {
@@ -66,6 +66,10 @@ int Province::get_population() const {
 
 int Province::get_number_of_city_pops() const {
     return number_of_city_pops;
+}
+
+const std::unordered_map<int, BasePop*>& Province::get_rural_pops() const {
+    return rural_pops;
 }
 
 void Province::add_population(int population_to_add) {
@@ -194,7 +198,7 @@ void Province::create_pops() {
 	number_of_city_pops = floor(population * 0.2 / BasePop::get_people_per_pop());
     m.lock();
 	for (int i = 0; i < number_of_rural_pops; i++) {
-        pops.push_back(memnew(BasePop(province_id, 0)));
+        create_rural_pop(0);
     }
     m.unlock();
 		
@@ -203,7 +207,7 @@ void Province::create_pops() {
 	if (towns.size() == 0) {
         m.lock();
 		for (int i = 0; i < number_of_city_pops; i++) {
-            pops.push_back(memnew(BasePop(province_id, 0)));
+            create_rural_pop(0);
         }
         number_of_city_pops = 0;
         m.unlock();
@@ -223,6 +227,11 @@ void Province::create_pops() {
     }
 }
 
+void Province::create_rural_pop(Variant culture) {
+    BasePop* pop = memnew(BasePop(province_id, culture));
+    rural_pops[pop->get_pop_id()] = pop;
+}
+
 std::vector<Vector2i> Province::get_town_tiles() const {
     std::vector<Vector2i> toReturn;
     std::scoped_lock lock(m);
@@ -236,13 +245,13 @@ std::vector<Vector2i> Province::get_town_tiles() const {
 
 int Province::count_pops() const {
     std::scoped_lock lock(m);
-    return pops.size();
+    return rural_pops.size();
 }
 
 void Province::find_employment_for_pops() {
     Ref<FactoryTemplate> work;
 
-    for (BasePop* pop: pops) {
+    for (const auto [__, pop]: rural_pops) {
         if (pop -> is_seeking_employment()) {
             if (work.is_valid() && pop->will_work_here(work)) {
                 pop -> work_here(work);

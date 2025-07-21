@@ -8,6 +8,7 @@
 #include "base_pop.hpp"
 
 class CargoInfo;
+struct PopSaleResult;
 
 using namespace godot;
 
@@ -51,8 +52,10 @@ public:
     //Pop stuff
     void add_pop(BasePop* pop);
     void sell_to_pops();
-    void update_buy_orders();
     void sell_type(int type);
+    PopSaleResult& sell_type_to_rural_pops(int type);
+    PopSaleResult& sell_type_to_city_pops(int type);
+    PopSaleResult& sell_type_to_pops(int type, const std::unordered_map<int, BasePop*> &pops);
     int get_total_pops() const;
     Ref<FactoryTemplate> find_employment(BasePop* pop) const;
     int get_number_of_broke_pops() const;
@@ -65,6 +68,8 @@ public:
     //Economy Stats
     float get_total_wealth_of_pops();
     float get_needs_met_of_pops();
+
+    void update_buy_orders();
 
     // Process Hooks
     void day_tick();

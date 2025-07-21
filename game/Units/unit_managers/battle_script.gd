@@ -77,7 +77,7 @@ func unit_battle(attacker: base_unit, defender: base_unit) -> combat_results:
 	var def_fire: int = defender.get_fire_damage()
 	var def_shock: int = defender.get_shock_damage()
 	var dist: int = check_range_to_unit(defender, attacker)
-	var def_range: int = defender.get_unit_range()
+	var def_range: float = defender.get_unit_range()
 	
 	attacker.add_battle_experience()
 	defender.add_battle_experience()

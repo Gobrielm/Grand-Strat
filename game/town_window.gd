@@ -5,6 +5,8 @@ var current_cargo: Dictionary
 var current_prices: Dictionary
 var current_cash: int
 var current_pops: int
+var type_hovered: int = -1
+var inside_price_list: bool = false
 
 const time_every_update: int = 1
 var progress: float = 0.0
@@ -12,12 +14,17 @@ var progress: float = 0.0
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	hide()
+
+
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
-	progress += delta
-	if progress > time_every_update:
-		progress = 0
-		refresh_window()
+	if visible:
+		progress += delta
+		if progress > time_every_update:
+			progress = 0
+			refresh_window()
+		refresh_hover()
+	
 
 func _on_close_requested() -> void:
 	hide()
@@ -112,7 +119,6 @@ func update_factories(info: Array[Array]) -> void:
 			fact_list.add_item(text, null, false)
 		
 		num += 1
-		
 
 func factory_window() -> void:
 	var cargo_list: ItemList = $Cargo_Node/Cargo_List
@@ -166,4 +172,36 @@ func get_selected_name() -> String:
 			toReturn += i
 		return toReturn
 	return ""
-	
+
+func refresh_hover() -> void:
+	if inside_price_list:
+		var local_pos: Vector2 = $Price_Node/Price_List.get_local_mouse_position()
+		var type: int = $Price_Node/Price_List.get_item_at_position(local_pos, true)
+		
+		start_hovering_type(type)
+	else:
+		$CargoInfoPopUp.hide()
+
+func start_hovering_type(type: int) -> void:
+	if type != type_hovered:
+		$CargoInfoPopUp/Timer.start(0.5)
+		type_hovered = type
+
+func _on_timer_timeout() -> void:
+	pop_up_info_window()
+
+func pop_up_info_window() -> void:
+	var pop_up: Popup = $CargoInfoPopUp
+	pop_up.get_node("Type").text = "Type: " + CargoInfo.get_instance().get_cargo_name(type_hovered)
+	pop_up.position = get_mouse_position() + $Price_Node.position + Vector2(-25, 35)
+	pop_up.get_node("Price").text = "$" + str(TerminalMap.get_instance().get_local_prices(location)[type_hovered])
+	pop_up.get_node("Quantity").text = "Amount: "
+	pop_up.popup()
+
+func _on_price_list_mouse_entered() -> void:
+	inside_price_list = true
+
+func _on_price_list_mouse_exited() -> void:
+	inside_price_list = false
+	$CargoInfoPopUp/Timer.stop()
+	type_hovered = -1

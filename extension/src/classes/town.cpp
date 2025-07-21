@@ -1,5 +1,6 @@
 #include "town.hpp"
 #include "../singletons/cargo_info.hpp"
+#include "../singletons/province_manager.hpp"
 #include "../singletons/terminal_map.hpp"
 #include <godot_cpp/core/class_db.hpp>
 
@@ -182,34 +183,47 @@ void Town::sell_to_pops() {
     }
 }
 
-void Town::update_buy_orders() {
-    const auto v = local_pricer -> get_last_month_demand();
-    for (int type = 0; type < v.size(); type++) {
-        if (v[type] == 0) {
-            remove_order(type);
-            remove_accept(type);
-        } else {
-            edit_order(type, v[type], true, get_local_price(type));
-            add_accept(type);
-        }
-    }
-}
-
-void Town::sell_type(int type) {
+struct PopSaleResult {
     double amount_sold = 0.0;
     double amount_wanted = 0.0;
-	for (const auto &[__, pop]: city_pops) {
+    PopSaleResult operator+(PopSaleResult& other) {
+        PopSaleResult toReturn;
+        toReturn.amount_sold = other.amount_sold + this->amount_sold;
+        amount_wanted = other.amount_wanted + this->amount_wanted;
+        return toReturn;
+    }
+};
+
+void Town::sell_type(int type) {
+    PopSaleResult sales = sell_type_to_city_pops(type) + sell_type_to_rural_pops(type);
+	
+    report_attempt_to_sell(type, round(sales.amount_wanted)); //Each amount wanted by pops
+	remove_cargo(type, round(sales.amount_sold));
+}
+
+PopSaleResult& Town::sell_type_to_rural_pops(int type) {
+    Ref<ProvinceManager> province_manager =  ProvinceManager::get_instance();
+    Province* province = province_manager->get_province(province_manager->get_province_id(get_location())); // Province where city is located
+    return sell_type_to_pops(type, province->get_rural_pops());
+}
+
+PopSaleResult& Town::sell_type_to_city_pops(int type) {
+    return sell_type_to_pops(type, city_pops);
+}
+
+PopSaleResult& Town::sell_type_to_pops(int type, const std::unordered_map<int, BasePop*> &pops) {
+    PopSaleResult toReturn;
+    for (const auto &[__, pop]: pops) {
 		float price = get_local_price(type);
 		double amount = pop -> get_desired(type, price); //Float for each pop
-        amount_wanted += amount;
-        double available_in_market = float(get_cargo_amount(type)) - amount_sold;
+        toReturn.amount_wanted += amount;
+        double available_in_market = float(get_cargo_amount(type)) - toReturn.amount_sold;
 		amount = std::min(amount, available_in_market);
-		amount_sold += amount;
+		toReturn.amount_sold += amount;
 		pop->buy_good(type, amount, price);
 		add_cash(amount * price);
     }
-    report_attempt_to_sell(type, round(amount_wanted)); //Each amount wanted by pops
-	remove_cargo(type, round(amount_sold));
+    return toReturn;
 }
 
 int Town::get_total_pops() const {
@@ -299,6 +313,19 @@ float Town::get_needs_met_of_pops() {
         total += pop -> get_average_fulfillment();
     }
     return total;
+}
+
+void Town::update_buy_orders() {
+    const auto v = local_pricer -> get_last_month_demand();
+    for (int type = 0; type < v.size(); type++) {
+        if (v[type] == 0) {
+            remove_order(type);
+            remove_accept(type);
+        } else {
+            edit_order(type, v[type], true, get_local_price(type));
+            add_accept(type);
+        }
+    }
 }
 
 // Process Hooks

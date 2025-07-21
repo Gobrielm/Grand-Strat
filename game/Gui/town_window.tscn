@@ -3,7 +3,6 @@
 [ext_resource type="Script" uid="uid://fr52bfla55vf" path="res://town_window.gd" id="1_6vqjj"]
 
 [node name="town_window" type="Window"]
-auto_translate_mode = 1
 initial_position = 1
 size = Vector2i(700, 400)
 script = ExtResource("1_6vqjj")
@@ -40,12 +39,6 @@ offset_right = 40.0
 offset_bottom = 23.0
 text = "Cargo List:"
 
-[node name="Name" type="RichTextLabel" parent="."]
-offset_right = 750.0
-offset_bottom = 40.0
-bbcode_enabled = true
-scroll_active = false
-
 [node name="Price_Node" type="Control" parent="."]
 layout_mode = 3
 anchors_preset = 8
@@ -55,7 +48,7 @@ anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -87.0
 offset_top = -120.0
-offset_right = 351.0
+offset_right = 113.0
 offset_bottom = 200.0
 grow_horizontal = 2
 grow_vertical = 2
@@ -64,6 +57,7 @@ grow_vertical = 2
 layout_mode = 0
 offset_right = 200.0
 offset_bottom = 300.0
+focus_mode = 0
 
 [node name="ColorRect" type="ColorRect" parent="Price_Node"]
 layout_mode = 0
@@ -77,19 +71,6 @@ offset_right = 40.0
 offset_bottom = 23.0
 text = "Local Prices:"
 
-[node name="Cash" type="Label" parent="."]
-offset_left = 17.0
-offset_top = 5.0
-offset_right = 57.0
-offset_bottom = 28.0
-
-[node name="Pops" type="Label" parent="."]
-offset_left = 536.0
-offset_top = 8.0
-offset_right = 585.0
-offset_bottom = 31.0
-text = "Pops: "
-
 [node name="Factory_Node" type="Control" parent="."]
 layout_mode = 3
 anchors_preset = 8
@@ -99,8 +80,8 @@ anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -325.0
 offset_top = -120.0
-offset_right = 351.0
-offset_bottom = 200.0
+offset_right = -129.0
+offset_bottom = 180.0
 grow_horizontal = 2
 grow_vertical = 2
 
@@ -125,4 +106,59 @@ offset_right = 40.0
 offset_bottom = 23.0
 text = "Factories:"
 
+[node name="Cash" type="Label" parent="."]
+offset_left = 17.0
+offset_top = 5.0
+offset_right = 57.0
+offset_bottom = 28.0
+
+[node name="Pops" type="Label" parent="."]
+offset_left = 536.0
+offset_top = 8.0
+offset_right = 585.0
+offset_bottom = 31.0
+text = "Pops: "
+
+[node name="Name" type="RichTextLabel" parent="."]
+offset_right = 750.0
+offset_bottom = 40.0
+bbcode_enabled = true
+scroll_active = false
+
+[node name="CargoInfoPopUp" type="Popup" parent="."]
+position = Vector2i(525, 274)
+size = Vector2i(102, 100)
+visible = true
+
+[node name="Type" type="Label" parent="CargoInfoPopUp"]
+offset_right = 40.0
+offset_bottom = 23.0
+text = "Grain"
+
+[node name="Price" type="Label" parent="CargoInfoPopUp"]
+offset_left = 61.0
+offset_right = 101.0
+offset_bottom = 23.0
+text = "$10.5"
+
+[node name="Quantity" type="Label" parent="CargoInfoPopUp"]
+offset_top = 25.0
+offset_right = 40.0
+offset_bottom = 48.0
+text = "Amount: 5"
+
+[node name="MarketInfo" type="Label" parent="CargoInfoPopUp"]
+offset_top = 49.0
+offset_right = 102.0
+offset_bottom = 100.0
+text = "Supply: 100
+Demand: 100"
+
+[node name="Timer" type="Timer" parent="CargoInfoPopUp"]
+wait_time = 0.5
+one_shot = true
+
 [connection signal="close_requested" from="." to="." method="_on_close_requested"]
+[connection signal="mouse_entered" from="Price_Node/Price_List" to="." method="_on_price_list_mouse_entered"]
+[connection signal="mouse_exited" from="Price_Node/Price_List" to="." method="_on_price_list_mouse_exited"]
+[connection signal="timeout" from="CargoInfoPopUp/Timer" to="." method="_on_timer_timeout"]

@@ -22,7 +22,7 @@ class Province : public Object {
     int number_of_city_pops = 0;
     std::vector<Vector2i> tiles;
     std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> terminal_tiles; //Doesn't 'own' Terminals yet
-    std::vector<BasePop*> pops; //Owns pops
+    std::unordered_map<int, BasePop*> rural_pops; //Owns pops
 
     std::vector<Vector2i> get_town_tiles() const;
 
@@ -45,6 +45,7 @@ class Province : public Object {
     void add_tile(Vector2i coords);
     int get_population() const;
     int get_number_of_city_pops() const;
+    const std::unordered_map<int, BasePop*>& get_rural_pops() const;
     void add_population(int population_to_add);
     void set_population(int new_population);
     int get_province_id() const;
@@ -60,6 +61,7 @@ class Province : public Object {
     bool has_town() const;
     const std::unordered_set<Vector2i, godot_helpers::Vector2iHasher>& get_terminal_tiles_set() const;
     void create_pops();
+    void create_rural_pop(Variant culture);
     int count_pops() const;
     void find_employment_for_pops();
     Ref<FactoryTemplate> find_employment(BasePop* pop) const;
