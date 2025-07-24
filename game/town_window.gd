@@ -162,7 +162,7 @@ func populate_info_window(type: int, p_location: Vector2i) -> void:
 	info.type = CargoInfo.get_instance().get_cargo_name(type)
 	info.price = "$" + str(town.get_local_price(type))
 	info.amount = "Amount: " + str(town.get_cargo_amount(type))
-	info.market_info = "Supply: " + str(town.get_last_month_demand()[type]) + '\n' + "Demand: " + str(town.get_last_month_supply()[type])
+	info.market_info = "Supply: " + str(town.get_last_month_supply()[type]) + '\n' + "Demand: " + str(town.get_last_month_demand()[type])
 	pop_up_info_window.rpc_id(multiplayer.get_remote_sender_id(), info)
 
 @rpc("authority", "call_local", "unreliable")

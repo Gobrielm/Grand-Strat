@@ -6,7 +6,7 @@
 
 #include "static_registry.hpp"
 #include "../classes/base_pop.hpp"
-#include "../classes/rural_pop.hpp"
+#include "../classes/pops/rural_pop.hpp"
 #include "../classes/town_pop.hpp"
 #include "../classes/province.hpp"
 #include "../classes/trade_order.hpp"

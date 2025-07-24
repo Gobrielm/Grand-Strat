@@ -1,7 +1,9 @@
 #include "../singletons/terminal_map.hpp"
+#include "../singletons/cargo_info.hpp"
 #include "province.hpp"
 #include "base_pop.hpp"
-#include "rural_pop.hpp"
+#include "pops/rural_pop.hpp"
+#include "pops/peasant_pop.hpp"
 #include "town_pop.hpp"
 #include "terminal.hpp"
 #include "factory_template.hpp"
@@ -51,6 +53,9 @@ Province::Province(int p_prov_id) {
 }
 Province::~Province() {
     for (const auto &[__, pop]: rural_pops) {
+        memdelete(pop);
+    }
+    for (const auto &[__, pop]: peasant_pops) {
         memdelete(pop);
     }
     rural_pops.clear();
@@ -194,20 +199,22 @@ const std::unordered_set<Vector2i, godot_helpers::Vector2iHasher>& Province::get
 }
 
 void Province::create_pops() {
-    int number_of_rural_pops = floor(population * 0.8 / BasePop::get_people_per_pop());
-	number_of_city_pops = floor(population * 0.2 / BasePop::get_people_per_pop());
-    m.lock();
+    int number_of_peasant_pops = floor(population * 0.6 / BasePop::get_people_per_pop());
+    int number_of_rural_pops = floor(population * 0.2 / RuralPop::get_people_per_pop());
+	number_of_city_pops = floor(population * 0.2 / TownPop::get_people_per_pop());
+    for (int i = 0; i < number_of_peasant_pops; i++) {
+        create_peasant_pop(0);
+    }
 	for (int i = 0; i < number_of_rural_pops; i++) {
         create_rural_pop(0);
     }
-    m.unlock();
 		
 	std::vector<Vector2i> towns = get_town_tiles();
-	//If no cities, then turn rest of population into rural pops
+	//If no cities, then turn rest of population into peasant pops
 	if (towns.size() == 0) {
         m.lock();
 		for (int i = 0; i < number_of_city_pops; i++) {
-            create_rural_pop(0);
+            create_peasant_pop(0);
         }
         number_of_city_pops = 0;
         m.unlock();
@@ -227,9 +234,20 @@ void Province::create_pops() {
     }
 }
 
+void Province::create_peasant_pop(Variant culture) {
+    PeasantPop* pop = memnew(PeasantPop(province_id, culture));
+    {
+        std::scoped_lock lock(m);
+        peasant_pops[pop->get_pop_id()] = pop;
+    }
+}
+
 void Province::create_rural_pop(Variant culture) {
-    BasePop* pop = memnew(BasePop(province_id, culture));
-    rural_pops[pop->get_pop_id()] = pop;
+    RuralPop* pop = memnew(RuralPop(province_id, culture));
+    {
+        std::scoped_lock lock(m);
+        rural_pops[pop->get_pop_id()] = pop;
+    }
 }
 
 std::vector<Vector2i> Province::get_town_tiles() const {
@@ -245,7 +263,7 @@ std::vector<Vector2i> Province::get_town_tiles() const {
 
 int Province::count_pops() const {
     std::scoped_lock lock(m);
-    return rural_pops.size();
+    return rural_pops.size() + peasant_pops.size();
 }
 
 void Province::find_employment_for_pops() {
@@ -300,6 +318,21 @@ Ref<FactoryTemplate> Province::find_urban_employment(BasePop* pop) const {
     return best_fact;
 }
 
+void Province::peasant_tick() { // Creates grain for themselves a tiny bit to give to the towns
+    double extra_grain = 0;
+    for (const auto& [__, pop]: peasant_pops) {
+        extra_grain += (rand() % 3 + 1) / 10; // Creates between 0.1 - 0.4, ie can fed 1/10 to 4/10 other people plus themselves
+    }
+    std::vector<Vector2i> town_tiles = get_town_tiles();
+    int for_each = extra_grain / town_tiles.size();
+    for (const Vector2i &tile: town_tiles) {
+        Ref<Town> town = TerminalMap::get_instance() -> get_town(tile);
+        town->add_cargo(CargoInfo::get_instance()->get_cargo_type("grain"), for_each);
+    }
+}
+
 void Province::month_tick() {
     find_employment_for_pops();
+    // Employ or find education for peasants
+    peasant_tick();
 }

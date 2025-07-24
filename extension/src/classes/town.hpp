@@ -53,9 +53,9 @@ public:
     void add_pop(BasePop* pop);
     void sell_to_pops();
     void sell_type(int type);
-    PopSaleResult& sell_type_to_rural_pops(int type);
-    PopSaleResult& sell_type_to_city_pops(int type);
-    PopSaleResult& sell_type_to_pops(int type, const std::unordered_map<int, BasePop*> &pops);
+    void sell_type_to_rural_pops(int type, PopSaleResult& current_sales);
+    void sell_type_to_city_pops(int type, PopSaleResult& current_sales);
+    void sell_type_to_pops(int type, PopSaleResult& current_sales, const std::unordered_map<int, BasePop*> &pops);
     int get_total_pops() const;
     Ref<FactoryTemplate> find_employment(BasePop* pop) const;
     int get_number_of_broke_pops() const;

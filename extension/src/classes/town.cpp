@@ -186,7 +186,7 @@ void Town::sell_to_pops() {
 struct PopSaleResult {
     double amount_sold = 0.0;
     double amount_wanted = 0.0;
-    PopSaleResult operator+(PopSaleResult& other) {
+    PopSaleResult operator+(const PopSaleResult& other) {
         PopSaleResult toReturn;
         toReturn.amount_sold = other.amount_sold + this->amount_sold;
         amount_wanted = other.amount_wanted + this->amount_wanted;
@@ -195,35 +195,36 @@ struct PopSaleResult {
 };
 
 void Town::sell_type(int type) {
-    PopSaleResult sales = sell_type_to_city_pops(type) + sell_type_to_rural_pops(type);
+    PopSaleResult sales;
+    sell_type_to_rural_pops(type, sales);
+    sell_type_to_city_pops(type, sales); 
+    
 	
     report_attempt_to_sell(type, round(sales.amount_wanted)); //Each amount wanted by pops
 	remove_cargo(type, round(sales.amount_sold));
 }
 
-PopSaleResult& Town::sell_type_to_rural_pops(int type) {
+void Town::sell_type_to_rural_pops(int type, PopSaleResult& current_sales) {
     Ref<ProvinceManager> province_manager =  ProvinceManager::get_instance();
     Province* province = province_manager->get_province(province_manager->get_province_id(get_location())); // Province where city is located
-    return sell_type_to_pops(type, province->get_rural_pops());
+    sell_type_to_pops(type, current_sales, province->get_rural_pops());
 }
 
-PopSaleResult& Town::sell_type_to_city_pops(int type) {
-    return sell_type_to_pops(type, city_pops);
+void Town::sell_type_to_city_pops(int type, PopSaleResult& current_sales) {
+    sell_type_to_pops(type, current_sales, city_pops);
 }
 
-PopSaleResult& Town::sell_type_to_pops(int type, const std::unordered_map<int, BasePop*> &pops) {
-    PopSaleResult toReturn;
+void Town::sell_type_to_pops(int type, PopSaleResult& current_sales, const std::unordered_map<int, BasePop*> &pops) {
     for (const auto &[__, pop]: pops) {
 		float price = get_local_price(type);
 		double amount = pop -> get_desired(type, price); //Float for each pop
-        toReturn.amount_wanted += amount;
-        double available_in_market = float(get_cargo_amount(type)) - toReturn.amount_sold;
+        current_sales.amount_wanted += amount;
+        double available_in_market = float(get_cargo_amount(type)) - current_sales.amount_sold;
 		amount = std::min(amount, available_in_market);
-		toReturn.amount_sold += amount;
+		current_sales.amount_sold += amount;
 		pop->buy_good(type, amount, price);
 		add_cash(amount * price);
     }
-    return toReturn;
 }
 
 int Town::get_total_pops() const {

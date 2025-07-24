@@ -11,7 +11,7 @@ BasePop* RuralPop::create(int p_home_prov_id, Variant p_culture) {
 
 void RuralPop::initialize(int p_home_prov_id, Variant p_culture) {}
 
-RuralPop::RuralPop::RuralPop(): BasePop(-1, 0) {}
+RuralPop::RuralPop(): BasePop(-1, 0) {}
 
 RuralPop::RuralPop(int p_home_prov_id, Variant p_culture): BasePop(p_home_prov_id, p_culture) {}
 
