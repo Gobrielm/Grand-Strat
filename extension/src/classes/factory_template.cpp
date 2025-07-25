@@ -26,7 +26,6 @@ void FactoryTemplate::_bind_methods() {
 
     ClassDB::bind_method(D_METHOD("get_last_month_income"), &FactoryTemplate::get_last_month_income);
 
-    ClassDB::bind_method(D_METHOD("get_employement"), &FactoryTemplate::get_employement);
     ClassDB::bind_method(D_METHOD("is_hiring"), &FactoryTemplate::is_hiring);
     ClassDB::bind_method(D_METHOD("is_firing"), &FactoryTemplate::is_firing);
     ClassDB::bind_method(D_METHOD("get_wage"), &FactoryTemplate::get_wage);
@@ -44,45 +43,42 @@ void FactoryTemplate::_bind_methods() {
 FactoryTemplate::FactoryTemplate() {}
 
 
-FactoryTemplate::FactoryTemplate(Vector2i new_location, int player_owner, Dictionary new_inputs, Dictionary new_outputs) {
-    initialize(new_location, player_owner, new_inputs, new_outputs);
+FactoryTemplate::FactoryTemplate(Vector2i new_location, int player_owner, Recipe p_recipe) {
+    initialize(new_location, player_owner, p_recipe);
 }
 
 FactoryTemplate::~FactoryTemplate() {}
 
-Ref<FactoryTemplate> FactoryTemplate::create(Vector2i new_location, int player_owner, Dictionary new_inputs, Dictionary new_outputs) {
-    return Ref<FactoryTemplate>(memnew(FactoryTemplate(new_location, player_owner, new_inputs, new_outputs)));
+Ref<FactoryTemplate> FactoryTemplate::create(Vector2i new_location, int player_owner, Recipe p_recipe) {
+    return Ref<FactoryTemplate>(memnew(FactoryTemplate(new_location, player_owner, p_recipe)));
 }
-void FactoryTemplate::initialize(Vector2i new_location, int player_owner, Dictionary new_inputs, Dictionary new_outputs) {
+void FactoryTemplate::initialize(Vector2i new_location, int player_owner, Recipe p_recipe) {
     Broker::initialize(new_location, player_owner);
-    Array input_keys = new_inputs.keys();
-    for (int i = 0; i < input_keys.size(); i++) {
-        int type = input_keys[i];
-        inputs[type] = new_inputs[type];
-    }
-    Array output_keys = new_outputs.keys();
-    for (int i = 0; i < output_keys.size(); i++) {
-        int type = output_keys[i];
-        outputs[type] = new_outputs[type];
-    }
+    recipe = p_recipe;
     local_pricer = memnew(FactoryLocalPriceController);
-    pops_needed = 1;
-    level = 1;
 }
 
 float FactoryTemplate::get_min_price(int type) const {
-    ERR_FAIL_COND_V(outputs.size() != 1 || inputs.size() != 0, 0.0);
+    ERR_FAIL_COND_V(get_outputs().size() != 1 || get_inputs().size() != 0, 0.0);
     return 0.0;
 }
 
 float FactoryTemplate::get_max_price(int type) const {
-    ERR_FAIL_COND_V(outputs.size() != 0, 100.0);
+    ERR_FAIL_COND_V(get_outputs().size() != 0, 100.0);
     return 100.0;
 }
 
 bool FactoryTemplate::does_create(int type) const {
     std::scoped_lock lock(m);
-    return outputs.count(type);
+    return get_outputs().count(type);
+}
+
+std::unordered_map<int, int> FactoryTemplate::get_outputs() const {
+    return recipe.get_outputs();
+}
+
+std::unordered_map<int, int> FactoryTemplate::get_inputs() const {
+    return recipe.get_inputs();
 }
 
 void FactoryTemplate::create_recipe() {
@@ -93,23 +89,23 @@ void FactoryTemplate::create_recipe() {
 
 int FactoryTemplate::get_batch_size() const {
     int batch_size = get_level();
-    for (auto& [type, amount]: inputs) {
+    for (auto& [type, amount]: get_outputs()) {
         batch_size = std::min((int)floor(get_cargo_amount(type) / amount), batch_size);
     }
-    for (auto& [type, amount]: outputs) {
+    for (auto& [type, amount]: get_inputs()) {
         batch_size = std::min((int)floor((get_max_storage() - get_cargo_amount(type)) / amount), batch_size);
     }
     return batch_size;
 }
 
 void FactoryTemplate::remove_inputs(int batch_size) {
-    for (auto& [type, amount]: inputs) {
+    for (auto& [type, amount]: get_inputs()) {
         remove_cargo(type, amount * batch_size);
     }
 }
 
 void FactoryTemplate::add_outputs(int batch_size) {
-    for (auto& [type, amount]: outputs) {
+    for (auto& [type, amount]: get_outputs()) {
         add_cargo_ignore_accepts(type, amount * batch_size);
     }
 }
@@ -118,6 +114,8 @@ String FactoryTemplate::get_recipe_as_string() const {
     Ref<CargoInfo> cargo_info = CargoInfo::get_instance();
     String x;
     int i = 0;
+    const auto outputs = get_outputs();
+    const auto inputs = get_outputs();
     for (const auto& [type, amount]: outputs) {
         x += String::num(amount) + " " + cargo_info->get_cargo_name(type);
         if (i < outputs.size() - 1) x += ", " ;
@@ -134,7 +132,7 @@ String FactoryTemplate::get_recipe_as_string() const {
 }
 
 void FactoryTemplate::distribute_cargo() {
-    for (const auto& [type, __]: outputs) {
+    for (const auto& [type, __]: get_outputs()) {
         TradeOrder* order = get_order(type);
         if (order && order->is_sell_order()) {
             report_demand_of_brokers(type);
@@ -144,21 +142,16 @@ void FactoryTemplate::distribute_cargo() {
 }
 
 int FactoryTemplate::get_level() const {
-	// int employment = get_employement();
-	// if (employment == 0) {
-    //     return 0;
-    // }
-	// return round(get_level_without_employment() * employment / get_pops_needed());
-    return get_level_without_employment();
+    return recipe.get_level();
 }
 
 int FactoryTemplate::get_level_without_employment() const {
-    return level;
+    return recipe.get_level_without_employment();
 }
 
 bool FactoryTemplate::is_max_level() const {
     if (is_primary_factory()) {
-        return level == TerminalMap::get_instance()->get_cargo_value_of_tile(get_location(), get_primary_type_production());
+        return get_level_without_employment() == TerminalMap::get_instance()->get_cargo_value_of_tile(get_location(), get_primary_type_production());
     }
 
     return false;
@@ -170,8 +163,8 @@ int FactoryTemplate::get_cost_for_upgrade() {
 
 void FactoryTemplate::check_for_upgrade() {
     //Signal will check with cargo_values to see if it can upgrade
-    if (inputs.size() == 0 && outputs.size() == 1) {
-        emit_signal("Check_Tile_Magnitude", this, level);
+    if (get_inputs().size() == 0 && get_outputs().size() == 1) {
+        emit_signal("Check_Tile_Magnitude", this, get_level_without_employment());
     }
 }
 
@@ -179,32 +172,30 @@ void FactoryTemplate::upgrade() {
     int cost = get_cost_for_upgrade();
     if (get_cash() >= cost && can_factory_upgrade()) {
         remove_cash(cost);
-        pops_needed += pops_needed / level;
-        level++;
+        recipe.upgrade();
     }
 }
 
 void FactoryTemplate::admin_upgrade() {
     if (can_factory_upgrade()) {
-        pops_needed += pops_needed / level;
-        level++;
+        recipe.upgrade();
     }
     
 }
 
 bool FactoryTemplate::can_factory_upgrade() const {
     if (is_primary_factory()) {
-        return TerminalMap::get_instance()->get_cargo_value_of_tile(get_location(), get_primary_type_production()) > level;
+        return TerminalMap::get_instance()->get_cargo_value_of_tile(get_location(), get_primary_type_production()) > get_level_without_employment();
     }
     return true;
 }
 
 bool FactoryTemplate::is_primary_factory() const {
-    return outputs.size() == 1 && CargoInfo::get_instance()->is_cargo_primary(get_primary_type_production());
+    return get_outputs().size() == 1 && CargoInfo::get_instance()->is_cargo_primary(get_primary_type_production());
 }
 
 int FactoryTemplate::get_primary_type_production() const {
-    return (*outputs.begin()).first;
+    return (*get_outputs().begin()).first;
 }
 
 void FactoryTemplate::update_income_array() {
@@ -223,47 +214,31 @@ float FactoryTemplate::get_last_month_income() const {
     return income_list.front();
 }
 
-int FactoryTemplate::get_pops_needed() const {
-    return pops_needed;
-}
-
-void FactoryTemplate::set_pops_needed(int num) {
-    pops_needed = num;
-}
-
-int FactoryTemplate::get_employement() const {
-    std::scoped_lock lock(m);
-    return employees.size();
-}
-
-bool FactoryTemplate::is_hiring() const {
-    return (get_pops_needed() - get_employement() >= 0);
+bool FactoryTemplate::is_hiring(BasePop* pop) const {
+    return (recipe.is_pop_needed(pop));
 }
 
 bool FactoryTemplate::is_firing() const {
-    return get_employement() != 0;
+    return false;
 }
 
 float FactoryTemplate::get_wage() const {
     float available = 0;
-    for (const auto &[type, amount]: inputs) {
+    for (const auto &[type, amount]: get_inputs()) {
         available -= get_local_price(type) * amount;
     }
-    for (const auto &[type, amount]: outputs) {
+    for (const auto &[type, amount]: get_outputs()) {
         available += get_local_price(type) * amount;
     }
     available *= 30;
 
-    return available / get_pops_needed();
+    return available / recipe.get_pops_needed_num();
 }
 
 void FactoryTemplate::work_here(BasePop* pop) {
-    if (is_hiring()) {
+    if (is_hiring(pop)) {
         m.lock();
-        int index = employees.empty() ? 0 : rand() % employees.size();
-        auto i = employees.begin();
-        std::advance(i, index);
-        employees.insert(i, pop);
+        recipe.add_pop(pop);
         m.unlock();
         pop->employ(get_wage());
     }
@@ -271,22 +246,14 @@ void FactoryTemplate::work_here(BasePop* pop) {
 
 void FactoryTemplate::pay_employees() {
     float wage = get_wage();
-    for (BasePop* employee : employees) {
+    for (BasePop* employee : recipe.get_employees()) {
         employee->pay_wage(transfer_cash(wage));
     }
 }
 
 void FactoryTemplate::fire_employees() {
     std::scoped_lock lock(m);
-    int fired = 0;
-    int to_fire = std::max((int)(employees.size() * 0.1), 100);
-    while (fired < to_fire && !employees.empty()) {
-        int rand_index = rand() % employees.size();
-        BasePop* pop = employees[rand_index];
-        employees.erase(employees.begin() + rand_index);
-        pop->fire();
-        fired++;
-    }
+    recipe.fire_employees();
 }
 
 void FactoryTemplate::day_tick() {

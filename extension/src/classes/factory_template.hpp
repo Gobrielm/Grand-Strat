@@ -5,6 +5,7 @@
 #include <list>
 
 #include "broker.hpp"
+#include "factory_utility/recipe.hpp"
 
 using namespace godot;
 
@@ -17,14 +18,13 @@ private:
     static const int COST_FOR_UPGRADE;
     static const int DEFAULT_BATCH_SIZE;
 
-    std::atomic<int> level = 1;
-    std::atomic<int> pops_needed = 1;
     float change_in_cash = 0.0;
 
     std::list<int> income_list;
-    std::vector<BasePop*> employees;
 
 protected:
+    Recipe recipe;
+
     static void _bind_methods();
 
     bool can_factory_upgrade() const;
@@ -32,16 +32,14 @@ protected:
     int get_primary_type_production() const;
 
 public:
-    std::unordered_map<int, int> inputs;
-    std::unordered_map<int, int> outputs;
 
     FactoryTemplate();
     virtual ~FactoryTemplate();
-    FactoryTemplate(Vector2i new_location, int player_owner, Dictionary new_inputs, Dictionary new_outputs);
+    FactoryTemplate(Vector2i new_location, int player_owner, Recipe recipe);
 
-    static Ref<FactoryTemplate> create(Vector2i new_location, int player_owner, Dictionary new_inputs, Dictionary new_outputs);
+    static Ref<FactoryTemplate> create(Vector2i new_location, int player_owner, Recipe recipe);
 
-    virtual void initialize(Vector2i new_location, int player_owner, Dictionary new_inputs, Dictionary new_outputs);
+    virtual void initialize(Vector2i new_location, int player_owner, Recipe recipe);
 
 
 
@@ -51,6 +49,8 @@ public:
     bool does_create(int type) const;
 
     // Production
+    std::unordered_map<int, int> get_outputs() const;
+    std::unordered_map<int, int> get_inputs() const;
     void create_recipe();
     int get_batch_size() const;
     void remove_inputs(int batch_size);
@@ -72,10 +72,7 @@ public:
     float get_last_month_income() const;
 
     // Employment
-    int get_pops_needed() const;
-    void set_pops_needed(int num);
-    int get_employement() const;
-    bool is_hiring() const;
+    bool is_hiring(BasePop* pop) const;
     bool is_firing() const;
     float get_wage() const;
     void work_here(BasePop* pop);
