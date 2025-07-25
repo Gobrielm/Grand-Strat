@@ -22,4 +22,6 @@ class TownPop : public BasePop {
     TownPop();
     TownPop(int p_home_prov_id, Variant p_culture);
     virtual ~TownPop();
+
+    static int get_people_per_pop();
 };

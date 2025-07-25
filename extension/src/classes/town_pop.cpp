@@ -16,3 +16,7 @@ TownPop::TownPop::TownPop(): BasePop(-1, 0) {}
 TownPop::TownPop(int p_home_prov_id, Variant p_culture): BasePop(p_home_prov_id, p_culture) {}
 
 TownPop::~TownPop() {}
+
+int TownPop::get_people_per_pop() {
+    return PEOPLE_PER_POP;
+}

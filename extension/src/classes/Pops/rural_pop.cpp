@@ -16,3 +16,7 @@ RuralPop::RuralPop(): BasePop(-1, 0) {}
 RuralPop::RuralPop(int p_home_prov_id, Variant p_culture): BasePop(p_home_prov_id, p_culture) {}
 
 RuralPop::~RuralPop() {}
+
+int RuralPop::get_people_per_pop() {
+    return PEOPLE_PER_POP;
+}

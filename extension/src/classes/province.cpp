@@ -199,7 +199,7 @@ const std::unordered_set<Vector2i, godot_helpers::Vector2iHasher>& Province::get
 }
 
 void Province::create_pops() {
-    int number_of_peasant_pops = floor(population * 0.6 / BasePop::get_people_per_pop());
+    int number_of_peasant_pops = floor(population * 0.6 / PeasantPop::get_people_per_pop());
     int number_of_rural_pops = floor(population * 0.2 / RuralPop::get_people_per_pop());
 	number_of_city_pops = floor(population * 0.2 / TownPop::get_people_per_pop());
     for (int i = 0; i < number_of_peasant_pops; i++) {
@@ -212,10 +212,10 @@ void Province::create_pops() {
 	std::vector<Vector2i> towns = get_town_tiles();
 	//If no cities, then turn rest of population into peasant pops
 	if (towns.size() == 0) {
-        m.lock();
 		for (int i = 0; i < number_of_city_pops; i++) {
             create_peasant_pop(0);
         }
+        m.lock();
         number_of_city_pops = 0;
         m.unlock();
 		return;
@@ -321,10 +321,13 @@ Ref<FactoryTemplate> Province::find_urban_employment(BasePop* pop) const {
 void Province::peasant_tick() { // Creates grain for themselves a tiny bit to give to the towns
     double extra_grain = 0;
     for (const auto& [__, pop]: peasant_pops) {
-        extra_grain += (rand() % 3 + 1) / 10; // Creates between 0.1 - 0.4, ie can fed 1/10 to 4/10 other people plus themselves
+        extra_grain += (rand() % 3 + 1) / 10.0; // Creates between 0.1 - 0.4, ie can fed 1/10 to 4/10 other people plus themselves
     }
     std::vector<Vector2i> town_tiles = get_town_tiles();
-    int for_each = extra_grain / town_tiles.size();
+    if (town_tiles.size() == 0) {
+        return;
+    }
+    int for_each = round(extra_grain / town_tiles.size());
     for (const Vector2i &tile: town_tiles) {
         Ref<Town> town = TerminalMap::get_instance() -> get_town(tile);
         town->add_cargo(CargoInfo::get_instance()->get_cargo_type("grain"), for_each);

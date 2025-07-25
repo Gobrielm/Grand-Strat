@@ -12,3 +12,6 @@ PeasantPop::PeasantPop(int p_home_prov_id, Variant p_culture): RuralPop(p_home_p
 
 PeasantPop::~PeasantPop() {}
 
+int PeasantPop::get_people_per_pop() {
+    return PEOPLE_PER_POP;
+}

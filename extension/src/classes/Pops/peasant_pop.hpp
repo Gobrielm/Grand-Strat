@@ -21,4 +21,6 @@ class PeasantPop : public RuralPop {
     PeasantPop();
     PeasantPop(int p_home_prov_id, Variant p_culture);
     virtual ~PeasantPop();
+
+    static int get_people_per_pop();
 };
