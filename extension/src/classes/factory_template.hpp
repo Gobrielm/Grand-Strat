@@ -3,12 +3,11 @@
 #include <unordered_map>
 #include <vector>
 #include <list>
-
 #include "broker.hpp"
-#include "factory_utility/recipe.hpp"
 
 using namespace godot;
 
+class Recipe;
 class BasePop;
 
 class FactoryTemplate : public Broker {
@@ -23,7 +22,7 @@ private:
     std::list<int> income_list;
 
 protected:
-    Recipe recipe;
+    Recipe* recipe = nullptr;
 
     static void _bind_methods();
 
@@ -35,13 +34,9 @@ public:
 
     FactoryTemplate();
     virtual ~FactoryTemplate();
-    FactoryTemplate(Vector2i new_location, int player_owner, Recipe recipe);
+    FactoryTemplate(Vector2i new_location, int player_owner, Recipe* recipe);
 
-    static Ref<FactoryTemplate> create(Vector2i new_location, int player_owner, Recipe recipe);
-
-    virtual void initialize(Vector2i new_location, int player_owner, Recipe recipe);
-
-
+    virtual void initialize(Vector2i new_location, int player_owner, Recipe* recipe);
 
     // Trade
     float get_min_price(int type) const;
@@ -72,7 +67,7 @@ public:
     float get_last_month_income() const;
 
     // Employment
-    bool is_hiring(BasePop* pop) const;
+    bool is_hiring(const BasePop* pop) const;
     bool is_firing() const;
     float get_wage() const;
     void work_here(BasePop* pop);

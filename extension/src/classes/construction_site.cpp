@@ -1,5 +1,6 @@
 #include "construction_site.hpp"
 #include "../singletons/cargo_info.hpp"
+#include "factory_utility/recipe.hpp"
 #include <godot_cpp/core/class_db.hpp>
 #include <mutex>
 
@@ -7,9 +8,6 @@ void ConstructionSite::_bind_methods() {
     ClassDB::bind_static_method(get_class_static(), D_METHOD("create", "new_location", "player_owner"), &ConstructionSite::create);
     ClassDB::bind_method(D_METHOD("initialize", "new_location", "player_owner"), &ConstructionSite::initialize);
 
-
-    ClassDB::bind_method(D_METHOD("set_recipe", "recipe"), &ConstructionSite::set_recipe);
-    ClassDB::bind_method(D_METHOD("get_recipe"), &ConstructionSite::get_recipe);
     ClassDB::bind_method(D_METHOD("has_recipe"), &ConstructionSite::has_recipe);
     ClassDB::bind_method(D_METHOD("destroy_recipe"), &ConstructionSite::destroy_recipe);
     ClassDB::bind_method(D_METHOD("get_construction_materials"), &ConstructionSite::get_construction_materials);
@@ -22,7 +20,7 @@ ConstructionSite::ConstructionSite(): FactoryTemplate() {
 
 ConstructionSite::~ConstructionSite() {}
 
-ConstructionSite::ConstructionSite(Vector2i new_location, int player_owner): FactoryTemplate(new_location, player_owner, {}, {}) {
+ConstructionSite::ConstructionSite(Vector2i new_location, int player_owner): FactoryTemplate(new_location, player_owner, memnew(Recipe)) {
     local_pricer = memnew(LocalPriceController);
 }
 
@@ -31,23 +29,23 @@ Ref<ConstructionSite> ConstructionSite::create(Vector2i new_location, int player
 }
 
 void ConstructionSite::initialize(Vector2i new_location, int player_owner) {
-    FactoryTemplate::initialize(new_location, player_owner, {}, {});
+    FactoryTemplate::initialize(new_location, player_owner, memnew(Recipe));
 }
 
 //Recipe
-void ConstructionSite::set_recipe(const Array recipe) {
-    FactoryTemplate::initialize(get_location(), get_player_owner(), recipe[0], recipe[1]);
+void ConstructionSite::set_recipe(Recipe* p_recipe) {
+    recipe = p_recipe;
 	create_construction_materials();
 }
 
 Array ConstructionSite::get_recipe() const {
     Dictionary in_d;
     m.lock();
-    for (const auto& [key, val]: inputs) {
+    for (const auto& [key, val]: get_inputs()) {
         in_d[key] = val;
     }
     Dictionary out_d;
-    for (const auto& [key, val]: outputs) {
+    for (const auto& [key, val]: get_outputs()) {
         out_d[key] = val;
     }
     m.unlock();
@@ -59,13 +57,13 @@ Array ConstructionSite::get_recipe() const {
 
 bool ConstructionSite::has_recipe() const {
     std::scoped_lock lock(m);
-    return inputs.size() != 0 || outputs.size() != 0;
+    return recipe->has_recipe();
 }
 
 void ConstructionSite::destroy_recipe() {
     std::scoped_lock lock(m);
-    inputs.clear();
-    outputs.clear();
+    memdelete(recipe);
+    recipe = nullptr;
 }
 
 //Materials

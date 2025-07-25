@@ -1,12 +1,11 @@
 #include "recipe_info.hpp"
 #include "cargo_info.hpp"
+#include "../classes/factory_utility/recipe.hpp"
 
 Ref<RecipeInfo> RecipeInfo::singleton_instance = nullptr;
 
 void RecipeInfo::_bind_methods() {
     ClassDB::bind_static_method(get_class_static(), D_METHOD("get_instance"), &RecipeInfo::get_instance);
-
-    ClassDB::bind_method(D_METHOD("month_tick"), &RecipeInfo::get_primary_recipe_for_type);
 }
 
 RecipeInfo::RecipeInfo() {
@@ -22,45 +21,108 @@ Ref<RecipeInfo> RecipeInfo::get_instance() {
 }
 
 void RecipeInfo::add_recipes() {
-    for (const auto &readable_recipe: readable_recipes) {
-        Array recipe = convert_readable_recipe_to_usable(readable_recipe);
-        add_recipe(recipe);
-    }
+    create_recipe({{{}}, 
+        {{"clay", 1}}}, {{rural, 1}});
+    create_recipe({{{}}, 
+        {{"sand", 1}}}, {{rural, 1}});
+    create_recipe({{{}}, 
+        {{"sulfur", 1}}}, {{rural, 1}});
+    create_recipe({{{}}, 
+        {{"lead", 1}}}, {{rural, 1}});
+    create_recipe({{{}}, 
+        {{"iron", 1}}}, {{rural, 1}});
+    create_recipe({{{}}, 
+        {{"coal", 1}}}, {{rural, 1}});
+    create_recipe({{{}}, 
+        {{"copper", 1}}}, {{rural, 1}});
+    create_recipe({{{}}, 
+        {{"zinc", 1}}}, {{rural, 1}});
+    create_recipe({{{}}, 
+        {{"wood", 1}}}, {{rural, 1}});
+    create_recipe({{{}}, 
+        {{"salt", 1}}}, {{rural, 1}});
+    create_recipe({{{}}, 
+        {{"grain", 10}}}, {{rural, 10}});
+    create_recipe({{{}}, 
+        {{"livestock", 1}}}, {{rural, 1}});
+    create_recipe({{{}}, 
+        {{"fish", 1}}}, {{rural, 1}});
+    create_recipe({{{}}, 
+        {{"fruit", 1}}}, {{rural, 1}});
+    create_recipe({{{}}, 
+        {{"cotton", 1}}}, {{rural, 1}});
+    create_recipe({{{}}, 
+        {{"silk", 1}}}, {{rural, 1}});
+    create_recipe({{{}}, 
+        {{"spices", 1}}}, {{rural, 1}});
+    create_recipe({{{}}, 
+        {{"coffee", 1}}}, {{rural, 1}});
+    create_recipe({{{}}, 
+        {{"tea", 1}}}, {{rural, 1}});
+    create_recipe({{{}}, 
+        {{"tobacco", 1}}}, {{rural, 1}});
+    create_recipe({{{}}, 
+        {{"gold", 1}}}, {{rural, 1}});
+
+    // Secondary
+    create_recipe({{{"grain", 5}, {"salt", 2}}, 
+        {{"bread", 2}}}, {{town, 1}});
+    create_recipe({{{"cotton", 5}}, 
+        {{"clothes", 1}}}, {{town, 1}});
+    create_recipe({{{"wood", 3}}, 
+        {{"lumber", 1}}}, {{town, 1}});
+    create_recipe({{{"wood", 2}}, 
+        {{"paper", 1}}}, {{town, 1}});
+    create_recipe({{{"lumber", 3}}, 
+        {{"furniture", 1}}}, {{town, 1}});
+    create_recipe({{{"lumber", 4}}, 
+        {{"wagons", 1}}}, {{town, 1}});
+    create_recipe({{{"lumber", 10}}, 
+        {{"boats", 1}}}, {{town, 1}});
+
 }
 
-Array RecipeInfo::convert_readable_recipe_to_usable(const std::vector<std::unordered_map<std::string, int>>& readable_recipe) {
+void RecipeInfo::create_recipe(std::vector<std::unordered_map<std::string, int>> v, std::unordered_map<PopTypes, int> p) {
     Ref<CargoInfo> cargo_info = CargoInfo::get_instance();
-    Array toReturn;
-    
-    Dictionary new_inputs = convert_readable_side_of_recipe(readable_recipe[0]);
-    toReturn.push_back(new_inputs);
-
-    Dictionary new_outputs = convert_readable_side_of_recipe(readable_recipe[1]);
-    toReturn.push_back(new_outputs);
-
-    return toReturn;
-}
-
-Dictionary RecipeInfo::convert_readable_side_of_recipe(const std::unordered_map<std::string, int> &recipe_side) {
-    Ref<CargoInfo> cargo_info = CargoInfo::get_instance();
-
-    Dictionary new_side;
-    for (const auto &[cargo_name, amount]: recipe_side) {
-        new_side[cargo_info->get_cargo_type((cargo_name).c_str())] = amount;
+    std::vector<std::unordered_map<int, int>> v_int;
+    for (const auto &[cargo_name, amount]: v[0]) {
+        v_int[0][cargo_info->get_cargo_type(cargo_name.c_str())] = amount;
     }
-    return new_side;
+    for (const auto &[cargo_name, amount]: v[1]) {
+        v_int[1][cargo_info->get_cargo_type(cargo_name.c_str())] = amount;
+    }
+
+    add_recipe(memnew(Recipe(v_int[0], v_int[1], p)));
 }
 
-void RecipeInfo::add_recipe(Array& recipe) {
-    recipes.push_back(&recipe);
+void RecipeInfo::add_recipe(Recipe* recipe) {
+    recipes.push_back(recipe);
 }
 
-Array RecipeInfo::get_primary_recipe_for_type(int type) const {
+Recipe* RecipeInfo::get_primary_recipe_for_type(int type) const {
     for (int i = 0; i < recipes.size(); i++) {
-        Array recipe = recipes[i];
-        if (Dictionary(recipe[1]).has(type)) {
-            return recipe;
+        Recipe* recipe = recipes[i];
+        if (recipe->is_primary() && recipe->does_create(type)) {
+            return memnew(Recipe(*recipe));
         }
     }
-    return Array();
+    return nullptr;
+}
+
+Recipe* RecipeInfo::get_recipe(Dictionary inputs, Dictionary outputs) {
+    for (int i = 0; i < recipes.size(); i++) {
+        Recipe* recipe = recipes[i];
+        if (map_and_dict_match(inputs, recipe->get_inputs()) && map_and_dict_match(outputs, recipe->get_outputs())) {
+            return memnew(Recipe(*recipe));
+        }
+    }
+}
+
+bool RecipeInfo::map_and_dict_match(Dictionary d, std::unordered_map<int, int> m) {
+    for (const auto& [type, amount]: m) {
+        if (!d.has(type) || int(d[type]) != amount) {
+            return false;
+        }
+        return true;
+    }
 }

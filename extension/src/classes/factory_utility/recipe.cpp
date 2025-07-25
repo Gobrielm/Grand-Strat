@@ -12,6 +12,13 @@ Recipe::Recipe(std::unordered_map<int, int> &p_inputs, std::unordered_map<int, i
     pops_needed = p_pops_needed;
 }
 
+Recipe::Recipe(const Recipe& other) {
+    inputs = other.inputs;
+    outputs = other.outputs;
+    pops_needed = other.pops_needed;
+    employees = other.employees;
+}
+
 Dictionary Recipe::get_inputs_dict() const {
     Dictionary d;
     for (const auto &[type, amount]: inputs) {
@@ -28,14 +35,14 @@ Dictionary Recipe::get_outputs_dict() const {
     return d;
 }
 
-bool Recipe::is_pop_needed(BasePop* pop) const {
+bool Recipe::is_pop_needed(const BasePop* pop) const {
     return does_need_pop_type(get_pop_type(pop));
 }
 
-PopTypes Recipe::get_pop_type(BasePop* pop) const {
-    if (dynamic_cast<RuralPop*>(pop)) { // Checks pop is needed and if it has enough
+PopTypes Recipe::get_pop_type(const BasePop* pop) const {
+    if (typeid(pop) == typeid(RuralPop)) { // Checks pop is needed and if it has enough
         return rural;
-    } else if (dynamic_cast<TownPop*>(pop)) {
+    } else if (typeid(pop) == typeid(TownPop)) {
         return town;
     }
     return none;
@@ -112,6 +119,23 @@ double Recipe::get_level() const {
 
 int Recipe::get_level_without_employment() const {
     return level;
+}
+
+bool Recipe::has_recipe() const {
+    return inputs.size() == 0 && outputs.size() == 0;
+}
+
+bool Recipe::does_create(int type) const {
+    return outputs.count(type);
+}
+bool Recipe::is_primary() const {
+    return inputs.size() == 0;
+}
+
+void Recipe::clear() {
+    inputs.clear();
+    outputs.clear();
+    pops_needed.clear();
 }
 
 std::unordered_map<int, int> Recipe::get_inputs() const {

@@ -10,7 +10,7 @@ class WheatFarm : public AiFactory {
 
 protected:
     static void _bind_methods();
-    Dictionary get_input_dict();
+    Recipe* get_recipe();
 
 public:
     WheatFarm();

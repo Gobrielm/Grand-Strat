@@ -29,7 +29,7 @@ public:
     virtual void initialize(Vector2i new_location, int player_owner);
 
     //Recipe
-    void set_recipe(const Array recipe);
+    void set_recipe(Recipe* p_recipe);
     void destroy_recipe();
     Array get_recipe() const;
     bool has_recipe() const;

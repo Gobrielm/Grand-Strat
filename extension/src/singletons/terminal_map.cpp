@@ -1,5 +1,6 @@
 #include "terminal_map.hpp"
 #include "road_map.hpp"
+#include "recipe_info.hpp"
 #include "../classes/terminal.hpp"
 #include "../classes/station.hpp"
 #include "../classes/broker.hpp"
@@ -247,12 +248,13 @@ Ref<Factory> TerminalMap::create_factory(const Vector2i &p_location, int p_playe
     if (p_player_owner > 0) {
         Ref<Factory> factory;
         factory.instantiate();
-        factory->initialize(p_location, p_player_owner, p_inputs, p_outputs);
+        
+        factory->initialize(p_location, p_player_owner, RecipeInfo::get_instance()->get_recipe(p_inputs, p_outputs));
         return factory;
     } else {
         Ref<AiFactory> factory;
         factory.instantiate();
-        factory->initialize(p_location, p_player_owner, p_inputs, p_outputs);
+        factory->initialize(p_location, p_player_owner, RecipeInfo::get_instance()->get_recipe(p_inputs, p_outputs));
         return factory;
     }
 }
@@ -461,7 +463,7 @@ Ref<Town> TerminalMap::get_town(const Vector2i &coords) {
 //Action doers
 void TerminalMap::set_construction_site_recipe(const Vector2i &coords, const Array &selected_recipe) {
     if (is_owned_recipeless_construction_site(coords)) {
-        get_terminal_as<ConstructionSite>(coords) -> set_recipe(selected_recipe);
+        get_terminal_as<ConstructionSite>(coords) -> set_recipe(RecipeInfo::get_instance()->get_recipe(selected_recipe[0], selected_recipe[1]));
     }
 }
 

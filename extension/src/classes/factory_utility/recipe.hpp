@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../base_pop.hpp"
 #include <unordered_map>
+#include "../base_pop.hpp"
 
 using namespace godot;
 
@@ -11,15 +11,16 @@ enum PopTypes {
     none = 99
 };
 
-class Recipe {
+class BasePop;
 
+class Recipe {
     std::unordered_map<PopTypes, std::vector<BasePop*>> employees;
     std::unordered_map<int, int> inputs;
     std::unordered_map<int, int> outputs;
     std::unordered_map<PopTypes, int> pops_needed;
 
     protected:
-    PopTypes get_pop_type(BasePop* pop) const;
+    PopTypes get_pop_type(const BasePop* pop) const;
     bool does_need_pop_type(PopTypes pop_type) const;
 
     public:
@@ -27,9 +28,10 @@ class Recipe {
 
     Recipe();
     Recipe(std::unordered_map<int, int> &p_inputs, std::unordered_map<int, int> &p_outputs, std::unordered_map<PopTypes, int> &p_pops_needed);
+    Recipe(const Recipe& other);
     Dictionary get_inputs_dict() const;
     Dictionary get_outputs_dict() const;
-    bool is_pop_needed(BasePop* pop) const;
+    bool is_pop_needed(const BasePop* pop) const;
     void add_pop(BasePop* pop);
     void remove_pop(BasePop* pop);
     int get_employement() const;
@@ -41,6 +43,10 @@ class Recipe {
     double get_level() const;
     int get_level_without_employment() const;
 
+    bool has_recipe() const;
+    bool does_create(int type) const;
+    bool is_primary() const;
+    void clear();
 
     // Getters
     std::unordered_map<int, int> get_inputs() const;

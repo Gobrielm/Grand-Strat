@@ -16,11 +16,7 @@ protected:
 public:
     AiFactory();
     virtual ~AiFactory();
-    AiFactory(Vector2i new_location, int player_owner, Dictionary new_inputs, Dictionary new_outputs);
-
-    static Ref<AiFactory> create(Vector2i new_location, int player_owner, Dictionary new_inputs, Dictionary new_outputs);
-
-    virtual void initialize(Vector2i new_location, int player_owner, Dictionary new_inputs, Dictionary new_outputs);
+    AiFactory(Vector2i new_location, int player_owner, Recipe* p_recipe);
 
     //Orders
     void change_orders();

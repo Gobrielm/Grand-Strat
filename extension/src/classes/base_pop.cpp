@@ -107,7 +107,7 @@ bool BasePop::is_seeking_employment() const {
 bool BasePop::will_work_here(Ref<FactoryTemplate> fact) const {
     //Checking of suitability, eg Literacy, 
     
-    if (!fact -> is_hiring()) {
+    if (!fact -> is_hiring(this)) {
         return false;
     } 
 	float income = fact -> get_wage();

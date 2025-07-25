@@ -2,8 +2,6 @@
 #include "ai_factory.hpp"
 
 void AiFactory::_bind_methods() {
-    ClassDB::bind_static_method(get_class_static(), D_METHOD("create", "new_location", "player_owner", "new_inputs", "new_outputs"), &AiFactory::create);
-
     ClassDB::bind_method(D_METHOD("day_tick"), &AiFactory::day_tick);
     ClassDB::bind_method(D_METHOD("month_tick"), &AiFactory::month_tick);
 }
@@ -14,15 +12,7 @@ AiFactory::~AiFactory() {
 
 }
 
-AiFactory::AiFactory(Vector2i new_location, int player_owner, Dictionary new_inputs, Dictionary new_outputs): Factory(new_location, player_owner, new_inputs, new_outputs) {}
-
-Ref<AiFactory> AiFactory::create(Vector2i new_location, int player_owner, Dictionary new_inputs, Dictionary new_outputs) {
-    return Ref<AiFactory>(memnew(AiFactory(new_location, player_owner, new_inputs, new_outputs)));
-}
-
-void AiFactory::initialize(Vector2i new_location, int player_owner, Dictionary new_inputs, Dictionary new_outputs) {
-    Factory::initialize(new_location, player_owner, new_inputs, new_outputs);
-}
+AiFactory::AiFactory(Vector2i new_location, int player_owner, Recipe* p_recipe): Factory(new_location, player_owner, p_recipe) {}
 
 //Orders
 void AiFactory::change_orders() {
@@ -31,19 +21,20 @@ void AiFactory::change_orders() {
 }
 
 void AiFactory::change_buy_orders() {
-    for (auto& [type, __]: inputs) {
+    for (auto& [type, __]: get_inputs()) {
         change_order(type, true);
     }
 }
 
 void AiFactory::change_sell_orders() {
-    for (auto& [type, __]: outputs) {
+    for (auto& [type, __]: get_outputs()) {
         change_order(type, false);
     }
 }
 
 void AiFactory::change_order(int type, bool buy) {
-    int amount = (buy ? inputs[type]: outputs[type]) * get_level();
+    std::unordered_map<int, int> outputs = get_outputs();
+    int amount = (buy ? get_inputs()[type]: outputs[type]) * get_level();
     float price = get_local_price(type);
     float limit_price = buy ? price * 1.2: price * 0.8;
 
@@ -60,7 +51,7 @@ void AiFactory::change_order(int type, bool buy) {
 
 //Upgrades
 void AiFactory::consider_upgrade() {
-    if (inputs.size() == 0) {
+    if (get_inputs().size() == 0) {
         consider_upgrade_primary();
     } else {
         consider_upgrade_secondary();
@@ -70,7 +61,7 @@ void AiFactory::consider_upgrade() {
 void AiFactory::consider_upgrade_primary() {
     float total_diff = 0.0;
 	int amount = 0;
-	for (auto& [type, __]: outputs) {
+	for (auto& [type, __]: get_outputs()) {
         int max_value = TerminalMap::get_instance() -> get_cargo_value_of_tile(get_location(), type);
         if (max_value < get_level_without_employment()) {
             return;

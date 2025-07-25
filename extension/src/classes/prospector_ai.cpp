@@ -89,7 +89,7 @@ bool ProspectorAi::does_have_building_in_area_already(const Vector2i &center) { 
             m[tile] = m[curr] + 1;
 
             Ref<FactoryTemplate> factory = terminal_map -> get_terminal_as<FactoryTemplate>(tile);
-            if (factory.is_valid() && factory->get_player_owner() == get_owner_id() && factory->outputs.count(cargo_type)) {
+            if (factory.is_valid() && factory->get_player_owner() == get_owner_id() && factory->get_outputs().count(cargo_type)) {
                 
                 if (!factory->is_max_level()) {
                     return true;

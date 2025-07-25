@@ -156,7 +156,7 @@ bool RoadDepot::is_road_depot_valid(Ref<RoadDepot> road_depot) const {
 
         Ref<FactoryTemplate> fact = terminal_map->get_terminal_as<FactoryTemplate>(tile);
 
-        for (const auto& [type, __]: fact->outputs) {
+        for (const auto& [type, __]: fact->get_outputs()) {
             supplies_provided.insert(type);
         }
     }
@@ -176,7 +176,7 @@ bool RoadDepot::is_road_depot_valid(Ref<RoadDepot> road_depot) const {
 
         Ref<FactoryTemplate> fact = terminal_map->get_terminal_as<FactoryTemplate>(tile);
 
-        for (const auto& [type, __]: fact->outputs) {
+        for (const auto& [type, __]: fact->get_outputs()) {
             if (supplies_needed.count(type)) return true;  // If other depot makes what this depot needs
         }
     }

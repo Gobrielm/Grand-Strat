@@ -1,5 +1,6 @@
 #include "factory_template.hpp"
 #include "factory_local_price_controller.hpp"
+#include "factory_utility/recipe.hpp"
 #include "base_pop.hpp"
 #include "../singletons/cargo_info.hpp"
 #include "../singletons/terminal_map.hpp"
@@ -9,9 +10,6 @@
 using namespace godot;
 
 void FactoryTemplate::_bind_methods() {
-    ClassDB::bind_static_method(get_class_static(), D_METHOD("create", "new_location", "player_owner", "new_inputs", "new_outputs"), &FactoryTemplate::create);
-    ClassDB::bind_method(D_METHOD("initialize", "new_location", "player_owner", "new_inputs", "new_outputs"), &FactoryTemplate::initialize);
-
     ClassDB::bind_method(D_METHOD("get_min_price", "type"), &FactoryTemplate::get_min_price);
     ClassDB::bind_method(D_METHOD("get_max_price", "type"), &FactoryTemplate::get_max_price);
     ClassDB::bind_method(D_METHOD("does_create", "type"), &FactoryTemplate::does_create);
@@ -26,7 +24,7 @@ void FactoryTemplate::_bind_methods() {
 
     ClassDB::bind_method(D_METHOD("get_last_month_income"), &FactoryTemplate::get_last_month_income);
 
-    ClassDB::bind_method(D_METHOD("is_hiring"), &FactoryTemplate::is_hiring);
+    ClassDB::bind_method(D_METHOD("is_hiring", "pop"), &FactoryTemplate::is_hiring);
     ClassDB::bind_method(D_METHOD("is_firing"), &FactoryTemplate::is_firing);
     ClassDB::bind_method(D_METHOD("get_wage"), &FactoryTemplate::get_wage);
 
@@ -43,16 +41,13 @@ void FactoryTemplate::_bind_methods() {
 FactoryTemplate::FactoryTemplate() {}
 
 
-FactoryTemplate::FactoryTemplate(Vector2i new_location, int player_owner, Recipe p_recipe) {
+FactoryTemplate::FactoryTemplate(Vector2i new_location, int player_owner, Recipe* p_recipe) {
     initialize(new_location, player_owner, p_recipe);
 }
 
 FactoryTemplate::~FactoryTemplate() {}
 
-Ref<FactoryTemplate> FactoryTemplate::create(Vector2i new_location, int player_owner, Recipe p_recipe) {
-    return Ref<FactoryTemplate>(memnew(FactoryTemplate(new_location, player_owner, p_recipe)));
-}
-void FactoryTemplate::initialize(Vector2i new_location, int player_owner, Recipe p_recipe) {
+void FactoryTemplate::initialize(Vector2i new_location, int player_owner, Recipe* p_recipe) {
     Broker::initialize(new_location, player_owner);
     recipe = p_recipe;
     local_pricer = memnew(FactoryLocalPriceController);
@@ -74,11 +69,11 @@ bool FactoryTemplate::does_create(int type) const {
 }
 
 std::unordered_map<int, int> FactoryTemplate::get_outputs() const {
-    return recipe.get_outputs();
+    return recipe->get_outputs();
 }
 
 std::unordered_map<int, int> FactoryTemplate::get_inputs() const {
-    return recipe.get_inputs();
+    return recipe->get_inputs();
 }
 
 void FactoryTemplate::create_recipe() {
@@ -142,11 +137,11 @@ void FactoryTemplate::distribute_cargo() {
 }
 
 int FactoryTemplate::get_level() const {
-    return recipe.get_level();
+    return recipe->get_level();
 }
 
 int FactoryTemplate::get_level_without_employment() const {
-    return recipe.get_level_without_employment();
+    return recipe->get_level_without_employment();
 }
 
 bool FactoryTemplate::is_max_level() const {
@@ -172,13 +167,13 @@ void FactoryTemplate::upgrade() {
     int cost = get_cost_for_upgrade();
     if (get_cash() >= cost && can_factory_upgrade()) {
         remove_cash(cost);
-        recipe.upgrade();
+        recipe->upgrade();
     }
 }
 
 void FactoryTemplate::admin_upgrade() {
     if (can_factory_upgrade()) {
-        recipe.upgrade();
+        recipe->upgrade();
     }
     
 }
@@ -214,8 +209,8 @@ float FactoryTemplate::get_last_month_income() const {
     return income_list.front();
 }
 
-bool FactoryTemplate::is_hiring(BasePop* pop) const {
-    return (recipe.is_pop_needed(pop));
+bool FactoryTemplate::is_hiring(const BasePop* pop) const {
+    return (recipe->is_pop_needed(pop));
 }
 
 bool FactoryTemplate::is_firing() const {
@@ -232,13 +227,13 @@ float FactoryTemplate::get_wage() const {
     }
     available *= 30;
 
-    return available / recipe.get_pops_needed_num();
+    return available / recipe->get_pops_needed_num();
 }
 
 void FactoryTemplate::work_here(BasePop* pop) {
     if (is_hiring(pop)) {
         m.lock();
-        recipe.add_pop(pop);
+        recipe->add_pop(pop);
         m.unlock();
         pop->employ(get_wage());
     }
@@ -246,14 +241,14 @@ void FactoryTemplate::work_here(BasePop* pop) {
 
 void FactoryTemplate::pay_employees() {
     float wage = get_wage();
-    for (BasePop* employee : recipe.get_employees()) {
+    for (BasePop* employee : recipe->get_employees()) {
         employee->pay_wage(transfer_cash(wage));
     }
 }
 
 void FactoryTemplate::fire_employees() {
     std::scoped_lock lock(m);
-    recipe.fire_employees();
+    recipe->fire_employees();
 }
 
 void FactoryTemplate::day_tick() {
