@@ -30,7 +30,7 @@ FactoryCreator* FactoryCreator::get_instance() {
 void FactoryCreator::create_primary_industry(int type, Vector2i coords, int player_id, int mult) {
     Recipe* recipe = RecipeInfo::get_instance()->get_primary_recipe_for_type(type);
     Ref<Factory> factory;
-    if (player_id < 0) {
+    if (player_id <= 0) {
         factory = Ref<AiFactory>(memnew(AiFactory())); // This may not create an ai factory
     } else {
         factory.instantiate();

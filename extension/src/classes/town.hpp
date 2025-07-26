@@ -6,6 +6,7 @@
 #include "broker.hpp"
 #include "factory_template.hpp"
 #include "base_pop.hpp"
+#include "town_utility/town_cargo.hpp"
 
 class CargoInfo;
 struct PopSaleResult;
@@ -22,6 +23,7 @@ private:
 
 protected:
     static void _bind_methods();
+    std::vector<TownCargo*> market_storage;
 
 public:
     Town();
@@ -54,6 +56,7 @@ public:
     void sell_to_pops();
     void sell_type(int type);
     void sell_type_to_rural_pops(int type, PopSaleResult& current_sales);
+    std::unordered_map<int, BasePop*> get_rural_pops() const;
     void sell_type_to_city_pops(int type, PopSaleResult& current_sales);
     void sell_type_to_pops(int type, PopSaleResult& current_sales, const std::unordered_map<int, BasePop*> &pops);
     int get_total_pops() const;
@@ -64,6 +67,9 @@ public:
     void sell_to_other_brokers();
     void distribute_from_order(const TradeOrder* order) override;
     std::vector<bool> get_accepts_vector() const override;
+
+    //Storage Replacement
+    void buy_cargo(int type, int amount, float price, Vector2i seller) override;
 
     //Economy Stats
     float get_total_wealth_of_pops();

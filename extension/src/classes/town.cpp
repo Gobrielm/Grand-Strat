@@ -92,7 +92,7 @@ int Town::get_demand(int type) const {
 //To Buy
 bool Town::is_price_acceptable(int type, float price) const {
     std::scoped_lock lock(m);
-    return (local_pricer -> get_local_price(type) * MAX_TRADE_MARGIN) >= price;
+    return (local_pricer -> get_local_price(type)) >= price;
 }
 
 int Town::get_desired_cargo(int type, float price) const {
@@ -205,9 +205,13 @@ void Town::sell_type(int type) {
 }
 
 void Town::sell_type_to_rural_pops(int type, PopSaleResult& current_sales) {
+    sell_type_to_pops(type, current_sales, get_rural_pops());
+}
+
+std::unordered_map<int, BasePop*> Town::get_rural_pops() const {
     Ref<ProvinceManager> province_manager =  ProvinceManager::get_instance();
-    Province* province = province_manager->get_province(province_manager->get_province_id(get_location())); // Province where city is located
-    sell_type_to_pops(type, current_sales, province->get_rural_pops());
+    Province* province = province_manager->get_province(province_manager->get_province_id(get_location()));// Province where city is located
+    return province->get_rural_pops();
 }
 
 void Town::sell_type_to_city_pops(int type, PopSaleResult& current_sales) {
@@ -249,6 +253,11 @@ Ref<FactoryTemplate> Town::find_employment(BasePop* pop) const {
 int Town::get_number_of_broke_pops() const {
     int count = 0;
     for (const auto& [__, pop]: city_pops) {
+        if (pop -> get_wealth() < 20) {
+            count++;
+        }
+    }
+    for (const auto& [__, pop]: get_rural_pops()) {
         if (pop -> get_wealth() < 20) {
             count++;
         }
@@ -296,6 +305,11 @@ std::vector<bool> Town::get_accepts_vector() const {
         v[type] = does_accept(type);
     }
     return v;
+}
+
+void Town::buy_cargo(int type, int amount, float price, Vector2i seller) {
+    TownCargo* town_cargo = new TownCargo(seller, type, amount, price);
+    market_storage.push_back(town_cargo);
 }
 
 //Economy Stats

@@ -90,21 +90,20 @@ bool Broker::is_price_acceptable(int type, float pricePer) const {
     return trade_orders.at(type)->get_limit_price() >= pricePer;
 }
 
-void Broker::buy_cargo(int type, int amount, float price) {
-    add_cargo_ignore_accepts(type, amount);
+void Broker::buy_cargo(int type, int amount, float price, Vector2i seller) {
+    Ref<Broker> broker = TerminalMap::get_instance()->get_broker(seller);
     int total = std::round(amount * price);
+    add_cargo_ignore_accepts(type, amount);
     remove_cash(total);
-    std::scoped_lock lock(m);
-    change_in_cash -= total;
+
+    broker->add_cash(total);
+    broker->report_change_in_cash(total);
+
+    report_change_in_cash(-total);
 }
 
-int Broker::sell_cargo(int type, int amount, float price) {
-    int transferred = transfer_cargo(type, amount);
-    int total = std::round(price * transferred);
-    add_cash(total);
-    std::scoped_lock lock(m);
-    change_in_cash += total;
-    return transferred;
+int Broker::sell_cargo(int type, int amount) {
+    return transfer_cargo(type, amount);
 }
 
 int Broker::add_cargo_ignore_accepts(int type, int amount) { //Make sure 
@@ -112,6 +111,11 @@ int Broker::add_cargo_ignore_accepts(int type, int amount) { //Make sure
     local_pricer -> add_supply(type, amount);
     m.unlock();
     return FixedHold::add_cargo_ignore_accepts(type, amount);
+}
+
+void Broker::report_change_in_cash(float amount) {
+    std::scoped_lock lock(m);
+    change_in_cash += amount;
 }
 
 int Broker::add_cargo(int type, int amount) { // If amount is ever negitive, it will break
@@ -223,7 +227,6 @@ void Broker::distribute_from_order(const TradeOrder* order) {
         if (get_cargo_amount(order->get_type()) == 0) return;
         Ref<RoadDepot> road_depot = TerminalMap::get_instance() -> get_terminal_as<RoadDepot>(tile);
         if (road_depot.is_null()) continue;
-        
         distribute_to_road_depot_brokers(road_depot, order, s);
     }
     
@@ -251,8 +254,8 @@ void Broker::distribute_to_order(Ref<Broker> otherBroker, const TradeOrder* orde
 
     int amount = std::min(desired, order->get_amount()); 
     if (amount > 0) {
-        amount = sell_cargo(type, amount, price);
-        otherBroker->buy_cargo(type, amount, price);
+        amount = sell_cargo(type, amount);
+        otherBroker->buy_cargo(type, amount, price, get_location());
         if (road_depot.is_valid()) {
             road_depot->add_cash(transfer_cash(amount * price * road_depot->get_fee()));
         }

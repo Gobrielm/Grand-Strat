@@ -260,7 +260,7 @@ void FactoryTemplate::fire_employees() {
 }
 
 void FactoryTemplate::day_tick() {
-    print_line("Never be Run");
+    print_error("Never be Run, factory template day tick");
     ERR_FAIL();
 }
 
