@@ -35,6 +35,7 @@
 #include "../singletons/terminal_map.hpp"
 #include "../singletons/data_collector.hpp"
 #include "../singletons/province_manager.hpp"
+#include "../singletons/factory_creator.hpp"
 
 
 
@@ -80,6 +81,7 @@ void initialize_gdextension_types(ModuleInitializationLevel p_level)
 	GDREGISTER_CLASS(TerminalMap);
 	GDREGISTER_CLASS(DataCollector);
 	GDREGISTER_CLASS(ProvinceManager);
+	GDREGISTER_CLASS(FactoryCreator);
 	StaticRegistry::initialize();
 	
 }

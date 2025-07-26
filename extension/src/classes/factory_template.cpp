@@ -84,10 +84,10 @@ void FactoryTemplate::create_recipe() {
 
 int FactoryTemplate::get_batch_size() const {
     int batch_size = get_level();
-    for (auto& [type, amount]: get_outputs()) {
+    for (auto& [type, amount]: get_inputs()) {
         batch_size = std::min((int)floor(get_cargo_amount(type) / amount), batch_size);
     }
-    for (auto& [type, amount]: get_inputs()) {
+    for (auto& [type, amount]: get_outputs()) {
         batch_size = std::min((int)floor((get_max_storage() - get_cargo_amount(type)) / amount), batch_size);
     }
     return batch_size;
@@ -145,7 +145,7 @@ void FactoryTemplate::distribute_cargo() {
 }
 
 int FactoryTemplate::get_level() const {
-    return recipe->get_level();
+    return round(recipe->get_level());
 }
 
 int FactoryTemplate::get_level_without_employment() const {

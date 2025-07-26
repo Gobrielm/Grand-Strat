@@ -6,6 +6,7 @@
 #include "../singletons/terminal_map.hpp"
 #include "../singletons/cargo_info.hpp"
 #include "../singletons/road_map.hpp"
+#include "../singletons/factory_creator.hpp"
 
 void InitialBuilder::_bind_methods() {
     ClassDB::bind_static_method(get_class_static(), D_METHOD("create", "p_country_id"), &InitialBuilder::create);
@@ -53,18 +54,8 @@ void InitialBuilder::build_factory_type(int type, Province* province) {
                 //Need to check if this factory will be cutoff, then check neighboors
                 if (will_any_factory_be_cut_off(tile)) continue;
                 int mult = std::min(rand() % 5, cargo_val);
-                
-                if (type == 10) {
-                    cargo_map->call("create_wheat_farm", tile, get_owner_id(), mult);
-                } else {
-                    Array recipe;
-                    recipe.push_back(Dictionary());
-                    Dictionary d;
-                    d[type] = 1;
 
-                    recipe.push_back(d);
-                    cargo_map->call("create_factory", get_owner_id(), tile, recipe, mult);
-                }
+                FactoryCreator::get_instance()->create_primary_industry(type, tile, get_owner_id(), mult);
                 
                 levels_placed += mult;
                 if (levels_placed > num_of_levels_to_place) {
@@ -174,15 +165,12 @@ int InitialBuilder::place_group_of_factories(const Vector2i &center) {
             int wood_val = get_cargo_value_of_tile(tile, "wood");
 
             if (rand() % 4 == 0) {
-                Array recipe;
-                recipe.push_back(Dictionary());
-                Dictionary d;
-                if (grain_val > wood_val) d[CargoInfo::get_instance()->get_cargo_type("grain")] = 1;
-                else d[CargoInfo::get_instance()->get_cargo_type("wood")] = 1;
+                int type = -1;
+                if (grain_val > wood_val) type = CargoInfo::get_instance()->get_cargo_type("grain");
+                else type = CargoInfo::get_instance()->get_cargo_type("wood");
 
-                recipe.push_back(d);
                 int mult = std::min(5 + rand() % 10, std::max(grain_val, wood_val));
-                cargo_map->call("create_factory", get_owner_id(), tile, recipe, mult);
+                FactoryCreator::get_instance()->create_primary_industry(type, tile, get_owner_id(), mult);
                 built += mult;
             }
         }

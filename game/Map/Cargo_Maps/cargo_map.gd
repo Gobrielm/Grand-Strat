@@ -89,7 +89,7 @@ func create_factory(p_player_id: int, coords: Vector2i, obj_recipe: Array, mult:
 	
 	for i: int in range(1, mult):
 		new_factory.admin_upgrade()
-	call_thread_safe("call_set_tile_rpc", coords, get_atlas_cell((obj_recipe[1] as Dictionary).keys()[0]))
+	call_thread_safe("call_set_tile_rpc", coords, (obj_recipe[1] as Dictionary).keys()[0])
 	add_terminal_to_province(new_factory)
 	TerminalMap.get_instance().create_terminal(new_factory)
 
@@ -97,12 +97,12 @@ func create_wheat_farm(coords: Vector2i, p_player_id: int, mult: int) -> void:
 	var new_factory: Factory = WheatFarm.create(coords, p_player_id)
 	for i: int in range(1, mult):
 		new_factory.admin_upgrade()
-	call_thread_safe("call_set_tile_rpc", coords, Vector2i(4, 0))
+	call_thread_safe("call_set_tile_rpc", coords, 10)
 	add_terminal_to_province(new_factory)
 	TerminalMap.get_instance().create_terminal(new_factory)
 
-func call_set_tile_rpc(coords: Vector2i, atlas_cell: Vector2i) -> void:
-	set_tile.rpc(coords, atlas_cell)
+func call_set_tile_rpc(coords: Vector2i, type: int) -> void:
+	set_tile.rpc(coords, get_atlas_cell(type))
 
 func place_test_industry() -> void:
 	var output: Dictionary = {}
@@ -141,7 +141,9 @@ func _on_cargo_values_finished_created_map_resources() -> void:
 		place_random_industries()
 
 func test() -> void:
-	create_factory(0, Vector2i(101, -117), recipe.get_primary_recipe_for_type(CargoInfo.get_instance().get_cargo_type("grain")), 1)
-	place_random_road_depot(Vector2i(101, -117))
+	FactoryCreator.get_instance().create_primary_industry(10, Vector2i(101, -117), 0, 1)
+	var tile1: Vector2i = place_random_road_depot(Vector2i(101, -117))
+	
 	create_town(Vector2i(101, -114), 177)
-	place_random_road_depot(Vector2i(101, -114))
+	var tile2: Vector2i = place_random_road_depot(Vector2i(101, -114))
+	RoadMap.get_instance().bfs_and_connect(tile1, tile2)

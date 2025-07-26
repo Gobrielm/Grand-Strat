@@ -10,6 +10,9 @@ Recipe::Recipe(std::unordered_map<int, int> &p_inputs, std::unordered_map<int, i
     inputs = p_inputs;
     outputs = p_outputs;
     pops_needed = p_pops_needed;
+    for (const auto &[pop_type, __]: pops_needed) {
+        employees[pop_type] = {};
+    }
 }
 
 Recipe::Recipe(const Recipe& other) {
@@ -40,9 +43,9 @@ bool Recipe::is_pop_needed(const BasePop* pop) const {
 }
 
 PopTypes Recipe::get_pop_type(const BasePop* pop) const {
-    if (typeid(pop) == typeid(RuralPop)) { // Checks pop is needed and if it has enough
+    if (typeid(*pop) == typeid(RuralPop)) { // Checks pop is needed and if it has enough
         return rural;
-    } else if (typeid(pop) == typeid(TownPop)) {
+    } else if (typeid(*pop) == typeid(TownPop)) {
         return town;
     }
     return none;
