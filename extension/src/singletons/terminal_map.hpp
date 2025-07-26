@@ -74,10 +74,12 @@ public:
 
     //Creators
     void create_terminal(Ref<Terminal> p_terminal);
+    void encode_factory(Ref<Factory> factory, int mult = 1);
     void add_connected_brokers(Ref<Broker> p_broker);
     void add_connected_stations(Ref<RoadDepot> road_depot);
     void find_stations(Ref<Broker> broker);
     Ref<Factory> create_factory(const Vector2i &p_location, int p_player_owner, const Dictionary &p_inputs, const Dictionary &p_outputs);
+    Ref<Factory> create_primary_factory(const Vector2i &p_location, int p_player_owner, int type) const;
     
     //Checkers
     int get_cargo_value_of_tile(const Vector2i &coords, int type) const;

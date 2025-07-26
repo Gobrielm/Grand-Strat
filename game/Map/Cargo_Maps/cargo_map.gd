@@ -85,14 +85,11 @@ func get_most_prominent_resources(province: Province) -> Dictionary:
 	return d
 
 func create_factory(p_player_id: int, coords: Vector2i, obj_recipe: Array, mult: int) -> void:
-	var new_factory: Factory
-	if p_player_id > 0:
-		new_factory =  Factory.create(coords, p_player_id, obj_recipe[0], obj_recipe[1])
-	else:
-		new_factory =  AiFactory.create(coords, p_player_id, obj_recipe[0], obj_recipe[1])
+	var new_factory: Factory = TerminalMap.get_instance().create_factory(coords, p_player_id, obj_recipe[0], obj_recipe[1])
+	
 	for i: int in range(1, mult):
 		new_factory.admin_upgrade()
-	call_thread_safe("call_set_tile_rpc", coords, get_atlas_cell(obj_recipe))
+	call_thread_safe("call_set_tile_rpc", coords, get_atlas_cell((obj_recipe[1] as Dictionary).keys()[0]))
 	add_terminal_to_province(new_factory)
 	TerminalMap.get_instance().create_terminal(new_factory)
 
@@ -112,10 +109,8 @@ func place_test_industry() -> void:
 	output[1] = 1
 	create_factory(-1, Vector2i(0, 0), [{}, output], 1)
 
-func get_atlas_cell(obj_recipe: Array) -> Vector2i:
-	var output: Dictionary = obj_recipe[1]
-	if obj_recipe[0].is_empty() and output.size() == 1:
-		var primary_type: int = output.keys()[0]
+func get_atlas_cell(primary_type: int = -1) -> Vector2i:
+	if primary_type != -1:
 		if (primary_type >= 2 and primary_type <= 7) or primary_type == 20:
 			return Vector2i(3, 0)
 		elif primary_type == 10 or primary_type == 13 or primary_type == 14 or (primary_type >= 16 and primary_type <= 19):

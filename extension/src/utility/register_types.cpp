@@ -35,7 +35,6 @@
 #include "../singletons/terminal_map.hpp"
 #include "../singletons/data_collector.hpp"
 #include "../singletons/province_manager.hpp"
-#include "../singletons/recipe_info.hpp"
 
 
 
@@ -81,7 +80,6 @@ void initialize_gdextension_types(ModuleInitializationLevel p_level)
 	GDREGISTER_CLASS(TerminalMap);
 	GDREGISTER_CLASS(DataCollector);
 	GDREGISTER_CLASS(ProvinceManager);
-	GDREGISTER_CLASS(RecipeInfo);
 	StaticRegistry::initialize();
 	
 }

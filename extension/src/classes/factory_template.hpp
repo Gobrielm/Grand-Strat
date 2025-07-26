@@ -51,6 +51,7 @@ public:
     void remove_inputs(int batch_size);
     void add_outputs(int batch_size);
     String get_recipe_as_string() const;
+    int get_primary_type() const;
 
     // Selling
     void distribute_cargo();

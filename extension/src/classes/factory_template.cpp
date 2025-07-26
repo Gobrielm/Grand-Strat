@@ -126,6 +126,14 @@ String FactoryTemplate::get_recipe_as_string() const {
     return x;
 }
 
+int FactoryTemplate::get_primary_type() const {
+    if (recipe->get_outputs().size() == 0) {
+        return -1;
+    } else {
+        return (*get_outputs().begin()).first;
+    }
+}
+
 void FactoryTemplate::distribute_cargo() {
     for (const auto& [type, __]: get_outputs()) {
         TradeOrder* order = get_order(type);

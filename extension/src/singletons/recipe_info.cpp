@@ -2,21 +2,17 @@
 #include "cargo_info.hpp"
 #include "../classes/factory_utility/recipe.hpp"
 
-Ref<RecipeInfo> RecipeInfo::singleton_instance = nullptr;
-
-void RecipeInfo::_bind_methods() {
-    ClassDB::bind_static_method(get_class_static(), D_METHOD("get_instance"), &RecipeInfo::get_instance);
-}
+RecipeInfo* RecipeInfo::singleton_instance = nullptr;
 
 RecipeInfo::RecipeInfo() {
     add_recipes();
 }
 
 void RecipeInfo::create() {
-    singleton_instance = Ref<RecipeInfo>(memnew(RecipeInfo));
+    singleton_instance = (new(RecipeInfo));
 }
 
-Ref<RecipeInfo> RecipeInfo::get_instance() {
+RecipeInfo* RecipeInfo::get_instance() {
     return singleton_instance;
 }
 
@@ -85,10 +81,17 @@ void RecipeInfo::add_recipes() {
 void RecipeInfo::create_recipe(std::vector<std::unordered_map<std::string, int>> v, std::unordered_map<PopTypes, int> p) {
     Ref<CargoInfo> cargo_info = CargoInfo::get_instance();
     std::vector<std::unordered_map<int, int>> v_int;
+    v_int.emplace_back(); v_int.emplace_back(); // Add two maps to the vector for i/o
     for (const auto &[cargo_name, amount]: v[0]) {
+        if (cargo_name.size() == 0) {
+            continue;
+        }
         v_int[0][cargo_info->get_cargo_type(cargo_name.c_str())] = amount;
     }
     for (const auto &[cargo_name, amount]: v[1]) {
+        if (cargo_name.size() == 0) {
+            continue;
+        }
         v_int[1][cargo_info->get_cargo_type(cargo_name.c_str())] = amount;
     }
 
@@ -116,6 +119,7 @@ Recipe* RecipeInfo::get_recipe(Dictionary inputs, Dictionary outputs) {
             return memnew(Recipe(*recipe));
         }
     }
+    return nullptr;
 }
 
 bool RecipeInfo::map_and_dict_match(Dictionary d, std::unordered_map<int, int> m) {
@@ -125,4 +129,5 @@ bool RecipeInfo::map_and_dict_match(Dictionary d, std::unordered_map<int, int> m
         }
         return true;
     }
+    return false;
 }

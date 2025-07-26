@@ -1,6 +1,7 @@
 #include "terminal_map.hpp"
 #include "road_map.hpp"
 #include "recipe_info.hpp"
+#include "province_manager.hpp"
 #include "../classes/terminal.hpp"
 #include "../classes/station.hpp"
 #include "../classes/broker.hpp"
@@ -32,9 +33,13 @@ void TerminalMap::_bind_methods() {
     ClassDB::bind_method(D_METHOD("get_main_map"), &TerminalMap::get_main_map);
 
     // Creators
+
     ClassDB::bind_method(D_METHOD("create_terminal", "p_terminal"), &TerminalMap::create_terminal);
+    ClassDB::bind_method(D_METHOD("encode_factory", "factory", "mult"), &TerminalMap::encode_factory);
     ClassDB::bind_method(D_METHOD("add_connected_brokers", "p_broker"), &TerminalMap::add_connected_brokers);
     ClassDB::bind_method(D_METHOD("create_factory", "p_location", "p_player_owner", "p_inputs", "p_outputs"), &TerminalMap::create_factory);
+    ClassDB::bind_method(D_METHOD("create_primary_factory", "p_location", "p_player_owner", "type"), &TerminalMap::create_primary_factory);
+    
 
     // Checkers
     ClassDB::bind_method(D_METHOD("is_hold", "coords"), &TerminalMap::is_hold);
@@ -208,6 +213,17 @@ void TerminalMap::create_terminal(Ref<Terminal> p_terminal) {
     }
 }
 
+void TerminalMap::encode_factory(Ref<Factory> factory, int mult) {
+    for (int i = 1; i < mult; i++) {
+        factory->admin_upgrade();
+    }
+    Ref<ProvinceManager> province_manager = ProvinceManager::get_instance();
+    Vector2i coords = factory->get_location();
+    province_manager->get_province(province_manager->get_province_id(coords))->add_terminal(coords); // Adds to province
+    create_terminal(factory);
+    cargo_map->call("call_set_tile_rpc", coords, factory->get_primary_type());
+}
+
 void TerminalMap::add_connected_brokers(Ref<Broker> p_broker) {
     Array connected = map->get_surrounding_cells(p_broker->get_location());
     for (int i = 0; i < connected.size(); i++) {
@@ -255,6 +271,21 @@ Ref<Factory> TerminalMap::create_factory(const Vector2i &p_location, int p_playe
         Ref<AiFactory> factory;
         factory.instantiate();
         factory->initialize(p_location, p_player_owner, RecipeInfo::get_instance()->get_recipe(p_inputs, p_outputs));
+        return factory;
+    }
+}
+
+Ref<Factory> TerminalMap::create_primary_factory(const Vector2i &p_location, int p_player_owner, int type) const {
+    if (p_player_owner > 0) {
+        Ref<Factory> factory;
+        factory.instantiate();
+        
+        factory->initialize(p_location, p_player_owner, RecipeInfo::get_instance()->get_primary_recipe_for_type(type));
+        return factory;
+    } else {
+        Ref<AiFactory> factory;
+        factory.instantiate();
+        factory->initialize(p_location, p_player_owner, RecipeInfo::get_instance()->get_primary_recipe_for_type(type));
         return factory;
     }
 }
