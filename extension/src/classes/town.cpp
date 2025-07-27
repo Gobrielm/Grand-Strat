@@ -30,7 +30,6 @@ void Town::_bind_methods() {
 
     // Selling
     ClassDB::bind_method(D_METHOD("sell_to_pops"), &Town::sell_to_pops);
-    ClassDB::bind_method(D_METHOD("sell_type", "type"), &Town::sell_type);
     ClassDB::bind_method(D_METHOD("get_total_pops"), &Town::get_total_pops);
     ClassDB::bind_method(D_METHOD("sell_to_other_brokers"), &Town::sell_to_other_brokers);
     ClassDB::bind_method(D_METHOD("distribute_from_order", "order"), &Town::distribute_from_order);
@@ -43,8 +42,21 @@ void Town::_bind_methods() {
 Town::Town(): Broker(Vector2i(0, 0), 0) {
     set_max_storage(DEFAULT_MAX_STORAGE);
     local_pricer = memnew(LocalPriceController);
-    remove_cash(get_cash());
-    add_cash(INITIAL_CASH);
+    for (const auto& [type, __]: CargoInfo::get_instance()->get_base_prices()) {
+        market_storage[type] = std::priority_queue<TownCargo*, std::vector<TownCargo*>, TownCargo::TownCargoPtrCompare>();
+    }
+}
+
+Town::Town(Vector2i new_location): Broker(new_location, 0) {
+    set_max_storage(DEFAULT_MAX_STORAGE);
+    local_pricer = memnew(LocalPriceController);
+    for (const auto& [type, __]: CargoInfo::get_instance()->get_base_prices()) {
+        market_storage[type] = std::priority_queue<TownCargo*, std::vector<TownCargo*>, TownCargo::TownCargoPtrCompare>();
+    }
+}
+
+Ref<Town> Town::create(Vector2i new_location) {
+    return Ref<Town>(memnew(Town(new_location)));
 }
 
 Town::~Town() {
@@ -53,15 +65,6 @@ Town::~Town() {
     }
     city_pops.clear();
     internal_factories.clear();
-}
-
-Town::Town(Vector2i new_location): Broker(new_location, 0) {
-    set_max_storage(DEFAULT_MAX_STORAGE);
-    local_pricer = memnew(LocalPriceController);
-}
-
-Ref<Town> Town::create(Vector2i new_location) {
-    return Ref<Town>(memnew(Town(new_location)));
 }
 
 void Town::initialize(Vector2i new_location) {
@@ -178,60 +181,65 @@ void Town::add_pop(BasePop* pop) {
 
 void Town::sell_to_pops() {
     //market -> get_supply().size() represents all goods
-    for (int type = 0; type < get_supply().size(); type++) {
-        sell_type(type);
-    }
-    for (const auto& town_cargo: market_storage) {
-        
-    }
-}
-
-struct PopSaleResult {
-    double amount_sold = 0.0;
-    double amount_wanted = 0.0;
-    PopSaleResult operator+(const PopSaleResult& other) {
-        PopSaleResult toReturn;
-        toReturn.amount_sold = other.amount_sold + this->amount_sold;
-        amount_wanted = other.amount_wanted + this->amount_wanted;
-        return toReturn;
-    }
-};
-
-void Town::sell_type(int type) {
-    PopSaleResult sales;
-    sell_type_to_rural_pops(type, sales);
-    sell_type_to_city_pops(type, sales); 
+    sell_to_city_pops();
+    sell_to_rural_pops();
     
-	
-    report_attempt_to_sell(type, round(sales.amount_wanted)); //Each amount wanted by pops
-	remove_cargo(type, round(sales.amount_sold));
 }
 
-void Town::sell_type_to_rural_pops(int type, PopSaleResult& current_sales) {
-    sell_type_to_pops(type, current_sales, get_rural_pops());
+void Town::sell_to_city_pops() {
+    for (const auto &[__, pop]: city_pops) {
+        sell_to_pop(pop);
+    }
 }
+
+void Town::sell_to_rural_pops() {
+    for (const auto &[__, pop]: get_rural_pops()) {
+        sell_to_pop(pop);
+    }
+}
+
+void Town::sell_to_pop(BasePop* pop) {
+    pop->month_tick();
+    
+    for (auto& [type, pq]: market_storage) {
+        {
+            std::scoped_lock lock(m);
+            local_pricer -> add_demand(type, pop -> get_desired(type));
+        }
+        if (pq.empty()) {
+            continue;
+        }
+        TownCargo* town_cargo = pq.top();
+        int desired = pop -> get_desired(type, town_cargo->price);
+        while (desired > 0) {
+            int amount = std::min(desired, town_cargo->amount);
+            pop->buy_good(type, amount, town_cargo->price);
+            pay_factory(amount, town_cargo->price, town_cargo->source);
+            town_cargo->amount -= amount;
+
+            if (!town_cargo->amount) {
+                pq.pop();
+                if (pq.empty()) {
+                    break;
+                }
+                delete town_cargo;
+                town_cargo = pq.top();
+            }
+            desired = pop -> get_desired(type, town_cargo->price);
+        }
+    }
+}
+
+void Town::pay_factory(int amount, float price, Vector2i source) {
+    Ref<FactoryTemplate> factory = TerminalMap::get_instance()->get_terminal_as<FactoryTemplate>(source);
+    if (factory.is_null()) return; 
+    factory->add_cash(amount * price);
+}   
 
 std::unordered_map<int, BasePop*> Town::get_rural_pops() const {
     Ref<ProvinceManager> province_manager =  ProvinceManager::get_instance();
     Province* province = province_manager->get_province(province_manager->get_province_id(get_location()));// Province where city is located
     return province->get_rural_pops();
-}
-
-void Town::sell_type_to_city_pops(int type, PopSaleResult& current_sales) {
-    sell_type_to_pops(type, current_sales, city_pops);
-}
-
-void Town::sell_type_to_pops(int type, PopSaleResult& current_sales, const std::unordered_map<int, BasePop*> &pops) {
-    for (const auto &[__, pop]: pops) {
-		float price = get_local_price(type);
-		double amount = pop -> get_desired(type, price); //Float for each pop
-        current_sales.amount_wanted += amount;
-        double available_in_market = float(get_cargo_amount(type)) - current_sales.amount_sold;
-		amount = std::min(amount, available_in_market);
-		current_sales.amount_sold += amount;
-		pop->buy_good(type, amount, price);
-		add_cash(amount * price);
-    }
 }
 
 int Town::get_total_pops() const {
@@ -316,7 +324,11 @@ void Town::buy_cargo(int type, int amount, float price, Vector2i seller) {
         std::scoped_lock lock(m);
         local_pricer -> add_supply(type, amount);
     }
-    market_storage.push_back(town_cargo);
+    market_storage[town_cargo->type].push(town_cargo);
+}
+
+int Town::add_cargo(int type, int amount) {
+    return 0; // Need to pay peasant or landowner or something
 }
 
 //Economy Stats
@@ -352,7 +364,8 @@ void Town::update_buy_orders() {
 
 // Process Hooks
 void Town::day_tick() {
-    sell_to_other_brokers();
+    // sell_to_other_brokers(); Doesn't work anymore, need to redo, should include factories, construction sites, and warehouses
+    // sell_to_other_towns();
 }
 
 void Town::month_tick() {

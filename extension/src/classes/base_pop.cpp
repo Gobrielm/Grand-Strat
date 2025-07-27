@@ -19,7 +19,6 @@ void BasePop::_bind_methods() {
     ClassDB::bind_method(D_METHOD("is_income_acceptable", "p_income"), &BasePop::is_income_acceptable);
     ClassDB::bind_method(D_METHOD("get_expected_income"), &BasePop::get_expected_income);
     ClassDB::bind_method(D_METHOD("get_sol"), &BasePop::get_sol);
-    ClassDB::bind_method(D_METHOD("get_desired", "type", "price"), &BasePop::get_desired);
     ClassDB::bind_method(D_METHOD("buy_good", "type", "price"), &BasePop::buy_good);
     ClassDB::bind_method(D_METHOD("get_education_level"), &BasePop::get_education_level);
     ClassDB::bind_method(D_METHOD("get_wealth"), &BasePop::get_wealth);
@@ -52,7 +51,10 @@ BasePop::BasePop(int p_home_prov_id, Variant p_culture) {
     income = 0.0;
     education_level = 0;
     for (const auto &[type, __]: base_needs) {
-        fulfillment[type] = 0.0;
+        internal_storage[type] = 0.0;
+    }
+    for (const auto &[type, __]: specialities) {
+        internal_storage[type] = 0.0;
     }
 }
 
@@ -149,23 +151,43 @@ float BasePop::get_sol() const {
     return get_income();
 }
 
-float BasePop::get_desired(int type, float price) const {
-    float amount = 0;
-	if (base_needs.count(type)) amount += base_needs[type];
-
-	if (specialities.count(type)) amount += specialities[type];
-	
-    if (amount * price < wealth) {
-        return amount;
-    }
-	return 0;
+int BasePop::get_base_need(int type) const {
+    return base_needs.count(type) ? base_needs[type]: 0;
+}
+int BasePop::get_base_want(int type) const {
+    return specialities.count(type) ? specialities[type]: 0;
 }
 
-void BasePop::buy_good(int type, float amount, float price) {
+int BasePop::get_desired(int type) const {
+    if (!internal_storage.count(type)) {
+        return 0;
+    }
+    int amount = int(get_max_storage(type) - internal_storage.at(type));
+    if (income == 0.0 && !base_needs.count(type)) {
+        return 0; // Don't buy if not neccessary and no job
+    }
+	
+	return amount;
+}
+
+int BasePop::get_desired(int type, float price) const {
+    int amount = std::min(int(wealth / price), int(get_max_storage(type) - internal_storage.at(type)));
+    if (income == 0.0 && !base_needs.count(type)) {
+        return 0; // Don't buy if not neccessary and no job
+    }
+	
+	return amount;
+}
+
+void BasePop::buy_good(int type, int amount, float price) {
     wealth -= amount * price;
-    fulfillment[type] = amount;
+    internal_storage[type] += amount;
 	if (wealth < 0) //TODO, uh-oh
         ERR_FAIL_MSG("Not enough money to buy good as pop");
+}
+
+int BasePop::get_max_storage(int type) const {
+    return (get_base_need(type) + get_base_want(type)) * 3; // Storage is based on need, so pops have 3 months without any access before bad
 }
 
 int BasePop::get_education_level() const {
@@ -187,5 +209,15 @@ Variant BasePop::get_culture() const {
 }
 
 float BasePop::get_average_fulfillment() const {
-    return fulfillment.at(10) / base_needs.at(10);
+    return std::fmin((internal_storage.at(10) / base_needs.at(10)), 1.0);
+}
+
+void BasePop::month_tick() {
+    for (const auto& [type, __]: internal_storage) {
+        internal_storage[type] -= (get_base_need(type) + get_base_want(type));
+        if (internal_storage[type] < 0) {
+            // DO something
+            internal_storage[type] = 0;
+        }
+    }
 }

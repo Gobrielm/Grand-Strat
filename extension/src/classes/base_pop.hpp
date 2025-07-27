@@ -27,7 +27,7 @@ class BasePop : public Object {
     Variant culture;
     float income;
 
-    std::unordered_map<int, float> fulfillment;
+    std::unordered_map<int, float> internal_storage;
     
     protected:
     static void _bind_methods();
@@ -42,6 +42,8 @@ class BasePop : public Object {
     int get_pop_id() const;
     void set_home_prov_id(int p_home_prov_id);
     int get_home_prov_id() const;
+
+
     void work_here(Ref<FactoryTemplate> work);
     bool is_seeking_employment() const;
     virtual bool will_work_here(Ref<FactoryTemplate> fact) const;
@@ -52,13 +54,20 @@ class BasePop : public Object {
     bool is_income_acceptable(float p_income) const;
     float get_expected_income() const;
     float get_sol() const;
-    float get_desired(int type, float price) const;
-    void buy_good(int type, float amount, float price);
+
+    int get_base_need(int type) const;
+    int get_base_want(int type) const;
+
+    int get_desired(int type) const;
+    int get_desired(int type, float price) const;
+    void buy_good(int type, int amount, float price);
+    int get_max_storage(int type) const;
     int get_education_level() const;
     float get_wealth() const;
     float transfer_wealth();
     Variant get_culture() const;
     float get_average_fulfillment() const;
+    void month_tick();
 
     static BasePop* create(int p_home_prov_id = -1, Variant p_culture = 0);
 

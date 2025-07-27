@@ -15,8 +15,6 @@ void Broker::_bind_methods() {
     ClassDB::bind_method(D_METHOD("get_desired_cargo", "type", "pricePer"), &Broker::get_desired_cargo);
     ClassDB::bind_method(D_METHOD("get_desired_cargo_from_train", "type"), &Broker::get_desired_cargo_from_train);
     ClassDB::bind_method(D_METHOD("is_price_acceptable", "type", "pricePer"), &Broker::is_price_acceptable);
-    ClassDB::bind_method(D_METHOD("buy_cargo", "type", "amount", "price"), &Broker::buy_cargo);
-    ClassDB::bind_method(D_METHOD("sell_cargo", "type", "amount", "price"), &Broker::sell_cargo);
     ClassDB::bind_method(D_METHOD("place_order", "type", "amount", "buy", "max_price"), &Broker::place_order);
     ClassDB::bind_method(D_METHOD("edit_order", "type", "amount", "buy", "max_price"), &Broker::edit_order);
     ClassDB::bind_method(D_METHOD("get_order", "type"), &Broker::get_order);

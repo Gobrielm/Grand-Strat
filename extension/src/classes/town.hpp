@@ -9,7 +9,6 @@
 #include "town_utility/town_cargo.hpp"
 
 class CargoInfo;
-struct PopSaleResult;
 
 using namespace godot;
 
@@ -54,11 +53,11 @@ public:
     //Pop stuff
     void add_pop(BasePop* pop);
     void sell_to_pops();
-    void sell_type(int type);
-    void sell_type_to_rural_pops(int type, PopSaleResult& current_sales);
+    void sell_to_rural_pops();
+    void sell_to_city_pops();
+    void sell_to_pop(BasePop* pop);
+    void pay_factory(int amount, float price, Vector2i source);
     std::unordered_map<int, BasePop*> get_rural_pops() const;
-    void sell_type_to_city_pops(int type, PopSaleResult& current_sales);
-    void sell_type_to_pops(int type, PopSaleResult& current_sales, const std::unordered_map<int, BasePop*> &pops);
     int get_total_pops() const;
     Ref<FactoryTemplate> find_employment(BasePop* pop) const;
     int get_number_of_broke_pops() const;
@@ -70,6 +69,7 @@ public:
 
     //Storage Replacement
     void buy_cargo(int type, int amount, float price, Vector2i seller) override;
+    int add_cargo(int type, int amount) override;
 
     //Economy Stats
     float get_total_wealth_of_pops();
