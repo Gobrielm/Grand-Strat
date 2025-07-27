@@ -43,10 +43,11 @@ class Broker : public FixedHold {
 
     virtual bool is_price_acceptable(int type, float pricePer) const;
 
-    virtual void buy_cargo(int type, int amount, float price);
-    virtual int sell_cargo(int type, int amount, float price);
+    virtual void buy_cargo(int type, int amount, float price, Vector2i seller);
+    int sell_cargo(int type, int amount);
     int add_cargo(int type, int amount) override;
     int add_cargo_ignore_accepts(int type, int amount) override;
+    void report_change_in_cash(float amount);
 
     virtual void place_order(int type, int amount, bool buy, float maxPrice);
     virtual void edit_order(int type, int amount, bool buy, float maxPrice);

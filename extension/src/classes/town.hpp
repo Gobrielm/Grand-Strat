@@ -23,7 +23,7 @@ private:
 
 protected:
     static void _bind_methods();
-    std::vector<TownCargo*> market_storage;
+    std::unordered_map<int, std::priority_queue<TownCargo*, std::vector<TownCargo*>, TownCargo::TownCargoPtrCompare>> market_storage;
 
 public:
     Town();
