@@ -97,13 +97,13 @@ bool Town::is_price_acceptable(int type, float price) const {
 
 int Town::get_desired_cargo(int type, float price) const {
     if (is_price_acceptable(type, price)) {
-		int amount_could_get = std::min(get_max_storage() - get_cargo_amount(type), get_amount_can_buy(price));
+		int amount_could_get = std::min(get_max_storage() - get_cargo_amount(type), get_amount_can_buy(price)); // TODO, add tracker for this since other thing is vector
         int amount_wanted = 0;
         {
             std::scoped_lock lock(m);
-            amount_wanted = ceil(local_pricer -> get_last_month_demand(type) / 25);
+            amount_wanted = ceil(local_pricer -> get_last_month_demand(type) / 25); // Buy a bit more than last month just to fill storage
         }
-		return std::min(amount_wanted, amount_could_get); // While buy a bit more than last month just to fill storage
+		return std::min(amount_wanted, amount_could_get); 
     }
 	return 0;
 }
@@ -180,6 +180,9 @@ void Town::sell_to_pops() {
     //market -> get_supply().size() represents all goods
     for (int type = 0; type < get_supply().size(); type++) {
         sell_type(type);
+    }
+    for (const auto& town_cargo: market_storage) {
+        
     }
 }
 
@@ -309,6 +312,10 @@ std::vector<bool> Town::get_accepts_vector() const {
 
 void Town::buy_cargo(int type, int amount, float price, Vector2i seller) {
     TownCargo* town_cargo = new TownCargo(seller, type, amount, price);
+    {
+        std::scoped_lock lock(m);
+        local_pricer -> add_supply(type, amount);
+    }
     market_storage.push_back(town_cargo);
 }
 
