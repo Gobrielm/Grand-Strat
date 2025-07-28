@@ -6,12 +6,15 @@ using namespace godot;
 
 struct TownCargo {
 
-    TownCargo(Vector2i p_source, int p_type, int p_amount, float p_price);
+    TownCargo(int p_type, int p_amount, float p_price, Vector2i p_source);
     int type;
     int amount;
     int age = 0;
     float price;
     Vector2i source;
+
+    void sell_cargo(int p_amount);
+    void transfer_cargo(int p_amount);
 
     // Sorts by price
     bool operator>(const TownCargo& other) const;

@@ -214,8 +214,7 @@ void Town::sell_to_pop(BasePop* pop) {
         while (desired > 0) {
             int amount = std::min(desired, town_cargo->amount);
             pop->buy_good(type, amount, town_cargo->price);
-            pay_factory(amount, town_cargo->price, town_cargo->source);
-            town_cargo->amount -= amount;
+            town_cargo->sell_cargo(amount);
 
             if (!town_cargo->amount) {
                 pq.pop();
@@ -281,19 +280,17 @@ void Town::sell_to_other_brokers() {
     std::vector<int> supply = get_supply();
 	for (int type = 0; type < supply.size(); type++) {
         report_demand_of_brokers(type);
-        if (get_cargo_amount(type) == 0) continue;
-		TradeOrder* order = memnew(TradeOrder(type, get_cargo_amount(type), false, get_local_price(type)));
-		distribute_from_order(order);
-        memdelete(order);
+        if (market_storage[type].empty()) continue;
+		distribute_type(type);
     }
 }
 
-void Town::distribute_from_order(const TradeOrder* order) {
+void Town::distribute_type(int type) {
     //Distribute to local factories
 	for (const auto &[__, fact_vector]: internal_factories) {
 		for (Ref<FactoryTemplate> fact: fact_vector) {
-			if (fact->does_accept(order->get_type())) {
-                distribute_to_order(fact.ptr(), order); //Use ptr becuase it isn't in terminal_map
+			if (fact->does_accept(type)) {
+                distribute_type_to_broker(type, fact); //Use ptr becuase it isn't in terminal_map
             }
         }
     }
@@ -301,10 +298,40 @@ void Town::distribute_from_order(const TradeOrder* order) {
 	for (const auto &tile: connected_brokers) {
         Ref<Broker> broker = TerminalMap::get_instance() -> get_broker(tile);
         if (broker.is_null()) continue;
-        bool does_accept = broker->does_accept(order->get_type());
-		if (does_accept) {
-            distribute_to_order(broker, order);
+		if (broker->does_accept(type)) {
+            distribute_type_to_broker(type, broker);
         }
+    }
+}
+
+void Town::distribute_type_to_broker(int type, Ref<Broker> broker) {
+    auto& pq = market_storage[type];
+    float broker_price = broker->get_local_price(type);
+    if (pq.empty()) {
+        return;
+    }
+    TownCargo* town_cargo = pq.top(); // town_cargo comes from a fact/broker selling it, they would seek a higher price
+    int desired = broker -> get_desired_cargo(type, town_cargo->price);
+    while (desired > 0) {
+        int amount = std::min(desired, town_cargo->amount);
+        broker->buy_cargo(type, amount, town_cargo->price, town_cargo->source);
+        Ref<Town> town = broker;
+        if (!town.is_valid()) { // If it is a town then just transfer cargo, not sold yet
+            town_cargo->sell_cargo(amount);
+        } else {
+            town_cargo->transfer_cargo(amount);
+        }
+        
+        if (!town_cargo->amount) {
+            pq.pop();
+            if (pq.empty()) {
+                break;
+            }
+            delete town_cargo;
+        }
+
+        town_cargo = pq.top();
+        desired = broker -> get_desired_cargo(type, town_cargo->price);
     }
 }
 
@@ -319,7 +346,7 @@ std::vector<bool> Town::get_accepts_vector() const {
 }
 
 void Town::buy_cargo(int type, int amount, float price, Vector2i seller) {
-    TownCargo* town_cargo = new TownCargo(seller, type, amount, price);
+    TownCargo* town_cargo = new TownCargo(type, amount, price, seller);
     {
         std::scoped_lock lock(m);
         local_pricer -> add_supply(type, amount);

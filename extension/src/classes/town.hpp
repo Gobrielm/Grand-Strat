@@ -64,7 +64,8 @@ public:
 
     //Selling to brokers
     void sell_to_other_brokers();
-    void distribute_from_order(const TradeOrder* order) override;
+    void distribute_type(int type);
+    void distribute_type_to_broker(int type, Ref<Broker> broker);
     std::vector<bool> get_accepts_vector() const override;
 
     //Storage Replacement
