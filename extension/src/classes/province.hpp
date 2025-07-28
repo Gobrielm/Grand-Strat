@@ -66,11 +66,12 @@ class Province : public Object {
     void create_pops();
     void create_peasant_pop(Variant culture);
     void create_rural_pop(Variant culture);
+    std::vector<int> create_buildings_for_peasants();
+    void employ_peasants();
     int count_pops() const;
     void find_employment_for_pops();
     Ref<FactoryTemplate> find_employment(BasePop* pop) const;
     Ref<FactoryTemplate> find_urban_employment(BasePop* pop) const;
-    void peasant_tick();
     void month_tick();
     
 

@@ -88,6 +88,10 @@ int Recipe::get_pops_needed_num() const {
     return total;
 }
 
+float Recipe::get_employment_rate() const {
+    return get_employement() / float(get_pops_needed_num());
+}
+
 void Recipe::fire_employees() {
     int fired = 0;
     int to_fire = std::max((int)(get_employement() * 0.1), 1); // Fire atleast 1 pop
@@ -104,6 +108,19 @@ void Recipe::fire_employees() {
 
 void Recipe::upgrade() {
     level++;
+    for (const auto &[type, amount]: outputs) {
+        outputs[type] = std::round(amount * (double(level) / (level - 1.0)));
+    }
+    for (const auto &[type, amount]: inputs) {
+        inputs[type] = std::round(amount * (double(level) / (level - 1.0)));
+    }
+    for (const auto &[type, amount]: pops_needed) {
+        pops_needed[type] = std::round(amount * (double(level) / (level - 1.0)));
+    }
+}
+
+void Recipe::degrade() {
+    level--;
     for (const auto &[type, amount]: outputs) {
         outputs[type] = std::round(amount * (double(level) / (level - 1.0)));
     }

@@ -23,6 +23,7 @@ public:
     static RecipeInfo* get_instance();
     void add_recipes();
     void create_recipe(std::vector<std::unordered_map<std::string, int>> v, std::unordered_map<PopTypes, int> p);
+    static Recipe* convert_readable_recipe_into_recipe(std::vector<std::unordered_map<std::string, int>> v, std::unordered_map<PopTypes, int> p);
     void add_recipe(Recipe* recipe);
     Recipe* get_primary_recipe_for_type(int type) const;
     Recipe* get_recipe(Dictionary inputs, Dictionary outputs);

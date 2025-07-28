@@ -8,6 +8,7 @@
 #include "terminal.hpp"
 #include "factory_template.hpp"
 #include "town.hpp"
+#include "specific_buildings/subsistence_farm.hpp"
 
 void Province::_bind_methods() {
     ClassDB::bind_static_method(get_class_static(), D_METHOD("create", "p_prov_id"), &Province::create);
@@ -232,6 +233,8 @@ void Province::create_pops() {
         
         index = (index + 1) % towns.size();
     }
+
+    employ_peasants();
 }
 
 void Province::create_peasant_pop(Variant culture) {
@@ -247,6 +250,32 @@ void Province::create_rural_pop(Variant culture) {
     {
         std::scoped_lock lock(m);
         rural_pops[pop->get_pop_id()] = pop;
+    }
+}
+
+std::vector<int> Province::create_buildings_for_peasants() {
+    Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
+    std::vector<int> subsistence_farm_ids;
+    for (const Vector2i &tile: tiles) {
+        int temp = terminal_map->get_cargo_value_of_tile(tile, CargoInfo::get_instance()->get_cargo_type("grain"));
+        if (temp > 0) {
+            Ref<SubsistenceFarm> farm = Ref<SubsistenceFarm>(memnew(SubsistenceFarm(0)));
+            terminal_map->create_isolated_terminal(farm);
+            subsistence_farm_ids.push_back(farm->get_terminal_id());
+        }
+    }
+    return subsistence_farm_ids;
+}
+
+void Province::employ_peasants() {
+    Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
+    std::vector<int> farms = create_buildings_for_peasants();
+    int i = 0;
+    for (const auto& [__, pop]: peasant_pops) {
+        Ref<SubsistenceFarm> farm = terminal_map->get_terminal_as<SubsistenceFarm>(farms[i]);
+        farm->add_pop(pop);
+
+        i = (i + 1) % farms.size();
     }
 }
 
@@ -318,24 +347,7 @@ Ref<FactoryTemplate> Province::find_urban_employment(BasePop* pop) const {
     return best_fact;
 }
 
-void Province::peasant_tick() { // Creates grain for themselves a tiny bit to give to the towns
-    double extra_grain = 0;
-    for (const auto& [__, pop]: peasant_pops) {
-        extra_grain += (rand() % 3 + 1) / 10.0; // Creates between 0.1 - 0.4, ie can fed 1/10 to 4/10 other people plus themselves
-    }
-    std::vector<Vector2i> town_tiles = get_town_tiles();
-    if (town_tiles.size() == 0) {
-        return;
-    }
-    int for_each = round(extra_grain / town_tiles.size());
-    for (const Vector2i &tile: town_tiles) {
-        Ref<Town> town = TerminalMap::get_instance() -> get_town(tile);
-        town->add_cargo(CargoInfo::get_instance()->get_cargo_type("grain"), for_each);
-    }
-}
-
 void Province::month_tick() {
     find_employment_for_pops();
     // Employ or find education for peasants
-    peasant_tick();
 }

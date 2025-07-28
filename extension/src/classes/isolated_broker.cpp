@@ -1,6 +1,6 @@
 #include "isolated_broker.hpp"
 #include "town.hpp"
-#include "recipe.hpp"
+#include "factory_utility/recipe.hpp"
 #include "../singletons/cargo_info.hpp"
 #include "../singletons/terminal_map.hpp"
 
@@ -9,10 +9,20 @@ void IsolatedBroker::_bind_methods() {
 }
 
 
-IsolatedBroker::IsolatedBroker(): Firm(Vector2i(0, 0), 0) {
+IsolatedBroker::IsolatedBroker(int p_owner): Firm(Vector2i(0, 0), p_owner) {
+    std::scoped_lock lock(m);
     for (int i = 0; i < CargoInfo::get_instance()->get_number_of_goods(); i++) {
         storage[i] = 0;
     }
+}
+
+void IsolatedBroker::add_pop(BasePop* pop) {
+    {
+        std::scoped_lock lock(m);
+        recipe->add_pop(pop);
+    }
+    
+    consider_upgrade();
 }
 
 void IsolatedBroker::sell_cargo() {
@@ -27,7 +37,11 @@ void IsolatedBroker::sell_type(Ref<Town> town, int type, int amount) {
     float price = town->get_local_price(type);
     amount = std::min(amount, town->get_desired_cargo(type, price));
     town->buy_cargo(type, amount, price, get_terminal_id());
-    storage[type] -= amount;
+    {
+        std::scoped_lock lock(m);
+        storage[type] -= amount;
+    }
+    
 }
 
 bool IsolatedBroker::check_outputs() const {
@@ -66,4 +80,18 @@ void IsolatedBroker::day_tick() {
 
 void IsolatedBroker::month_tick() {
     // Something will pops maybe
+}
+
+void IsolatedBroker::consider_upgrade() {
+    std::scoped_lock lock(m);
+    if (recipe->get_employment_rate() > 0.8) {
+        recipe->upgrade();
+    }
+}
+
+void IsolatedBroker::consider_degrade() {
+    std::scoped_lock lock(m);
+    if (recipe->get_employment_rate() < 0.5) {
+        recipe->upgrade();
+    }
 }

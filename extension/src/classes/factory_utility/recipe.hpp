@@ -37,10 +37,12 @@ class Recipe {
     void remove_pop(BasePop* pop);
     int get_employement() const;
     int get_pops_needed_num() const;
+    float get_employment_rate() const;
     void fire_employees();
 
     // Levels
     virtual void upgrade();
+    virtual void degrade();
     virtual double get_level() const;
     virtual int get_level_without_employment() const;
 

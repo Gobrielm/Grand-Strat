@@ -61,7 +61,20 @@ void RecipeInfo::create_recipe(std::vector<std::unordered_map<std::string, int>>
         v_int[1][cargo_info->get_cargo_type(cargo_name.c_str())] = amount;
     }
 
-    add_recipe(memnew(Recipe(v_int[0], v_int[1], p)));
+    add_recipe(new Recipe(v_int[0], v_int[1], p));
+}
+
+Recipe* RecipeInfo::convert_readable_recipe_into_recipe(std::vector<std::unordered_map<std::string, int>> v, std::unordered_map<PopTypes, int> p) {
+    Ref<CargoInfo> cargo_info = CargoInfo::get_instance();
+    std::vector<std::unordered_map<int, int>> v_int;
+    v_int.emplace_back(); v_int.emplace_back(); // Add two maps to the vector for i/o
+    for (const auto &[cargo_name, amount]: v[0]) {
+        v_int[0][cargo_info->get_cargo_type(cargo_name.c_str())] = amount;
+    }
+    for (const auto &[cargo_name, amount]: v[1]) {
+        v_int[1][cargo_info->get_cargo_type(cargo_name.c_str())] = amount;
+    }
+    return new Recipe(v_int[0], v_int[1], p);
 }
 
 void RecipeInfo::add_recipe(Recipe* recipe) {
@@ -72,7 +85,7 @@ Recipe* RecipeInfo::get_primary_recipe_for_type(int type) const {
     for (int i = 0; i < recipes.size(); i++) {
         Recipe* recipe = recipes[i];
         if (recipe->is_primary() && recipe->does_create(type)) {
-            return memnew(Recipe(*recipe));
+            return new Recipe(*recipe);
         }
     }
     return nullptr;
@@ -82,7 +95,7 @@ Recipe* RecipeInfo::get_recipe(Dictionary inputs, Dictionary outputs) {
     for (int i = 0; i < recipes.size(); i++) {
         Recipe* recipe = recipes[i];
         if (map_and_dict_match(inputs, recipe->get_inputs()) && map_and_dict_match(outputs, recipe->get_outputs())) {
-            return memnew(Recipe(*recipe));
+            return new Recipe(*recipe);
         }
     }
     return nullptr;
