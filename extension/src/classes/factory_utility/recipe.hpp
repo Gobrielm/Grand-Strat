@@ -8,6 +8,7 @@ using namespace godot;
 enum PopTypes {
     rural = 1,
     town = 2,
+    peasant = 3,
     none = 99
 };
 
@@ -39,9 +40,9 @@ class Recipe {
     void fire_employees();
 
     // Levels
-    void upgrade();
-    double get_level() const;
-    int get_level_without_employment() const;
+    virtual void upgrade();
+    virtual double get_level() const;
+    virtual int get_level_without_employment() const;
 
     bool has_recipe() const;
     bool does_create(int type) const;

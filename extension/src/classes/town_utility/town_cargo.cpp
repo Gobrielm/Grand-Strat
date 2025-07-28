@@ -2,11 +2,11 @@
 #include "../factory_template.hpp"
 #include "../../singletons/terminal_map.hpp"
 
-TownCargo::TownCargo(int p_type, int p_amount, float p_price, Vector2i p_source) {
+TownCargo::TownCargo(int p_type, int p_amount, float p_price, int p_terminal_id) {
     type = p_type;
     amount = p_amount;
     price = p_price;
-    source = p_source;
+    terminal_id = p_terminal_id;
 }
 
 bool TownCargo::operator>(const TownCargo& other) const {
@@ -18,7 +18,7 @@ bool TownCargo::operator==(const TownCargo& other) const {
 }
 
 void TownCargo::sell_cargo(int p_amount) {
-    Ref<FactoryTemplate> factory = TerminalMap::get_instance()->get_terminal_as<FactoryTemplate>(source);
+    Ref<FactoryTemplate> factory = TerminalMap::get_instance()->get_terminal_as<FactoryTemplate>(terminal_id);
     if (factory.is_null()) return; 
     factory->add_cash(p_amount * price);
     transfer_cargo(p_amount);

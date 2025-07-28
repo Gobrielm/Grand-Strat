@@ -69,7 +69,7 @@ public:
     std::vector<bool> get_accepts_vector() const override;
 
     //Storage Replacement
-    void buy_cargo(int type, int amount, float price, Vector2i seller) override;
+    void buy_cargo(int type, int amount, float price, int p_terminal_id) override;
     int add_cargo(int type, int amount) override;
 
     //Economy Stats

@@ -37,7 +37,8 @@ private:
 
     mutable std::shared_mutex cargo_map_mutex;
     mutable std::mutex m;
-    std::unordered_map<Vector2i, Ref<Terminal>, godot_helpers::Vector2iHasher> cargo_map_terminals;
+    std::unordered_map<Vector2i, int, godot_helpers::Vector2iHasher> cargo_map_terminals;
+    std::unordered_map<int, Ref<Terminal>> terminal_id_to_terminal;
 
     TerminalMapThreadPool* thread_pool = nullptr;
 
@@ -73,8 +74,10 @@ public:
     void unpause_time();
 
     //Creators
+    void create_isolated_terminal(Ref<Terminal> p_terminal);
     void create_terminal(Ref<Terminal> p_terminal);
     void encode_factory(Ref<Factory> factory, int mult = 1);
+    void encode_factory_from_construction_site(Ref<Factory> factory);
     void add_connected_brokers(Ref<Broker> p_broker);
     void add_connected_stations(Ref<RoadDepot> road_depot);
     void find_stations(Ref<Broker> broker);
@@ -118,12 +121,27 @@ public:
     Ref<Town> get_town(const Vector2i &coords);
 
     template <typename T>
-    Ref<T> get_terminal_as(const Vector2i &coords, const std::function<bool(const Vector2i &)> &type_check = nullptr) {
+    Ref<T> get_terminal_as(const Vector2i &coords, const std::function<bool(const Vector2i &)> &type_check = nullptr) const {
         Ref<T> toReturn = Ref<T>(nullptr);
         {
             std::unique_lock lock(cargo_map_mutex);
             if (cargo_map_terminals.count(coords) == 1 && (!type_check || type_check(coords))) {
-                Ref<T> typed = cargo_map_terminals[coords];
+                Ref<T> typed = terminal_id_to_terminal.at(cargo_map_terminals.at(coords));
+                if (typed.is_valid()) {
+                    toReturn = typed;
+                }
+            }
+        }
+        return toReturn;
+    }
+
+    template <typename T>
+    Ref<T> get_terminal_as(int terminal_id) const {
+        Ref<T> toReturn = Ref<T>(nullptr);
+        {
+            std::unique_lock lock(cargo_map_mutex);
+            if (terminal_id_to_terminal.count(terminal_id) == 1) {
+                Ref<T> typed = terminal_id_to_terminal.at(terminal_id);
                 if (typed.is_valid()) {
                     toReturn = typed;
                 }

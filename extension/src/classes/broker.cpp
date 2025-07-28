@@ -88,8 +88,8 @@ bool Broker::is_price_acceptable(int type, float pricePer) const {
     return trade_orders.at(type)->get_limit_price() >= pricePer;
 }
 
-void Broker::buy_cargo(int type, int amount, float price, Vector2i seller) {
-    Ref<Broker> broker = TerminalMap::get_instance()->get_broker(seller);
+void Broker::buy_cargo(int type, int amount, float price, int p_terminal_id) {
+    Ref<Broker> broker = TerminalMap::get_instance()->get_terminal_as<Broker>(p_terminal_id);
     int total = std::round(amount * price);
     add_cargo_ignore_accepts(type, amount);
     remove_cash(total);
@@ -253,7 +253,7 @@ void Broker::distribute_to_order(Ref<Broker> otherBroker, const TradeOrder* orde
     int amount = std::min(desired, order->get_amount()); 
     if (amount > 0) {
         amount = sell_cargo(type, amount);
-        otherBroker->buy_cargo(type, amount, price, get_location());
+        otherBroker->buy_cargo(type, amount, price, get_terminal_id());
         if (road_depot.is_valid()) {
             road_depot->add_cash(transfer_cash(amount * price * road_depot->get_fee()));
         }

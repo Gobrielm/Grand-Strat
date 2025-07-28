@@ -14,6 +14,16 @@ void Terminal::_bind_methods() {
     ClassDB::add_property(Terminal::get_class_static(),  PropertyInfo(Variant::INT, "player_owner"), "", "get_player_owner");
 }
 
+Terminal::Terminal(): terminal_id(-1) {
+    location = Vector2i(0, 0);
+    player_owner = 0;
+}
+
+Terminal::Terminal(const Vector2i p_location, const int p_owner): terminal_id(total_terminals++) {
+    location = p_location;
+    player_owner = p_owner;
+}
+
 void Terminal::set_location(const Vector2i p_location) {
     std::scoped_lock lock(m);
     location = p_location;
@@ -29,10 +39,15 @@ int Terminal::get_player_owner() const {
     return player_owner;
 }
 
+int Terminal::get_terminal_id() const {
+    return terminal_id;
+}
+
 Ref<Terminal> Terminal::create(const Vector2i p_location, const int p_owner) {
     // Static factory methods typically don't need locking unless accessing shared state.
     return Ref<Terminal>(memnew(Terminal(p_location, p_owner)));
 }
+
 
 void Terminal::initialize(const Vector2i p_location, int p_owner) {
     std::scoped_lock lock(m);
@@ -40,4 +55,4 @@ void Terminal::initialize(const Vector2i p_location, int p_owner) {
     player_owner = p_owner;
 }
 
-
+int Terminal::total_terminals = 0;

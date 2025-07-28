@@ -314,7 +314,7 @@ void Town::distribute_type_to_broker(int type, Ref<Broker> broker) {
     int desired = broker -> get_desired_cargo(type, town_cargo->price);
     while (desired > 0) {
         int amount = std::min(desired, town_cargo->amount);
-        broker->buy_cargo(type, amount, town_cargo->price, town_cargo->source);
+        broker->buy_cargo(type, amount, town_cargo->price, town_cargo->terminal_id);
         Ref<Town> town = broker;
         if (!town.is_valid()) { // If it is a town then just transfer cargo, not sold yet
             town_cargo->sell_cargo(amount);
@@ -345,8 +345,8 @@ std::vector<bool> Town::get_accepts_vector() const {
     return v;
 }
 
-void Town::buy_cargo(int type, int amount, float price, Vector2i seller) {
-    TownCargo* town_cargo = new TownCargo(type, amount, price, seller);
+void Town::buy_cargo(int type, int amount, float price, int p_terminal_id) {
+    TownCargo* town_cargo = new TownCargo(type, amount, price, p_terminal_id);
     {
         std::scoped_lock lock(m);
         local_pricer -> add_supply(type, amount);

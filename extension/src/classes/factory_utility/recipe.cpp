@@ -1,6 +1,7 @@
 #include "recipe.hpp"
 #include "../Pops/rural_pop.hpp"
 #include "../town_pop.hpp"
+#include "../Pops/peasant_pop.hpp"
 
 Recipe::Recipe() {
 
@@ -47,6 +48,8 @@ PopTypes Recipe::get_pop_type(const BasePop* pop) const {
         return rural;
     } else if (typeid(*pop) == typeid(TownPop)) {
         return town;
+    } else if (typeid(*pop) == typeid(PeasantPop)) {
+        return peasant;
     }
     return none;
 }
