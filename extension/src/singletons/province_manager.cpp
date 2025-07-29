@@ -161,7 +161,8 @@ int ProvinceManager::get_province_id(Vector2i tile) const {
 Province* ProvinceManager::get_province(int id) const {
     std::shared_lock lock(province_mutex);
     auto it = provinces.find(id);
-    return it != provinces.end() ? it->second : nullptr;
+    ERR_FAIL_COND_V_MSG(it == provinces.end(), nullptr, "Province of id " + String::num_int64(id) + " is not a valid province id.");
+    return it->second;
 }
 
 void ProvinceManager::add_province_to_country(Province* prov, int country_id) {

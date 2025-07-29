@@ -12,8 +12,7 @@ Factory::Factory(): FactoryTemplate() {}
 
 Factory::~Factory() {}
 
-Factory::Factory(Vector2i new_location, int player_owner, Recipe* p_recipe) {
-    FactoryTemplate::initialize(new_location, player_owner, p_recipe);
+Factory::Factory(Vector2i new_location, int player_owner, Recipe* p_recipe): FactoryTemplate(new_location, player_owner, p_recipe) {
 }
 
     // Recipe
@@ -24,9 +23,10 @@ bool Factory::check_recipe() {
 bool Factory::check_inputs() {
     bool toReturn = true;
     for (const auto& [type, amount]: get_inputs()) {
-        m.lock();
-        local_pricer -> add_demand(type, amount);
-        m.unlock();
+        {
+            std::scoped_lock lock(m);
+            local_pricer -> add_demand(type, amount);
+        }
         if (get_cargo_amount(type) < amount) {
             toReturn = false;
         }
@@ -54,7 +54,8 @@ void Factory::day_tick() {
 
 void Factory::month_tick() {
     FactoryTemplate::month_tick();
-    m.lock();
-    local_pricer->adjust_prices();
-    m.unlock();
+    {
+        std::scoped_lock lock(m);
+        local_pricer->adjust_prices();
+    }
 }

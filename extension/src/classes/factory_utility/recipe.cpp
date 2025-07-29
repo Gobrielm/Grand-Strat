@@ -25,6 +25,7 @@ Recipe::Recipe(const Recipe& other) {
 
 Dictionary Recipe::get_inputs_dict() const {
     Dictionary d;
+    std::scoped_lock lock(m);
     for (const auto &[type, amount]: inputs) {
         d[type] = amount;
     }
@@ -33,6 +34,7 @@ Dictionary Recipe::get_inputs_dict() const {
 
 Dictionary Recipe::get_outputs_dict() const {
     Dictionary d;
+    std::scoped_lock lock(m);
     for (const auto &[type, amount]: outputs) {
         d[type] = amount;
     }
@@ -55,15 +57,18 @@ PopTypes Recipe::get_pop_type(const BasePop* pop) const {
 }
 
 bool Recipe::does_need_pop_type(PopTypes pop_type) const {
+    std::scoped_lock lock(m);
     return pops_needed.count(pop_type) && pops_needed.at(pop_type) != employees.at(pop_type).size();
 }
 
 void Recipe::add_pop(BasePop* pop) {
+    std::scoped_lock lock(m);
     employees[get_pop_type(pop)].push_back(pop);
 }
 
 void Recipe::remove_pop(BasePop* pop) {
     int i = 0;
+    std::scoped_lock lock(m);
     std::vector<BasePop*> pop_v = employees[get_pop_type(pop)];
     for (auto it = pop_v.begin(); it != pop_v.end(); it++) {
         if (*it == pop) {
@@ -74,6 +79,7 @@ void Recipe::remove_pop(BasePop* pop) {
 
 int Recipe::get_employement() const {
     int total = 0;
+    std::scoped_lock lock(m);
     for (const auto [__, pop_vector]: employees) {
         total += pop_vector.size();
     }
@@ -82,6 +88,7 @@ int Recipe::get_employement() const {
 
 int Recipe::get_pops_needed_num() const {
     int total = 0;
+    std::scoped_lock lock(m);
     for (const auto [__, amount]: pops_needed) {
         total += amount;
     }
@@ -107,6 +114,7 @@ void Recipe::fire_employees() {
 }
 
 void Recipe::upgrade() {
+    std::scoped_lock lock(m);
     level++;
     for (const auto &[type, amount]: outputs) {
         outputs[type] = std::round(amount * (double(level) / (level - 1.0)));
@@ -120,6 +128,7 @@ void Recipe::upgrade() {
 }
 
 void Recipe::degrade() {
+    std::scoped_lock lock(m);
     level--;
     for (const auto &[type, amount]: outputs) {
         outputs[type] = std::round(amount * (double(level) / (level - 1.0)));
@@ -141,40 +150,49 @@ double Recipe::get_level() const {
 }
 
 int Recipe::get_level_without_employment() const {
+    std::scoped_lock lock(m);
     return level;
 }
 
 bool Recipe::has_recipe() const {
+    std::scoped_lock lock(m);
     return inputs.size() == 0 && outputs.size() == 0;
 }
 
 bool Recipe::does_create(int type) const {
+    std::scoped_lock lock(m);
     return outputs.count(type);
 }
 bool Recipe::is_primary() const {
+    std::scoped_lock lock(m);
     return inputs.size() == 0;
 }
 
 void Recipe::clear() {
+    std::scoped_lock lock(m);
     inputs.clear();
     outputs.clear();
     pops_needed.clear();
 }
 
 std::unordered_map<int, int> Recipe::get_inputs() const {
+    std::scoped_lock lock(m);
     return inputs;
 }
 
 std::unordered_map<int, int> Recipe::get_outputs() const {
+    std::scoped_lock lock(m);
     return outputs;
 }
 
 std::unordered_map<PopTypes, int> Recipe::get_pops_needed() const {
+    std::scoped_lock lock(m);
     return pops_needed;
 }
 
 std::vector<BasePop*> Recipe::get_employees() const {
     std::vector<BasePop*> v;
+    std::scoped_lock lock(m);
     for (const auto &[__, pop_vect]: employees) {
         for (const auto &pop: pop_vect) {
             v.push_back(pop);
@@ -183,14 +201,17 @@ std::vector<BasePop*> Recipe::get_employees() const {
     return v;
 }
 
-void Recipe::set_inputs(const std::unordered_map<int, int> &new_inputs) {
+void Recipe::set_inputs(const std::unordered_map<int, int> new_inputs) {
+    std::scoped_lock lock(m);
     inputs = new_inputs;
 }
 
-void Recipe::set_outputs(const std::unordered_map<int, int> &new_outputs) {
+void Recipe::set_outputs(const std::unordered_map<int, int> new_outputs) {
+    std::scoped_lock lock(m);
     outputs = new_outputs;
 }
 
-void Recipe::set_pops_needed(const std::unordered_map<PopTypes, int> &new_pops_needed) {
+void Recipe::set_pops_needed(const std::unordered_map<PopTypes, int> new_pops_needed) {
+    std::scoped_lock lock(m);
     pops_needed = new_pops_needed;
 }

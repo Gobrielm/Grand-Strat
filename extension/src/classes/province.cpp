@@ -303,8 +303,8 @@ void Province::find_employment_for_pops() {
 
     for (const auto [__, pop]: rural_pops) {
         if (pop -> is_seeking_employment()) {
-            if (work.is_valid() && pop->will_work_here(work)) {
-                work-> work_here(pop);
+            if (work.is_valid() && work->is_hiring(pop) && pop->will_work_here(work)) {
+                work -> work_here(pop);
             } else {
                 work = find_employment(pop);
                 if (work.is_valid()) {

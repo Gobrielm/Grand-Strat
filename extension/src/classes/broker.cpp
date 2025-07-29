@@ -105,9 +105,10 @@ int Broker::sell_cargo(int type, int amount) {
 }
 
 int Broker::add_cargo_ignore_accepts(int type, int amount) { //Make sure 
-    m.lock();
-    local_pricer -> add_supply(type, amount);
-    m.unlock();
+    {
+        std::scoped_lock lock(m);
+        local_pricer -> add_supply(type, amount);
+    }
     return FixedHold::add_cargo_ignore_accepts(type, amount);
 }
 
@@ -129,15 +130,18 @@ void Broker::place_order(int type, int amount, bool buy, float maxPrice) {
 }
 
 void Broker::edit_order(int type, int amount, bool buy, float maxPrice) {
-    m.lock();
-    if (trade_orders.count(type)) {
+    bool has_trade;
+    {
+        std::scoped_lock lock(m);
+        has_trade = trade_orders.count(type);
+    }
+    if (has_trade) {
+        std::scoped_lock lock(m);
         TradeOrder* order = trade_orders[type];
         order->change_buy(buy);
         order->change_amount(amount);
         order->set_max_price(maxPrice);
-        m.unlock();
     } else {
-        m.unlock();
         place_order(type, amount, buy, maxPrice);
     }
 }
@@ -153,9 +157,9 @@ std::unordered_map<int, TradeOrder*> Broker::get_orders() {
     return trade_orders;
 }
 
-Dictionary Broker::get_orders_dict() {
-    std::scoped_lock lock(m);
+Dictionary Broker::get_orders_dict() { 
     Dictionary d;
+    std::scoped_lock lock(m);
     for (const auto &[type, order]: trade_orders) {
         d[type] = order;
     }
@@ -171,8 +175,9 @@ void Broker::remove_order(int type) {
 }
 
 void Broker::add_connected_broker(Ref<Broker> broker) {
+    Vector2i tile = broker->get_location();
     std::scoped_lock lock(m);
-    connected_brokers.insert(broker->get_location());
+    connected_brokers.insert(tile);
 }
 
 void Broker::remove_connected_broker(const Ref<Broker> broker) {
@@ -202,6 +207,7 @@ void Broker::remove_connected_station(const Vector2i p_location) {
 }
 
 int Broker::get_number_of_connected_terminals() const {
+    std::scoped_lock lock(m);
     return connected_brokers.size() + connected_stations.size();
 }
 

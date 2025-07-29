@@ -38,17 +38,15 @@ void RoadDepot::remove_connected_broker(const Ref<Broker> broker) {
 
 void RoadDepot::add_connected_road_depot(const Vector2i road_depot_tile) {
     // ERR_FAIL_COND_MSG(other_road_depots.count(new_road_depot -> get_location()) != 0, "Already has a road depot there");
-    m.lock();
+    std::scoped_lock lock(m);
     other_road_depots.insert(road_depot_tile);
-    m.unlock();
 }
 
 void RoadDepot::remove_connected_road_depot(const Vector2i road_depot_tile) {
     // ERR_FAIL_COND_MSG(other_road_depots.count(new_road_depot -> get_location()) == 0, "Dones't has a road depot there");
     if (other_road_depots.count(road_depot_tile) == 0) return; 
-    m.lock();
+    std::scoped_lock lock(m);
     other_road_depots.erase(road_depot_tile);
-    m.unlock();
 }
 
 

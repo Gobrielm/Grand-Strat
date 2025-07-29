@@ -41,11 +41,14 @@ void FactoryTemplate::_bind_methods() {
 FactoryTemplate::FactoryTemplate() {}
 
 
-FactoryTemplate::FactoryTemplate(Vector2i new_location, int player_owner, Recipe* p_recipe) {
-    initialize(new_location, player_owner, p_recipe);
+FactoryTemplate::FactoryTemplate(Vector2i new_location, int player_owner, Recipe* p_recipe): Broker(new_location, player_owner) {
+    recipe = p_recipe;
+    local_pricer = memnew(FactoryLocalPriceController);
 }
 
-FactoryTemplate::~FactoryTemplate() {}
+FactoryTemplate::~FactoryTemplate() {
+    delete recipe;
+}
 
 void FactoryTemplate::initialize(Vector2i new_location, int player_owner, Recipe* p_recipe) {
     Broker::initialize(new_location, player_owner);
@@ -64,7 +67,6 @@ float FactoryTemplate::get_max_price(int type) const {
 }
 
 bool FactoryTemplate::does_create(int type) const {
-    std::scoped_lock lock(m);
     return get_outputs().count(type);
 }
 
@@ -202,12 +204,14 @@ int FactoryTemplate::get_primary_type_production() const {
 }
 
 void FactoryTemplate::update_income_array() {
-    m.lock();
-    income_list.push_front(change_in_cash);
-    if (income_list.size() == 27) {
-        income_list.pop_back();
+    {
+        std::scoped_lock lock(m);
+        income_list.push_front(change_in_cash);
+        if (income_list.size() == 27) {
+            income_list.pop_back();
+        }
     }
-    m.unlock();
+    
     change_in_cash = get_cash();
 }
 
@@ -227,22 +231,24 @@ bool FactoryTemplate::is_firing() const {
 
 float FactoryTemplate::get_wage() const {
     float available = 0;
-    for (const auto &[type, amount]: get_inputs()) {
-        available -= get_local_price(type) * amount;
+    
+    {
+        for (const auto &[type, amount]: get_inputs()) {
+            available -= get_local_price(type) * amount;
+        }
+        for (const auto &[type, amount]: get_outputs()) {
+            available += get_local_price(type) * amount;
+        }
+        available *= 30;
     }
-    for (const auto &[type, amount]: get_outputs()) {
-        available += get_local_price(type) * amount;
-    }
-    available *= 30;
+    
 
     return available / recipe->get_pops_needed_num();
 }
 
 void FactoryTemplate::work_here(BasePop* pop) {
     if (is_hiring(pop)) {
-        m.lock();
         recipe->add_pop(pop);
-        m.unlock();
         pop->employ(get_wage());
     }
 }
@@ -255,7 +261,6 @@ void FactoryTemplate::pay_employees() {
 }
 
 void FactoryTemplate::fire_employees() {
-    std::scoped_lock lock(m);
     recipe->fire_employees();
 }
 

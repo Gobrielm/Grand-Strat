@@ -53,6 +53,7 @@ void Terminal::initialize(const Vector2i p_location, int p_owner) {
     std::scoped_lock lock(m);
     location = p_location;
     player_owner = p_owner;
+    print_error("DOES NOT CREATE TERMINAL ID");
 }
 
 int Terminal::total_terminals = 0;

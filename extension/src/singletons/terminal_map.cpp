@@ -130,11 +130,11 @@ void TerminalMap::assign_cargo_controller(Node* p_cargo_controller) {
 }
 
 void TerminalMap::_on_day_tick_timeout() {
-    thread_pool->day_tick();
+    // thread_pool->day_tick();
 }
 
 void TerminalMap::_on_month_tick_timeout() {
-    thread_pool->month_tick();
+    // thread_pool->month_tick();
 }
 
 std::vector<Ref<Terminal>> TerminalMap::get_terminals_for_day_tick() const {
@@ -165,7 +165,7 @@ std::vector<Ref<Terminal>> TerminalMap::get_terminals_for_month_tick() const {
 }
 
 void TerminalMap::clear() {
-    std::unique_lock lock(cargo_map_mutex);
+    std::scoped_lock lock(cargo_map_mutex);
     cargo_map_terminals.clear();
 }
 
@@ -205,7 +205,7 @@ void TerminalMap::create_isolated_terminal(Ref<Terminal> p_terminal) {
 void TerminalMap::create_terminal(Ref<Terminal> p_terminal) {
     Vector2i location = p_terminal->get_location();
     {
-        std::unique_lock lock(cargo_map_mutex);
+        std::scoped_lock lock(cargo_map_mutex);
         cargo_map_terminals[location] = p_terminal->get_terminal_id();
         terminal_id_to_terminal[p_terminal->get_terminal_id()] = p_terminal;
     }
@@ -227,7 +227,13 @@ void TerminalMap::encode_factory(Ref<Factory> factory, int mult) {
     }
     Ref<ProvinceManager> province_manager = ProvinceManager::get_instance();
     Vector2i coords = factory->get_location();
-    province_manager->get_province(province_manager->get_province_id(coords))->add_terminal(coords); // Adds to province
+    Province* province = province_manager->get_province(province_manager->get_province_id(coords));
+    if (province == nullptr) {
+        print_error("Province not found with tile : " + coords);
+        return;
+    }
+    province->add_terminal(coords); // Adds to province
+    
     create_terminal(factory);
     cargo_map->call("call_set_tile_rpc", coords, factory->get_primary_type());
 }
@@ -243,7 +249,7 @@ void TerminalMap::add_connected_brokers(Ref<Broker> p_broker) {
     for (int i = 0; i < connected.size(); i++) {
         if (connected[i].get_type() != Variant::VECTOR2I) continue;
         Vector2i tile = connected[i];
-        Ref<Broker> other = get_broker(tile);
+        Ref<Broker> other = get_terminal_as<Broker>(tile);
         if (other.is_null()) continue;
         p_broker->add_connected_broker(other);
         other->add_connected_broker(p_broker);
@@ -522,7 +528,7 @@ void TerminalMap::transform_construction_site_to_factory(const Vector2i &coords)
     if (is_owned_construction_site(coords)) {
         
         Ref<ConstructionSite> old_site = get_terminal_as<ConstructionSite>(coords);
-        std::unique_lock lock(cargo_map_mutex);
+        std::scoped_lock lock(cargo_map_mutex);
         Ref<Factory> factory = create_factory(coords, old_site->get_player_owner(), old_site->get_recipe()[0], old_site->get_recipe()[1]);
 
         terminal_id_to_terminal.erase(old_site->get_terminal_id());

@@ -19,6 +19,7 @@ class Recipe {
     std::unordered_map<int, int> inputs;
     std::unordered_map<int, int> outputs;
     std::unordered_map<PopTypes, int> pops_needed;
+    mutable std::mutex m;
 
     protected:
     PopTypes get_pop_type(const BasePop* pop) const;
@@ -58,7 +59,7 @@ class Recipe {
     std::vector<BasePop*> get_employees() const;
 
     // Setters
-    void set_inputs(const std::unordered_map<int, int>& new_inputs);
-    void set_outputs(const std::unordered_map<int, int>& new_outputs);
-    void set_pops_needed(const std::unordered_map<PopTypes, int>& new_pops_needed);
+    void set_inputs(const std::unordered_map<int, int> new_inputs);
+    void set_outputs(const std::unordered_map<int, int> new_outputs);
+    void set_pops_needed(const std::unordered_map<PopTypes, int> new_pops_needed);
 };

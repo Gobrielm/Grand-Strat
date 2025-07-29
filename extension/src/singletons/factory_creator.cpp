@@ -24,17 +24,23 @@ void FactoryCreator::create() {
     }
 }
 FactoryCreator* FactoryCreator::get_instance() {
+    ERR_FAIL_COND_V_MSG(singleton_instance == nullptr, nullptr, "Factory Creator not instanced");
     return singleton_instance;
 }
 
 void FactoryCreator::create_primary_industry(int type, Vector2i coords, int player_id, int mult) {
-    Recipe* recipe = RecipeInfo::get_instance()->get_primary_recipe_for_type(type);
-    Ref<Factory> factory;
-    if (player_id <= 0) {
-        factory = Ref<AiFactory>(memnew(AiFactory())); // This may not create an ai factory
-    } else {
-        factory.instantiate();
+    if (coords == Vector2i(0, 0)) {
+        print_error("Tried to build factory at " + coords);
+        return;
     }
-    factory->initialize(coords, player_id, recipe);
-    TerminalMap::get_instance()->encode_factory(factory, mult);
+    Recipe* recipe = RecipeInfo::get_instance()->get_primary_recipe_for_type(type);
+    
+    if (player_id <= 0) {
+        Ref<AiFactory> factory = Ref<AiFactory>(memnew(AiFactory(coords, player_id, recipe)));
+        TerminalMap::get_instance()->encode_factory(factory, mult);
+    } else {
+        Ref<Factory> factory = Ref<Factory>(memnew(Factory(coords, player_id, recipe)));
+        TerminalMap::get_instance()->encode_factory(factory, mult);
+    }
+    
 }
