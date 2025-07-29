@@ -209,7 +209,6 @@ void Province::create_pops() {
 	for (int i = 0; i < number_of_rural_pops; i++) {
         create_rural_pop(0);
     }
-		
 	std::vector<Vector2i> towns = get_town_tiles();
 	//If no cities, then turn rest of population into peasant pops
 	if (towns.size() == 0) {
@@ -219,22 +218,22 @@ void Province::create_pops() {
         m.lock();
         number_of_city_pops = 0;
         m.unlock();
+        // employ_peasants();
 		return;
     }
+
+    // employ_peasants();
+
 	int index = 0;
 	for (int i = 0; i < number_of_city_pops; i++) {
         Ref<Town> town = TerminalMap::get_instance() -> get_town(towns[index]);
         
         if (town.is_valid()) {
-            m.lock();
             town -> add_pop(memnew(BasePop(province_id, 0)));
-            m.unlock();
         }
         
         index = (index + 1) % towns.size();
     }
-
-    employ_peasants();
 }
 
 void Province::create_peasant_pop(Variant culture) {
@@ -257,7 +256,7 @@ std::vector<int> Province::create_buildings_for_peasants() {
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     std::vector<int> subsistence_farm_ids;
     for (const Vector2i &tile: tiles) {
-        int temp = terminal_map->get_cargo_value_of_tile(tile, CargoInfo::get_instance()->get_cargo_type("grain"));
+        int temp = terminal_map->get_cargo_value_of_tile(tile, 10);
         if (temp > 0) {
             Ref<SubsistenceFarm> farm = Ref<SubsistenceFarm>(memnew(SubsistenceFarm(0)));
             terminal_map->create_isolated_terminal(farm);
@@ -270,6 +269,10 @@ std::vector<int> Province::create_buildings_for_peasants() {
 void Province::employ_peasants() {
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     std::vector<int> farms = create_buildings_for_peasants();
+    if (farms.size() == 0) {
+        print_error("No possible peasant buildings");
+        return;
+    }
     int i = 0;
     for (const auto& [__, pop]: peasant_pops) {
         Ref<SubsistenceFarm> farm = terminal_map->get_terminal_as<SubsistenceFarm>(farms[i]);

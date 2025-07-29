@@ -10,8 +10,8 @@ void IsolatedBroker::_bind_methods() {
 
 
 IsolatedBroker::IsolatedBroker(int p_owner): Firm(Vector2i(0, 0), p_owner) {
-    std::scoped_lock lock(m);
     for (int i = 0; i < CargoInfo::get_instance()->get_number_of_goods(); i++) {
+        std::scoped_lock lock(m);
         storage[i] = 0;
     }
 }
@@ -65,17 +65,19 @@ bool IsolatedBroker::check_inputs() const {
 void IsolatedBroker::create_recipe() {
     if (check_outputs() && check_inputs()) {
         for (const auto& [type, amount]: recipe->get_outputs()) {
+            std::scoped_lock lock(m);
             storage[type] += amount;
         }
         for (const auto& [type, amount]: recipe->get_inputs()) {
+            std::scoped_lock lock(m);
             storage[type] -= amount;
         }
     }
 }
 
 void IsolatedBroker::day_tick() {
-    create_recipe();
-    sell_cargo();
+    // create_recipe();
+    // sell_cargo();
 }
 
 void IsolatedBroker::month_tick() {

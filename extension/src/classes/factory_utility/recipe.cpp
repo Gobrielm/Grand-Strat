@@ -44,12 +44,12 @@ bool Recipe::is_pop_needed(const BasePop* pop) const {
 }
 
 PopTypes Recipe::get_pop_type(const BasePop* pop) const {
-    if (typeid(*pop) == typeid(RuralPop)) { // Checks pop is needed and if it has enough
-        return rural;
+    if (typeid(*pop) == typeid(PeasantPop)) { // Checks pop is needed and if it has enough
+        return peasant;
     } else if (typeid(*pop) == typeid(TownPop)) {
         return town;
-    } else if (typeid(*pop) == typeid(PeasantPop)) {
-        return peasant;
+    } else if (typeid(*pop) == typeid(RuralPop)) {
+        return rural;
     }
     return none;
 }

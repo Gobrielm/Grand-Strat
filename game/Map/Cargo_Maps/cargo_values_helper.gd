@@ -178,6 +178,8 @@ func update_resource_array(type: int, tile: Vector2i, val: int, toReturn: Array)
 #Resource_array is array[good_index] -> dict
 func add_basic_resource(resource_array: Array , tile: Vector2i) -> void:
 	var atlas: Vector2i = map.get_cell_atlas_coords(tile)
+	if randi() % 3 == 0: # Every province will get some grain
+		update_resource_array(10, tile, 1, resource_array)
 	if is_forested(atlas):
 		if atlas == Vector2i(1, 0):
 			update_resource_array(13, tile, 1, resource_array)

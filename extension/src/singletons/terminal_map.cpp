@@ -141,8 +141,7 @@ std::vector<Ref<Terminal>> TerminalMap::get_terminals_for_day_tick() const {
     std::vector<Ref<Terminal>> v;
     {
         std::shared_lock lock(cargo_map_mutex);
-        for (const auto &[__, terminal_id]: cargo_map_terminals) {
-            Ref<Terminal> terminal = terminal_id_to_terminal.at(terminal_id);
+        for (const auto &[__, terminal]: terminal_id_to_terminal) {
             if (terminal->has_method("day_tick")) {
                 v.push_back(terminal);
             }
@@ -156,8 +155,7 @@ std::vector<Ref<Terminal>> TerminalMap::get_terminals_for_month_tick() const {
     std::vector<Ref<Terminal>> v;
     {
         std::shared_lock lock(cargo_map_mutex);
-        for (const auto &[__, terminal_id]: cargo_map_terminals) {
-            Ref<Terminal> terminal = terminal_id_to_terminal.at(terminal_id);
+        for (const auto &[__, terminal]: terminal_id_to_terminal) {
             if (terminal->has_method("month_tick")) {
                 v.push_back(terminal);
             }
@@ -308,6 +306,7 @@ Ref<Factory> TerminalMap::create_primary_factory(const Vector2i &p_location, int
 
 //Checkers
 int TerminalMap::get_cargo_value_of_tile(const Vector2i &coords, int type) const {
+    std::scoped_lock lock(m);
     return cargo_values->call("get_tile_magnitude", coords, type);
 }
 
