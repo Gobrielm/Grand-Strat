@@ -26,14 +26,18 @@ class Province : public Object {
     std::vector<Vector2i> tiles;
     std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> terminal_tiles; //Doesn't 'own' Terminals yet
     std::unordered_map<Vector2i, Vector2i, godot_helpers::Vector2iHasher> closest_town_to_tile;
-    std::unordered_map<int, BasePop*> rural_pops; //Owns pops
-    std::unordered_map<int, PeasantPop*> peasant_pops; //Owns pops
-    std::unordered_map<int, TownPop*> town_pops; //Owns pops
+
+    std::unordered_map<int, BasePop*> pops;
+
+    std::unordered_set<int> rural_pops; //Owns pops
+    std::unordered_set<int> peasant_pops; //Owns pops
+    std::unordered_set<int> town_pops; //Owns pops
 
     std::vector<Vector2i> get_town_tiles() const;
 
     protected:
     static void _bind_methods();
+    BasePop* get_pop(int pop_id);
     
     
 
@@ -51,7 +55,7 @@ class Province : public Object {
     void add_tile(Vector2i coords);
     int get_population() const;
     int get_number_of_city_pops() const;
-    const std::unordered_map<int, BasePop*> get_rural_pops() const;
+    const std::unordered_set<int> get_rural_pop_ids() const;
     void add_population(int population_to_add);
     void set_population(int new_population);
     int get_province_id() const;
@@ -71,7 +75,12 @@ class Province : public Object {
     void refresh_closest_town_to_tile();
     Vector2i get_closest_town_to_tile(Vector2i tile, std::vector<Vector2i> towns);
 
-    // Pops
+    // === Pops ===
+    // Global pop functions
+    void pay_pop(int pop_id, float wage);
+    void fire_pop(int pop_id);
+
+    // Local Pop Stuff
     void create_pops();
     void create_peasant_pop(Variant culture, Vector2i p_location);
     void create_rural_pop(Variant culture, Vector2i p_location);
@@ -81,6 +90,8 @@ class Province : public Object {
     void employ_peasants();
     int count_pops() const;
     void find_employment_for_pops();
+    void find_employment_for_town_pops();
+    void find_employment_for_rural_pops();
     Ref<FactoryTemplate> find_employment(BasePop* pop) const;
     Ref<FactoryTemplate> find_urban_employment(BasePop* pop) const;
     void month_tick();

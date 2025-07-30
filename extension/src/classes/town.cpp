@@ -262,6 +262,44 @@ void Town::sell_to_rural_pop(BasePop* pop) {
     }
 }
 
+void Town::sell_to_pop(BasePop* pop) { // Called from Province, do not call locally
+    std::unique_lock lock(m);
+
+    for (auto& [type, pq] : market_storage) {
+        local_pricer->add_demand(type, pop->get_desired(type));
+        if (pq.empty()) {
+            continue;
+        }
+
+        TownCargo* town_cargo = pq.top();
+        int desired = pop->get_desired(type, town_cargo->price);
+
+        while (desired > 0) {
+            int amount = std::min(desired, town_cargo->amount);
+            pop->buy_good(type, amount, town_cargo->price);
+
+            TownCargo* current = town_cargo;
+
+            {
+                lock.unlock();
+                current->sell_cargo(amount); // Makes call on other broker, so unlock for safety
+                lock.lock();
+            }
+            
+
+            if (!current->amount && !pq.empty() && pq.top() == current) {
+                pq.pop();
+                delete current;
+            }
+
+            if (pq.empty()) break;
+
+            town_cargo = pq.top();
+            desired = pop->get_desired(type, town_cargo->price);
+        }
+    }
+}
+
 void Town::pay_factory(int amount, float price, Vector2i source) {
     Ref<FactoryTemplate> factory = TerminalMap::get_instance()->get_terminal_as<FactoryTemplate>(source);
     if (factory.is_null()) return; 

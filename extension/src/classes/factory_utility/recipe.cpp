@@ -64,13 +64,13 @@ bool Recipe::does_need_pop_type(PopTypes pop_type) const {
 
 void Recipe::add_pop(BasePop* pop) {
     std::scoped_lock lock(m);
-    employees[get_pop_type(pop)].push_back(pop);
+    employees[get_pop_type(pop)].push_back(pop->get_pop_id());
 }
 
-void Recipe::remove_pop(BasePop* pop) {
+void Recipe::remove_pop(int pop_id, PopTypes pop_type) {
     std::scoped_lock lock(m);
-    auto &vec = employees[get_pop_type(pop)];
-    vec.erase(std::remove(vec.begin(), vec.end(), pop), vec.end());
+    auto &vec = employees[pop_type];
+    vec.erase(std::remove(vec.begin(), vec.end(), pop_id), vec.end());
 }
 
 int Recipe::get_employement() const {
@@ -96,18 +96,23 @@ float Recipe::get_employment_rate() const {
     return employement / float(get_pops_needed_num());
 }
 
-void Recipe::fire_employees() {
+std::vector<int> Recipe::fire_employees_and_get_vector() {
+    std::vector<int> v;
     int fired = 0;
     int to_fire = std::max((int)(get_employement() * 0.1), 1); // Fire atleast 1 pop
-    std::vector<BasePop*> pops = get_employees();
-    while (fired < to_fire && pops.size() != 0) {
-        int rand_index = rand() % pops.size();
-        BasePop* pop = pops[rand_index];
-        pops.erase(pops.begin() + rand_index); // Erase from local vector
-        remove_pop(pop);                       // Erase from actual vector
-        pop->fire();
+    std::unordered_map<int, PopTypes> pop_ids = get_employee_ids();
+    while (fired < to_fire && !pop_ids.empty()) {
+        int rand_index = rand() % pop_ids.size();
+
+        auto it = std::next(pop_ids.begin(), rand_index);
+        int pop_id = it->first; 
+
+        pop_ids.erase(it);              //Remove locally
+        remove_pop(pop_id, it->second); //Remove within object
+        v.push_back(pop_id);            //Add to vector to return
         fired++;
     }
+    return v;
 }
 
 void Recipe::upgrade() {
@@ -187,15 +192,15 @@ std::unordered_map<PopTypes, int> Recipe::get_pops_needed() const {
     return pops_needed;
 }
 
-std::vector<BasePop*> Recipe::get_employees() const {
-    std::vector<BasePop*> v;
+std::unordered_map<int, PopTypes> Recipe::get_employee_ids() const {
+    std::unordered_map<int, PopTypes> map;
     std::scoped_lock lock(m);
-    for (const auto &[__, pop_vect]: employees) {
+    for (const auto &[pop_type, pop_vect]: employees) {
         for (const auto &pop: pop_vect) {
-            v.push_back(pop);
+            map[pop] = pop_type;
         }
     }
-    return v;
+    return map;
 }
 
 void Recipe::set_inputs(const std::unordered_map<int, int> new_inputs) {

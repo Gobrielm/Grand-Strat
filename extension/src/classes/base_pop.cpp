@@ -83,6 +83,13 @@ int BasePop::get_home_prov_id() const {
     return home_prov_id;
 }
 
+void BasePop::set_location(Vector2i p_location) {
+    location = p_location;
+}
+Vector2i BasePop::get_location() const {
+    return location;
+}
+
 void BasePop::set_home_prov_id(int p_home_prov_id) {
     home_prov_id = p_home_prov_id;
 }
@@ -113,6 +120,7 @@ void BasePop::work_here(Ref<FactoryTemplate> work) {
 
 void BasePop::pay_wage(float wage) {
     wealth += wage;
+    income = wage;
 }
 
 void BasePop::employ(float wage) {

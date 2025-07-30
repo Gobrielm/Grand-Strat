@@ -4,6 +4,7 @@
 #include "base_pop.hpp"
 #include "../singletons/cargo_info.hpp"
 #include "../singletons/terminal_map.hpp"
+#include "../singletons/province_manager.hpp"
 #include <godot_cpp/core/class_db.hpp>
 #include <algorithm>
 
@@ -250,18 +251,26 @@ void FactoryTemplate::work_here(BasePop* pop) {
     if (is_hiring(pop)) {
         recipe->add_pop(pop);
         pop->employ(get_wage());
+        pop->set_location(get_location());
     }
 }
 
 void FactoryTemplate::pay_employees() {
+    Ref<ProvinceManager> province_manager = ProvinceManager::get_instance();
     float wage = get_wage();
-    for (BasePop* employee : recipe->get_employees()) {
-        employee->pay_wage(transfer_cash(wage));
+    for (const auto& [pop_id, pop_type] : recipe->get_employee_ids()) {
+        Province* province = province_manager->get_province(province_manager->get_province_id(get_location()));
+        province->pay_pop(pop_id, transfer_cash(wage));
     }
 }
 
 void FactoryTemplate::fire_employees() {
-    recipe->fire_employees();
+    Ref<ProvinceManager> province_manager = ProvinceManager::get_instance();
+    std::vector<int> pops_to_fire = recipe->fire_employees_and_get_vector();
+    for (const auto& pop_id : pops_to_fire) {
+        Province* province = province_manager->get_province(province_manager->get_province_id(get_location()));
+        province->fire_pop(pop_id);
+    }
 }
 
 void FactoryTemplate::day_tick() {

@@ -53,22 +53,22 @@ void FactoryCreator::create_road_depot(Vector2i coords, int player_id) {
     Ref<ProvinceManager> province_manager = ProvinceManager::get_instance();
     Ref<RoadDepot> road_depot = Ref<RoadDepot>(memnew(RoadDepot(coords, player_id)));
     Province* province = province_manager->get_province(province_manager->get_province_id(coords));
-    province->add_terminal(coords);
     TerminalMap::get_instance()->create_terminal(road_depot);
+    province->add_terminal(coords);
 }
 
 void FactoryCreator::create_construction_site(Vector2i coords, int player_id) {
     Ref<ProvinceManager> province_manager = ProvinceManager::get_instance();
     Ref<ConstructionSite> construction_site = Ref<ConstructionSite>(memnew(ConstructionSite(coords, player_id)));
     Province* province = province_manager->get_province(province_manager->get_province_id(coords));
-    province->add_terminal(coords);
     TerminalMap::get_instance()->create_terminal(construction_site);
+    province->add_terminal(coords);
 }
 
 void FactoryCreator::create_town(Vector2i coords) {
     Ref<ProvinceManager> province_manager = ProvinceManager::get_instance();
     Ref<Town> town = Ref<Town>(memnew(Town(coords)));
     Province* province = province_manager->get_province(province_manager->get_province_id(coords));
-    province->add_terminal(coords);
     TerminalMap::get_instance()->create_terminal(town);
+    province->add_terminal(coords);
 }

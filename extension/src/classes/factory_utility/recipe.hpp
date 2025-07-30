@@ -15,7 +15,7 @@ enum PopTypes {
 class BasePop;
 
 class Recipe {
-    std::unordered_map<PopTypes, std::vector<BasePop*>> employees;
+    std::unordered_map<PopTypes, std::vector<int>> employees;
     std::unordered_map<int, int> inputs;
     std::unordered_map<int, int> outputs;
     std::unordered_map<PopTypes, int> pops_needed;
@@ -24,6 +24,7 @@ class Recipe {
     protected:
     PopTypes get_pop_type(const BasePop* pop) const;
     bool does_need_pop_type(PopTypes pop_type) const;
+    void remove_pop(int pop_id, PopTypes pop_type);
 
     public:
     int level = 1;
@@ -35,11 +36,11 @@ class Recipe {
     Dictionary get_outputs_dict() const;
     bool is_pop_needed(const BasePop* pop) const;
     void add_pop(BasePop* pop);
-    void remove_pop(BasePop* pop);
+    
     int get_employement() const;
     int get_pops_needed_num() const;
     float get_employment_rate() const;
-    void fire_employees();
+    std::vector<int> fire_employees_and_get_vector();
 
     // Levels
     virtual void upgrade();
@@ -56,7 +57,7 @@ class Recipe {
     std::unordered_map<int, int> get_inputs() const;
     std::unordered_map<int, int> get_outputs() const;
     std::unordered_map<PopTypes, int> get_pops_needed() const;
-    std::vector<BasePop*> get_employees() const;
+    std::unordered_map<int, PopTypes> get_employee_ids() const;
 
     // Setters
     void set_inputs(const std::unordered_map<int, int> new_inputs);

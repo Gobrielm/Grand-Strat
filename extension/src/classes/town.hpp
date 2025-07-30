@@ -57,6 +57,7 @@ public:
     void sell_to_rural_pops();
     void sell_to_town_pop(BasePop* pop);
     void sell_to_rural_pop(BasePop* pop);
+    void sell_to_pop(BasePop* pop);
     void pay_factory(int amount, float price, Vector2i source);
     int get_total_pops() const;
     Ref<FactoryTemplate> find_employment(BasePop* pop) const;

@@ -233,9 +233,9 @@ void TerminalMap::encode_factory(Ref<Factory> factory, int mult) {
         print_error("Province not found with tile : " + coords);
         return;
     }
-    province->add_terminal(coords); // Adds to province
     
     create_terminal(factory);
+    province->add_terminal(coords); // Adds to province
     cargo_map->call("call_set_tile_rpc", coords, factory->get_primary_type());
 }
 

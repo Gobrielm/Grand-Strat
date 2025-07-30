@@ -42,7 +42,8 @@ class BasePop : public Object {
     int get_pop_id() const;
     void set_home_prov_id(int p_home_prov_id);
     int get_home_prov_id() const;
-
+    void set_location(Vector2i p_location);
+    Vector2i get_location() const;
 
     void work_here(Ref<FactoryTemplate> work);
     bool is_seeking_employment() const;
