@@ -186,7 +186,6 @@ void Town::sell_to_pops() {
     //market -> get_supply().size() represents all goods
     sell_to_city_pops();
     sell_to_rural_pops();
-    
 }
 
 void Town::sell_to_city_pops() {
@@ -217,7 +216,6 @@ void Town::sell_to_pop(BasePop* pop) { // Locks, does not reference outside, onl
             int amount = std::min(desired, town_cargo->amount);
             pop->buy_good(type, amount, town_cargo->price);
             town_cargo->sell_cargo(amount);
-
             if (!town_cargo->amount) {
                 pq.pop();
                 if (pq.empty()) {

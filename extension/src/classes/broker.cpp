@@ -6,7 +6,6 @@
 
 
 void Broker::_bind_methods() {
-    ClassDB::bind_static_method(get_class_static(), D_METHOD("create", "new_location", "player_owner", "max_amount"), &Broker::create);
     
     ClassDB::bind_method(D_METHOD("initialize", "location", "owner", "max_amount"), &Broker::initialize);
     ClassDB::bind_method(D_METHOD("can_afford", "price"), &Broker::can_afford);
@@ -24,10 +23,6 @@ void Broker::_bind_methods() {
     ClassDB::bind_method(D_METHOD("get_orders_dict"), &Broker::get_orders_dict);
     ClassDB::bind_method(D_METHOD("get_connected_broker_locations"), &Broker::get_connected_broker_locations);
     ClassDB::bind_method(D_METHOD("get_number_of_connected_terminals"), &Broker::get_number_of_connected_terminals);
-}
-
-Ref<Broker> Broker::create(const Vector2i new_location, const int player_owner, const int p_max_amount) {
-    return Ref<Broker>(memnew(Broker(new_location, player_owner, p_max_amount)));
 }
 
 Broker::Broker(): FixedHold() {}

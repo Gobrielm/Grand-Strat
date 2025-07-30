@@ -26,8 +26,6 @@ class Broker : public FixedHold {
     const float MAX_TRADE_MARGIN = 1.05f;
 
     public:
-
-    static Ref<Broker> create(const Vector2i new_location, const int player_owner, const int p_max_amount = DEFAULT_MAX_STORAGE);
     
     Broker();
     Broker(const Vector2i new_location, const int player_owner, const int p_max_amount = DEFAULT_MAX_STORAGE);

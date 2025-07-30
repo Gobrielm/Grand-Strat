@@ -10,7 +10,7 @@ var id: int
 var near_stop: bool = false
 var acceleration_direction: Vector2
 var velocity: Vector2
-var cargo_hold: Hold = Hold.create(location, player_owner, 50)
+var cargo_hold: Hold = Hold.create(location, player_owner, 50) # PBUG: DONT USE create
 var loading: bool = false
 var unloading: bool = false
 var ticker: float = 0

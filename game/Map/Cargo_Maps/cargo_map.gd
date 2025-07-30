@@ -37,11 +37,9 @@ func create_town(coords: Vector2i, prov_id: int) -> void:
 	var province_manager: ProvinceManager = ProvinceManager.get_instance()
 	if province_manager.get_population(prov_id) < TOWN_THRESHOLD:
 		return
-	var new_town: Town = Town.create(coords)
+	FactoryCreator.get_instance().create_town(coords)
 	Utils.world_map.make_cell_invisible(coords)
 	set_tile.rpc(coords, Vector2i(0, 1))
-	add_terminal_to_province(new_town)
-	TerminalMap.get_instance().create_terminal(new_town)
 
 func add_industries_to_towns() -> void:
 	for country_id: int in tile_ownership.get_instance().get_country_ids():
@@ -65,9 +63,7 @@ func place_random_road_depot(middle: Vector2i) -> Vector2i:
 
 func place_road_depot(tile: Vector2i, owner_id: int) -> void:
 	RoadMap.get_instance().place_road_depot(tile)
-	var road_depot: RoadDepot = RoadDepot.create(tile, owner_id)
-	add_terminal_to_province(road_depot)
-	TerminalMap.get_instance().create_terminal(road_depot)
+	FactoryCreator.get_instance().create_road_depot(tile, owner_id)
 
 func get_most_prominent_resources(province: Province) -> Dictionary:
 	var d: Dictionary = {}
@@ -93,14 +89,6 @@ func create_factory(p_player_id: int, coords: Vector2i, obj_recipe: Array, mult:
 	add_terminal_to_province(new_factory)
 	TerminalMap.get_instance().create_terminal(new_factory)
 
-func create_wheat_farm(coords: Vector2i, p_player_id: int, mult: int) -> void:
-	var new_factory: Factory = WheatFarm.create(coords, p_player_id)
-	for i: int in range(1, mult):
-		new_factory.admin_upgrade()
-	call_thread_safe("call_set_tile_rpc", coords, 10)
-	add_terminal_to_province(new_factory)
-	TerminalMap.get_instance().create_terminal(new_factory)
-
 func call_set_tile_rpc(coords: Vector2i, type: int) -> void:
 	set_tile.rpc(coords, get_atlas_cell(type))
 
@@ -118,10 +106,8 @@ func get_atlas_cell(primary_type: int = -1) -> Vector2i:
 	return Vector2i(4, 1)
 
 func create_construction_site(_player_id: int, coords: Vector2i) -> void:
-	var new_factory: ConstructionSite = ConstructionSite.create(coords, _player_id)
+	FactoryCreator.get_instance().create_construction_site(coords, _player_id)
 	set_tile.rpc(coords, Vector2i(3, 1))
-	add_terminal_to_province(new_factory)
-	TerminalMap.get_instance().create_terminal(new_factory)
 
 func get_available_primary_recipes(coords: Vector2i) -> Array:
 	return cargo_values.get_available_primary_recipes(coords)
@@ -144,6 +130,7 @@ func test() -> void:
 	FactoryCreator.get_instance().create_primary_industry(10, Vector2i(101, -117), 0, 1)
 	var tile1: Vector2i = place_random_road_depot(Vector2i(101, -117))
 	
+	FactoryCreator.get_instance().create_primary_industry(10, Vector2i(101, -113), 0, 1)
 	create_town(Vector2i(101, -114), 177)
 	var tile2: Vector2i = place_random_road_depot(Vector2i(101, -114))
 	RoadMap.get_instance().bfs_and_connect(tile1, tile2)

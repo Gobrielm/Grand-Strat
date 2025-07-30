@@ -30,7 +30,6 @@ void Terminal::set_location(const Vector2i p_location) {
 }
 
 Vector2i Terminal::get_location() const {
-    std::scoped_lock lock(m);
     return location;
 }
 
