@@ -29,7 +29,6 @@ void InitialBuilder::build_initital_factories() {
     Ref<ProvinceManager> province_manager = ProvinceManager::get_instance();
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     std::unordered_set<int> prov_ids = province_manager->get_country_provinces(get_country_id());
-    
     for (const int &prov_id: prov_ids) {
         Province* province = province_manager->get_province(prov_id);
         if (province->has_town()) {
@@ -54,7 +53,6 @@ void InitialBuilder::build_factory_type(int type, Province* province) {
                 //Need to check if this factory will be cutoff, then check neighboors
                 if (will_any_factory_be_cut_off(tile)) continue;
                 int mult = std::min(rand() % 5, cargo_val);
-
                 FactoryCreator::get_instance()->create_primary_industry(type, tile, get_owner_id(), mult);
                 
                 levels_placed += mult;

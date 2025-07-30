@@ -73,12 +73,13 @@ int Province::get_population() const {
 }
 
 int Province::get_number_of_city_pops() const {
-    std::scoped_lock lock(m);
-    return number_of_city_pops;
+    std::scoped_lock lock(pops_lock);
+    return town_pops.size();
 }
 
 const std::unordered_map<int, BasePop*> Province::get_rural_pops() const {
-    std::scoped_lock lock(m);
+    print_line("Unsafe");
+    std::scoped_lock lock(pops_lock);
     return rural_pops;
 }
 
@@ -177,6 +178,7 @@ void Province::add_terminal(Vector2i tile) {
         return;
     }
     terminal_tiles.insert(tile);
+    refresh_closest_town_to_tile();
 }
 
 void Province::remove_terminal(Vector2i tile) { //BUG: Never gets called when deleting terminals
@@ -204,25 +206,47 @@ const std::unordered_set<Vector2i, godot_helpers::Vector2iHasher>& Province::get
     return terminal_tiles;
 }
 
+void Province::refresh_closest_town_to_tile() {
+    const auto& town_tiles = get_town_tiles();
+    if (town_tiles.size() == 0) return; 
+    std::scoped_lock lock(m);
+    for (const Vector2i &tile: tiles) {
+        Vector2i closest_town = get_closest_town_to_tile(tile, town_tiles);
+        closest_town_to_tile[tile] = closest_town;
+    }
+}
+
+Vector2i Province::get_closest_town_to_tile(Vector2i tile, std::vector<Vector2i> towns) {
+    double closest_dist = -1;
+    Vector2i closest_tile;
+    for (const auto& cell: towns) {
+        double temp_dist = tile.distance_to(cell);
+        if (temp_dist < closest_dist || closest_dist == -1) {
+            closest_dist = temp_dist;
+            closest_tile = cell;
+        }
+    }
+    return closest_tile;
+}   
+
 void Province::create_pops() {
     int number_of_peasant_pops = floor(population * 0.6 / PeasantPop::get_people_per_pop());
     int number_of_rural_pops = floor(population * 0.2 / RuralPop::get_people_per_pop());
-	number_of_city_pops = floor(population * 0.2 / TownPop::get_people_per_pop());
+	int number_of_city_pops = floor(population * 0.2 / TownPop::get_people_per_pop());
     for (int i = 0; i < number_of_peasant_pops; i++) {
-        create_peasant_pop(0);
+        create_peasant_pop(0, tiles[rand() % tiles.size()]);
     }
 	for (int i = 0; i < number_of_rural_pops; i++) {
-        create_rural_pop(0);
+        create_rural_pop(0, tiles[rand() % tiles.size()]);
     }
 	std::vector<Vector2i> towns = get_town_tiles();
 	//If no cities, then turn rest of population into peasant pops
 	if (towns.size() == 0) {
 		for (int i = 0; i < number_of_city_pops; i++) {
-            create_peasant_pop(0);
+            create_peasant_pop(0, tiles[rand() % tiles.size()]);
         }
-        number_of_city_pops = 0;
     } else {
-        create_town_pops(towns);
+        create_town_pops(number_of_city_pops, towns);
     }
 
     // employ_peasants();
@@ -230,29 +254,38 @@ void Province::create_pops() {
 	
 }
 
-void Province::create_peasant_pop(Variant culture) {
-    PeasantPop* pop = memnew(PeasantPop(province_id, culture));
+void Province::create_peasant_pop(Variant culture, Vector2i p_location) {
+    PeasantPop* pop = memnew(PeasantPop(province_id, p_location, culture));
     {
-        std::scoped_lock lock(m);
+        std::scoped_lock lock(pops_lock);
         peasant_pops[pop->get_pop_id()] = pop;
     }
 }
 
-void Province::create_rural_pop(Variant culture) {
-    RuralPop* pop = memnew(RuralPop(province_id, culture));
+void Province::create_rural_pop(Variant culture, Vector2i p_location) {
+    RuralPop* pop = memnew(RuralPop(province_id, p_location, culture));
     {
-        std::scoped_lock lock(m);
+        std::scoped_lock lock(pops_lock);
         rural_pops[pop->get_pop_id()] = pop;
     }
 }
 
-void Province::create_town_pops(const std::vector<Vector2i>& towns) {
+int Province::create_town_pop(Variant culture, Vector2i p_location) {
+    TownPop* pop = memnew(TownPop(province_id, p_location, culture));
+    {
+        std::scoped_lock lock(pops_lock);
+        town_pops[pop->get_pop_id()] = pop;
+    }
+}
+
+void Province::create_town_pops(int amount, const std::vector<Vector2i>& towns) {
     int index = 0;
-	for (int i = 0; i < number_of_city_pops; i++) {
+	for (int i = 0; i < amount; i++) {
         Ref<Town> town = TerminalMap::get_instance() -> get_town(towns[index]);
         
         if (town.is_valid()) {
-            town -> add_pop(memnew(BasePop(province_id, 0)));
+            int pop_id = create_town_pop(0, town -> get_location());
+            town -> add_pop(pop_id);
         }
         
         index = (index + 1) % towns.size();
@@ -301,13 +334,13 @@ std::vector<Vector2i> Province::get_town_tiles() const {
 }
 
 int Province::count_pops() const {
-    std::scoped_lock lock(m);
+    std::scoped_lock lock(pops_lock);
     return rural_pops.size() + peasant_pops.size();
 }
 
 void Province::find_employment_for_pops() {
     Ref<FactoryTemplate> work;
-
+    std::scoped_lock lock(pops_lock);
     for (const auto [__, pop]: rural_pops) {
         if (pop -> is_seeking_employment()) {
             if (work.is_valid() && work->is_hiring(pop) && pop->will_work_here(work)) {
@@ -326,7 +359,7 @@ Ref<FactoryTemplate> Province::find_employment(BasePop* pop) const {
     float max_wage = 0.0;
     Ref<FactoryTemplate> best_fact = Ref<FactoryTemplate>(nullptr);
     
-    for (const auto tile: terminal_tiles) {
+    for (const auto &tile: terminal_tiles) {
         Ref<FactoryTemplate> fact = TerminalMap::get_instance() -> get_terminal_as<FactoryTemplate>(tile);
         if (fact.is_valid() && pop -> will_work_here(fact) && fact -> get_wage() > max_wage) {
             best_fact = fact;
@@ -358,6 +391,24 @@ Ref<FactoryTemplate> Province::find_urban_employment(BasePop* pop) const {
 }
 
 void Province::month_tick() {
+    sell_to_pops();
     find_employment_for_pops();
     // Employ or find education for peasants
+}
+
+
+void Province::sell_to_pops() {
+    Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
+    // Get closest town and then use town functions to sell to those pops
+    std::scoped_lock lock(pops_lock);
+    for (const auto [__, pop]: town_pops) {
+        pop->month_tick();
+        
+    }
+
+    for (const auto [__, pop]: rural_pops) {
+        pop->month_tick();
+        
+    }
+
 }

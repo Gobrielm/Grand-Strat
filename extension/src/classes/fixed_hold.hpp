@@ -7,10 +7,11 @@ namespace godot {
 
 class FixedHold : public Hold {
     GDCLASS(FixedHold, Hold);
-    std::unordered_set<int> accepts;
+    
 
 protected:
     static void _bind_methods();
+    std::unordered_set<int> accepts;
 
 public:
     

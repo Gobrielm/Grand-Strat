@@ -3,8 +3,6 @@
 #include <godot_cpp/core/class_db.hpp>
 
 void BasePop::_bind_methods() {
-    ClassDB::bind_static_method(BasePop::get_class_static(), D_METHOD("create", "p_home_prov_id", "p_culture"), &BasePop::create);
-    ClassDB::bind_method(D_METHOD("initialize", "p_home_prov_id", "p_culture"), &BasePop::initialize);
     ClassDB::bind_static_method(BasePop::get_class_static(), D_METHOD("create_base_needs", "d"), &BasePop::create_base_needs);
     ClassDB::bind_static_method(BasePop::get_class_static(), D_METHOD("get_people_per_pop"), &BasePop::get_people_per_pop);
 
@@ -39,9 +37,10 @@ std::mutex BasePop::m;
 std::unordered_map<int, float> BasePop::base_needs;
 std::unordered_map<int, float> BasePop::specialities;
 
-BasePop::BasePop(): BasePop(-1, 0) {}
+BasePop::BasePop(): BasePop(-1, Vector2i(0, 0), 0) {}
 
-BasePop::BasePop(int p_home_prov_id, Variant p_culture) {
+BasePop::BasePop(int p_home_prov_id, Vector2i p_location, Variant p_culture) {
+    location = p_location;
     home_prov_id = p_home_prov_id;
     culture = p_culture;
     m.lock();
@@ -62,15 +61,6 @@ BasePop::~BasePop() {}
 
 String BasePop::_to_string() const {
     return "BasePop";
-}
-
-BasePop* BasePop::create(int p_home_prov_id, Variant p_culture) {
-    return memnew(BasePop(p_home_prov_id, p_culture));
-}
-
-void BasePop::initialize(int p_home_prov_id, Variant p_culture) {
-    home_prov_id = p_home_prov_id;
-    culture = p_culture;
 }
 
 void BasePop::create_base_needs(Dictionary d) { //d<int, float>

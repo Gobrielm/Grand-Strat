@@ -16,11 +16,8 @@ class TownPop : public BasePop {
 
     public:
 
-    static BasePop* create(int p_home_prov_id = -1, Variant p_culture = 0);
-    void initialize(int p_home_prov_id = -1, Variant p_culture = 0);
-
     TownPop();
-    TownPop(int p_home_prov_id, Variant p_culture);
+    TownPop(int p_home_prov_id, Vector2i p_location, Variant p_culture);
     virtual ~TownPop();
 
     static int get_people_per_pop();

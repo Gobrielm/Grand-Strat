@@ -92,11 +92,6 @@ func create_factory(p_player_id: int, coords: Vector2i, obj_recipe: Array, mult:
 func call_set_tile_rpc(coords: Vector2i, type: int) -> void:
 	set_tile.rpc(coords, get_atlas_cell(type))
 
-func place_test_industry() -> void:
-	var output: Dictionary = {}
-	output[1] = 1
-	create_factory(-1, Vector2i(0, 0), [{}, output], 1)
-
 func get_atlas_cell(primary_type: int = -1) -> Vector2i:
 	if primary_type != -1:
 		if (primary_type >= 2 and primary_type <= 7) or primary_type == 20:

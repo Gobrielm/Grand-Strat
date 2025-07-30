@@ -8,6 +8,7 @@
 class BasePop;
 class RuralPop;
 class PeasantPop;
+class TownPop;
 class Terminal;
 class FactoryTemplate;
 class Town;
@@ -18,14 +19,16 @@ class Province : public Object {
     GDCLASS(Province, Object);
 
     mutable std::mutex m;
+    mutable std::mutex pops_lock;
     int province_id;
     int country_id = -1;
     int population;
-    int number_of_city_pops = 0;
     std::vector<Vector2i> tiles;
     std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> terminal_tiles; //Doesn't 'own' Terminals yet
+    std::unordered_map<Vector2i, Vector2i, godot_helpers::Vector2iHasher> closest_town_to_tile;
     std::unordered_map<int, BasePop*> rural_pops; //Owns pops
     std::unordered_map<int, PeasantPop*> peasant_pops; //Owns pops
+    std::unordered_map<int, TownPop*> town_pops; //Owns pops
 
     std::vector<Vector2i> get_town_tiles() const;
 
@@ -63,10 +66,17 @@ class Province : public Object {
     Array get_terminal_tiles() const;
     bool has_town() const;
     const std::unordered_set<Vector2i, godot_helpers::Vector2iHasher>& get_terminal_tiles_set() const;
+
+    //Town Stuff
+    void refresh_closest_town_to_tile();
+    Vector2i get_closest_town_to_tile(Vector2i tile, std::vector<Vector2i> towns);
+
+    // Pops
     void create_pops();
-    void create_peasant_pop(Variant culture);
-    void create_rural_pop(Variant culture);
-    void create_town_pops(const std::vector<Vector2i>& towns);
+    void create_peasant_pop(Variant culture, Vector2i p_location);
+    void create_rural_pop(Variant culture, Vector2i p_location);
+    int create_town_pop(Variant culture, Vector2i p_location);
+    void create_town_pops(int amount, const std::vector<Vector2i>& towns);
     std::vector<int> create_buildings_for_peasants();
     void employ_peasants();
     int count_pops() const;
@@ -74,6 +84,7 @@ class Province : public Object {
     Ref<FactoryTemplate> find_employment(BasePop* pop) const;
     Ref<FactoryTemplate> find_urban_employment(BasePop* pop) const;
     void month_tick();
+    void sell_to_pops();
     
 
     

@@ -4,11 +4,9 @@
 void PeasantPop::_bind_methods() {
 }
 
-void PeasantPop::initialize(int p_home_prov_id, Variant p_culture) {}
+PeasantPop::PeasantPop(): RuralPop(-1, Vector2i(0, 0), 0) {}
 
-PeasantPop::PeasantPop(): RuralPop(-1, 0) {}
-
-PeasantPop::PeasantPop(int p_home_prov_id, Variant p_culture): RuralPop(p_home_prov_id, p_culture) {}
+PeasantPop::PeasantPop(int p_home_prov_id, Vector2i p_location, Variant p_culture): RuralPop(p_home_prov_id, p_location, p_culture) {}
 
 PeasantPop::~PeasantPop() {}
 

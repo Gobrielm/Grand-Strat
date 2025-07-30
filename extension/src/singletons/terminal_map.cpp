@@ -165,7 +165,7 @@ std::vector<Ref<Terminal>> TerminalMap::get_terminals_for_month_tick() const {
 }
 
 void TerminalMap::clear() {
-    std::scoped_lock lock(cargo_map_mutex);
+    std::unique_lock lock(cargo_map_mutex);
     cargo_map_terminals.clear();
 }
 
@@ -194,18 +194,22 @@ void TerminalMap::unpause_time() {
 
 //Creators
 void TerminalMap::create_isolated_terminal(Ref<Terminal> p_terminal) {
+    int term_id = p_terminal->get_terminal_id();
     {
-        std::scoped_lock lock(cargo_map_mutex);
-        terminal_id_to_terminal[p_terminal->get_terminal_id()] = p_terminal;
+        std::unique_lock lock(cargo_map_mutex);
+        ERR_FAIL_COND_MSG(terminal_id_to_terminal.count(term_id), "Tried to create terminal where terminal exists with id " + String::num_int64(term_id));
+        terminal_id_to_terminal[term_id] = p_terminal;
     }
 }
 
 void TerminalMap::create_terminal(Ref<Terminal> p_terminal) {
     Vector2i location = p_terminal->get_location();
+    int term_id = p_terminal->get_terminal_id();
     {
-        std::scoped_lock lock(cargo_map_mutex);
-        cargo_map_terminals[location] = p_terminal->get_terminal_id();
-        terminal_id_to_terminal[p_terminal->get_terminal_id()] = p_terminal;
+        std::unique_lock lock(cargo_map_mutex);
+        ERR_FAIL_COND_MSG(cargo_map_terminals.count(location) || terminal_id_to_terminal.count(term_id), "Tried to create terminal where terminal exists at " + location + " with id " + String::num_int64(term_id));
+        cargo_map_terminals[location] = term_id;
+        terminal_id_to_terminal[term_id] = p_terminal;
     }
     Ref<Broker> broker = get_broker(location);
     if (broker.is_valid()) {
@@ -294,15 +298,10 @@ Ref<Factory> TerminalMap::create_factory(const Vector2i &p_location, int p_playe
 
 Ref<Factory> TerminalMap::create_primary_factory(const Vector2i &p_location, int p_player_owner, int type) const {
     if (p_player_owner > 0) {
-        Ref<Factory> factory;
-        factory.instantiate();
-        
-        factory->initialize(p_location, p_player_owner, RecipeInfo::get_instance()->get_primary_recipe_for_type(type));
+        Ref<Factory> factory = Ref<Factory>(memnew(Factory(p_location, p_player_owner, RecipeInfo::get_instance()->get_primary_recipe_for_type(type))));
         return factory;
     } else {
-        Ref<AiFactory> factory;
-        factory.instantiate();
-        factory->initialize(p_location, p_player_owner, RecipeInfo::get_instance()->get_primary_recipe_for_type(type));
+        Ref<AiFactory> factory = Ref<AiFactory>(memnew(AiFactory(p_location, p_player_owner, RecipeInfo::get_instance()->get_primary_recipe_for_type(type))));
         return factory;
     }
 }
@@ -373,7 +372,7 @@ bool TerminalMap::is_owned_station(const Vector2i &coords, int player_id) {
 }
 bool TerminalMap::is_ai_station(const Vector2i &coords) {                       //May work?
     bool val = false;
-    std::scoped_lock lock(cargo_map_mutex);
+    std::unique_lock lock(cargo_map_mutex);
     Ref<StationWOMethods> term = get_terminal_as<StationWOMethods>(coords);
     if (term.is_valid()) {
         val = term -> get_class() == "AiStation";
@@ -526,7 +525,7 @@ void TerminalMap::transform_construction_site_to_factory(const Vector2i &coords)
         Ref<Factory> factory = create_factory(coords, old_site->get_player_owner(), old_site->get_recipe()[0], old_site->get_recipe()[1]);
 
         {
-            std::scoped_lock lock(cargo_map_mutex);
+            std::unique_lock lock(cargo_map_mutex);
             terminal_id_to_terminal.erase(old_site->get_terminal_id());
             cargo_map_terminals.erase(old_site->get_location());
         }

@@ -125,14 +125,10 @@ public:
         Ref<T> toReturn = Ref<T>(nullptr);
         {
             std::scoped_lock lock(cargo_map_mutex);
-            auto it = cargo_map_terminals.find(coords);
-            if (it != cargo_map_terminals.end() && (!type_check || type_check(coords))) {
-                auto term_it = terminal_id_to_terminal.find(it->second);
-                if (term_it != terminal_id_to_terminal.end()) {
-                    Ref<T> typed = term_it->second;
-                    if (typed.is_valid()) {
-                        toReturn = typed;
-                    }
+            if (cargo_map_terminals.count(coords) && (!type_check || type_check(coords))) {
+                Ref<T> typed = terminal_id_to_terminal.at(cargo_map_terminals.at(coords));
+                if (typed.is_valid()) {
+                    toReturn = typed;
                 }
             }
         }
@@ -144,9 +140,8 @@ public:
         Ref<T> toReturn = Ref<T>(nullptr);
         {
             std::scoped_lock lock(cargo_map_mutex);
-            auto it = terminal_id_to_terminal.find(terminal_id);
-            if (it != terminal_id_to_terminal.end()) {
-                Ref<T> typed = it->second;
+            if (terminal_id_to_terminal.count(terminal_id)) {
+                Ref<T> typed = terminal_id_to_terminal.at(terminal_id);
                 if (typed.is_valid()) {
                     toReturn = typed;
                 }

@@ -61,10 +61,6 @@ Ref<Town> Town::create(Vector2i new_location) {
 
 Town::~Town() {
     std::scoped_lock lock(m);
-    for (const auto &[__, pop]: city_pops) {
-        memdelete(pop);
-    }
-    city_pops.clear();
     internal_factories.clear();
 }
 
@@ -176,55 +172,92 @@ Dictionary Town::get_last_month_demand() const {
 }
 
 //Pop stuff
-void Town::add_pop(BasePop* pop) {
+void Town::add_pop(int pop_id) {
     std::scoped_lock lock(m);
-    ERR_FAIL_COND_MSG(city_pops.count(pop -> get_pop_id()) != 0, "Pop of id has already been created");
-    city_pops[pop -> get_pop_id()] = pop;
+    ERR_FAIL_COND_MSG(town_pop_ids.count(pop_id), "Pop of id has already been created");
+    town_pop_ids.insert(pop_id);
 }
 
 void Town::sell_to_pops() {
     //market -> get_supply().size() represents all goods
-    sell_to_city_pops();
-    sell_to_rural_pops();
+    // sell_to_city_pops();
+    // sell_to_rural_pops();
 }
 
 void Town::sell_to_city_pops() {
-
-    for (const auto &[__, pop]: get_city_pops()) {
-        sell_to_pop(pop);
-    }
+    // std::scoped_lock lock(m);
+    // for (const auto &[__, pop]: town_pop_ids) {
+    //     pop->month_tick();
+    //     sell_to_town_pop(pop);
+    // }
 }
 
 void Town::sell_to_rural_pops() {
-    for (const auto &[__, pop]: get_rural_pops()) {
-        sell_to_pop(pop);
-    }
+    // for (const auto &[__, pop]: get_rural_pops()) {
+    //     sell_to_rural_pop(pop);
+    // }
 }
 
-void Town::sell_to_pop(BasePop* pop) { // Locks, does not reference outside, only local pops
-    pop->month_tick();
-    std::scoped_lock lock(m);
-    for (auto& [type, pq]: market_storage) {
-
-        local_pricer -> add_demand(type, pop -> get_desired(type));
+void Town::sell_to_town_pop(BasePop* pop) {
+    for (auto& [type, pq] : market_storage) {
+        local_pricer->add_demand(type, pop->get_desired(type));
         if (pq.empty()) {
             continue;
         }
+
         TownCargo* town_cargo = pq.top();
-        int desired = pop -> get_desired(type, town_cargo->price);
+        int desired = pop->get_desired(type, town_cargo->price);
+
         while (desired > 0) {
             int amount = std::min(desired, town_cargo->amount);
             pop->buy_good(type, amount, town_cargo->price);
-            town_cargo->sell_cargo(amount);
-            if (!town_cargo->amount) {
+
+            TownCargo* current = town_cargo;
+
+            current->sell_cargo(amount);
+
+            if (!current->amount && !pq.empty() && pq.top() == current) {
                 pq.pop();
-                if (pq.empty()) {
-                    break;
-                }
-                delete town_cargo;
-                town_cargo = pq.top();
+                delete current;
             }
-            desired = pop -> get_desired(type, town_cargo->price);
+
+            if (pq.empty()) break;
+
+            town_cargo = pq.top();
+            desired = pop->get_desired(type, town_cargo->price);
+        }
+    }
+}
+
+void Town::sell_to_rural_pop(BasePop* pop) {
+    std::scoped_lock lock(m);
+
+    for (auto& [type, pq] : market_storage) {
+        local_pricer->add_demand(type, pop->get_desired(type));
+        if (pq.empty()) {
+            continue;
+        }
+
+        TownCargo* town_cargo = pq.top();
+        int desired = pop->get_desired(type, town_cargo->price);
+
+        while (desired > 0) {
+            int amount = std::min(desired, town_cargo->amount);
+            pop->buy_good(type, amount, town_cargo->price);
+
+            TownCargo* current = town_cargo;
+
+            current->sell_cargo(amount);
+
+            if (!current->amount && !pq.empty() && pq.top() == current) {
+                pq.pop();
+                delete current;
+            }
+
+            if (pq.empty()) break;
+
+            town_cargo = pq.top();
+            desired = pop->get_desired(type, town_cargo->price);
         }
     }
 }
@@ -235,20 +268,9 @@ void Town::pay_factory(int amount, float price, Vector2i source) {
     factory->add_cash(amount * price);
 }   
 
-std::unordered_map<int, BasePop*> Town::get_city_pops() const {
-    std::scoped_lock lock(m);
-    return city_pops;
-}
-
-std::unordered_map<int, BasePop*> Town::get_rural_pops() const {
-    Ref<ProvinceManager> province_manager =  ProvinceManager::get_instance();
-    Province* province = province_manager->get_province(province_manager->get_province_id(get_location()));// Province where city is located
-    return province->get_rural_pops();
-}
-
 int Town::get_total_pops() const {
     std::scoped_lock lock(m);
-    return city_pops.size();
+    return town_pop_ids.size();
 }
 
 Ref<FactoryTemplate> Town::find_employment(BasePop* pop) const {
@@ -266,18 +288,15 @@ Ref<FactoryTemplate> Town::find_employment(BasePop* pop) const {
 }
 
 int Town::get_number_of_broke_pops() const {
-    int count = 0;
-    for (const auto& [__, pop]: get_city_pops()) {
-        if (pop -> get_wealth() < 20) {
-            count++;
-        }
-    }
-    for (const auto& [__, pop]: get_rural_pops()) {
-        if (pop -> get_wealth() < 20) {
-            count++;
-        }
-    }
-    return count;
+    return 0;
+    // int count = 0;
+    // std::scoped_lock lock(m);
+    // for (const auto& [__, pop]: town_pop_ids) {
+    //     if (pop -> get_wealth() < 20) {
+    //         count++;
+    //     }
+    // }
+    // return count;
 }
 
 //Selling to brokers
@@ -355,8 +374,9 @@ void Town::buy_cargo(int type, int amount, float price, int p_terminal_id) {
     {
         std::scoped_lock lock(m);
         local_pricer -> add_supply(type, amount);
+        market_storage[town_cargo->type].push(town_cargo);
     }
-    market_storage[town_cargo->type].push(town_cargo);
+    
 }
 
 int Town::add_cargo(int type, int amount) {
@@ -367,28 +387,35 @@ int Town::add_cargo(int type, int amount) {
 
 float Town::get_total_wealth_of_pops() {
     float total = 0.0;
-    for (const auto &[__, pop]: city_pops) {
-        total += pop -> get_wealth();
-    }
+    // for (const auto &[__, pop]: town_pop_ids) {
+    //     total += pop -> get_wealth();
+    // }
     return total;
 }
 
 float Town::get_needs_met_of_pops() {
     float total = 0.0;
-    for (const auto &[__, pop]: city_pops) {
-        total += pop -> get_average_fulfillment();
-    }
+    // for (const auto &[__, pop]: town_pop_ids) {
+    //     total += pop -> get_average_fulfillment();
+    // }
     return total;
 }
 
 void Town::update_buy_orders() {
-    const auto v = local_pricer -> get_last_month_demand();
+
+    std::vector<int> v;
+    {
+        std::scoped_lock lock(m);
+        v = local_pricer -> get_last_month_demand();
+    }
+
     for (int type = 0; type < v.size(); type++) {
         if (v[type] == 0) {
             remove_order(type);
             remove_accept(type);
         } else {
-            edit_order(type, v[type], true, get_local_price(type));
+            float price = get_local_price(type);
+            edit_order(type, v[type], true, price);
             add_accept(type);
         }
     }
@@ -406,7 +433,7 @@ void Town::month_tick() {
     {
         std::scoped_lock lock(m);
         local_pricer -> adjust_prices();
+        max_amount = town_pop_ids.size() * 5; // Update size according to number of pops
     }
     
-    set_max_storage(city_pops.size() * 5); // Update size according to number of pops
 }

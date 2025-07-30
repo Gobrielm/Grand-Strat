@@ -19,7 +19,7 @@ class BasePop : public Object {
     static std::unordered_map<int, float> base_needs;
     static std::unordered_map<int, float> specialities;
     
-
+    Vector2i location;
     int pop_id;
     int education_level;
     float wealth;
@@ -69,12 +69,7 @@ class BasePop : public Object {
     float get_average_fulfillment() const;
     void month_tick();
 
-    static BasePop* create(int p_home_prov_id = -1, Variant p_culture = 0);
-
-    void initialize(int p_home_prov_id = -1, Variant p_culture = 0);
-    
-
     BasePop();
-    BasePop(int p_home_prov_id, Variant p_culture);
+    BasePop(int p_home_prov_id, Vector2i p_location, Variant p_culture);
     ~BasePop();
 };

@@ -17,7 +17,7 @@ class Town : public Broker {
 
 private:
     std::unordered_map<int, std::vector<Ref<FactoryTemplate>>> internal_factories; //Not thread safe
-    std::unordered_map<int, BasePop*> city_pops;
+    std::unordered_set<int> town_pop_ids;
     float INITIAL_CASH = 10000;
 
 protected:
@@ -51,14 +51,13 @@ public:
     Dictionary get_last_month_demand() const;
 
     //Pop stuff
-    void add_pop(BasePop* pop);
+    void add_pop(int pop_id);
     void sell_to_pops();
-    void sell_to_rural_pops();
     void sell_to_city_pops();
-    void sell_to_pop(BasePop* pop);
+    void sell_to_rural_pops();
+    void sell_to_town_pop(BasePop* pop);
+    void sell_to_rural_pop(BasePop* pop);
     void pay_factory(int amount, float price, Vector2i source);
-    std::unordered_map<int, BasePop*> get_city_pops() const;
-    std::unordered_map<int, BasePop*> get_rural_pops() const;
     int get_total_pops() const;
     Ref<FactoryTemplate> find_employment(BasePop* pop) const;
     int get_number_of_broke_pops() const;
