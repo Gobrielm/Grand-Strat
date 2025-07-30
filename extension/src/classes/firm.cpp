@@ -32,9 +32,8 @@ int Firm::get_amount_can_buy(const float amount_per) const {
 
 void Firm::add_cash(float amount) {
     if (get_player_owner() == 0) {
-        m.lock();
+        std::scoped_lock lock(m);
         cash += amount;
-        m.unlock();
     } else {
         MoneyController::get_instance()->add_money_to_player(get_player_owner(), amount);
     }
@@ -42,9 +41,8 @@ void Firm::add_cash(float amount) {
 
 void Firm::remove_cash(float amount) {
     if (get_player_owner() == 0) {
-        m.lock();
+        std::scoped_lock lock(m);
         cash -= amount;
-        m.unlock();
     } else {
         add_cash(-amount);
     }

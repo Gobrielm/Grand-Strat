@@ -35,8 +35,8 @@ private:
     Node2D* cargo_values = nullptr;
     Node* cargo_controller = nullptr;
 
-    mutable std::shared_mutex cargo_map_mutex;
-    mutable std::mutex m;
+    mutable std::shared_mutex cargo_map_mutex;  // Protected cargo_map_terminals and terminal_id_to_terminal exclusively
+    mutable std::mutex m;                       // Protects everyhing else, mainly the different godot objects above
     std::unordered_map<Vector2i, int, godot_helpers::Vector2iHasher> cargo_map_terminals;
     std::unordered_map<int, Ref<Terminal>> terminal_id_to_terminal;
 
@@ -124,11 +124,15 @@ public:
     Ref<T> get_terminal_as(const Vector2i &coords, const std::function<bool(const Vector2i &)> &type_check = nullptr) const {
         Ref<T> toReturn = Ref<T>(nullptr);
         {
-            std::unique_lock lock(cargo_map_mutex);
-            if (cargo_map_terminals.count(coords) == 1 && (!type_check || type_check(coords))) {
-                Ref<T> typed = terminal_id_to_terminal.at(cargo_map_terminals.at(coords));
-                if (typed.is_valid()) {
-                    toReturn = typed;
+            std::scoped_lock lock(cargo_map_mutex);
+            auto it = cargo_map_terminals.find(coords);
+            if (it != cargo_map_terminals.end() && (!type_check || type_check(coords))) {
+                auto term_it = terminal_id_to_terminal.find(it->second);
+                if (term_it != terminal_id_to_terminal.end()) {
+                    Ref<T> typed = term_it->second;
+                    if (typed.is_valid()) {
+                        toReturn = typed;
+                    }
                 }
             }
         }
@@ -139,9 +143,10 @@ public:
     Ref<T> get_terminal_as(int terminal_id) const {
         Ref<T> toReturn = Ref<T>(nullptr);
         {
-            std::unique_lock lock(cargo_map_mutex);
-            if (terminal_id_to_terminal.count(terminal_id) == 1) {
-                Ref<T> typed = terminal_id_to_terminal.at(terminal_id);
+            std::scoped_lock lock(cargo_map_mutex);
+            auto it = terminal_id_to_terminal.find(terminal_id);
+            if (it != terminal_id_to_terminal.end()) {
+                Ref<T> typed = it->second;
                 if (typed.is_valid()) {
                     toReturn = typed;
                 }

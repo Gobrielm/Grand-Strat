@@ -9,10 +9,10 @@ class Hold : public Firm {
     GDCLASS(Hold, Firm);
 
 private:
-    int max_amount;
-    static int NUMBER_OF_GOODS;
 
 protected:
+    int max_amount;
+    static int NUMBER_OF_GOODS;
     static void _bind_methods();
 
 public:

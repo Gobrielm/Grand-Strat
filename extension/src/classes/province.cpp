@@ -63,18 +63,22 @@ Province::~Province() {
 }
 
 void Province::add_tile(Vector2i coords) {
+    std::scoped_lock lock(m);
     tiles.push_back(coords);
 }
 
 int Province::get_population() const {
+    std::scoped_lock lock(m);
     return population;
 }
 
 int Province::get_number_of_city_pops() const {
+    std::scoped_lock lock(m);
     return number_of_city_pops;
 }
 
-const std::unordered_map<int, BasePop*>& Province::get_rural_pops() const {
+const std::unordered_map<int, BasePop*> Province::get_rural_pops() const {
+    std::scoped_lock lock(m);
     return rural_pops;
 }
 
@@ -111,7 +115,8 @@ Array Province::get_tiles() const {
     return a;
 }
 
-const std::vector<Vector2i>& Province::get_tiles_vector() const {
+const std::vector<Vector2i> Province::get_tiles_vector() const {
+    std::scoped_lock lock(m);
     return tiles;
 }
 
@@ -215,25 +220,14 @@ void Province::create_pops() {
 		for (int i = 0; i < number_of_city_pops; i++) {
             create_peasant_pop(0);
         }
-        m.lock();
         number_of_city_pops = 0;
-        m.unlock();
-        // employ_peasants();
-		return;
+    } else {
+        create_town_pops(towns);
     }
 
     // employ_peasants();
 
-	int index = 0;
-	for (int i = 0; i < number_of_city_pops; i++) {
-        Ref<Town> town = TerminalMap::get_instance() -> get_town(towns[index]);
-        
-        if (town.is_valid()) {
-            town -> add_pop(memnew(BasePop(province_id, 0)));
-        }
-        
-        index = (index + 1) % towns.size();
-    }
+	
 }
 
 void Province::create_peasant_pop(Variant culture) {
@@ -249,6 +243,19 @@ void Province::create_rural_pop(Variant culture) {
     {
         std::scoped_lock lock(m);
         rural_pops[pop->get_pop_id()] = pop;
+    }
+}
+
+void Province::create_town_pops(const std::vector<Vector2i>& towns) {
+    int index = 0;
+	for (int i = 0; i < number_of_city_pops; i++) {
+        Ref<Town> town = TerminalMap::get_instance() -> get_town(towns[index]);
+        
+        if (town.is_valid()) {
+            town -> add_pop(memnew(BasePop(province_id, 0)));
+        }
+        
+        index = (index + 1) % towns.size();
     }
 }
 

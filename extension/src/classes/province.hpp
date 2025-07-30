@@ -48,14 +48,14 @@ class Province : public Object {
     void add_tile(Vector2i coords);
     int get_population() const;
     int get_number_of_city_pops() const;
-    const std::unordered_map<int, BasePop*>& get_rural_pops() const;
+    const std::unordered_map<int, BasePop*> get_rural_pops() const;
     void add_population(int population_to_add);
     void set_population(int new_population);
     int get_province_id() const;
     int get_country_id() const;
     void set_country_id(int p_country_id);
     Array get_tiles() const;
-    const std::vector<Vector2i>& get_tiles_vector() const;
+    const std::vector<Vector2i> get_tiles_vector() const;
     std::vector<Vector2i> get_town_centered_tiles() const;
     Vector2i get_random_tile() const;
     void add_terminal(Vector2i tile);
@@ -66,6 +66,7 @@ class Province : public Object {
     void create_pops();
     void create_peasant_pop(Variant culture);
     void create_rural_pop(Variant culture);
+    void create_town_pops(const std::vector<Vector2i>& towns);
     std::vector<int> create_buildings_for_peasants();
     void employ_peasants();
     int count_pops() const;

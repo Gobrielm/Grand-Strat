@@ -130,11 +130,11 @@ void TerminalMap::assign_cargo_controller(Node* p_cargo_controller) {
 }
 
 void TerminalMap::_on_day_tick_timeout() {
-    // thread_pool->day_tick();
+    thread_pool->day_tick();
 }
 
 void TerminalMap::_on_month_tick_timeout() {
-    // thread_pool->month_tick();
+    thread_pool->month_tick();
 }
 
 std::vector<Ref<Terminal>> TerminalMap::get_terminals_for_day_tick() const {
@@ -183,15 +183,13 @@ Node2D* TerminalMap::get_cargo_values() const {
 
  //Time
 void TerminalMap::pause_time() {
-    m.lock();
+    std::scoped_lock lock(m);
     cargo_controller->call("backend_pause");
-    m.unlock();
 }
 
 void TerminalMap::unpause_time() {
-    m.lock();
+    std::scoped_lock lock(m);
     cargo_controller->call("backend_unpause");
-    m.unlock();
 }
 
 //Creators
@@ -209,7 +207,6 @@ void TerminalMap::create_terminal(Ref<Terminal> p_terminal) {
         cargo_map_terminals[location] = p_terminal->get_terminal_id();
         terminal_id_to_terminal[p_terminal->get_terminal_id()] = p_terminal;
     }
-
     Ref<Broker> broker = get_broker(location);
     if (broker.is_valid()) {
         add_connected_brokers(broker);
@@ -376,12 +373,11 @@ bool TerminalMap::is_owned_station(const Vector2i &coords, int player_id) {
 }
 bool TerminalMap::is_ai_station(const Vector2i &coords) {                       //May work?
     bool val = false;
-    m.lock();
+    std::scoped_lock lock(cargo_map_mutex);
     Ref<StationWOMethods> term = get_terminal_as<StationWOMethods>(coords);
     if (term.is_valid()) {
         val = term -> get_class() == "AiStation";
     }
-    m.unlock();
     return val;
 } 
 bool TerminalMap::is_owned_ai_station(const Vector2i &coords, int id) {
@@ -526,13 +522,15 @@ void TerminalMap::destroy_recipe(const Vector2i &coords) {
 
 void TerminalMap::transform_construction_site_to_factory(const Vector2i &coords) { // Doesn't keep same id
     if (is_owned_construction_site(coords)) {
-        
         Ref<ConstructionSite> old_site = get_terminal_as<ConstructionSite>(coords);
-        std::scoped_lock lock(cargo_map_mutex);
         Ref<Factory> factory = create_factory(coords, old_site->get_player_owner(), old_site->get_recipe()[0], old_site->get_recipe()[1]);
 
-        terminal_id_to_terminal.erase(old_site->get_terminal_id());
-        cargo_map_terminals.erase(old_site->get_location());
+        {
+            std::scoped_lock lock(cargo_map_mutex);
+            terminal_id_to_terminal.erase(old_site->get_terminal_id());
+            cargo_map_terminals.erase(old_site->get_location());
+        }
+        
 
         encode_factory_from_construction_site(factory);
 
@@ -580,8 +578,8 @@ float TerminalMap::get_average_cash_of_city_pop() const {
     double ave = 0;
     int count = 0;
     std::shared_lock lock(cargo_map_mutex);
-    for (const auto &[tile, __]: cargo_map_terminals) {
-        Ref<Town> typed = get_terminal_as<Town>(tile);
+    for (const auto &[__, terminal]: terminal_id_to_terminal) {
+        Ref<Town> typed = Ref<Town>(terminal);
         if (typed.is_valid()) {
             ave += typed -> get_total_wealth_of_pops();
             count += typed -> get_total_pops();
@@ -594,8 +592,8 @@ float TerminalMap::get_average_factory_level() const {
     double ave = 0;
     int count = 0;
     std::shared_lock lock(cargo_map_mutex);
-    for (const auto &[tile, __]: cargo_map_terminals) {
-        Ref<Factory> typed = get_terminal_as<Factory>(tile);
+    for (const auto &[__, terminal]: terminal_id_to_terminal) {
+        Ref<Factory> typed = Ref<Factory>(terminal);
         if (typed.is_valid()) {
             ave += typed -> get_level();
             count++;
@@ -607,8 +605,8 @@ float TerminalMap::get_average_factory_level() const {
 int TerminalMap::get_grain_demand() const {
     int total_demand = 0;
     std::shared_lock lock(cargo_map_mutex);
-    for (const auto &[tile, __]: cargo_map_terminals) {
-        Ref<Town> typed = get_terminal_as<Town>(tile);
+    for (const auto &[__, terminal]: terminal_id_to_terminal) {
+        Ref<Town> typed = Ref<Town>(terminal);
         if (typed.is_valid()) {
             total_demand += int(typed -> get_last_month_demand().get(CargoInfo::get_instance()->get_cargo_type("grain"), 0));
         }
@@ -620,8 +618,8 @@ int TerminalMap::get_grain_demand() const {
 int TerminalMap::get_grain_supply() const {
     int total_supply = 0;
     std::shared_lock lock(cargo_map_mutex);
-    for (const auto &[tile, __]: cargo_map_terminals) {
-        Ref<Town> typed = get_terminal_as<Town>(tile);
+    for (const auto &[__, terminal]: terminal_id_to_terminal) {
+        Ref<Town> typed = Ref<Town>(terminal);
         if (typed.is_valid()) {
             total_supply += int(typed -> get_last_month_supply().get(CargoInfo::get_instance()->get_cargo_type("grain"), 0));
         }
@@ -632,8 +630,8 @@ int TerminalMap::get_grain_supply() const {
 int TerminalMap::get_number_of_broke_pops() const {
     int count = 0;
     std::shared_lock lock(cargo_map_mutex);
-    for (const auto &[tile, __]: cargo_map_terminals) {
-        Ref<Town> typed = get_terminal_as<Town>(tile);
+    for (const auto &[__, terminal]: terminal_id_to_terminal) {
+        Ref<Town> typed = Ref<Town>(terminal);
         if (typed.is_valid()) {
             count += int(typed -> get_number_of_broke_pops());
         }
@@ -646,8 +644,8 @@ float TerminalMap::get_average_cash_of_terminal() const {
     double ave = 0;
     int count = 0;
     std::shared_lock lock(cargo_map_mutex);
-    for (const auto &[tile, __]: cargo_map_terminals) {
-        Ref<T> typed = get_terminal_as<T>(tile);
+    for (const auto &[__, terminal]: terminal_id_to_terminal) {
+        Ref<T> typed = Ref<T>(terminal);
         if (typed.is_valid()) {
             ave += typed -> get_cash();
             count++;

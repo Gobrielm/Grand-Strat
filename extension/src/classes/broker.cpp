@@ -35,6 +35,7 @@ Broker::Broker(): FixedHold() {}
 Broker::Broker(const Vector2i new_location, const int player_owner, const int p_max_amount): FixedHold(new_location, player_owner, p_max_amount) {}
 
 Broker::~Broker() {
+    std::scoped_lock lock(m);
     for (auto& [key, ptr]: trade_orders) {
         memdelete(ptr);
     }
@@ -130,19 +131,14 @@ void Broker::place_order(int type, int amount, bool buy, float maxPrice) {
 }
 
 void Broker::edit_order(int type, int amount, bool buy, float maxPrice) {
-    bool has_trade;
-    {
-        std::scoped_lock lock(m);
-        has_trade = trade_orders.count(type);
-    }
-    if (has_trade) {
-        std::scoped_lock lock(m);
-        TradeOrder* order = trade_orders[type];
-        order->change_buy(buy);
-        order->change_amount(amount);
-        order->set_max_price(maxPrice);
+    std::scoped_lock lock(m);
+    auto it = trade_orders.find(type);
+    if (it != trade_orders.end()) {
+        it->second->change_buy(buy);
+        it->second->change_amount(amount);
+        it->second->set_max_price(maxPrice);
     } else {
-        place_order(type, amount, buy, maxPrice);
+        trade_orders[type] = memnew(TradeOrder(type, amount, buy, maxPrice));
     }
 }
 

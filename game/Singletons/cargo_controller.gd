@@ -17,7 +17,7 @@ func _init() -> void:
 	singleton_instance = self
 
 static func get_instance() -> cargo_controller:
-	assert(singleton_instance != null, "Train_Manager has not be created, and has been accessed")
+	assert(singleton_instance != null, "Cargo Controller has not be created, and has been accessed")
 	return singleton_instance
 
 func _ready() -> void:

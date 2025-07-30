@@ -6,8 +6,8 @@ using namespace godot;
 
 class Firm : public Terminal {
     GDCLASS(Firm, Terminal);
-    float cash = 1000;
     protected:
+    float cash = 1000;
     static void _bind_methods();
 
     public:

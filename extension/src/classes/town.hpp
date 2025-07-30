@@ -57,6 +57,7 @@ public:
     void sell_to_city_pops();
     void sell_to_pop(BasePop* pop);
     void pay_factory(int amount, float price, Vector2i source);
+    std::unordered_map<int, BasePop*> get_city_pops() const;
     std::unordered_map<int, BasePop*> get_rural_pops() const;
     int get_total_pops() const;
     Ref<FactoryTemplate> find_employment(BasePop* pop) const;

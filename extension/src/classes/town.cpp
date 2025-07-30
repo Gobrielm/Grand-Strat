@@ -60,6 +60,7 @@ Ref<Town> Town::create(Vector2i new_location) {
 }
 
 Town::~Town() {
+    std::scoped_lock lock(m);
     for (const auto &[__, pop]: city_pops) {
         memdelete(pop);
     }
@@ -100,12 +101,10 @@ bool Town::is_price_acceptable(int type, float price) const {
 
 int Town::get_desired_cargo(int type, float price) const {
     if (is_price_acceptable(type, price)) {
-		int amount_could_get = std::min(get_max_storage() - get_cargo_amount(type), get_amount_can_buy(price)); // TODO, add tracker for this since other thing is vector
-        int amount_wanted = 0;
-        {
-            std::scoped_lock lock(m);
-            amount_wanted = ceil(local_pricer -> get_last_month_demand(type) / 25); // Buy a bit more than last month just to fill storage
-        }
+        std::scoped_lock lock(m);
+		int amount_could_get = std::min(max_amount - storage.at(type), int(cash / price)); // TODO, add tracker for this since other thing is vector
+        int amount_wanted = ceil(local_pricer -> get_last_month_demand(type) / 25); // Buy a bit more than last month just to fill storage
+        
 		return std::min(amount_wanted, amount_could_get); 
     }
 	return 0;
@@ -130,31 +129,33 @@ float Town::get_fulfillment(int type) const {
 }
 
 void Town::add_factory(Ref<FactoryTemplate> fact) {
-    m.lock();
-    if (!internal_factories.count(fact->get_player_owner()))
-		internal_factories[fact->get_player_owner()] = std::vector<Ref<FactoryTemplate>>();
-	internal_factories[fact->get_player_owner()].push_back(fact);
-    m.unlock();
+    {
+        std::scoped_lock lock(m);
+        if (!internal_factories.count(fact->get_player_owner()))
+            internal_factories[fact->get_player_owner()] = std::vector<Ref<FactoryTemplate>>();
+        internal_factories[fact->get_player_owner()].push_back(fact);
+    }
 	fact->add_connected_broker(this);
 }
 
 Array Town::get_factories() const {
     Array a;
-    m.lock();
+    std::scoped_lock lock(m);
     for (const auto &[__, v]: internal_factories){
         for (Ref<FactoryTemplate> f: v) {
             a.push_back(f);
         }
     }   
-    m.unlock();
     return a;
 }
 
 Dictionary Town::get_last_month_supply() const {
     Dictionary d = {};
-    m.lock();
-    const auto v = local_pricer -> get_last_month_supply();
-    m.unlock();
+    std::vector<int> v;
+    {
+        std::scoped_lock lock(m);
+        v = local_pricer -> get_last_month_supply();
+    }
     for (int type = 0; type < v.size(); type++) {
         d[type] = v[type];
     }
@@ -163,9 +164,11 @@ Dictionary Town::get_last_month_supply() const {
 
 Dictionary Town::get_last_month_demand() const {
     Dictionary d = {};
-    m.lock();
-    const auto v = local_pricer -> get_last_month_demand();
-    m.unlock();
+    std::vector<int> v;
+    {
+        std::scoped_lock lock(m);
+        v = local_pricer -> get_last_month_demand();
+    }
     for (int type = 0; type < v.size(); type++) {
         d[type] = v[type];
     }
@@ -187,7 +190,8 @@ void Town::sell_to_pops() {
 }
 
 void Town::sell_to_city_pops() {
-    for (const auto &[__, pop]: city_pops) {
+
+    for (const auto &[__, pop]: get_city_pops()) {
         sell_to_pop(pop);
     }
 }
@@ -198,14 +202,12 @@ void Town::sell_to_rural_pops() {
     }
 }
 
-void Town::sell_to_pop(BasePop* pop) {
+void Town::sell_to_pop(BasePop* pop) { // Locks, does not reference outside, only local pops
     pop->month_tick();
-    
+    std::scoped_lock lock(m);
     for (auto& [type, pq]: market_storage) {
-        {
-            std::scoped_lock lock(m);
-            local_pricer -> add_demand(type, pop -> get_desired(type));
-        }
+
+        local_pricer -> add_demand(type, pop -> get_desired(type));
         if (pq.empty()) {
             continue;
         }
@@ -235,6 +237,11 @@ void Town::pay_factory(int amount, float price, Vector2i source) {
     factory->add_cash(amount * price);
 }   
 
+std::unordered_map<int, BasePop*> Town::get_city_pops() const {
+    std::scoped_lock lock(m);
+    return city_pops;
+}
+
 std::unordered_map<int, BasePop*> Town::get_rural_pops() const {
     Ref<ProvinceManager> province_manager =  ProvinceManager::get_instance();
     Province* province = province_manager->get_province(province_manager->get_province_id(get_location()));// Province where city is located
@@ -262,7 +269,7 @@ Ref<FactoryTemplate> Town::find_employment(BasePop* pop) const {
 
 int Town::get_number_of_broke_pops() const {
     int count = 0;
-    for (const auto& [__, pop]: city_pops) {
+    for (const auto& [__, pop]: get_city_pops()) {
         if (pop -> get_wealth() < 20) {
             count++;
         }
@@ -398,8 +405,10 @@ void Town::day_tick() {
 void Town::month_tick() {
     sell_to_pops();
     update_buy_orders();
-    m.lock();
-    local_pricer -> adjust_prices();
-    m.unlock();
+    {
+        std::scoped_lock lock(m);
+        local_pricer -> adjust_prices();
+    }
+    
     set_max_storage(city_pops.size() * 5); // Update size according to number of pops
 }

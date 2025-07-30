@@ -28,11 +28,12 @@ class Broker : public FixedHold {
     public:
 
     static Ref<Broker> create(const Vector2i new_location, const int player_owner, const int p_max_amount = DEFAULT_MAX_STORAGE);
-
+    
     Broker();
     Broker(const Vector2i new_location, const int player_owner, const int p_max_amount = DEFAULT_MAX_STORAGE);
     virtual ~Broker();
     virtual void initialize(const Vector2i new_location, const int player_owner, const int p_max_amount = DEFAULT_MAX_STORAGE);
+    Broker(const Broker&) = delete;
 
     bool can_afford(int price) const;
     Dictionary get_local_prices() const;

@@ -17,9 +17,9 @@ Recipe::Recipe(std::unordered_map<int, int> &p_inputs, std::unordered_map<int, i
 }
 
 Recipe::Recipe(const Recipe& other) {
-    inputs = other.inputs;
-    outputs = other.outputs;
-    pops_needed = other.pops_needed;
+    inputs = other.get_inputs();
+    outputs = other.get_outputs();
+    pops_needed = other.get_pops_needed();
     employees = other.employees;
 }
 
@@ -46,11 +46,12 @@ bool Recipe::is_pop_needed(const BasePop* pop) const {
 }
 
 PopTypes Recipe::get_pop_type(const BasePop* pop) const {
-    if (typeid(*pop) == typeid(PeasantPop)) { // Checks pop is needed and if it has enough
+    String pop_class = pop->get_class();
+    if (pop_class == "PeasantPop") { // Checks pop is needed and if it has enough
         return peasant;
-    } else if (typeid(*pop) == typeid(TownPop)) {
+    } else if (pop_class == "TownPop") {
         return town;
-    } else if (typeid(*pop) == typeid(RuralPop)) {
+    } else if (pop_class == "RuralPop") {
         return rural;
     }
     return none;
@@ -67,14 +68,9 @@ void Recipe::add_pop(BasePop* pop) {
 }
 
 void Recipe::remove_pop(BasePop* pop) {
-    int i = 0;
     std::scoped_lock lock(m);
-    std::vector<BasePop*> pop_v = employees[get_pop_type(pop)];
-    for (auto it = pop_v.begin(); it != pop_v.end(); it++) {
-        if (*it == pop) {
-            employees[get_pop_type(pop)].erase(it);
-        }
-    }
+    auto &vec = employees[get_pop_type(pop)];
+    vec.erase(std::remove(vec.begin(), vec.end(), pop), vec.end());
 }
 
 int Recipe::get_employement() const {
@@ -96,7 +92,8 @@ int Recipe::get_pops_needed_num() const {
 }
 
 float Recipe::get_employment_rate() const {
-    return get_employement() / float(get_pops_needed_num());
+    int employement = get_employement(); // Seperated because both lock, idk
+    return employement / float(get_pops_needed_num());
 }
 
 void Recipe::fire_employees() {
