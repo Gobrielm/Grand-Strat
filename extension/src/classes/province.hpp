@@ -76,6 +76,12 @@ class Province : public Object {
     Vector2i get_closest_town_to_tile(Vector2i tile, std::vector<Vector2i> towns);
 
     // === Pops ===
+    // Info Stuff
+    double get_total_wealth_of_pops();
+    float get_needs_met_of_pops();
+    int get_number_of_broke_pops();
+
+
     // Global pop functions
     void pay_pop(int pop_id, float wage);
     void fire_pop(int pop_id);

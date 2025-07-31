@@ -162,11 +162,9 @@ public:
     float get_average_cash_of_road_depot() const;
     float get_average_cash_of_factory() const;
     float get_average_cash_of_town() const;
-    float get_average_cash_of_city_pop() const;
     float get_average_factory_level() const;
     int get_grain_demand() const;
     int get_grain_supply() const;
-    int get_number_of_broke_pops() const;
 
     template <typename T>
     float get_average_cash_of_terminal() const;

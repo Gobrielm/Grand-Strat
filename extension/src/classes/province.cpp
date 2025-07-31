@@ -228,6 +228,35 @@ Vector2i Province::get_closest_town_to_tile(Vector2i tile, std::vector<Vector2i>
     return closest_tile;
 }   
 
+double Province::get_total_wealth_of_pops() {
+    double total = 0;
+    std::scoped_lock lock(pops_lock);
+    for (const auto& [__, pop]: pops) {
+        total += pop->get_wealth();
+    }
+    return total;
+}
+
+float Province::get_needs_met_of_pops() {
+    double total = 0;
+    std::scoped_lock lock(pops_lock);
+    for (const auto& [__, pop]: pops) {
+        total += pop->get_average_fulfillment();
+    }
+    return total;
+}
+
+int Province::get_number_of_broke_pops() {
+    int total = 0;
+    std::scoped_lock lock(pops_lock);
+    for (const auto& [__, pop]: pops) {
+        if (pop->get_wealth() < 15) {
+            total++;
+        }
+    }
+    return total;
+}
+
 void Province::pay_pop(int pop_id, float wage) {
     std::scoped_lock lock(pops_lock);
     ERR_FAIL_COND_EDMSG(!pops.count(pop_id), "Tried to pay pop of unknown id: " + String::num(pop_id));

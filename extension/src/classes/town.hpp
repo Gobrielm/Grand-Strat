@@ -23,6 +23,7 @@ private:
 protected:
     static void _bind_methods();
     std::unordered_map<int, std::priority_queue<TownCargo*, std::vector<TownCargo*>, TownCargo::TownCargoPtrCompare>> market_storage;
+    std::unordered_map<int, int> current_totals; // Keeps track of current totals of goods
 
 public:
     Town();
@@ -42,6 +43,8 @@ public:
     bool is_price_acceptable(int type, float price) const override;
     int get_desired_cargo(int type, float price) const override;
 
+    int get_cargo_amount(int type) const override;
+
     // Production
     float get_fulfillment(int type) const;
     Dictionary get_fulfillment_dict() const;
@@ -52,16 +55,10 @@ public:
 
     //Pop stuff
     void add_pop(int pop_id);
-    void sell_to_pops();
-    void sell_to_city_pops();
-    void sell_to_rural_pops();
-    void sell_to_town_pop(BasePop* pop);
-    void sell_to_rural_pop(BasePop* pop);
     void sell_to_pop(BasePop* pop);
     void pay_factory(int amount, float price, Vector2i source);
     int get_total_pops() const;
     Ref<FactoryTemplate> find_employment(BasePop* pop) const;
-    int get_number_of_broke_pops() const;
 
     //Selling to brokers
     void sell_to_other_brokers();
@@ -72,10 +69,6 @@ public:
     //Storage Replacement
     void buy_cargo(int type, int amount, float price, int p_terminal_id) override;
     int add_cargo(int type, int amount) override;
-
-    //Economy Stats
-    float get_total_wealth_of_pops();
-    float get_needs_met_of_pops();
 
     void update_buy_orders();
 

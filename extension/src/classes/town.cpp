@@ -29,7 +29,6 @@ void Town::_bind_methods() {
     
 
     // Selling
-    ClassDB::bind_method(D_METHOD("sell_to_pops"), &Town::sell_to_pops);
     ClassDB::bind_method(D_METHOD("get_total_pops"), &Town::get_total_pops);
     ClassDB::bind_method(D_METHOD("sell_to_other_brokers"), &Town::sell_to_other_brokers);
     ClassDB::bind_method(D_METHOD("distribute_from_order", "order"), &Town::distribute_from_order);
@@ -178,90 +177,6 @@ void Town::add_pop(int pop_id) {
     town_pop_ids.insert(pop_id);
 }
 
-void Town::sell_to_pops() {
-    //market -> get_supply().size() represents all goods
-    // sell_to_city_pops();
-    // sell_to_rural_pops();
-}
-
-void Town::sell_to_city_pops() {
-    // std::scoped_lock lock(m);
-    // for (const auto &[__, pop]: town_pop_ids) {
-    //     pop->month_tick();
-    //     sell_to_town_pop(pop);
-    // }
-}
-
-void Town::sell_to_rural_pops() {
-    // for (const auto &[__, pop]: get_rural_pops()) {
-    //     sell_to_rural_pop(pop);
-    // }
-}
-
-void Town::sell_to_town_pop(BasePop* pop) {
-    for (auto& [type, pq] : market_storage) {
-        local_pricer->add_demand(type, pop->get_desired(type));
-        if (pq.empty()) {
-            continue;
-        }
-
-        TownCargo* town_cargo = pq.top();
-        int desired = pop->get_desired(type, town_cargo->price);
-
-        while (desired > 0) {
-            int amount = std::min(desired, town_cargo->amount);
-            pop->buy_good(type, amount, town_cargo->price);
-
-            TownCargo* current = town_cargo;
-
-            current->sell_cargo(amount);
-
-            if (!current->amount && !pq.empty() && pq.top() == current) {
-                pq.pop();
-                delete current;
-            }
-
-            if (pq.empty()) break;
-
-            town_cargo = pq.top();
-            desired = pop->get_desired(type, town_cargo->price);
-        }
-    }
-}
-
-void Town::sell_to_rural_pop(BasePop* pop) {
-    std::scoped_lock lock(m);
-
-    for (auto& [type, pq] : market_storage) {
-        local_pricer->add_demand(type, pop->get_desired(type));
-        if (pq.empty()) {
-            continue;
-        }
-
-        TownCargo* town_cargo = pq.top();
-        int desired = pop->get_desired(type, town_cargo->price);
-
-        while (desired > 0) {
-            int amount = std::min(desired, town_cargo->amount);
-            pop->buy_good(type, amount, town_cargo->price);
-
-            TownCargo* current = town_cargo;
-
-            current->sell_cargo(amount);
-
-            if (!current->amount && !pq.empty() && pq.top() == current) {
-                pq.pop();
-                delete current;
-            }
-
-            if (pq.empty()) break;
-
-            town_cargo = pq.top();
-            desired = pop->get_desired(type, town_cargo->price);
-        }
-    }
-}
-
 void Town::sell_to_pop(BasePop* pop) { // Called from Province, do not call locally
     std::unique_lock lock(m);
 
@@ -323,18 +238,6 @@ Ref<FactoryTemplate> Town::find_employment(BasePop* pop) const {
         }
     }
 	return best_fact;
-}
-
-int Town::get_number_of_broke_pops() const {
-    return 0;
-    // int count = 0;
-    // std::scoped_lock lock(m);
-    // for (const auto& [__, pop]: town_pop_ids) {
-    //     if (pop -> get_wealth() < 20) {
-    //         count++;
-    //     }
-    // }
-    // return count;
 }
 
 //Selling to brokers
@@ -423,22 +326,6 @@ int Town::add_cargo(int type, int amount) {
 
 //Economy Stats
 
-float Town::get_total_wealth_of_pops() {
-    float total = 0.0;
-    // for (const auto &[__, pop]: town_pop_ids) {
-    //     total += pop -> get_wealth();
-    // }
-    return total;
-}
-
-float Town::get_needs_met_of_pops() {
-    float total = 0.0;
-    // for (const auto &[__, pop]: town_pop_ids) {
-    //     total += pop -> get_average_fulfillment();
-    // }
-    return total;
-}
-
 void Town::update_buy_orders() {
 
     std::vector<int> v;
@@ -466,7 +353,6 @@ void Town::day_tick() {
 }
 
 void Town::month_tick() {
-    sell_to_pops();
     update_buy_orders();
     {
         std::scoped_lock lock(m);

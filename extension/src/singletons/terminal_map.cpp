@@ -573,20 +573,6 @@ float TerminalMap::get_average_cash_of_town() const {
     return get_average_cash_of_terminal<Town>();
 }
 
-float TerminalMap::get_average_cash_of_city_pop() const {
-    double ave = 0;
-    int count = 0;
-    std::shared_lock lock(cargo_map_mutex);
-    for (const auto &[__, terminal]: terminal_id_to_terminal) {
-        Ref<Town> typed = Ref<Town>(terminal);
-        if (typed.is_valid()) {
-            ave += typed -> get_total_wealth_of_pops();
-            count += typed -> get_total_pops();
-        }
-    }
-    return ave / count;
-}
-
 float TerminalMap::get_average_factory_level() const {
     double ave = 0;
     int count = 0;
@@ -624,18 +610,6 @@ int TerminalMap::get_grain_supply() const {
         }
     }
     return total_supply;
-}
-
-int TerminalMap::get_number_of_broke_pops() const {
-    int count = 0;
-    std::shared_lock lock(cargo_map_mutex);
-    for (const auto &[__, terminal]: terminal_id_to_terminal) {
-        Ref<Town> typed = Ref<Town>(terminal);
-        if (typed.is_valid()) {
-            count += int(typed -> get_number_of_broke_pops());
-        }
-    }
-    return count;
 }
 
 template <typename T>

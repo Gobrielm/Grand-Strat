@@ -12,7 +12,7 @@ private:
     std::vector<float> road_depot_data_points;
     std::vector<float> town_data_points;
     std::vector<float> factory_data_points;
-    std::vector<float> city_pops_data_points;
+    std::vector<float> pops_data_points;
     std::vector<float> factory_ave_level;
     std::vector<int> grain_demand;
     std::vector<int> grain_supply;

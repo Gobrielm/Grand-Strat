@@ -26,7 +26,7 @@ public:
     virtual void initialize(const Vector2i new_location, const int player_owner, const int p_max_amount = DEFAULT_MAX_STORAGE);
 
     virtual int add_cargo(int type, int amount);
-    int get_cargo_amount(int type) const;
+    virtual int get_cargo_amount(int type) const;
     virtual void remove_cargo(int type, int amount);
     virtual int transfer_cargo(int type, int amount);
     virtual int get_amount_to_add(int type, int amount) const;

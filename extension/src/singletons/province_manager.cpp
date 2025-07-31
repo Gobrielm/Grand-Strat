@@ -165,6 +165,24 @@ Province* ProvinceManager::get_province(int id) const {
     return it->second;
 }
 
+float ProvinceManager::get_average_cash_of_pops() const {
+    float total_wealth = 0;
+    int total_pops = 0;
+    for (const auto& [__, province]: provinces) {
+        total_wealth += province->get_total_wealth_of_pops();
+        total_pops += province->count_pops();
+    }
+    return total_wealth / total_pops;
+}
+
+int ProvinceManager::get_number_of_broke_pops() const {
+    int total_pops = 0;
+    for (const auto& [__, province]: provinces) {
+        total_pops += province->get_number_of_broke_pops();
+    }
+    return total_pops;
+}
+
 void ProvinceManager::add_province_to_country(Province* prov, int country_id) {
     int old_id = prov->get_country_id();
     if (old_id != -1) {

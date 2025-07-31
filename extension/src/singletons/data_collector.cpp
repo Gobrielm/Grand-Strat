@@ -2,6 +2,7 @@
 #include <fstream>
 #include "data_collector.hpp"
 #include "terminal_map.hpp"
+#include "province_manager.hpp"
 #include <godot_cpp/core/class_db.hpp>
 
 DataCollector* DataCollector::singleton_instance = nullptr;
@@ -34,12 +35,12 @@ void DataCollector::month_tick() {
     road_depot_data_points.push_back(TerminalMap::get_instance() -> get_average_cash_of_road_depot());
     town_data_points.push_back(TerminalMap::get_instance() -> get_average_cash_of_town());
     factory_data_points.push_back(TerminalMap::get_instance() -> get_average_cash_of_factory());
-    city_pops_data_points.push_back(TerminalMap::get_instance() -> get_average_cash_of_city_pop());
+    pops_data_points.push_back(ProvinceManager::get_instance() -> get_average_cash_of_pops());
     factory_ave_level.push_back(TerminalMap::get_instance() -> get_average_factory_level());
     grain_demand.push_back(TerminalMap::get_instance() -> get_grain_demand());
     grain_supply.push_back(TerminalMap::get_instance() -> get_grain_supply());
     grain_fulfillment.push_back(float(grain_supply.back()) / grain_demand.back());
-    broke_pops.push_back(TerminalMap::get_instance() -> get_number_of_broke_pops());
+    broke_pops.push_back(ProvinceManager::get_instance() -> get_number_of_broke_pops());
     write_data_to_file();
 }
 
@@ -64,8 +65,8 @@ void DataCollector::write_data_to_file() {
         file << x;
         file << ",";
     }
-    file << "\nCity pops Data points,\n";
-    for (float x: city_pops_data_points) {
+    file << "\nPops average wealth,\n";
+    for (float x: pops_data_points) {
         file << x;
         file << ",";
     }

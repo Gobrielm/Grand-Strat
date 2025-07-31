@@ -71,6 +71,10 @@ public:
     int get_province_id(Vector2i tile) const;
     Province* get_province(int province_id) const;
 
+    //Economy stats
+    float get_average_cash_of_pops() const;
+    int get_number_of_broke_pops() const;
+
     // Country to province mapping
     void add_province_to_country(Province* prov, int country_id);
     Dictionary get_countries_provinces(int country_id) const;
