@@ -155,7 +155,9 @@ bool ProvinceManager::is_tile_a_province(Vector2i tile) const {
 int ProvinceManager::get_province_id(Vector2i tile) const {
     std::shared_lock lock(province_mutex);
     auto it = tiles_to_province_id.find(tile);
-    return it != tiles_to_province_id.end() ? it->second : -1;
+
+    ERR_FAIL_COND_V_MSG(it == tiles_to_province_id.end(), -1, "Tried to find province with tile: " + tile + " which does not exist");
+    return it->second;
 }
 
 Province* ProvinceManager::get_province(int id) const {
@@ -168,6 +170,7 @@ Province* ProvinceManager::get_province(int id) const {
 float ProvinceManager::get_average_cash_of_pops() const {
     float total_wealth = 0;
     int total_pops = 0;
+    std::shared_lock lock(province_mutex);
     for (const auto& [__, province]: provinces) {
         total_wealth += province->get_total_wealth_of_pops();
         total_pops += province->count_pops();
@@ -177,6 +180,7 @@ float ProvinceManager::get_average_cash_of_pops() const {
 
 int ProvinceManager::get_number_of_broke_pops() const {
     int total_pops = 0;
+    std::shared_lock lock(province_mutex);
     for (const auto& [__, province]: provinces) {
         total_pops += province->get_number_of_broke_pops();
     }
@@ -184,6 +188,7 @@ int ProvinceManager::get_number_of_broke_pops() const {
 }
 
 void ProvinceManager::add_province_to_country(Province* prov, int country_id) {
+    std::unique_lock lock(province_mutex);
     int old_id = prov->get_country_id();
     if (old_id != -1) {
         country_id_to_province_ids[old_id].erase(prov->get_province_id());

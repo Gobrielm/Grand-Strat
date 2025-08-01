@@ -72,7 +72,7 @@ public:
     bool is_hiring(const BasePop* pop) const;
     bool is_firing() const;
     float get_wage() const;
-    void work_here(BasePop* pop);
+    void employ_pop(BasePop* pop);
     void pay_employees();
     void fire_employees();
 

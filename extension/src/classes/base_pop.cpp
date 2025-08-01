@@ -23,13 +23,6 @@ void BasePop::_bind_methods() {
     ClassDB::bind_method(D_METHOD("transfer_wealth"), &BasePop::transfer_wealth);
     ClassDB::bind_method(D_METHOD("get_culture"), &BasePop::get_culture);
 
-
-    ClassDB::add_property(get_class_static(),  PropertyInfo(Variant::INT, "pop_id"), "", "get_pop_id");
-    ClassDB::add_property(get_class_static(),  PropertyInfo(Variant::INT, "education_level"), "", "get_education_level");
-    ClassDB::add_property(get_class_static(),  PropertyInfo(Variant::FLOAT, "wealth"), "", "get_wealth");
-    ClassDB::add_property(get_class_static(),  PropertyInfo(Variant::INT, "home_prov_id"), "", "get_home_prov_id");
-    ClassDB::add_property(get_class_static(),  PropertyInfo(Variant::INT, "culture"), "", "get_culture");
-    ClassDB::add_property(get_class_static(),  PropertyInfo(Variant::INT, "income"), "", "get_income");
 }
 
 int BasePop::total_pops = 0;
@@ -103,27 +96,13 @@ bool BasePop::is_seeking_employment() const {
     }
 }
 
-bool BasePop::will_work_here(Ref<FactoryTemplate> fact) const {
-    //Checking of suitability, eg Literacy, 
-    
-    if (!fact -> is_hiring(this)) {
-        return false;
-    } 
-	float income = fact -> get_wage();
-    bool val = is_income_acceptable(income);
-    return val;
-}
-
-void BasePop::work_here(Ref<FactoryTemplate> work) {
-    work -> work_here(this);
-}
-
 void BasePop::pay_wage(float wage) {
     wealth += wage;
     income = wage;
 }
 
-void BasePop::employ(float wage) {
+void BasePop::employ(int p_employement_id, float wage) {
+    employement_id = p_employement_id;
     income = wage;
 }
 

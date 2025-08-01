@@ -124,11 +124,15 @@ public:
     Ref<T> get_terminal_as(const Vector2i &coords, const std::function<bool(const Vector2i &)> &type_check = nullptr) const {
         Ref<T> toReturn = Ref<T>(nullptr);
         {
-            std::scoped_lock lock(cargo_map_mutex);
-            if (cargo_map_terminals.count(coords) && (!type_check || type_check(coords))) {
-                Ref<T> typed = terminal_id_to_terminal.at(cargo_map_terminals.at(coords));
-                if (typed.is_valid()) {
-                    toReturn = typed;
+            std::shared_lock lock(cargo_map_mutex);
+            auto it = cargo_map_terminals.find(coords);
+            if (it != cargo_map_terminals.end()) {
+                auto it2 = terminal_id_to_terminal.find(it->second);
+                if (it2 != terminal_id_to_terminal.end() && (!type_check || type_check(coords))) {
+                    Ref<T> typed = it2->second;
+                    if (typed.is_valid()) {
+                        toReturn = typed;
+                    }
                 }
             }
         }
@@ -139,7 +143,7 @@ public:
     Ref<T> get_terminal_as(int terminal_id) const {
         Ref<T> toReturn = Ref<T>(nullptr);
         {
-            std::scoped_lock lock(cargo_map_mutex);
+            std::shared_lock lock(cargo_map_mutex);
             if (terminal_id_to_terminal.count(terminal_id)) {
                 Ref<T> typed = terminal_id_to_terminal.at(terminal_id);
                 if (typed.is_valid()) {
@@ -161,7 +165,6 @@ public:
     //Economy Testing Functions
     float get_average_cash_of_road_depot() const;
     float get_average_cash_of_factory() const;
-    float get_average_cash_of_town() const;
     float get_average_factory_level() const;
     int get_grain_demand() const;
     int get_grain_supply() const;

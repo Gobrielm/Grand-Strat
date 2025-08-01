@@ -1,10 +1,12 @@
 #pragma once
 
 #include <unordered_map>
+#include <set>
 #include <vector>
 
 #include "broker.hpp"
 #include "factory_template.hpp"
+#include "road_depot.hpp"
 #include "base_pop.hpp"
 #include "town_utility/town_cargo.hpp"
 
@@ -22,7 +24,7 @@ private:
 
 protected:
     static void _bind_methods();
-    std::unordered_map<int, std::priority_queue<TownCargo*, std::vector<TownCargo*>, TownCargo::TownCargoPtrCompare>> market_storage;
+    std::unordered_map<int, std::multiset<TownCargo*, TownCargo::TownCargoPtrCompare>> market_storage;
     std::unordered_map<int, int> current_totals; // Keeps track of current totals of goods
 
 public:
@@ -63,12 +65,14 @@ public:
     //Selling to brokers
     void sell_to_other_brokers();
     void distribute_type(int type);
-    void distribute_type_to_broker(int type, Ref<Broker> broker);
+    void distribute_type_to_broker(int type, Ref<Broker> broker, Ref<RoadDepot> road_depot = Ref<RoadDepot>(nullptr));
     std::vector<bool> get_accepts_vector() const override;
 
     //Storage Replacement
     void buy_cargo(int type, int amount, float price, int p_terminal_id) override;
+    void buy_cargo(const TownCargo* cargo) override;
     int add_cargo(int type, int amount) override;
+    void age_all_cargo();
 
     void update_buy_orders();
 

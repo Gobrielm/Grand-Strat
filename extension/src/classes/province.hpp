@@ -1,6 +1,7 @@
 #pragma once
 
 #include <godot_cpp/classes/object.hpp>
+#include <shared_mutex>
 #include <unordered_set>
 #include "../utility/vector2i_hash.hpp"
 #include <vector>
@@ -19,7 +20,7 @@ class Province : public Object {
     GDCLASS(Province, Object);
 
     mutable std::mutex m;
-    mutable std::mutex pops_lock;
+    mutable std::shared_mutex pops_lock;
     int province_id;
     int country_id = -1;
     int population;
@@ -98,7 +99,7 @@ class Province : public Object {
     void find_employment_for_pops();
     void find_employment_for_town_pops();
     void find_employment_for_rural_pops();
-    Ref<FactoryTemplate> find_employment(BasePop* pop) const;
+    Ref<FactoryTemplate> find_rural_employment(BasePop* pop) const;
     Ref<FactoryTemplate> find_urban_employment(BasePop* pop) const;
     void month_tick();
     void sell_to_pops();

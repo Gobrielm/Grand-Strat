@@ -70,12 +70,12 @@ int Province::get_population() const {
 }
 
 int Province::get_number_of_city_pops() const {
-    std::scoped_lock lock(pops_lock);
+    std::shared_lock lock(pops_lock);
     return town_pops.size();
 }
 
 const std::unordered_set<int> Province::get_rural_pop_ids() const {
-    std::scoped_lock lock(pops_lock);
+    std::shared_lock lock(pops_lock);
     return rural_pops;
 }
 
@@ -230,7 +230,7 @@ Vector2i Province::get_closest_town_to_tile(Vector2i tile, std::vector<Vector2i>
 
 double Province::get_total_wealth_of_pops() {
     double total = 0;
-    std::scoped_lock lock(pops_lock);
+    std::shared_lock lock(pops_lock);
     for (const auto& [__, pop]: pops) {
         total += pop->get_wealth();
     }
@@ -239,7 +239,7 @@ double Province::get_total_wealth_of_pops() {
 
 float Province::get_needs_met_of_pops() {
     double total = 0;
-    std::scoped_lock lock(pops_lock);
+    std::shared_lock lock(pops_lock);
     for (const auto& [__, pop]: pops) {
         total += pop->get_average_fulfillment();
     }
@@ -248,7 +248,7 @@ float Province::get_needs_met_of_pops() {
 
 int Province::get_number_of_broke_pops() {
     int total = 0;
-    std::scoped_lock lock(pops_lock);
+    std::shared_lock lock(pops_lock);
     for (const auto& [__, pop]: pops) {
         if (pop->get_wealth() < 15) {
             total++;
@@ -258,19 +258,19 @@ int Province::get_number_of_broke_pops() {
 }
 
 void Province::pay_pop(int pop_id, float wage) {
-    std::scoped_lock lock(pops_lock);
+    std::unique_lock lock(pops_lock);
     ERR_FAIL_COND_EDMSG(!pops.count(pop_id), "Tried to pay pop of unknown id: " + String::num(pop_id));
     pops[pop_id] -> pay_wage(wage);
 }
 
 void Province::fire_pop(int pop_id) {
-    std::scoped_lock lock(pops_lock);
+    std::unique_lock lock(pops_lock);
     ERR_FAIL_COND_EDMSG(!pops.count(pop_id), "Tried to fire pop of unknown id: " + String::num(pop_id));
     pops[pop_id] -> fire();
 }
 
 BasePop* Province::get_pop(int pop_id) {
-    ERR_FAIL_COND_V_MSG(!pops.count(pop_id), nullptr, "Pop of id: " + String::num(pop_id) + " not found.");
+    ERR_FAIL_COND_V_EDMSG(!pops.count(pop_id), nullptr, "Pop of id: " + String::num(pop_id) + " not found.");
     return pops[pop_id];
 }
 
@@ -302,7 +302,7 @@ void Province::create_pops() {
 void Province::create_peasant_pop(Variant culture, Vector2i p_location) {
     PeasantPop* pop = memnew(PeasantPop(province_id, p_location, culture));
     {
-        std::scoped_lock lock(pops_lock);
+        std::unique_lock lock(pops_lock);
         peasant_pops.insert(pop->get_pop_id());
         pops[pop->get_pop_id()] = pop;
     }
@@ -311,7 +311,7 @@ void Province::create_peasant_pop(Variant culture, Vector2i p_location) {
 void Province::create_rural_pop(Variant culture, Vector2i p_location) {
     RuralPop* pop = memnew(RuralPop(province_id, p_location, culture));
     {
-        std::scoped_lock lock(pops_lock);
+        std::unique_lock lock(pops_lock);
         rural_pops.insert(pop->get_pop_id());
         pops[pop->get_pop_id()] = pop;
     }
@@ -320,7 +320,7 @@ void Province::create_rural_pop(Variant culture, Vector2i p_location) {
 int Province::create_town_pop(Variant culture, Vector2i p_location) {
     TownPop* pop = memnew(TownPop(province_id, p_location, culture));
     {
-        std::scoped_lock lock(pops_lock);
+        std::unique_lock lock(pops_lock);
         town_pops.insert(pop->get_pop_id());
         pops[pop->get_pop_id()] = pop;
     }
@@ -385,7 +385,7 @@ std::vector<Vector2i> Province::get_town_tiles() const {
 }
 
 int Province::count_pops() const {
-    std::scoped_lock lock(pops_lock);
+    std::shared_lock lock(pops_lock);
     return pops.size();
 }
 
@@ -399,31 +399,35 @@ void Province::find_employment_for_town_pops() {
 
 void Province::find_employment_for_rural_pops() {
     Ref<FactoryTemplate> work;
-    std::scoped_lock lock(pops_lock);
-    for (const auto pop_id: rural_pops) {
+    std::unique_lock lock(pops_lock);
+    
+    for (const auto &pop_id: rural_pops) {
         BasePop* pop = get_pop(pop_id);
         if (pop -> is_seeking_employment()) {
-            if (work.is_valid() && work->is_hiring(pop) && pop->will_work_here(work)) {
-                work -> work_here(pop);
+            if (work.is_valid() && work->is_hiring(pop)) {
+                work->employ_pop(pop);
             } else {
-                work = find_employment(pop);
+                work = find_rural_employment(pop);
                 if (work.is_valid()) {
-                    work-> work_here(pop);
+                    work->employ_pop(pop);
                 }
             }
         }
     }
 }
 
-Ref<FactoryTemplate> Province::find_employment(BasePop* pop) const {
+Ref<FactoryTemplate> Province::find_rural_employment(BasePop* pop) const {
     float max_wage = 0.0;
     Ref<FactoryTemplate> best_fact = Ref<FactoryTemplate>(nullptr);
     
     for (const auto &tile: terminal_tiles) {
         Ref<FactoryTemplate> fact = TerminalMap::get_instance() -> get_terminal_as<FactoryTemplate>(tile);
-        if (fact.is_valid() && pop -> will_work_here(fact) && fact -> get_wage() > max_wage) {
+        if (fact.is_null()) continue;
+
+        float wage = fact -> get_wage();
+        if (fact->is_hiring(pop) && wage > max_wage) {
             best_fact = fact;
-            max_wage = fact -> get_wage();
+            max_wage = wage;
         }
 
     }
@@ -452,7 +456,7 @@ Ref<FactoryTemplate> Province::find_urban_employment(BasePop* pop) const {
 
 void Province::month_tick() {
     sell_to_pops();
-    find_employment_for_pops();
+    // find_employment_for_pops();
     // Employ or find education for peasants
 }
 
@@ -460,16 +464,18 @@ void Province::month_tick() {
 void Province::sell_to_pops() {
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     // Get closest town and then use town functions to sell to those pops
-    std::scoped_lock lock(pops_lock);
+    std::unique_lock lock(pops_lock);
+    
     for (const auto& pop_id: town_pops) {
         BasePop* pop = get_pop(pop_id);
         pop->month_tick();
-        if (!closest_town_to_tile.count(pop->get_location())) {
+        Ref<Town> town = TerminalMap::get_instance()->get_town(pop->get_location());
+        if (town.is_null()) {
             if (get_town_tiles().size() != 0) print_error("There are more than 0 towns"); 
             print_error("Pop is not in province or province has no towns, pop location: " + pop->get_location());
             continue;
         }
-        Ref<Town> town = TerminalMap::get_instance()->get_town(closest_town_to_tile[pop->get_location()]);
+        
         town->sell_to_pop(pop);
     }
 
@@ -481,6 +487,10 @@ void Province::sell_to_pops() {
             continue;
         }
         Ref<Town> town = TerminalMap::get_instance()->get_town(closest_town_to_tile[pop->get_location()]);
+        if (town.is_null()) {
+            print_error("Towns and terminals are desynced at " + pop->get_location());
+            continue;
+        }
         town->sell_to_pop(pop);
     }
 

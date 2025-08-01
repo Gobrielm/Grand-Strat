@@ -24,7 +24,6 @@
 #include "../classes/construction_site.hpp"
 #include "../classes/factory.hpp"
 #include "../classes/ai_factory.hpp"
-#include "../classes/Specific_Buildings/wheat_farm.hpp"
 #include "../classes/isolated_broker.hpp"
 #include "../classes/Specific_Buildings/subsistence_farm.hpp"
 #include "../classes/road_depot.hpp"
@@ -72,7 +71,6 @@ void initialize_gdextension_types(ModuleInitializationLevel p_level)
 	GDREGISTER_CLASS(ConstructionSite);
 	GDREGISTER_CLASS(Factory);
 	GDREGISTER_CLASS(AiFactory);
-	GDREGISTER_CLASS(WheatFarm);
 	GDREGISTER_CLASS(IsolatedBroker);
 	GDREGISTER_CLASS(SubsistenceFarm);
 	GDREGISTER_CLASS(RoadDepot);

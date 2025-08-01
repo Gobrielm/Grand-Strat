@@ -7,6 +7,7 @@ using namespace godot;
 
 struct TownCargo {
 
+    TownCargo(const TownCargo* other);
     TownCargo(int p_type, int p_amount, float p_price, int p_terminal_id);
     int type;
     int amount;
@@ -14,8 +15,13 @@ struct TownCargo {
     float price;
     int terminal_id;
 
+    std::unordered_map<int, float> fees_to_pay;
+
     void sell_cargo(int p_amount);
+    void pay_fees(float &total_price);
     void transfer_cargo(int p_amount);
+    void return_cargo();
+    void add_fee_to_pay(int term_id, float fee);
 
     // Sorts by price
     bool operator>(const TownCargo& other) const;
@@ -23,7 +29,9 @@ struct TownCargo {
 
     struct TownCargoPtrCompare {
         bool operator()(const TownCargo* lhs, const TownCargo* rhs) const {
-            return lhs->price > rhs->price; // Min-heap: lowest price at top
+            if (lhs->price == rhs->price)
+                return lhs < rhs; // fallback to pointer address
+            return lhs->price > rhs->price; // lowest price first
         }
     };
 };

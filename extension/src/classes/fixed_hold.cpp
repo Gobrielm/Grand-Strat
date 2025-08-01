@@ -92,7 +92,7 @@ void FixedHold::add_accept(int type) {
 
 void FixedHold::remove_accept(int type) {
     std::scoped_lock lock(m);
-    accepts.erase(type);
+    if (accepts.count(type)) accepts.erase(type);
 }
 
 bool FixedHold::does_accept(int type) const {

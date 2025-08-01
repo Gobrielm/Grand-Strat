@@ -2,21 +2,21 @@
 
 #include "fixed_hold.hpp"
 #include "trade_order.hpp"
-#include "terminal.hpp"
 #include "road_depot.hpp"
+
 #include "local_price_controller.hpp"
 #include "../utility/vector2i_hash.hpp"
 #include <unordered_map>
 #include <unordered_set>
 #include <memory>
 
+class TownCargo;
+
 using namespace godot;
 
 class Broker : public FixedHold {
     GDCLASS(Broker, FixedHold);
     
-
-
     protected:
     static void _bind_methods();
     std::unordered_map<int, TradeOrder*> trade_orders;
@@ -44,6 +44,8 @@ class Broker : public FixedHold {
     virtual bool is_price_acceptable(int type, float pricePer) const;
 
     virtual void buy_cargo(int type, int amount, float price, int p_terminal_id);
+    virtual void buy_cargo(const TownCargo* cargo);
+
     int sell_cargo(int type, int amount);
     int add_cargo(int type, int amount) override;
     int add_cargo_ignore_accepts(int type, int amount) override;

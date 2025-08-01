@@ -569,10 +569,6 @@ float TerminalMap::get_average_cash_of_factory() const {
     return get_average_cash_of_terminal<Factory>();
 }
 
-float TerminalMap::get_average_cash_of_town() const {
-    return get_average_cash_of_terminal<Town>();
-}
-
 float TerminalMap::get_average_factory_level() const {
     double ave = 0;
     int count = 0;

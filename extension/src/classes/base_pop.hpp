@@ -26,6 +26,7 @@ class BasePop : public Object {
     int home_prov_id;
     Variant culture;
     float income;
+    int employement_id;
 
     std::unordered_map<int, float> internal_storage;
     
@@ -45,11 +46,9 @@ class BasePop : public Object {
     void set_location(Vector2i p_location);
     Vector2i get_location() const;
 
-    void work_here(Ref<FactoryTemplate> work);
     bool is_seeking_employment() const;
-    virtual bool will_work_here(Ref<FactoryTemplate> fact) const;
     void pay_wage(float wage);
-    void employ(float wage);
+    void employ(int p_employement_id, float wage);
     void fire();
     float get_income() const;
     bool is_income_acceptable(float p_income) const;

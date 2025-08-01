@@ -6,7 +6,9 @@
 namespace godot_helpers {
     struct Vector2iHasher {
         size_t operator()(const godot::Vector2i& v) const {
-            return std::hash<int>()(v.x) ^ (std::hash<int>()(v.y) << 1);
+            size_t h1 = std::hash<int>()(v.x);
+            size_t h2 = std::hash<int>()(v.y);
+            return h1 ^ (h2 + 0x9e3779b9 + (h1 << 6) + (h1 >> 2));
         }
     };
 

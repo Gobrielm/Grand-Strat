@@ -29,7 +29,6 @@ void FactoryTemplate::_bind_methods() {
     ClassDB::bind_method(D_METHOD("is_firing"), &FactoryTemplate::is_firing);
     ClassDB::bind_method(D_METHOD("get_wage"), &FactoryTemplate::get_wage);
 
-    ClassDB::bind_method(D_METHOD("work_here", "pop"), &FactoryTemplate::work_here);
     ClassDB::bind_method(D_METHOD("pay_employees"), &FactoryTemplate::pay_employees);
     ClassDB::bind_method(D_METHOD("fire_employees"), &FactoryTemplate::fire_employees);
 
@@ -148,7 +147,8 @@ void FactoryTemplate::distribute_cargo() {
 }
 
 int FactoryTemplate::get_level() const {
-    return round(recipe->get_level());
+    return 1;
+    // return round(recipe->get_level());
 }
 
 int FactoryTemplate::get_level_without_employment() const {
@@ -223,7 +223,7 @@ float FactoryTemplate::get_last_month_income() const {
 }
 
 bool FactoryTemplate::is_hiring(const BasePop* pop) const {
-    return (recipe->is_pop_needed(pop));
+    return (recipe->is_pop_needed(pop)); // TODO: Check requirements
 }
 
 bool FactoryTemplate::is_firing() const {
@@ -243,14 +243,15 @@ float FactoryTemplate::get_wage() const {
         available *= 30;
     }
     
-
+    if (!recipe->get_pops_needed_num()) return 0;
+    
     return available / recipe->get_pops_needed_num();
 }
 
-void FactoryTemplate::work_here(BasePop* pop) {
+void FactoryTemplate::employ_pop(BasePop* pop) {
     if (is_hiring(pop)) {
         recipe->add_pop(pop);
-        pop->employ(get_wage());
+        pop->employ(get_wage(), terminal_id);
         pop->set_location(get_location());
     }
 }
@@ -258,7 +259,7 @@ void FactoryTemplate::work_here(BasePop* pop) {
 void FactoryTemplate::pay_employees() {
     Ref<ProvinceManager> province_manager = ProvinceManager::get_instance();
     float wage = get_wage();
-    for (const auto& [pop_id, pop_type] : recipe->get_employee_ids()) {
+    for (const auto& [pop_id, __] : recipe->get_employee_ids()) {
         Province* province = province_manager->get_province(province_manager->get_province_id(get_location()));
         province->pay_pop(pop_id, transfer_cash(wage));
     }

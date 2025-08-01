@@ -1,6 +1,7 @@
 #include "broker.hpp"
 #include "road_depot.hpp"
 #include "../singletons/terminal_map.hpp"
+#include "town_utility/town_cargo.hpp"
 #include <algorithm>
 #include <cmath>
 
@@ -89,11 +90,16 @@ void Broker::buy_cargo(int type, int amount, float price, int p_terminal_id) {
     int total = std::round(amount * price);
     add_cargo_ignore_accepts(type, amount);
     remove_cash(total);
-
+    
     broker->add_cash(total);
     broker->report_change_in_cash(total);
 
     report_change_in_cash(-total);
+}
+
+void Broker::buy_cargo(const TownCargo* cargo) {
+    //TODO: DEAL WIHT FEES
+    buy_cargo(cargo->type, cargo->amount, cargo->price, cargo->terminal_id);
 }
 
 int Broker::sell_cargo(int type, int amount) {
@@ -129,9 +135,10 @@ void Broker::edit_order(int type, int amount, bool buy, float maxPrice) {
     std::scoped_lock lock(m);
     auto it = trade_orders.find(type);
     if (it != trade_orders.end()) {
-        it->second->change_buy(buy);
-        it->second->change_amount(amount);
-        it->second->set_max_price(maxPrice);
+        TradeOrder* trade_order = it->second;
+        trade_order->change_buy(buy);
+        trade_order->change_amount(amount);
+        trade_order->set_max_price(maxPrice);
     } else {
         trade_orders[type] = memnew(TradeOrder(type, amount, buy, maxPrice));
     }
@@ -250,10 +257,16 @@ void Broker::distribute_to_order(Ref<Broker> otherBroker, const TradeOrder* orde
     int amount = std::min(desired, order->get_amount()); 
     if (amount > 0) {
         amount = sell_cargo(type, amount);
-        otherBroker->buy_cargo(type, amount, price, get_terminal_id());
-        if (road_depot.is_valid()) {
-            road_depot->add_cash(transfer_cash(amount * price * road_depot->get_fee()));
+        {
+            TownCargo* cargo = new TownCargo(type, amount, price, get_terminal_id());
+            if (road_depot.is_valid()) {
+                cargo->add_fee_to_pay(road_depot->get_terminal_id(), road_depot->get_fee()); // FEES ADDED BUT NOT DEALT WITH
+            }
+            otherBroker->buy_cargo(cargo);
+            delete cargo;
         }
+        
+        
     }
 }
 
