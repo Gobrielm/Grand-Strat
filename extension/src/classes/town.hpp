@@ -9,6 +9,7 @@
 #include "road_depot.hpp"
 #include "base_pop.hpp"
 #include "town_utility/town_cargo.hpp"
+#include "town_utility/pop_order.hpp"
 
 class CargoInfo;
 
@@ -24,7 +25,9 @@ private:
 
 protected:
     static void _bind_methods();
-    std::unordered_map<int, std::multiset<TownCargo*, TownCargo::TownCargoPtrCompare>> market_storage;
+    std::unordered_map<int, std::multiset<TownCargo*, TownCargo::TownCargoPtrCompare>> cargo_sell_orders; // Lowest price first
+    std::unordered_map<int, std::vector<PopOrder*>> pop_buy_orders; // Highest price first
+    std::unordered_map<int, float> current_prices; // Keep track of prices from last month
     std::unordered_map<int, int> current_totals; // Keeps track of current totals of goods
 
 public:
@@ -57,6 +60,7 @@ public:
 
     //Pop stuff
     void add_pop(int pop_id);
+    void place_buy_order(BasePop* pop);
     void sell_to_pop(BasePop* pop);
     void pay_factory(int amount, float price, Vector2i source);
     int get_total_pops() const;
@@ -67,6 +71,7 @@ public:
     void distribute_type(int type);
     void distribute_type_to_broker(int type, Ref<Broker> broker, Ref<RoadDepot> road_depot = Ref<RoadDepot>(nullptr));
     std::vector<bool> get_accepts_vector() const override;
+    float get_local_price(int type) const override;
 
     //Storage Replacement
     void buy_cargo(int type, int amount, float price, int p_terminal_id) override;
@@ -75,6 +80,10 @@ public:
     void age_all_cargo();
 
     void update_buy_orders();
+    void update_local_prices();
+    void update_local_price(int type);
+    void trade_cargo_internally();
+    void trade_type_of_cargo_internally(int type);
 
     // Process Hooks
     void day_tick();

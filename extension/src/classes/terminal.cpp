@@ -55,4 +55,4 @@ void Terminal::initialize(const Vector2i p_location, int p_owner) {
     print_error("DOES NOT CREATE TERMINAL ID");
 }
 
-int Terminal::total_terminals = 0;
+std::atomic<int> Terminal::total_terminals = 0;

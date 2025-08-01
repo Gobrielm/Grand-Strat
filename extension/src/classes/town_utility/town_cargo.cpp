@@ -19,6 +19,8 @@ TownCargo::TownCargo(int p_type, int p_amount, float p_price, int p_terminal_id)
 }
 
 bool TownCargo::operator>(const TownCargo& other) const {
+    if (price == other.price)
+        return this > &other; // fallback to pointer address
     return price > other.price;
 }
 
@@ -27,9 +29,13 @@ bool TownCargo::operator==(const TownCargo& other) const {
 }
 
 void TownCargo::sell_cargo(int p_amount) {
+    sell_cargo(p_amount, price);
+}
+
+void TownCargo::sell_cargo(int p_amount, float p_price) {
     Ref<FactoryTemplate> factory = TerminalMap::get_instance()->get_terminal_as<FactoryTemplate>(terminal_id);
     if (factory.is_null()) return; 
-    float total_price = p_amount * price;
+    float total_price = p_amount * p_price;
     pay_fees(total_price);
     factory->add_cash(total_price);
     amount -= p_amount;

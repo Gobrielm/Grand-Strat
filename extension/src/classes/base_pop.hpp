@@ -14,13 +14,12 @@ class BasePop : public Object {
 
     static constexpr int PEOPLE_PER_POP = 1000;
     static constexpr int INITIAL_WEALTH = 1000;
-    static int total_pops;
-    static std::mutex m;
+    static std::atomic<int> total_pops;
     static std::unordered_map<int, float> base_needs;
     static std::unordered_map<int, float> specialities;
     
     Vector2i location;
-    int pop_id;
+    const int pop_id;
     int education_level;
     float wealth;
     int home_prov_id;
@@ -33,7 +32,8 @@ class BasePop : public Object {
     protected:
     static void _bind_methods();
     String _to_string() const;
-    
+    float get_limit_price_for_wanted_good(int type) const;
+    float get_limit_price_for_needed_good(int type) const;
     
 
     public:
@@ -57,6 +57,7 @@ class BasePop : public Object {
 
     int get_base_need(int type) const;
     int get_base_want(int type) const;
+    float get_limit_price(int type) const;
 
     int get_desired(int type) const;
     int get_desired(int type, float price) const;

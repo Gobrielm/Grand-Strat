@@ -8,7 +8,7 @@ using namespace godot;
 
 class Terminal : public RefCounted {
     GDCLASS(Terminal, RefCounted);
-    static int total_terminals;
+    static std::atomic<int> total_terminals;
     Vector2i location;
     int player_owner;
     

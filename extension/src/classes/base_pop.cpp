@@ -25,20 +25,17 @@ void BasePop::_bind_methods() {
 
 }
 
-int BasePop::total_pops = 0;
-std::mutex BasePop::m;
+std::atomic<int> BasePop::total_pops = 0;
 std::unordered_map<int, float> BasePop::base_needs;
 std::unordered_map<int, float> BasePop::specialities;
 
-BasePop::BasePop(): BasePop(-1, Vector2i(0, 0), 0) {}
+BasePop::BasePop(): BasePop(-1, Vector2i(0, 0), -1) {}
 
-BasePop::BasePop(int p_home_prov_id, Vector2i p_location, Variant p_culture) {
+BasePop::BasePop(int p_home_prov_id, Vector2i p_location, Variant p_culture): pop_id(total_pops++) {
     location = p_location;
     home_prov_id = p_home_prov_id;
     culture = p_culture;
-    m.lock();
-    pop_id = total_pops++;
-    m.unlock();
+    
     wealth = INITIAL_WEALTH;
     income = 0.0;
     education_level = 0;
@@ -133,6 +130,51 @@ int BasePop::get_base_need(int type) const {
 }
 int BasePop::get_base_want(int type) const {
     return specialities.count(type) ? specialities[type]: 0;
+}
+
+float BasePop::get_limit_price(int type) const {
+    if (!internal_storage.count(type)) {
+        return 0;
+    } else if (base_needs.count(type)) {
+        return get_limit_price_for_needed_good(type);
+    } else {
+        return get_limit_price_for_wanted_good(type);
+    }
+}
+
+float BasePop::get_limit_price_for_wanted_good(int type) const {
+    int amount = get_desired(type);
+    float available_money = income * 0.95; // Save a bit
+    
+    float wanted = get_max_storage(type) / get_desired(type); // 0 - 1;
+
+    float total_wanted = wanted;
+    for (const auto& [other_type, __]: specialities) {
+        if (type == other_type) continue;
+        float weighted_want = get_max_storage(other_type) / get_desired(other_type); // 0 - 1;
+        total_wanted += weighted_want;
+    }
+    for (const auto& [other_type, __]: base_needs) {
+        if (type == other_type) continue;
+        float weighted_need = get_max_storage(other_type) / get_desired(other_type); // 0 - 1;
+        total_wanted += weighted_need;
+    }
+    return available_money * (wanted / total_wanted);
+}
+
+float BasePop::get_limit_price_for_needed_good(int type) const {
+    int amount = get_desired(type);
+    float available_money = income; // Save a bit
+    
+    float needed = get_max_storage(type) / get_desired(type); // 0 - 1;
+
+    float total_needed = needed;
+    for (const auto& [other_type, __]: specialities) {
+        if (type == other_type) continue;
+        float weighted_need = get_max_storage(other_type) / get_desired(other_type); // 0 - 1;
+        total_needed += weighted_need;
+    }
+    return available_money * (needed / total_needed);
 }
 
 int BasePop::get_desired(int type) const {

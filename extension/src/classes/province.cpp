@@ -269,6 +269,18 @@ void Province::fire_pop(int pop_id) {
     pops[pop_id] -> fire();
 }
 
+void Province::sell_cargo_to_pop(int pop_id, int type, int amount, float price) {
+    std::unique_lock lock(pops_lock);
+    BasePop* pop = get_pop(pop_id);
+    pop->buy_good(type, amount, price);
+}
+
+int Province::get_pop_max_buy_amount(int pop_id, int type, float price) {
+    std::unique_lock lock(pops_lock);
+    BasePop* pop = get_pop(pop_id);
+    return pop->get_desired(type, price);
+}
+
 BasePop* Province::get_pop(int pop_id) {
     ERR_FAIL_COND_V_EDMSG(!pops.count(pop_id), nullptr, "Pop of id: " + String::num(pop_id) + " not found.");
     return pops[pop_id];
@@ -294,7 +306,7 @@ void Province::create_pops() {
         create_town_pops(number_of_city_pops, towns);
     }
 
-    // employ_peasants();
+    employ_peasants();
 
 	
 }
@@ -359,7 +371,8 @@ void Province::employ_peasants() {
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     std::vector<int> farms = create_buildings_for_peasants();
     if (farms.size() == 0) {
-        print_error("No possible peasant buildings");
+        // print_line(tiles.front());
+        // print_error("No possible peasant buildings");
         return;
     }
     int i = 0;
@@ -456,7 +469,7 @@ Ref<FactoryTemplate> Province::find_urban_employment(BasePop* pop) const {
 
 void Province::month_tick() {
     sell_to_pops();
-    // find_employment_for_pops();
+    find_employment_for_pops();
     // Employ or find education for peasants
 }
 
@@ -475,8 +488,8 @@ void Province::sell_to_pops() {
             print_error("Pop is not in province or province has no towns, pop location: " + pop->get_location());
             continue;
         }
-        
-        town->sell_to_pop(pop);
+        town->place_buy_order(pop);
+        // town->sell_to_pop(pop);
     }
 
     for (const auto& pop_id: rural_pops) {
