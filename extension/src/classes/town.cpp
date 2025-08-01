@@ -492,7 +492,9 @@ void Town::trade_type_of_cargo_internally(int type) {
     std::random_device rd;
     std::mt19937 g(rd());
 
-    std::scoped_lock lock(m);
+    std::unordered_map<int, float> money_to_pay; // Stores money to pay other brokers locally to be done after unlocking
+
+    std::unique_lock lock(m);
 
     auto& sell_ms = cargo_sell_orders[type];
     
@@ -528,7 +530,7 @@ void Town::trade_type_of_cargo_internally(int type) {
         amount = std::min(amount, province->get_pop_max_buy_amount(buy_order->pop_id, type, price));
 
         province->sell_cargo_to_pop(buy_order->pop_id, type, amount, price);
-        sell_order->sell_cargo(amount, price); // Calls outside factory, could be in town, then crash
+        sell_order->sell_cargo(amount, price, money_to_pay); // Calls outside factory, could be in town, then crash
         buy_order->buy_cargo(amount);
 
         if (sell_order->amount == 0) {
@@ -539,6 +541,13 @@ void Town::trade_type_of_cargo_internally(int type) {
             delete buy_order;
             buy_it = buy_v.erase(buy_it);
         }
+    }
+
+    lock.unlock(); // UNLOCK
+    Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
+    for (const auto &[terminal_id, to_pay]: money_to_pay) {
+        Ref<Broker> broker = terminal_map->get_terminal_as<Broker>(terminal_id);
+        broker->add_cash(to_pay);
     }
 }
 

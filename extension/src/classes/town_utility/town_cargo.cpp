@@ -41,6 +41,23 @@ void TownCargo::sell_cargo(int p_amount, float p_price) {
     amount -= p_amount;
 }
 
+void TownCargo::sell_cargo(int p_amount, float p_price, std::unordered_map<int, float>& to_pay) {
+    float total_price = p_amount * p_price;
+    for (auto& [term_id, fee]: fees_to_pay) {
+        if (!to_pay.count(term_id)) {
+            to_pay[term_id] = 0;
+        }
+        float fee_price = total_price * fee;
+        to_pay[term_id] += fee_price;
+        total_price -= fee_price;
+    }
+    if (!to_pay.count(terminal_id)) {
+        to_pay[terminal_id] = 0;
+    }
+    to_pay[terminal_id] += total_price;
+    amount -= p_amount;
+}
+
 void TownCargo::pay_fees(float &total_price) {
     for (auto& [terminal_id, fee]: fees_to_pay) {
         float to_pay = total_price * fee;

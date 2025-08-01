@@ -19,6 +19,7 @@ struct TownCargo {
 
     void sell_cargo(int p_amount);
     void sell_cargo(int p_amount, float p_price);
+    void sell_cargo(int p_amount, float p_price, std::unordered_map<int, float>& to_pay);
     void pay_fees(float &total_price);
     void transfer_cargo(int p_amount);
     void return_cargo();
