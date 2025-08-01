@@ -188,34 +188,36 @@ void Town::sell_to_pop(BasePop* pop) { // Called from Province, do not call loca
 
     for (auto& [type, ms] : market_storage) {
         local_pricer->add_demand(type, pop->get_desired(type));
+        // continue; // TEMP
+
         if (ms.empty()) {
             continue;
         }
-
-        TownCargo* town_cargo = *ms.begin();
+        auto it = ms.begin();
+        TownCargo* town_cargo = *it;
         int desired = pop->get_desired(type, town_cargo->price);
 
         while (desired > 0) {
             int amount = std::min(desired, town_cargo->amount);
             pop->buy_good(type, amount, town_cargo->price);
             current_totals[type] -= amount;
-            TownCargo* current = town_cargo;
 
             {
                 lock.unlock();
-                current->sell_cargo(amount); // Makes call on other broker, so unlock for safety
+                town_cargo->sell_cargo(amount); // Makes call on other broker, so unlock for safety
                 lock.lock();
             }
             
 
-            if (!current->amount && !ms.empty()) {
-                ms.erase(ms.begin()); // Erases first element
-                delete current;
+            if (town_cargo->amount == 0 && !ms.empty()) {
+                ms.erase(it); // Erases first element
+                delete town_cargo;
             }
 
             if (ms.empty()) break;
 
-            town_cargo = *ms.begin();
+            it = ms.begin();
+            town_cargo = *it;
             desired = pop->get_desired(type, town_cargo->price);
         }
     }

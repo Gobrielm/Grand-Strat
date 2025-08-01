@@ -27,12 +27,12 @@ bool TownCargo::operator==(const TownCargo& other) const {
 }
 
 void TownCargo::sell_cargo(int p_amount) {
-    Ref<Broker> broker = TerminalMap::get_instance()->get_terminal_as<Broker>(terminal_id);
-    if (broker.is_null()) return; 
+    Ref<FactoryTemplate> factory = TerminalMap::get_instance()->get_terminal_as<FactoryTemplate>(terminal_id);
+    if (factory.is_null()) return; 
     float total_price = p_amount * price;
     pay_fees(total_price);
-    broker->add_cash(total_price);
-    transfer_cargo(p_amount);
+    factory->add_cash(total_price);
+    amount -= p_amount;
 }
 
 void TownCargo::pay_fees(float &total_price) {

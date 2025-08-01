@@ -51,7 +51,7 @@ func backend_unpause() -> void:
 func get_game_speed() -> int:
 	return clock_singleton.get_instance().get_game_speed()
 
-func day_tick() -> void: #Crash after first month tick
+func day_tick() -> void:
 	TerminalMap.get_instance()._on_day_tick_timeout()
 	clock.iterate_day()
 	if clock.is_next_month():
