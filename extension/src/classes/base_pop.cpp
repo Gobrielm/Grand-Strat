@@ -3,7 +3,6 @@
 #include <godot_cpp/core/class_db.hpp>
 
 void BasePop::_bind_methods() {
-    ClassDB::bind_static_method(BasePop::get_class_static(), D_METHOD("create_base_needs", "d"), &BasePop::create_base_needs);
     ClassDB::bind_static_method(BasePop::get_class_static(), D_METHOD("get_people_per_pop"), &BasePop::get_people_per_pop);
 
 
@@ -53,11 +52,9 @@ String BasePop::_to_string() const {
     return "BasePop";
 }
 
-void BasePop::create_base_needs(Dictionary d) { //d<int, float>
-    Array keys = d.keys();
-    for (int i = 0; i < keys.size(); i++) {
-        int type = keys[i];
-        base_needs[type] = d[type];
+void BasePop::create_base_needs(std::unordered_map<int, float> p_base_needs) {
+    for (const auto [type, amount]: p_base_needs) {
+        base_needs[type] = amount;
     }
 }
 
@@ -125,11 +122,11 @@ float BasePop::get_sol() const {
     return get_income();
 }
 
-int BasePop::get_base_need(int type) const {
-    return base_needs.count(type) ? base_needs[type]: 0;
+float BasePop::get_base_need(int type) const {
+    return base_needs.count(type) == 1 ? base_needs[type]: 0;
 }
-int BasePop::get_base_want(int type) const {
-    return specialities.count(type) ? specialities[type]: 0;
+float BasePop::get_base_want(int type) const {
+    return specialities.count(type) == 1 ? specialities[type]: 0;
 }
 
 float BasePop::get_buy_price(int type, float current_price) const {
@@ -144,12 +141,12 @@ float BasePop::get_buy_price(int type, float current_price) const {
 
 float BasePop::get_buy_price_for_needed_good(int type, float current_price) const {
     float available_money = income; // Save a bit
-    
+
     float needed = float(get_desired(type)) / get_max_storage(type); // 0 - 1;
     if (needed == 0) return 0;
 
     float total_needed = needed;
-    for (const auto& [other_type, __]: base_needs) {
+    for (const auto& [other_type, amount]: base_needs) {
         if (type == other_type) continue;
         float weighted_need = float(get_desired(other_type)) / get_max_storage(other_type); // 0 - 1;
         total_needed += weighted_need;
@@ -240,7 +237,7 @@ void BasePop::buy_good(int type, int amount, float price) {
 }
 
 int BasePop::get_max_storage(int type) const {
-    return (get_base_need(type) + get_base_want(type)) * 3; // Storage is based on need, so pops have 3 months without any access before bad
+    return ceil((get_base_need(type) + get_base_want(type)) * 3.0); // Storage is based on need, so pops have 3 months without any access before bad
 }
 
 int BasePop::get_education_level() const {

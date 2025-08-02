@@ -182,7 +182,7 @@ void Town::add_pop(int pop_id) {
 }
 
 void Town::sell_to_pop(BasePop* pop) { // Called from Province, do not call locally
-
+    std::unordered_map<int, float> money_to_pay; // Queued up money to distribute during month tick
     std::scoped_lock lock(m);
 
     for (auto& [type, ms] : cargo_sell_orders) {
@@ -197,7 +197,8 @@ void Town::sell_to_pop(BasePop* pop) { // Called from Province, do not call loca
         while (sell_it != ms.end()) {
             sell_order = *sell_it;
 
-            const float buyer_price = pop->get_buy_price(type, get_local_price_unsafe(type));
+            const float buyer_price = pop->get_buy_price(type, get_local_price_unsafe(type)); // Is nan
+            buy_orders_price_map[type][round(buyer_price * 10)] += desired;
             const float seller_price = sell_order->price;
             float price = (buyer_price + seller_price) / 2; // Price average
 
@@ -212,11 +213,8 @@ void Town::sell_to_pop(BasePop* pop) { // Called from Province, do not call loca
             if (amount == 0) {
                 break;
             }
-            {
-                std::scoped_lock lock(money_to_pay_mutex);
-                sell_order->sell_cargo(amount, price, money_to_pay); // Calls with money_to_pay
-            }
-            
+
+            sell_order->sell_cargo(amount, price, money_to_pay); // Calls with money_to_pay
             pop->buy_good(type, amount, price);
 
             if (sell_order->amount == 0) {
@@ -226,6 +224,14 @@ void Town::sell_to_pop(BasePop* pop) { // Called from Province, do not call loca
                 break;
             }
         }
+    }
+
+    Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
+    for (const auto &[terminal_id, to_pay]: money_to_pay) {
+        Ref<Broker> broker = terminal_map->get_terminal_as<Broker>(terminal_id);
+        if (broker.is_null()) continue;
+        
+        broker->add_cash(to_pay);
     }
 }
 
@@ -349,10 +355,9 @@ std::vector<bool> Town::get_accepts_vector() const {
 float Town::get_local_price(int type) const {
     
     std::scoped_lock lock(m);
-    // if (current_prices.at(type) > 0) {
-    //     print_line(current_prices.at(type));
-    //     return current_prices.at(type);
-    // }
+    if (current_prices.at(type) > 0) {
+        return current_prices.at(type);
+    }
     return local_pricer -> get_local_price(type);
 }
 
@@ -449,49 +454,32 @@ void Town::update_buy_orders() {
     }
 }
 
-// void Town::update_local_prices() {
-//     for (const auto &[type, __]: cargo_sell_orders) {
-//         update_local_price(type);
-//     }
-// }
-
-// void Town::update_local_price(int type) { // TODO: when pops buy, they leave a type, amount, price thing 
-//     std::map<float, int, std::greater<float>> buy_prices; // Boxes of 0.1
-//     std::map<float, int> sell_prices; // Boxes of 0.1
-//     std::scoped_lock lock(m);
-//     for (const auto& cargo: cargo_sell_orders[type]) {
-//         float price = (round(cargo->price * double(10))) / 10; // Rounds to nearest tenth
-//         if (!buy_prices.count(price)) {
-//             buy_prices[price] = 0;
-//         }
-//         buy_prices[price] += cargo->amount;
-//     }
-//     for (const auto& order: pop_buy_orders[type]) {
-//         float price = (round(order->price * double(10))) / 10; // Rounds to nearest tenth
-//         if (!sell_prices.count(price)) {
-//             sell_prices[price] = 0;
-//         }
-//         sell_prices[price] += order->amount;
-//     }
-//     int diff = -1;
-//     for (const auto& [price, amount]: buy_prices) {
-//         int temp_diff = abs(sell_prices[price] - amount);
-//         if (temp_diff < diff) {
-//             diff = temp_diff;
-//             current_prices[type] = price;
-//         }
-//     }
-// }
-
-void Town::distribute_money() {
-    std::scoped_lock lock(money_to_pay_mutex);
-    Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
-    for (const auto &[terminal_id, to_pay]: money_to_pay) {
-        Ref<Broker> broker = terminal_map->get_terminal_as<Broker>(terminal_id);
-        if (broker.is_null()) continue;
-        broker->add_cash(to_pay);
+void Town::update_local_prices() {
+    for (const auto &[type, __]: cargo_sell_orders) {
+        update_local_price(type);
     }
-    money_to_pay.clear();
+}
+
+void Town::update_local_price(int type) { // TODO: when pops buy, they leave a type, amount, price thing 
+    std::unordered_map<int, int> buy_prices; // Multiples and rounds price by 10
+    std::unordered_map<int, int> sell_prices; // Multiples and rounds price by 10
+    std::scoped_lock lock(m);
+    for (const auto& cargo: cargo_sell_orders[type]) {
+        int price = (round(cargo->price * 10.0)); // Rounds to nearest tenth
+        buy_prices[price] += cargo->amount;
+    }
+    for (const auto& [ten_price, amount]: buy_orders_price_map[type]) {
+        sell_prices[ten_price] += amount;
+    }
+    int diff = -1;
+    for (const auto& [ten_price, amount]: buy_prices) {
+        int temp_diff = abs(sell_prices[ten_price] - amount);
+        float price = ten_price / 10.0;
+        if (temp_diff < diff) {
+            diff = temp_diff;
+            current_prices[type] = price;
+        }
+    }
 }
 
 // Process Hooks
@@ -502,12 +490,11 @@ void Town::day_tick() {
 
 void Town::month_tick() {
 
-    // update_local_prices();
+    update_local_prices();
     update_buy_orders();
     {
         std::scoped_lock lock(m);
         local_pricer -> adjust_prices();
     }
     age_all_cargo();
-    distribute_money();
 }

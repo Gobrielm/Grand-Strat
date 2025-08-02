@@ -25,12 +25,11 @@ private:
 
 protected:
     static void _bind_methods();
+    std::unordered_map<int, std::unordered_map<int, int>> buy_orders_price_map; // type -> price * 10 -> amount
     std::unordered_map<int, std::multiset<TownCargo*, TownCargo::TownCargoPtrCompare>> cargo_sell_orders; // Lowest price first
     std::unordered_map<int, float> current_prices; // Keep track of prices from last month
     std::unordered_map<int, int> current_totals; // Keeps track of current totals of goods
-    std::unordered_map<int, float> money_to_pay; // Queued up money to distribute during month tick
-    std::mutex money_to_pay_mutex;
-    void distribute_money();
+    
     float get_local_price_unsafe(int type) const;
 
 public:
@@ -44,6 +43,7 @@ public:
 
     std::vector<int> get_supply() const;
     std::vector<int> get_demand() const;
+    
 
     int get_supply(int type) const;
     int get_demand(int type) const;
@@ -83,8 +83,8 @@ public:
     std::multiset<TownCargo *, TownCargo::TownCargoPtrCompare>::iterator return_cargo(std::multiset<TownCargo *, TownCargo::TownCargoPtrCompare>::iterator cargo_it, std::unordered_map<int, std::unordered_map<int, int>>& cargo_to_return);
 
     void update_buy_orders();
-    // void update_local_prices();
-    // void update_local_price(int type);
+    void update_local_prices();
+    void update_local_price(int type);
 
     // Process Hooks
     void day_tick();

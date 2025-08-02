@@ -41,7 +41,7 @@ class BasePop : public Object {
 
     public:
 
-    static void create_base_needs(Dictionary d);
+    static void create_base_needs(std::unordered_map<int, float> p_base_needs);
     static int get_people_per_pop();
     int get_pop_id() const;
     void set_home_prov_id(int p_home_prov_id);
@@ -58,8 +58,8 @@ class BasePop : public Object {
     float get_expected_income() const;
     float get_sol() const;
 
-    int get_base_need(int type) const;
-    int get_base_want(int type) const;
+    float get_base_need(int type) const;
+    float get_base_want(int type) const;
     float get_buy_price(int type, float current_price) const;
 
     int get_desired(int type) const;
