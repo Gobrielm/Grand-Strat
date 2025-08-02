@@ -2,18 +2,16 @@
 
 struct PopOrder {
 
+    static constexpr float MAX_DIFF = 0.1;
     PopOrder(const PopOrder* other);
-    PopOrder(int p_type, int p_amount, float p_exp_price, float p_limit_price, int p_pop_id);
+    PopOrder(int p_type, int p_amount, float p_price, int p_pop_id);
     int type;
     int amount;
-    float limit_price;
-    float exp_price;
+    float price;
     int pop_id;
     int age = 0;
 
-
     void buy_cargo(int p_amount);
-    
 
     // Sorts by price
     bool operator>(const PopOrder& other) const;
@@ -21,9 +19,9 @@ struct PopOrder {
 
     struct PopOrderPtrCompare {
         bool operator()(const PopOrder* lhs, const PopOrder* rhs) const {
-            if (lhs->limit_price == rhs->limit_price)
+            if (lhs->price == rhs->price)
                 return lhs < rhs; // fallback to pointer address
-            return lhs->limit_price < rhs->limit_price; // highest price first
+            return lhs->price < rhs->price; // highest price first
         }
     };
 };

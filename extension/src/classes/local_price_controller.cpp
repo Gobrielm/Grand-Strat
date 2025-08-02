@@ -95,7 +95,6 @@ void LocalPriceController::adjust_cargo_price(int type, float base_price) {
     demand[type] = 0;
 }
 
-
 float LocalPriceController::get_difference_from_base_price(int type, std::vector<int> &p_supply, std::vector<int> &p_demand) const { // Returns percentage diff + 1
     if (p_supply[type] == p_demand[type] && p_supply[type] == 0) {
         return 1;

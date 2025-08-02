@@ -87,7 +87,7 @@ class Province : public Object {
     void pay_pop(int pop_id, float wage);
     void fire_pop(int pop_id);
     void sell_cargo_to_pop(int pop_id, int type, int amount, float price);
-    int get_pop_max_buy_amount(int pop_id, int type, float price);
+    int get_pop_desired(int pop_id, int type, float price);
 
     // Local Pop Stuff
     void create_pops();

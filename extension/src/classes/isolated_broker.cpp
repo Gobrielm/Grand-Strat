@@ -35,6 +35,7 @@ void IsolatedBroker::sell_cargo() {
 
 void IsolatedBroker::sell_type(Ref<Town> town, int type, int amount) {
     float price = town->get_local_price(type);
+    print_line(price);
     amount = std::min(amount, town->get_desired_cargo(type, price));
     town->buy_cargo(type, amount, price, get_terminal_id());
     {
@@ -76,8 +77,8 @@ void IsolatedBroker::create_recipe() {
 }
 
 void IsolatedBroker::day_tick() {
-    // create_recipe();
-    // sell_cargo();
+    create_recipe();
+    sell_cargo();
 }
 
 void IsolatedBroker::month_tick() {

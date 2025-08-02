@@ -23,6 +23,7 @@ struct TownCargo {
     void pay_fees(float &total_price);
     void transfer_cargo(int p_amount);
     void return_cargo();
+    void return_cargo(std::unordered_map<int, std::unordered_map<int, int>>& cargo_to_return);
     void add_fee_to_pay(int term_id, float fee);
 
     // Sorts by price

@@ -265,8 +265,6 @@ void Broker::distribute_to_order(Ref<Broker> otherBroker, const TradeOrder* orde
             otherBroker->buy_cargo(cargo);
             delete cargo;
         }
-        
-        
     }
 }
 

@@ -132,49 +132,83 @@ int BasePop::get_base_want(int type) const {
     return specialities.count(type) ? specialities[type]: 0;
 }
 
-float BasePop::get_limit_price(int type) const {
-    if (!internal_storage.count(type)) {
+float BasePop::get_buy_price(int type, float current_price) const {
+    if (get_max_storage(type) == 0) {
         return 0;
     } else if (base_needs.count(type)) {
-        return get_limit_price_for_needed_good(type);
+        return get_buy_price_for_needed_good(type, current_price);
     } else {
-        return get_limit_price_for_wanted_good(type);
+        return get_buy_price_for_wanted_good(type, current_price);
     }
 }
 
-float BasePop::get_limit_price_for_wanted_good(int type) const {
-    int amount = get_desired(type);
+float BasePop::get_buy_price_for_needed_good(int type, float current_price) const {
+    float available_money = income; // Save a bit
+    
+    float needed = float(get_desired(type)) / get_max_storage(type); // 0 - 1;
+    if (needed == 0) return 0;
+
+    float total_needed = needed;
+    for (const auto& [other_type, __]: base_needs) {
+        if (type == other_type) continue;
+        float weighted_need = float(get_desired(other_type)) / get_max_storage(other_type); // 0 - 1;
+        total_needed += weighted_need;
+        if (is_need_met(other_type)) break; // If need isn't met then just prioritize these goods
+    }
+    float price = available_money * (needed / total_needed);
+    if (price > current_price) {
+        return (price + current_price) / 2;
+    } else {
+        return price;
+    }
+}
+
+float BasePop::get_buy_price_for_wanted_good(int type, float current_price) const {
+    if (!are_needs_met()) {
+        return 0;
+    }
+
     float available_money = income * 0.95; // Save a bit
     
-    float wanted = get_max_storage(type) / get_desired(type); // 0 - 1;
+    float wanted = float(get_desired(type)) / get_max_storage(type); // 0 - 1;
+    if (wanted == 0) return 0;
 
     float total_wanted = wanted;
     for (const auto& [other_type, __]: specialities) {
         if (type == other_type) continue;
-        float weighted_want = get_max_storage(other_type) / get_desired(other_type); // 0 - 1;
+        float weighted_want = float(get_desired(other_type)) / get_max_storage(other_type); // 0 - 1;
         total_wanted += weighted_want;
+        if (!is_want_met(type)) break;
     }
     for (const auto& [other_type, __]: base_needs) {
         if (type == other_type) continue;
-        float weighted_need = get_max_storage(other_type) / get_desired(other_type); // 0 - 1;
+        float weighted_need = float(get_desired(other_type)) / get_max_storage(other_type); // 0 - 1;
         total_wanted += weighted_need;
     }
-    return available_money * (wanted / total_wanted);
+
+    float price = available_money * (wanted / total_wanted);
+    if (price > current_price) {
+        return (price + current_price) / 2;
+    } else {
+        return price;
+    }
 }
 
-float BasePop::get_limit_price_for_needed_good(int type) const {
-    int amount = get_desired(type);
-    float available_money = income; // Save a bit
-    
-    float needed = get_max_storage(type) / get_desired(type); // 0 - 1;
-
-    float total_needed = needed;
-    for (const auto& [other_type, __]: specialities) {
-        if (type == other_type) continue;
-        float weighted_need = get_max_storage(other_type) / get_desired(other_type); // 0 - 1;
-        total_needed += weighted_need;
+bool BasePop::are_needs_met() const {
+    for (const auto &[type, amount]: internal_storage) {
+        if (!(is_need_met(type))) {
+            return false;
+        }
     }
-    return available_money * (needed / total_needed);
+    return true;
+}
+
+bool BasePop::is_need_met(int type) const {
+    return (internal_storage.at(type) >= get_base_need(type));
+}
+
+bool BasePop::is_want_met(int type) const {
+    return (internal_storage.at(type) >= (get_base_need(type) + get_base_want(type)));
 }
 
 int BasePop::get_desired(int type) const {
@@ -182,7 +216,7 @@ int BasePop::get_desired(int type) const {
         return 0;
     }
     int amount = int(get_max_storage(type) - internal_storage.at(type));
-    if (income == 0.0 && !base_needs.count(type)) {
+    if ((income == 0.0 || !are_needs_met()) && !base_needs.count(type)) {
         return 0; // Don't buy if not neccessary and no job
     }
 	

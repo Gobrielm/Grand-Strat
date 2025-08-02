@@ -275,7 +275,7 @@ void Province::sell_cargo_to_pop(int pop_id, int type, int amount, float price) 
     pop->buy_good(type, amount, price);
 }
 
-int Province::get_pop_max_buy_amount(int pop_id, int type, float price) {
+int Province::get_pop_desired(int pop_id, int type, float price) {
     std::unique_lock lock(pops_lock);
     BasePop* pop = get_pop(pop_id);
     return pop->get_desired(type, price);
@@ -488,8 +488,7 @@ void Province::sell_to_pops() {
             print_error("Pop is not in province or province has no towns, pop location: " + pop->get_location());
             continue;
         }
-        town->place_buy_order(pop);
-        // town->sell_to_pop(pop);
+        town->sell_to_pop(pop);
     }
 
     for (const auto& pop_id: rural_pops) {

@@ -32,8 +32,11 @@ class BasePop : public Object {
     protected:
     static void _bind_methods();
     String _to_string() const;
-    float get_limit_price_for_wanted_good(int type) const;
-    float get_limit_price_for_needed_good(int type) const;
+    float get_buy_price_for_needed_good(int type, float current_price) const;
+    float get_buy_price_for_wanted_good(int type, float current_price) const;
+    bool are_needs_met() const;
+    bool is_need_met(int type) const;
+    bool is_want_met(int type) const;
     
 
     public:
@@ -57,7 +60,7 @@ class BasePop : public Object {
 
     int get_base_need(int type) const;
     int get_base_want(int type) const;
-    float get_limit_price(int type) const;
+    float get_buy_price(int type, float current_price) const;
 
     int get_desired(int type) const;
     int get_desired(int type, float price) const;
