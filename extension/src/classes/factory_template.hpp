@@ -40,8 +40,11 @@ public:
     virtual void initialize(Vector2i new_location, int player_owner, Recipe* recipe);
 
     // Trade
-    float get_min_price(int type) const;
-    float get_max_price(int type) const;
+
+    // Used for min price to sell
+    float get_min_price(int type) const; 
+    // Used for max price to buy
+    float get_max_price(int type) const; 
     bool does_create(int type) const;
 
     // Production
@@ -72,6 +75,8 @@ public:
     bool is_hiring(const BasePop* pop) const;
     bool is_firing() const;
     float get_wage() const;
+    float get_theoretical_gross_profit() const;
+    float get_real_gross_profit(int months_to_average) const; // 1-indexed
     void employ_pop(BasePop* pop);
     void pay_employees();
     void fire_employees();

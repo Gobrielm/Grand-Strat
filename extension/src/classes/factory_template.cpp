@@ -57,13 +57,31 @@ void FactoryTemplate::initialize(Vector2i new_location, int player_owner, Recipe
 }
 
 float FactoryTemplate::get_min_price(int type) const {
-    ERR_FAIL_COND_V(get_outputs().size() != 1 || get_inputs().size() != 0, 0.0);
-    return 0.0;
+    ERR_FAIL_COND_V(get_inputs().size() != 0, 0.0);
+    float available = 0;
+    for (const auto &[other_type, amount]: get_inputs()) {
+        available -= get_local_price(other_type) * amount;
+    }
+
+    for (const auto &[other_type, amount]: get_outputs()) {
+        if (type == other_type) continue;
+        available += get_local_price(other_type) * amount;
+    }
+    
+    return (available / type * -1);
 }
 
 float FactoryTemplate::get_max_price(int type) const {
     ERR_FAIL_COND_V(get_outputs().size() != 0, 100.0);
-    return 100.0;
+    float available = 0;
+    for (const auto &[other_type, amount]: get_outputs()) {
+        available += get_local_price(other_type) * amount;
+    }
+    for (const auto &[other_type, amount]: get_inputs()) {
+        if (type == other_type) continue;
+        available -= get_local_price(other_type) * amount;
+    }
+    return available / type;
 }
 
 bool FactoryTemplate::does_create(int type) const {
@@ -147,8 +165,7 @@ void FactoryTemplate::distribute_cargo() {
 }
 
 int FactoryTemplate::get_level() const {
-    return 1;
-    // return round(recipe->get_level());
+    return round(recipe->get_level());
 }
 
 int FactoryTemplate::get_level_without_employment() const {
@@ -231,21 +248,37 @@ bool FactoryTemplate::is_firing() const {
 }
 
 float FactoryTemplate::get_wage() const {
-    float available = 0;
-    
-    {
-        for (const auto &[type, amount]: get_inputs()) {
-            available -= get_local_price(type) * amount;
-        }
-        for (const auto &[type, amount]: get_outputs()) {
-            available += get_local_price(type) * amount;
-        }
-        available *= 30;
-    }
+    float gross_profit = get_theoretical_gross_profit();
     
     if (!recipe->get_pops_needed_num()) return 0;
     
-    return available / recipe->get_pops_needed_num();
+    return gross_profit / recipe->get_pops_needed_num();
+}
+
+float FactoryTemplate::get_theoretical_gross_profit() const {
+    float available = 0;
+    
+    for (const auto &[type, amount]: get_inputs()) {
+        available -= get_local_price(type) * amount;
+    }
+    for (const auto &[type, amount]: get_outputs()) {
+        available += get_local_price(type) * amount;
+    }
+    available *= 30;
+    return available;
+}
+
+float FactoryTemplate::get_real_gross_profit(int months_to_average) const {
+    ERR_FAIL_COND_V_EDMSG(months_to_average <= 0, 0, "Cannot average over a 0 or negitive amount of months");
+    float total = 0;
+    int i = 1;
+    for (auto it = income_list.begin(); it != income_list.end(); it++) {
+        total += (*it);
+        if (++i > months_to_average) {
+            break;
+        }       
+    }
+    return total / i;
 }
 
 void FactoryTemplate::employ_pop(BasePop* pop) {

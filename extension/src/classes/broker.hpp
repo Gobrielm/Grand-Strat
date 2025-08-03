@@ -20,7 +20,7 @@ class Broker : public FixedHold {
     protected:
     static void _bind_methods();
     std::unordered_map<int, TradeOrder*> trade_orders;
-    float change_in_cash = 0.0f;
+    float change_in_cash = 0.0f; // Represents change in cash from selling and buying goods, does not account for taxes, or salaries
     std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> connected_brokers;
     std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> connected_stations;
     LocalPriceController* local_pricer = nullptr;
