@@ -22,6 +22,15 @@ SubsistenceFarm::SubsistenceFarm(Vector2i p_location, int p_owner): IsolatedBrok
     );
 }
 
+std::unique_ptr<Recipe> SubsistenceFarm::get_recipe() {
+    std::unique_ptr<Recipe> toReturn = std::unique_ptr<Recipe>(RecipeInfo::convert_readable_recipe_into_recipe(
+        {{}, 
+        {{"grain", 1}}}, 
+        {{peasant, 10}}
+    ));
+    return toReturn;
+}
+
 void SubsistenceFarm::month_tick() {
     IsolatedBroker::month_tick();
 }

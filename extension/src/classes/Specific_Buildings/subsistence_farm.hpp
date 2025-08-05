@@ -11,5 +11,7 @@ class SubsistenceFarm: public IsolatedBroker {
     SubsistenceFarm();
     SubsistenceFarm(Vector2i p_location, int p_owner);
 
+    static std::unique_ptr<Recipe> get_recipe();
+
     void month_tick() override;
 };

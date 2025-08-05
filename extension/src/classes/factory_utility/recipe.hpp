@@ -27,7 +27,7 @@ class Recipe {
     void remove_pop(int pop_id, PopTypes pop_type);
 
     public:
-    int level = 1;
+    int level;
 
     Recipe();
     Recipe(std::unordered_map<int, int> &p_inputs, std::unordered_map<int, int> &p_outputs, std::unordered_map<PopTypes, int> &p_pops_needed);

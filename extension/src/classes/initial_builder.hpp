@@ -16,6 +16,7 @@ class InitialBuilder : public CompanyAi {
     std::vector<Vector2i> bfs_to_closest(Vector2i start, bool(*f)(Vector2i));
     void build_factory_type(int type, Province* province);
     int get_levels_to_build(int type, Province* province) const;
+    int get_levels_to_build_helper(int type, int demand) const;
     bool will_any_factory_be_cut_off(const Vector2i &fact_to_place) const;
     bool will_factory_by_cut_off(const Vector2i &factory_tile) const;
     int place_group_of_factories(const Vector2i &center);

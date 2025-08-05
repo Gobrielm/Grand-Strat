@@ -7,6 +7,7 @@
 #include "../singletons/cargo_info.hpp"
 #include "../singletons/road_map.hpp"
 #include "../singletons/factory_creator.hpp"
+#include "../singletons/recipe_info.hpp"
 
 void InitialBuilder::_bind_methods() {
     ClassDB::bind_static_method(get_class_static(), D_METHOD("create", "p_country_id"), &InitialBuilder::create);
@@ -42,8 +43,9 @@ void InitialBuilder::build_initital_factories() {
 void InitialBuilder::build_factory_type(int type, Province* province) {
     int tile_count = province->get_tiles_vector().size();
     int num_of_levels_to_place = get_levels_to_build(type, province);
+    if (num_of_levels_to_place == 0) return;
     int levels_placed = 0;
-    int chance = tile_count / num_of_levels_to_place; //Chances way higher to emphasize closer tiles
+    int chance = std::max(int(round(tile_count / float(num_of_levels_to_place))), 1); //Chances way higher to emphasize closer tiles
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     for (const Vector2i &tile: province->get_town_centered_tiles()) {
         if (TerminalMap::get_instance()->is_tile_available(tile)) {
@@ -54,7 +56,7 @@ void InitialBuilder::build_factory_type(int type, Province* province) {
                 if (will_any_factory_be_cut_off(tile)) continue;
                 int mult = std::min(rand() % 5, cargo_val);
                 FactoryCreator::get_instance()->create_primary_industry(type, tile, get_owner_id(), mult);
-                
+
                 levels_placed += mult;
                 if (levels_placed > num_of_levels_to_place) {
                     break;
@@ -66,12 +68,20 @@ void InitialBuilder::build_factory_type(int type, Province* province) {
 
 int InitialBuilder::get_levels_to_build(int type, Province* province) const {
     int num_pop = province->get_number_of_city_pops();
-    if (type == CargoInfo::get_instance()->get_cargo_type("grain")) {
-        return std::max(1, num_pop / 30);
-    } else if (type == CargoInfo::get_instance()->get_cargo_type("wood")) {
-        return std::max(1, num_pop / 100);
+    String cargo_name = CargoInfo::get_instance()->get_cargo_name(type);
+    if (cargo_name == "grain") {
+        return get_levels_to_build_helper(type, province->get_demand_for_grain());
+    } else if (cargo_name == "wood") {
+        return get_levels_to_build_helper(type, num_pop / 100);
     }
     return 0;
+}
+
+int InitialBuilder::get_levels_to_build_helper(int type, int demand) const {
+    Recipe* recipe = RecipeInfo::get_instance()->get_primary_recipe_for_type_read_only(type);
+    int ouput_quant = recipe->get_outputs()[type];
+    int levels_to_build = round((demand) / ouput_quant);
+    return std::max(1, levels_to_build);
 }
 
 bool InitialBuilder::will_any_factory_be_cut_off(const Vector2i &fact_to_place) const {

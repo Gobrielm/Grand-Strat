@@ -91,6 +91,16 @@ Recipe* RecipeInfo::get_primary_recipe_for_type(int type) const {
     return nullptr;
 }
 
+Recipe* RecipeInfo::get_primary_recipe_for_type_read_only(int type) const {
+    for (int i = 0; i < recipes.size(); i++) {
+        Recipe* recipe = recipes[i];
+        if (recipe->is_primary() && recipe->does_create(type)) {
+            return recipe;
+        }
+    }
+    return nullptr;
+}
+
 Recipe* RecipeInfo::get_recipe(Dictionary inputs, Dictionary outputs) {
     for (int i = 0; i < recipes.size(); i++) {
         Recipe* recipe = recipes[i];

@@ -4,7 +4,7 @@
 #include "../Pops/peasant_pop.hpp"
 
 Recipe::Recipe() {
-
+    level = 1;
 }
 
 Recipe::Recipe(std::unordered_map<int, int> &p_inputs, std::unordered_map<int, int> &p_outputs, std::unordered_map<PopTypes, int> &p_pops_needed) {
@@ -14,6 +14,7 @@ Recipe::Recipe(std::unordered_map<int, int> &p_inputs, std::unordered_map<int, i
     for (const auto &[pop_type, __]: pops_needed) {
         employees[pop_type] = {};
     }
+    level = 1;
 }
 
 Recipe::Recipe(const Recipe& other) {
@@ -21,6 +22,7 @@ Recipe::Recipe(const Recipe& other) {
     outputs = other.get_outputs();
     pops_needed = other.get_pops_needed();
     employees = other.employees;
+    level = other.level;
 }
 
 Dictionary Recipe::get_inputs_dict() const {

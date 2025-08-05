@@ -9,6 +9,7 @@
 #include "factory_template.hpp"
 #include "town.hpp"
 #include "specific_buildings/subsistence_farm.hpp"
+#include "factory_utility/recipe.hpp"
 
 void Province::_bind_methods() {
     ClassDB::bind_static_method(get_class_static(), D_METHOD("create", "p_prov_id"), &Province::create);
@@ -69,6 +70,22 @@ int Province::get_population() const {
     return population;
 }
 
+ int Province::get_demand_for_grain() const {
+    std::unique_ptr<Recipe> peasant_recipe = SubsistenceFarm::get_recipe();
+    int total_demand = 0;
+    {
+        std::scoped_lock lock(m);
+        total_demand = town_pops.size() + rural_pops.size();
+        int grain_o = (peasant_recipe->get_outputs().begin())->second;
+        int pops_needed = peasant_recipe->get_pops_needed_num();
+        total_demand -= grain_o * peasant_pops.size() / pops_needed;
+    }
+    if (total_demand < 0) {
+        return 0;
+    }
+    return total_demand;
+ }
+
 int Province::get_number_of_city_pops() const {
     std::shared_lock lock(pops_lock);
     return town_pops.size();
@@ -121,12 +138,16 @@ std::vector<Vector2i> Province::get_town_centered_tiles() const { //Assumes one 
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     std::vector<Vector2i> v;
     Vector2i town_tile;
-    for (Vector2i tile: get_terminal_tiles_set()) {
-        if (terminal_map->is_town(tile)) {
-            town_tile = tile;
-            break;
+    {
+        std::scoped_lock lock(m);
+        for (Vector2i tile: terminal_tiles) {
+            if (terminal_map->is_town(tile)) {
+                town_tile = tile;
+                break;
+            }
         }
     }
+    
     if (town_tile == Vector2i(0, 0)) {
         ERR_FAIL_V_MSG(v, "No town in province");
     }
@@ -137,7 +158,7 @@ std::vector<Vector2i> Province::get_town_centered_tiles() const { //Assumes one 
 
     auto push = [&pq](Vector2i tile, int weight) -> void {pq.push(godot_helpers::weighted_value<Vector2i>(tile, weight));};
 
-    for (Vector2i tile: get_tiles_vector()) {
+    for (Vector2i tile: tiles) {
         push(tile, tile.distance_to(town_tile));
     }
 
