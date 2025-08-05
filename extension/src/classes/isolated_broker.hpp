@@ -9,7 +9,7 @@ using namespace godot;
     Represents trading building that does not sit on a tile,
     only trades with the town in the same province, if multiple, then the closest.
     No local pricer and only adheres to town prices
-
+    Creates cargo every month versus every day to increase efficiency
 
 */
 
@@ -27,17 +27,18 @@ class IsolatedBroker : public Firm {
     std::unordered_map<int, int> storage;
 
     public:
-    IsolatedBroker(int p_owner = 0);
+    IsolatedBroker();
+    IsolatedBroker(Vector2i p_location, int p_owner);
 
     void add_pop(BasePop* pop);
 
+    void set_local_town(Vector2i p_town);
     void sell_cargo();
     void sell_type(Ref<Town> town, int type, int amount);
     bool check_inputs() const;
     bool check_outputs() const;
     void create_recipe();
-    void day_tick();
-    void month_tick();
+    virtual void month_tick();
 
     void consider_upgrade();
     void consider_degrade();

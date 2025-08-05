@@ -27,6 +27,7 @@ protected:
     static void _bind_methods();
     std::unordered_map<int, std::unordered_map<int, int>> buy_orders_price_map; // type -> price * 10 -> amount
     std::unordered_map<int, std::multiset<TownCargo*, TownCargo::TownCargoPtrCompare>> cargo_sell_orders; // Lowest price first
+    std::unordered_map<int, std::unordered_map<int, TownCargo*>> town_cargo_tracker;
     std::unordered_map<int, float> current_prices; // Keep track of prices from last month
     std::unordered_map<int, int> current_totals; // Keeps track of current totals of goods
     
@@ -64,6 +65,7 @@ public:
     //Pop stuff
     void add_pop(int pop_id);
     void sell_to_pop(BasePop* pop);
+    void delete_town_cargo(TownCargo *sell_order);
     void pay_factory(int amount, float price, Vector2i source);
     int get_total_pops() const;
     Ref<FactoryTemplate> find_employment(BasePop* pop) const;
@@ -78,9 +80,12 @@ public:
     //Storage Replacement
     void buy_cargo(int type, int amount, float price, int p_terminal_id) override;
     void buy_cargo(const TownCargo* cargo) override;
+    void encode_cargo(TownCargo* town_cargo);
+    void encode_existing_cargo(TownCargo* existing_town_cargo, const TownCargo* new_town_cargo);
     int add_cargo(int type, int amount) override;
     void age_all_cargo();
     std::multiset<TownCargo *, TownCargo::TownCargoPtrCompare>::iterator return_cargo(std::multiset<TownCargo *, TownCargo::TownCargoPtrCompare>::iterator cargo_it, std::unordered_map<int, std::unordered_map<int, int>>& cargo_to_return);
+    bool does_cargo_exist(int terminal_id, int type) const;
 
     void update_buy_orders();
     void update_local_prices();

@@ -2,13 +2,26 @@
 #include "../../singletons/recipe_info.hpp"
 
 void SubsistenceFarm::_bind_methods() {
-
+    ClassDB::bind_method(D_METHOD("month_tick"), &SubsistenceFarm::month_tick);
+    
 }
 
-SubsistenceFarm::SubsistenceFarm(int p_owner): IsolatedBroker(p_owner) {
+SubsistenceFarm::SubsistenceFarm(): IsolatedBroker(Vector2(0, 0), 0) {
     recipe = RecipeInfo::convert_readable_recipe_into_recipe(
         {{}, 
         {{"grain", 1}}}, 
-        {{peasant, 30}}
+        {{peasant, 10}}
     );
+}
+
+SubsistenceFarm::SubsistenceFarm(Vector2i p_location, int p_owner): IsolatedBroker(p_location, p_owner) {
+    recipe = RecipeInfo::convert_readable_recipe_into_recipe(
+        {{}, 
+        {{"grain", 1}}}, 
+        {{peasant, 10}}
+    );
+}
+
+void SubsistenceFarm::month_tick() {
+    IsolatedBroker::month_tick();
 }

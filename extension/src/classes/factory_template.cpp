@@ -240,19 +240,22 @@ float FactoryTemplate::get_last_month_income() const {
 }
 
 bool FactoryTemplate::is_hiring(const BasePop* pop) const {
-    return (recipe->is_pop_needed(pop)); // TODO: Check requirements
+    return recipe->is_pop_needed(pop) && get_theoretical_gross_profit() > 0; // TODO: Check requirements
 }
 
 bool FactoryTemplate::is_firing() const {
+    if (get_theoretical_gross_profit() < 0) {
+        return true;
+    }
     return false;
 }
 
 float FactoryTemplate::get_wage() const {
-    float gross_profit = get_theoretical_gross_profit();
+    float gross_profit = std::min(float(get_theoretical_gross_profit() * 0.9), get_cash());
     
     if (!recipe->get_pops_needed_num()) return 0;
     
-    return gross_profit / recipe->get_pops_needed_num();
+    return (gross_profit) / recipe->get_pops_needed_num();
 }
 
 float FactoryTemplate::get_theoretical_gross_profit() const {
@@ -284,7 +287,7 @@ float FactoryTemplate::get_real_gross_profit(int months_to_average) const {
 void FactoryTemplate::employ_pop(BasePop* pop) {
     if (is_hiring(pop)) {
         recipe->add_pop(pop);
-        pop->employ(get_wage(), terminal_id);
+        pop->employ(terminal_id, get_wage());
         pop->set_location(get_location());
     }
 }

@@ -6,7 +6,7 @@ TerminalMapThreadPool::TerminalMapThreadPool() {
     day_worker_threads.push_back(std::thread(&TerminalMapThreadPool::day_thread_processor, this));
     day_tick_checker = std::thread(&TerminalMapThreadPool::day_tick_check, this);
     month_tick_checker = std::thread(&TerminalMapThreadPool::month_tick_check, this);
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 6; i++) {
         month_worker_threads.push_back(std::thread(&TerminalMapThreadPool::month_thread_processor, this));
     }
     terminal_map = TerminalMap::get_instance().ptr();

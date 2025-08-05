@@ -359,7 +359,9 @@ std::vector<int> Province::create_buildings_for_peasants() {
     for (const Vector2i &tile: tiles) {
         int temp = terminal_map->get_cargo_value_of_tile(tile, 10);
         if (temp > 0) {
-            Ref<SubsistenceFarm> farm = Ref<SubsistenceFarm>(memnew(SubsistenceFarm(0)));
+            Ref<SubsistenceFarm> farm = Ref<SubsistenceFarm>(memnew(SubsistenceFarm(tile, 0)));
+            farm->set_local_town(closest_town_to_tile[tile]);
+            
             terminal_map->create_isolated_terminal(farm);
             subsistence_farm_ids.push_back(farm->get_terminal_id());
         }
@@ -368,6 +370,10 @@ std::vector<int> Province::create_buildings_for_peasants() {
 }
 
 void Province::employ_peasants() {
+    if (get_town_tiles().size() == 0) {
+        return;
+    }
+
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     std::vector<int> farms = create_buildings_for_peasants();
     if (farms.size() == 0) {
@@ -380,7 +386,7 @@ void Province::employ_peasants() {
         BasePop* pop = get_pop(pop_id);
         Ref<SubsistenceFarm> farm = terminal_map->get_terminal_as<SubsistenceFarm>(farms[i]);
         pop->set_location(farm->get_location());
-        farm->add_pop(pop); // Bug: Change to be pop id
+        farm->add_pop(pop);
 
         i = (i + 1) % farms.size();
     }

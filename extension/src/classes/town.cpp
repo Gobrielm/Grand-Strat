@@ -218,7 +218,7 @@ void Town::sell_to_pop(BasePop* pop) { // Called from Province, do not call loca
             pop->buy_good(type, amount, price);
 
             if (sell_order->amount == 0) {
-                delete sell_order;
+                delete_town_cargo(sell_order);
                 sell_it = ms.erase(sell_it);
             } else {
                 break;
@@ -233,6 +233,11 @@ void Town::sell_to_pop(BasePop* pop) { // Called from Province, do not call loca
         
         broker->add_cash(to_pay);
     }
+}
+
+void Town::delete_town_cargo(TownCargo *sell_order) {
+    town_cargo_tracker[sell_order->terminal_id].erase(sell_order->type);
+    delete sell_order;
 }
 
 void Town::pay_factory(int amount, float price, Vector2i source) {
@@ -331,7 +336,7 @@ void Town::distribute_type_to_broker(int type, Ref<Broker> broker, Ref<RoadDepot
         
         if (!town_cargo->amount) {
             ms.erase(it);
-            delete town_cargo;
+            delete_town_cargo(town_cargo);
             if (ms.empty()) {
                 break;
             }
@@ -369,31 +374,60 @@ float Town::get_local_price_unsafe(int type) const {
 }
 
 void Town::buy_cargo(int type, int amount, float price, int p_terminal_id) {
-    TownCargo* town_cargo = new TownCargo(type, amount, price, p_terminal_id);
+    TownCargo* new_town_cargo = new TownCargo(type, amount, price, p_terminal_id);
     {
         std::scoped_lock lock(m);
-        local_pricer -> add_supply(type, amount);
-        cargo_sell_orders[type].insert(town_cargo);
-        current_totals[type] += amount;
+        if (does_cargo_exist(p_terminal_id, type)) {
+            TownCargo* existing_town_cargo = town_cargo_tracker[p_terminal_id][type];
+            encode_existing_cargo(existing_town_cargo, new_town_cargo);
+            delete new_town_cargo;
+        } else {
+            encode_cargo(new_town_cargo);
+        }
+    }
+}
+
+void Town::buy_cargo(const TownCargo* cargo) {
+    TownCargo* new_town_cargo = new TownCargo(cargo);
+    int p_terminal_id = cargo->terminal_id;
+    int type = cargo->type;
+    {
+        std::scoped_lock lock(m);
+        if (does_cargo_exist(p_terminal_id, type)) {
+            TownCargo* existing_town_cargo = town_cargo_tracker[p_terminal_id][type];
+            encode_existing_cargo(existing_town_cargo, new_town_cargo);
+            delete new_town_cargo;
+        } else {
+            encode_cargo(new_town_cargo);
+        }
+
     }
     
 }
 
-void Town::buy_cargo(const TownCargo* cargo) {
-    TownCargo* town_cargo = new TownCargo(cargo);
+void Town::encode_cargo(TownCargo* town_cargo) {
     int type = town_cargo->type;
     int amount = town_cargo->amount;
-    {
-        std::scoped_lock lock(m);
-        local_pricer -> add_supply(type, amount);
-        cargo_sell_orders[type].insert(town_cargo);
-        current_totals[type] += amount;
-    }
+
+    local_pricer -> add_supply(type, amount);
+    cargo_sell_orders[type].insert(town_cargo);
+    current_totals[type] += amount;
+}
+
+void Town::encode_existing_cargo(TownCargo* existing_town_cargo, const TownCargo* new_town_cargo) {
+    int type = existing_town_cargo->type;
+    existing_town_cargo->price = new_town_cargo->price;
+    existing_town_cargo->age = 0;
+    int additional_amount = new_town_cargo->amount;
+
+    local_pricer -> add_supply(type, additional_amount);
+    current_totals[type] += additional_amount;
+    existing_town_cargo->amount += additional_amount;
 }
 
 int Town::add_cargo(int type, int amount) {
     ERR_FAIL_V_EDMSG(0, "Add cargo shouldn't be used on towns");
-    return 0; // Need to pay peasant or landowner or something
+    return 0;
 }
 
 void Town::age_all_cargo() {
@@ -424,12 +458,21 @@ std::multiset<TownCargo *, TownCargo::TownCargoPtrCompare>::iterator Town::retur
         int type = cargo->type;
         current_totals[type] -= cargo->amount;
         cargo->return_cargo(cargo_to_return); //Return cargo to broker
-        delete cargo;          //Delete old cargo
+        delete_town_cargo(cargo);             //Delete old cargo
         cargo_it = cargo_sell_orders[type].erase(cargo_it);     //Erase from set, and update iterator
     } else {
         ++cargo_it;                  //Increment if not deleting    
     }
     return cargo_it;
+}
+
+bool Town::does_cargo_exist(int terminal_id, int type) const {
+    auto it = town_cargo_tracker.find(terminal_id);
+    if (it != town_cargo_tracker.end()) {
+        auto type_it = (it->second).find(type);
+        return type_it != (it->second).end();
+    } 
+    return false;
 }
 
 //Economy Stats

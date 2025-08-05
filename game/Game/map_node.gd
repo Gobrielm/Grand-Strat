@@ -54,7 +54,7 @@ func initialize_game() -> void:
 		#cargo_map.test()
 		#Then create pops which needs towns
 		ProvinceManager.get_instance().create_pops()
-		cargo_map.add_industries_to_towns()
+		#cargo_map.add_industries_to_towns()
 	enable_nation_picker()
 
 func _input(event: InputEvent) -> void:
