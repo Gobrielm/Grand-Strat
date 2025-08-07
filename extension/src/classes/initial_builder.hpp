@@ -19,7 +19,7 @@ class InitialBuilder : public CompanyAi {
     int get_levels_to_build_helper(int type, int demand) const;
     bool will_any_factory_be_cut_off(const Vector2i &fact_to_place) const;
     bool will_factory_by_cut_off(const Vector2i &factory_tile) const;
-    int place_group_of_factories(const Vector2i &center);
+    void build_t2_factory_in_towns(Province* province);
     void build_and_connect_depots();
     void place_most_connected_depot(const Vector2i &center);
     int count_adjacent_factories(const Vector2i &center) const;

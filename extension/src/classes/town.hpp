@@ -52,7 +52,7 @@ public:
     bool is_price_acceptable(int type, float price) const override;
     int get_desired_cargo(int type, float price) const override;
 
-    int get_cargo_amount(int type) const override;
+    float get_cargo_amount(int type) const override;
 
     // Production
     float get_fulfillment(int type) const;
@@ -82,7 +82,7 @@ public:
     void buy_cargo(const TownCargo* cargo) override;
     void encode_cargo(TownCargo* town_cargo);
     void encode_existing_cargo(TownCargo* existing_town_cargo, const TownCargo* new_town_cargo);
-    int add_cargo(int type, int amount) override;
+    float add_cargo(int type, float amount) override;
     void age_all_cargo();
     std::multiset<TownCargo *, TownCargo::TownCargoPtrCompare>::iterator return_cargo(std::multiset<TownCargo *, TownCargo::TownCargoPtrCompare>::iterator cargo_it, std::unordered_map<int, std::unordered_map<int, int>>& cargo_to_return);
     bool does_cargo_exist(int terminal_id, int type) const;

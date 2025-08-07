@@ -4,6 +4,8 @@
 
 using namespace godot;
 
+class Recipe;
+
 class FactoryCreator : public Node {
     GDCLASS(FactoryCreator, Node);
 
@@ -21,6 +23,7 @@ public:
     static FactoryCreator* get_instance();
 
     void create_primary_industry(int type, Vector2i coords, int player_id, int mult = 1);
+    void create_secondary_industry(Recipe* recipe, Vector2i coords, int player_id, int mult = 1);
     void create_road_depot(Vector2i coords, int player_id);
     void create_construction_site(Vector2i coords, int player_id);
     void create_town(Vector2i coords);

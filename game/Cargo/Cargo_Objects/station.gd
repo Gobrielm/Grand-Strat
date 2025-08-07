@@ -45,6 +45,7 @@ func supply_army(tile: Vector2i, type: int, max_supply: int) -> void:
 func supply_unit(unit: base_unit, type: int, max_supply: int) -> void:
 	var org: organization = unit.org
 	var desired: int = min(org.get_desired_cargo(type), max_supply)
-	var amount: int = transfer_cargo(type, desired)
+	var amount: int = min(get_cargo_amount(type), desired)
+	remove_cargo(type, amount)
 	org.add_cargo(type, amount)
 	#TODO: Do some storing of, amount spent/goods used, on war

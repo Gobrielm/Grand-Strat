@@ -33,7 +33,7 @@ void AiFactory::change_sell_orders() {
 }
 
 void AiFactory::change_order(int type, bool buy) {
-    std::unordered_map<int, int> outputs = get_outputs();
+    std::unordered_map<int, float> outputs = get_outputs();
     int amount = (buy ? get_inputs()[type]: outputs[type]) * get_level();
     float price = get_local_price(type);
     float limit_price = buy ? price * 1.2: price * 0.8;

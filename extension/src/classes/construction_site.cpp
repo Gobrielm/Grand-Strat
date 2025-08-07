@@ -118,7 +118,7 @@ int ConstructionSite::get_desired_cargo(int type, float pricePer) const {
 
 int ConstructionSite::get_desired_cargo_from_train(int type, float pricePer) const {
     if (does_accept(type)) {
-        return std::min(get_max_storage(type) - get_cargo_amount(type), get_amount_can_buy(pricePer));
+        return std::min(int(get_max_storage(type) - get_cargo_amount(type)), get_amount_can_buy(pricePer));
     }
     return 0;
 }

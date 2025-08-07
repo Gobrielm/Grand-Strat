@@ -7,7 +7,7 @@ Recipe::Recipe() {
     level = 1;
 }
 
-Recipe::Recipe(std::unordered_map<int, int> &p_inputs, std::unordered_map<int, int> &p_outputs, std::unordered_map<PopTypes, int> &p_pops_needed) {
+Recipe::Recipe(std::unordered_map<int, float> p_inputs, std::unordered_map<int, float> p_outputs, std::unordered_map<PopTypes, int> p_pops_needed) {
     inputs = p_inputs;
     outputs = p_outputs;
     pops_needed = p_pops_needed;
@@ -179,12 +179,12 @@ void Recipe::clear() {
     pops_needed.clear();
 }
 
-std::unordered_map<int, int> Recipe::get_inputs() const {
+std::unordered_map<int, float> Recipe::get_inputs() const {
     std::scoped_lock lock(m);
     return inputs;
 }
 
-std::unordered_map<int, int> Recipe::get_outputs() const {
+std::unordered_map<int, float> Recipe::get_outputs() const {
     std::scoped_lock lock(m);
     return outputs;
 }
@@ -205,12 +205,12 @@ std::unordered_map<int, PopTypes> Recipe::get_employee_ids() const {
     return map;
 }
 
-void Recipe::set_inputs(const std::unordered_map<int, int> new_inputs) {
+void Recipe::set_inputs(const std::unordered_map<int, float> new_inputs) {
     std::scoped_lock lock(m);
     inputs = new_inputs;
 }
 
-void Recipe::set_outputs(const std::unordered_map<int, int> new_outputs) {
+void Recipe::set_outputs(const std::unordered_map<int, float> new_outputs) {
     std::scoped_lock lock(m);
     outputs = new_outputs;
 }

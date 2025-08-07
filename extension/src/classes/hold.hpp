@@ -16,7 +16,7 @@ protected:
     static void _bind_methods();
 
 public:
-    std::unordered_map<int, int> storage;
+    std::unordered_map<int, float> storage;
     static const int DEFAULT_MAX_STORAGE;
 
     static Ref<Terminal> create(const Vector2i new_location, const int player_owner, const int p_max_amount = DEFAULT_MAX_STORAGE);
@@ -25,15 +25,17 @@ public:
     Hold(const Vector2i new_location, const int player_owner, const int p_max_amount);
     virtual void initialize(const Vector2i new_location, const int player_owner, const int p_max_amount = DEFAULT_MAX_STORAGE);
 
-    virtual int add_cargo(int type, int amount);
-    virtual int get_cargo_amount(int type) const;
-    virtual void remove_cargo(int type, int amount);
+    virtual float add_cargo(int type, float amount);
+    virtual float get_cargo_amount(int type) const;
+    int get_cargo_amount_outside(int type) const;
+    virtual void remove_cargo(int type, float amount);
+    virtual float transfer_cargo(int type, float amount);
     virtual int transfer_cargo(int type, int amount);
-    virtual int get_amount_to_add(int type, int amount) const;
+    virtual float get_amount_to_add(int type, float amount) const;
 
     virtual Dictionary get_current_hold() const;
     void set_current_hold(Dictionary hold);
-    int get_current_hold_total() const;
+    float get_current_hold_total() const;
     bool is_full() const;
     bool is_empty() const;
 

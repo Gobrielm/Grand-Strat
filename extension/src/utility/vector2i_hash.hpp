@@ -12,6 +12,13 @@ namespace godot_helpers {
         }
     };
 
+    struct StringHasher {
+        size_t operator()(const godot::String& v) const {
+            std::string utf8 = std::string(v.utf8().get_data());
+            return std::hash<std::string>()(utf8);
+        }
+    };
+
     unsigned long long factorial(int n);
     unsigned long long nCr(int n, int r);
 

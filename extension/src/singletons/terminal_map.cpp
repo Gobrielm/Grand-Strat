@@ -164,10 +164,6 @@ TileMapLayer* TerminalMap::get_cargo_map() const {
     return cargo_map;
 }
 
-Node2D* TerminalMap::get_cargo_values() const {
-    return cargo_values;
-}
-
  //Time
 void TerminalMap::pause_time() {
     std::scoped_lock lock(m);
@@ -296,7 +292,7 @@ Ref<Factory> TerminalMap::create_primary_factory(const Vector2i &p_location, int
 //Checkers
 int TerminalMap::get_cargo_value_of_tile(const Vector2i &coords, int type) const {
     std::scoped_lock lock(m);
-    return cargo_values->call("get_tile_magnitude", coords, type);
+    return int(cargo_values->call("get_tile_magnitude", coords, type)) * 10;
 }
 
 std::vector<int> TerminalMap::get_available_resources_of_tile(const Vector2i &coords) const {

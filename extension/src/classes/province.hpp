@@ -34,8 +34,6 @@ class Province : public Object {
     std::unordered_set<int> peasant_pops; //Owns pops
     std::unordered_set<int> town_pops; //Owns pops
 
-    std::vector<Vector2i> get_town_tiles() const;
-
     protected:
     static void _bind_methods();
     BasePop* get_pop(int pop_id);
@@ -76,6 +74,7 @@ class Province : public Object {
     //Town Stuff
     void refresh_closest_town_to_tile();
     Vector2i get_closest_town_to_tile(Vector2i tile, std::vector<Vector2i> towns);
+    std::vector<Vector2i> get_town_tiles() const;
 
     // === Pops ===
     // Info Stuff

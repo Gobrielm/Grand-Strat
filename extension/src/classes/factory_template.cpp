@@ -88,11 +88,11 @@ bool FactoryTemplate::does_create(int type) const {
     return get_outputs().count(type);
 }
 
-std::unordered_map<int, int> FactoryTemplate::get_outputs() const {
+std::unordered_map<int, float> FactoryTemplate::get_outputs() const {
     return recipe->get_outputs();
 }
 
-std::unordered_map<int, int> FactoryTemplate::get_inputs() const {
+std::unordered_map<int, float> FactoryTemplate::get_inputs() const {
     return recipe->get_inputs();
 }
 
@@ -103,12 +103,13 @@ void FactoryTemplate::create_recipe() {
 }
 
 int FactoryTemplate::get_batch_size() const {
+    std::scoped_lock lock(m);
     int batch_size = get_level();
     for (auto& [type, amount]: get_inputs()) {
-        batch_size = std::min((int)floor(get_cargo_amount(type) / amount), batch_size);
+        batch_size = std::min(int(storage.at(type) / amount), batch_size);
     }
     for (auto& [type, amount]: get_outputs()) {
-        batch_size = std::min((int)floor((get_max_storage() - get_cargo_amount(type)) / amount), batch_size);
+        batch_size = std::min(int((get_max_storage() - storage.at(type)) / amount), batch_size);
     }
     return batch_size;
 }
@@ -165,7 +166,7 @@ void FactoryTemplate::distribute_cargo() {
 }
 
 int FactoryTemplate::get_level() const {
-    return round(recipe->get_level());
+    return floor(recipe->get_level());
 }
 
 int FactoryTemplate::get_level_without_employment() const {

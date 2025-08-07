@@ -1,4 +1,6 @@
 #include "initial_builder.hpp"
+#include "town.hpp"
+#include "ai_factory.hpp"
 #include <algorithm>
 #include <random>
 #include <queue>
@@ -27,6 +29,7 @@ InitialBuilder::InitialBuilder(): CompanyAi() {}
 InitialBuilder::InitialBuilder(int p_country_id): CompanyAi(p_country_id, 0) {}
 
 void InitialBuilder::build_initital_factories() {
+    auto start_time = std::chrono::high_resolution_clock::now();
     Ref<ProvinceManager> province_manager = ProvinceManager::get_instance();
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     std::unordered_set<int> prov_ids = province_manager->get_country_provinces(get_country_id());
@@ -35,9 +38,14 @@ void InitialBuilder::build_initital_factories() {
         if (province->has_town()) {
             build_factory_type(CargoInfo::get_instance()->get_cargo_type("grain"), province);
             build_factory_type(CargoInfo::get_instance()->get_cargo_type("wood"), province);
+            // build_t2_factory_in_towns(province);
         }
     }
     build_and_connect_depots();
+
+    auto end_time = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = end_time - start_time;
+    print_line("Factory Placement took " + String::num_scientific(elapsed.count()) + " seconds");
 }
 
 void InitialBuilder::build_factory_type(int type, Province* province) {
@@ -45,16 +53,15 @@ void InitialBuilder::build_factory_type(int type, Province* province) {
     int num_of_levels_to_place = get_levels_to_build(type, province);
     if (num_of_levels_to_place == 0) return;
     int levels_placed = 0;
-    int chance = std::max(int(round(tile_count / float(num_of_levels_to_place))), 1); //Chances way higher to emphasize closer tiles
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     for (const Vector2i &tile: province->get_town_centered_tiles()) {
         if (TerminalMap::get_instance()->is_tile_available(tile)) {
             int cargo_val = get_cargo_value_of_tile(tile, type);
 
-            if (cargo_val != 0 && rand() % chance == 0) {
+            if (cargo_val != 0 && rand() % 3 == 0) {
                 //Need to check if this factory will be cutoff, then check neighboors
                 if (will_any_factory_be_cut_off(tile)) continue;
-                int mult = std::min(rand() % 5, cargo_val);
+                int mult = std::min(rand() % cargo_val, cargo_val);
                 FactoryCreator::get_instance()->create_primary_industry(type, tile, get_owner_id(), mult);
 
                 levels_placed += mult;
@@ -72,16 +79,16 @@ int InitialBuilder::get_levels_to_build(int type, Province* province) const {
     if (cargo_name == "grain") {
         return get_levels_to_build_helper(type, province->get_demand_for_grain());
     } else if (cargo_name == "wood") {
-        return get_levels_to_build_helper(type, num_pop / 100);
+        return get_levels_to_build_helper(type, num_pop / 4);
     }
     return 0;
 }
 
 int InitialBuilder::get_levels_to_build_helper(int type, int demand) const {
     Recipe* recipe = RecipeInfo::get_instance()->get_primary_recipe_for_type_read_only(type);
-    int ouput_quant = recipe->get_outputs()[type];
-    int levels_to_build = round((demand) / ouput_quant);
-    return std::max(1, levels_to_build);
+    float ouput_quant = recipe->get_outputs()[type];
+    int levels_to_build = round((demand) / (ouput_quant * 30));
+    return levels_to_build;
 }
 
 bool InitialBuilder::will_any_factory_be_cut_off(const Vector2i &fact_to_place) const {
@@ -110,6 +117,18 @@ bool InitialBuilder::will_factory_by_cut_off(const Vector2i &factory_tile) const
         }
     }
     return free_tiles <= 1;
+}
+
+void InitialBuilder::build_t2_factory_in_towns(Province* province) {
+    Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
+    Recipe* lumber_mill_recipe = RecipeInfo::get_instance()->get_secondary_recipe_for_type(CargoInfo::get_instance()->get_cargo_type("lumber"));
+
+    for (const Vector2i &tile: province->get_town_tiles()) {
+        Ref<Town> town = terminal_map->get_town(tile);
+        Ref<AiFactory> factory = Ref<AiFactory>(memnew(AiFactory(tile, 0, lumber_mill_recipe)));
+        TerminalMap::get_instance()->create_isolated_terminal(factory);
+        town->add_factory(factory);
+    }
 }
 
 void InitialBuilder::build_and_connect_depots() {
@@ -160,35 +179,6 @@ int InitialBuilder::count_adjacent_factories(const Vector2i &center) const {
         if (factory.is_valid()) count++;
     }
     return count;
-}
-
-int InitialBuilder::place_group_of_factories(const Vector2i &center) {
-    int built = 0;
-    TileMapLayer* main_map = TerminalMap::get_instance()->get_main_map();
-    Array tiles = main_map->get_surrounding_cells(center);
-    for (int i = 0; i < tiles.size(); i++) {
-        Vector2i tile = tiles[i];
-        if (TerminalMap::get_instance()->is_tile_available(tile)) {
-            int grain_val = get_cargo_value_of_tile(tile, "grain");
-            int wood_val = get_cargo_value_of_tile(tile, "wood");
-
-            if (rand() % 4 == 0) {
-                int type = -1;
-                if (grain_val > wood_val) type = CargoInfo::get_instance()->get_cargo_type("grain");
-                else type = CargoInfo::get_instance()->get_cargo_type("wood");
-
-                int mult = std::min(5 + rand() % 10, std::max(grain_val, wood_val));
-                FactoryCreator::get_instance()->create_primary_industry(type, tile, get_owner_id(), mult);
-                built += mult;
-            }
-        }
-    }
-    if (built != 0) {
-        place_depot(center);
-        connect_road_depot(center);
-        //Find and connect to closest town
-    }
-    return built;
 }
 
 void InitialBuilder::connect_road_depot(const Vector2i &depot) {

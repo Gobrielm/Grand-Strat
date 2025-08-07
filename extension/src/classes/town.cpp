@@ -104,7 +104,7 @@ int Town::get_desired_cargo(int type, float price) const { // BUG/TODO: Kinda ou
     return 1000000;
 }
 
-int Town::get_cargo_amount(int type) const {
+float Town::get_cargo_amount(int type) const {
     ERR_FAIL_COND_V_EDMSG(!current_totals.count(type), 0, "No cargo of type: " + String::num(type));
     return current_totals.at(type);
 }
@@ -130,8 +130,6 @@ float Town::get_fulfillment(int type) const {
 void Town::add_factory(Ref<FactoryTemplate> fact) {
     {
         std::scoped_lock lock(m);
-        if (!internal_factories.count(fact->get_player_owner()))
-            internal_factories[fact->get_player_owner()] = std::vector<Ref<FactoryTemplate>>();
         internal_factories[fact->get_player_owner()].push_back(fact);
     }
 	fact->add_connected_broker(this);
@@ -425,7 +423,7 @@ void Town::encode_existing_cargo(TownCargo* existing_town_cargo, const TownCargo
     existing_town_cargo->amount += additional_amount;
 }
 
-int Town::add_cargo(int type, int amount) {
+float Town::add_cargo(int type, float amount) {
     ERR_FAIL_V_EDMSG(0, "Add cargo shouldn't be used on towns");
     return 0;
 }

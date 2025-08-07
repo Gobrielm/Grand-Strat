@@ -67,7 +67,6 @@ public:
     void clear();
     TileMapLayer* get_main_map() const;
     TileMapLayer* get_cargo_map() const;
-    Node2D* get_cargo_values() const;
 
     //Time
     void pause_time();

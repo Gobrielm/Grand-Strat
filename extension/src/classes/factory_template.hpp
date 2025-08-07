@@ -48,8 +48,8 @@ public:
     bool does_create(int type) const;
 
     // Production
-    std::unordered_map<int, int> get_outputs() const;
-    std::unordered_map<int, int> get_inputs() const;
+    std::unordered_map<int, float> get_outputs() const;
+    std::unordered_map<int, float> get_inputs() const;
     void create_recipe();
     int get_batch_size() const;
     void remove_inputs(int batch_size);

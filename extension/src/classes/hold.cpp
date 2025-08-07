@@ -11,7 +11,6 @@ void Hold::_bind_methods() {
     ClassDB::bind_method(D_METHOD("add_cargo", "type", "amount"), &Hold::add_cargo);
     ClassDB::bind_method(D_METHOD("get_cargo_amount", "type"), &Hold::get_cargo_amount);
     ClassDB::bind_method(D_METHOD("remove_cargo", "type", "amount"), &Hold::remove_cargo);
-    ClassDB::bind_method(D_METHOD("transfer_cargo", "type", "amount"), &Hold::transfer_cargo);
     ClassDB::bind_method(D_METHOD("get_amount_to_add", "type", "amount"), &Hold::get_amount_to_add);
     ClassDB::bind_method(D_METHOD("get_current_hold"), &Hold::get_current_hold);
     ClassDB::bind_method(D_METHOD("set_current_hold", "hold"), &Hold::set_current_hold);
@@ -55,14 +54,14 @@ void Hold::initialize(Vector2i new_location, int player_owner, int p_max_amount)
     }
 }
 
-int Hold::add_cargo(int type, int amount) {
+float Hold::add_cargo(int type, float amount) {
     int amount_to_add = get_amount_to_add(type, amount);
     std::scoped_lock lock(m);
     storage[type] += amount_to_add;
     return amount_to_add;
 }
 
-int Hold::get_cargo_amount(int type) const {
+float Hold::get_cargo_amount(int type) const {
     std::scoped_lock lock(m);
     if (storage.count(type) == 0) {
         ERR_PRINT("Storage has no such type: " + String::num_int64(type));
@@ -71,19 +70,34 @@ int Hold::get_cargo_amount(int type) const {
     return storage.at(type);
 }
 
-void Hold::remove_cargo(int type, int amount) {
+int Hold::get_cargo_amount_outside(int type) const {
+    std::scoped_lock lock(m);
+    if (storage.count(type) == 0) {
+        ERR_PRINT("Storage has no such type: " + String::num_int64(type));
+        return 0; // or return some error value like -1, depending on your logic
+    }
+    return storage.at(type);
+}
+
+void Hold::remove_cargo(int type, float amount) {
     std::scoped_lock lock(m);
     storage[type] -= amount;
     ERR_FAIL_COND_MSG(storage[type] < 0, "Storage went below zero! It is " + String::num(storage[type]));
 }
 
-int Hold::transfer_cargo(int type, int amount) {
-    int val = std::min(amount, get_cargo_amount(type));
+float Hold::transfer_cargo(int type, float amount) {
+    float val = std::min(amount, get_cargo_amount(type));
     remove_cargo(type, val);
     return val;
 }
 
-int Hold::get_amount_to_add(int type, int amount) const {
+int Hold::transfer_cargo(int type, int amount) {
+    int val = std::min(amount, int(get_cargo_amount(type)));
+    remove_cargo(type, val);
+    return val;
+}
+
+float Hold::get_amount_to_add(int type, float amount) const {
     return std::min(get_max_storage() - get_current_hold_total(), amount);
 }
 
@@ -91,7 +105,7 @@ Dictionary Hold::get_current_hold() const {
     std::scoped_lock lock(m);
     Dictionary d;
     for (const auto &pair : storage) {
-        d[pair.first] = pair.second;
+        d[pair.first] = round(pair.second);
     }
     return d;
 }
@@ -105,13 +119,13 @@ void Hold::set_current_hold(Dictionary hold) {
     }
 }
 
-int Hold::get_current_hold_total() const {
+float Hold::get_current_hold_total() const {
     std::scoped_lock lock(m);
-    int total = 0;
+    float total = 0;
     for (const auto &pair : storage) {
         total += pair.second;
     }
-    return total;
+    return round(total);
 }
 
 bool Hold::is_full() const {
@@ -123,7 +137,6 @@ bool Hold::is_empty() const {
 }
 
 int Hold::get_max_storage() const {
-    std::scoped_lock lock(m);
     return max_amount;
 }
 

@@ -65,7 +65,7 @@ float Broker::get_local_price(int type) const {
 int Broker::get_desired_cargo(int type, float pricePer) const {
     if (trade_orders.count(type)) {
         if (trade_orders.at(type)->is_buy_order() && is_price_acceptable(type, pricePer)) {
-            int canGet = std::min(get_max_storage() - get_cargo_amount(type), get_amount_can_buy(pricePer));
+            int canGet = std::min(int(get_max_storage() - get_cargo_amount(type)), get_amount_can_buy(pricePer));
             return std::min(trade_orders.at(type)->get_amount(), canGet);
         }
     }
@@ -74,7 +74,7 @@ int Broker::get_desired_cargo(int type, float pricePer) const {
 
 int Broker::get_desired_cargo_from_train(int type) const {
     if (does_accept(type)) {
-        return std::min(get_max_storage() - get_cargo_amount(type), get_amount_can_buy(get_local_price(type)));
+        return std::min(int(get_max_storage() - get_cargo_amount(type)), get_amount_can_buy(get_local_price(type)));
     }
     return 0;
 }
@@ -106,7 +106,7 @@ int Broker::sell_cargo(int type, int amount) {
     return transfer_cargo(type, amount);
 }
 
-int Broker::add_cargo_ignore_accepts(int type, int amount) { //Make sure 
+float Broker::add_cargo_ignore_accepts(int type, float amount) { //Make sure 
     {
         std::scoped_lock lock(m);
         local_pricer -> add_supply(type, amount);
@@ -119,7 +119,7 @@ void Broker::report_change_in_cash(float amount) {
     change_in_cash += amount;
 }
 
-int Broker::add_cargo(int type, int amount) { // If amount is ever negitive, it will break
+float Broker::add_cargo(int type, float amount) { // If amount is ever negitive, it will break
     amount = FixedHold::add_cargo(type, amount);
     std::scoped_lock lock(m);
     local_pricer -> add_supply(type, amount);
@@ -217,7 +217,7 @@ void Broker::distribute_from_order(const TradeOrder* order) {
     std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> s;
 
     for (const auto& tile : connected_brokers) {
-        if (get_cargo_amount(order->get_type()) == 0) return;
+        if ((get_cargo_amount_outside(order->get_type())) == 0) return;
         Ref<Broker> broker = TerminalMap::get_instance() -> get_broker(tile);
         if (broker.is_null()) continue;
         s.insert(tile);
@@ -226,7 +226,7 @@ void Broker::distribute_from_order(const TradeOrder* order) {
         }
     }
     for (const auto& tile: connected_stations) {
-        if (get_cargo_amount(order->get_type()) == 0) return;
+        if (get_cargo_amount_outside(order->get_type()) == 0) return;
         Ref<RoadDepot> road_depot = TerminalMap::get_instance() -> get_terminal_as<RoadDepot>(tile);
         if (road_depot.is_null()) continue;
         distribute_to_road_depot_brokers(road_depot, order, s);

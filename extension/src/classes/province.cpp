@@ -72,18 +72,18 @@ int Province::get_population() const {
 
  int Province::get_demand_for_grain() const {
     std::unique_ptr<Recipe> peasant_recipe = SubsistenceFarm::get_recipe();
-    int total_demand = 0;
+    float total_demand = 0;
     {
         std::scoped_lock lock(m);
         total_demand = town_pops.size() + rural_pops.size();
-        int grain_o = (peasant_recipe->get_outputs().begin())->second;
+        float grain_o = (peasant_recipe->get_outputs().begin())->second;
         int pops_needed = peasant_recipe->get_pops_needed_num();
-        total_demand -= grain_o * peasant_pops.size() / pops_needed;
+        total_demand -= (grain_o * peasant_pops.size()) / pops_needed;
     }
     if (total_demand < 0) {
         return 0;
     }
-    return total_demand;
+    return round(total_demand);
  }
 
 int Province::get_number_of_city_pops() const {

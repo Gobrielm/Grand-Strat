@@ -10,7 +10,6 @@ void FixedHold::_bind_methods() {
     ClassDB::bind_method(D_METHOD("initialize", "new_location", "player_owner", "p_max_amount"), &FixedHold::initialize);
     ClassDB::bind_method(D_METHOD("add_cargo", "type", "amount"), &FixedHold::add_cargo);
     ClassDB::bind_method(D_METHOD("add_cargo_ignore_accepts", "type", "amount"), &FixedHold::add_cargo_ignore_accepts);
-    ClassDB::bind_method(D_METHOD("transfer_cargo", "type", "amount"), &FixedHold::transfer_cargo);
     ClassDB::bind_method(D_METHOD("get_desired_cargo", "type"), &FixedHold::get_desired_cargo);
     ClassDB::bind_method(D_METHOD("reset_accepts"), &FixedHold::reset_accepts);
     ClassDB::bind_method(D_METHOD("get_accepts"), &FixedHold::get_accepts);
@@ -35,22 +34,28 @@ void FixedHold::initialize(Vector2i new_location, int player_owner, const int p_
     accepts = std::unordered_set<int>();
 }
 
-int FixedHold::add_cargo(int type, int amount) {
+float FixedHold::add_cargo(int type, float amount) {
     if (does_accept(type)) {
         return Hold::add_cargo(type, amount);
     }
     return 0;
 }
 
-int FixedHold::add_cargo_ignore_accepts(int type, int amount) {
+float FixedHold::add_cargo_ignore_accepts(int type, float amount) {
     return Hold::add_cargo(type, amount);
 }
 
-int FixedHold::transfer_cargo(int type, int amount) {
-    int new_amount = std::min(get_cargo_amount(type), amount);
+float FixedHold::transfer_cargo(int type, float amount) {
+    float new_amount = std::min(get_cargo_amount(type), amount);
     remove_cargo(type, new_amount);
     return new_amount;
 }
+
+int FixedHold::transfer_cargo(int type, int amount) {
+    int new_amount = std::min(get_cargo_amount_outside(type), amount);
+    remove_cargo(type, new_amount);
+    return new_amount;
+}   
 
 int FixedHold::get_desired_cargo(int type) const {
     if (does_accept(type)) {

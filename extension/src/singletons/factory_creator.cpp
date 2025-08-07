@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include "../classes/factory_utility/recipe.hpp"
 #include "factory_creator.hpp"
 #include "../classes/town.hpp"
 #include "../classes/ai_factory.hpp"
@@ -39,7 +40,20 @@ void FactoryCreator::create_primary_industry(int type, Vector2i coords, int play
         return;
     }
     Recipe* recipe = RecipeInfo::get_instance()->get_primary_recipe_for_type(type);
-    
+    if (player_id <= 0) {
+        Ref<AiFactory> factory = Ref<AiFactory>(memnew(AiFactory(coords, player_id, recipe)));
+        TerminalMap::get_instance()->encode_factory(factory, mult);
+    } else {
+        Ref<Factory> factory = Ref<Factory>(memnew(Factory(coords, player_id, recipe)));
+        TerminalMap::get_instance()->encode_factory(factory, mult);
+    }
+}
+
+void FactoryCreator::create_secondary_industry(Recipe* recipe, Vector2i coords, int player_id, int mult) {
+    if (coords == Vector2i(0, 0)) {
+        print_error("Tried to build factory at " + coords);
+        return;
+    }
     if (player_id <= 0) {
         Ref<AiFactory> factory = Ref<AiFactory>(memnew(AiFactory(coords, player_id, recipe)));
         TerminalMap::get_instance()->encode_factory(factory, mult);
