@@ -33,4 +33,5 @@ class Terminal : public RefCounted {
     Terminal();
     Terminal(const Vector2i p_location, const int p_owner);
     virtual ~Terminal() {}
+    Terminal(const Terminal&);
 };

@@ -48,8 +48,12 @@ void Broker::initialize(const Vector2i new_location, const int player_owner, con
     FixedHold::initialize(new_location, player_owner, p_max_amount);
 }
 
-bool Broker::can_afford(int price) const {
+bool Broker::can_afford(float price) const {
     return get_cash() >= price;
+}
+
+bool Broker::can_afford_unsafe(float price) const {
+    return get_cash_unsafe() >= price;
 }
 
 Dictionary Broker::get_local_prices() const {
@@ -59,6 +63,10 @@ Dictionary Broker::get_local_prices() const {
 
 float Broker::get_local_price(int type) const {
     std::scoped_lock lock(m);
+    return local_pricer->get_local_price(type);
+}
+
+float Broker::get_local_price_unsafe(int type) const {
     return local_pricer->get_local_price(type);
 }
 
@@ -257,6 +265,7 @@ void Broker::distribute_to_road_depot_brokers(Ref<RoadDepot> road_depot, const T
 }
 
 void Broker::distribute_to_order(Ref<Broker> otherBroker, const TradeOrder* order, Ref<RoadDepot> road_depot) { 
+    
     int type = order->get_type();
     float price1 = get_local_price(type);
     otherBroker->report_price(type, price1);

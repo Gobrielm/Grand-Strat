@@ -14,6 +14,10 @@ void Terminal::_bind_methods() {
     ClassDB::add_property(Terminal::get_class_static(),  PropertyInfo(Variant::INT, "player_owner"), "", "get_player_owner");
 }
 
+Terminal::Terminal(const Terminal&): terminal_id(-1) {
+    ERR_FAIL_EDMSG("COPY CONSTRUCTOR RUN FOR TERMINAL");
+}   
+
 Terminal::Terminal(): terminal_id(-1) {
     location = Vector2i(0, 0);
     player_owner = 0;

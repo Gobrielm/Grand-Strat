@@ -35,6 +35,7 @@ class LocalPriceController: public RefCounted {
 
     void move_price(int type, float price);
     void adjust_prices();
+    void adjust_supply_demand();
     float get_current_difference_from_base_price(int type);
 
     void add_demand(int type, float amount); //Demand is only from attempts to buy/sell

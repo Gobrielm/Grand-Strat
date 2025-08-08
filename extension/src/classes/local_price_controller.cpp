@@ -73,6 +73,17 @@ void LocalPriceController::adjust_prices() {
     }
 }
 
+void LocalPriceController::adjust_supply_demand() {
+    int type = 0;
+	for (const auto& base_price: base_prices) {
+        last_month_supply[type] = supply[type];
+        supply[type] = 0;
+        last_month_demand[type] = demand[type];
+        demand[type] = 0;
+        type++;
+    }
+}
+
 void LocalPriceController::adjust_cargo_price(int type, float base_price) {
 
     float diff_from_base = get_current_difference_from_base_price(type);

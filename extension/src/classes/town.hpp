@@ -20,6 +20,7 @@ class Town : public Broker {
 
 private:
     std::unordered_map<int, std::vector<Ref<FactoryTemplate>>> internal_factories; //Not thread safe
+    mutable std::mutex internal_factories_mutex;
     std::unordered_set<int> town_pop_ids;
     float INITIAL_CASH = 10000;
 
@@ -30,8 +31,6 @@ protected:
     std::unordered_map<int, std::unordered_map<int, TownCargo*>> town_cargo_tracker;
     std::unordered_map<int, float> current_prices; // Keep track of prices from last month
     std::unordered_map<int, int> current_totals; // Keeps track of current totals of goods
-    
-    float get_local_price_unsafe(int type) const;
 
 public:
     Town();
@@ -77,6 +76,7 @@ public:
     void distribute_type_to_broker(int type, Ref<Broker> broker, Ref<RoadDepot> road_depot = Ref<RoadDepot>(nullptr));
     std::vector<bool> get_accepts_vector() const override;
     float get_local_price(int type) const override;
+    float get_local_price_unsafe(int type) const override;
 
     //Storage Replacement
     void buy_cargo(int type, int amount, float price, int p_terminal_id) override;

@@ -53,6 +53,10 @@ float StationWOMethods::get_local_price(int type) const {
     return amount_total == 0 ? max_price : market_price / amount_total;
 }
 
+float StationWOMethods::get_local_price_unsafe(int type) const {
+    return get_local_price(type); // Already unsafe, terrible
+}
+
 void StationWOMethods::place_order(int type, int amount, bool buy, float max_price) {
     add_accept(type);
     Broker::place_order(type, amount, buy, max_price);

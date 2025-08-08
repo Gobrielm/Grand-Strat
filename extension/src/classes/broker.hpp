@@ -34,9 +34,11 @@ class Broker : public FixedHold {
     virtual void initialize(const Vector2i new_location, const int player_owner, const int p_max_amount = DEFAULT_MAX_STORAGE);
     Broker(const Broker&) = delete;
 
-    bool can_afford(int price) const;
+    bool can_afford(float price) const;
+    bool can_afford_unsafe(float price) const;
     Dictionary get_local_prices() const;
     virtual float get_local_price(int type) const;
+    virtual float get_local_price_unsafe(int type) const;
 
     virtual int get_desired_cargo(int type, float pricePer) const;
     virtual int get_desired_cargo_unsafe(int type, float pricePer) const;

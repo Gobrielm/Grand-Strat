@@ -66,7 +66,7 @@ Ref<Town> Town::create(Vector2i new_location) {
 }
 
 Town::~Town() {
-    std::scoped_lock lock(m);
+    std::scoped_lock lock(internal_factories_mutex);
     internal_factories.clear();
 }
 
@@ -133,7 +133,7 @@ float Town::get_fulfillment(int type) const {
 
 void Town::add_factory(Ref<FactoryTemplate> fact) {
     {
-        std::scoped_lock lock(m);
+        std::scoped_lock lock(internal_factories_mutex);
         internal_factories[fact->get_player_owner()].push_back(fact);
     }
 	fact->add_connected_broker(this);
@@ -141,7 +141,7 @@ void Town::add_factory(Ref<FactoryTemplate> fact) {
 
 Array Town::get_factories() const {
     Array a;
-    std::scoped_lock lock(m);
+    std::scoped_lock lock(internal_factories_mutex);
     for (const auto &[__, v]: internal_factories){
         for (Ref<FactoryTemplate> f: v) {
             a.push_back(f);
@@ -199,7 +199,7 @@ void Town::sell_to_pop(BasePop* pop) { // Called from Province, do not call loca
         while (sell_it != ms.end()) {
             sell_order = *sell_it;
 
-            const float buyer_price = pop->get_buy_price(type, get_local_price_unsafe(type)); // Is nan
+            const float buyer_price = pop->get_buy_price(type, get_local_price_unsafe(type));
             buy_orders_price_map[type][round(buyer_price * 10)] += desired;
             const float seller_price = sell_order->price;
             float price = (buyer_price + seller_price) / 2; // Price average
@@ -220,8 +220,8 @@ void Town::sell_to_pop(BasePop* pop) { // Called from Province, do not call loca
             pop->buy_good(type, amount, price);
 
             if (sell_order->amount == 0) {
-                delete_town_cargo(sell_order);
                 sell_it = ms.erase(sell_it);
+                delete_town_cargo(sell_order);
             } else {
                 break;
             }
@@ -256,7 +256,8 @@ int Town::get_total_pops() const {
 Ref<FactoryTemplate> Town::find_employment(BasePop* pop) const {
     float max_wage = 0.0;
     Ref<FactoryTemplate> best_fact = nullptr;
-    
+
+    std::scoped_lock lock(internal_factories_mutex);
     for (const auto &[__, fact_vector]: internal_factories) {
         for (const auto &fact: fact_vector) {
             if (fact->is_hiring(pop) && fact -> get_wage() > max_wage)
@@ -279,16 +280,21 @@ void Town::sell_to_other_brokers() {
 
 void Town::distribute_type(int type) {
     //Distribute to local factories
-	for (const auto &[__, fact_vector]: internal_factories) {
-		for (Ref<FactoryTemplate> fact: fact_vector) {
-			if (fact->does_accept(type)) {
-                distribute_type_to_broker(type, fact);
+    {
+        std::scoped_lock lock(internal_factories_mutex);
+        for (const auto& [__, fact_vector]: internal_factories) {
+            for (Ref<FactoryTemplate> fact: fact_vector) {
+                if (fact->does_accept(type)) {
+                    distribute_type_to_broker(type, fact);
+                }
             }
         }
     }
+	
     std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> s;
+    s.insert(get_location());
 	//Distribute to other brokers
-	for (const auto &tile: connected_brokers) {
+	for (const auto tile: connected_brokers) {
         s.insert(tile);
         Ref<Broker> broker = TerminalMap::get_instance() -> get_broker(tile);
         if (broker.is_null()) continue;
@@ -296,12 +302,13 @@ void Town::distribute_type(int type) {
             distribute_type_to_broker(type, broker);
         }
     }
+
     // Distribute using stations to other brokers
-    for (const auto& tile: connected_stations) {
+    for (const auto tile: connected_stations) {
         Ref<RoadDepot> road_depot = TerminalMap::get_instance() -> get_terminal_as<RoadDepot>(tile);
         if (road_depot.is_null()) continue;
         std::vector<Ref<Broker>> other_brokers = road_depot->get_available_brokers(type);
-        for (auto broker: other_brokers) {
+        for (auto& broker: other_brokers) {
             if (!s.count(broker->get_location())) {
                 s.insert(broker->get_location());
                 distribute_type_to_broker(type, broker, road_depot);
@@ -310,67 +317,63 @@ void Town::distribute_type(int type) {
     }
 }
 
-void Town::distribute_type_to_broker(int type, Ref<Broker> broker, Ref<RoadDepot> road_depot) { // Cannot unlock throughout entire thing til done
+
+void Town::distribute_type_to_broker(int type, Ref<Broker> broker, Ref<RoadDepot> road_depot) {
+    std::vector<TownCargo*> cargo_to_send; // Queued up Town Cargo to sell to brokers
+    bool is_depot_valid = road_depot.is_valid();
+    float fee = 0.0;
+    if (is_depot_valid) {
+        std::scoped_lock lock2(road_depot->m); // Lock Depot
+        fee = road_depot->get_fee(); // Between 0 - 1
+    }
+
+    {
+        std::scoped_lock lock1(broker->m); // Lock Broker
+        std::scoped_lock lock(m); //  Lock self
     
-    while (true) { // If orders exist
-        TownCargo* town_cargo = nullptr;
-        float seller_price;
-        {   
-            std::scoped_lock lock(m);
-            auto& ms = cargo_sell_orders[type];
-            if (ms.empty()) {
-                break;
-            }
-            town_cargo = *(ms.begin());
-            seller_price = town_cargo->price;
-        }
-        
+        auto& ms = cargo_sell_orders[type];
+        if (ms.empty()) return;
 
-        float buyer_price = broker->get_local_price(type);
+        auto it = ms.begin();
+        TownCargo* town_cargo = *it; // town_cargo comes from a fact/broker selling it, they would seek a higher price
+
+        float buyer_price = broker->get_local_price_unsafe(type);
+        float seller_price = town_cargo->price;
         float price = (buyer_price + seller_price) / 2; // Price average
-        int desired = broker -> get_desired_cargo(type, price);
-        float fee = road_depot.is_valid() ? road_depot->get_fee() : 0; // Between 0 - 1
-        
-        while (desired > 0) {
-            {
-                std::unique_lock lock(m);
+        int desired = broker -> get_desired_cargo_unsafe(type, price);
 
-                auto& ms = cargo_sell_orders[type];
+        while (desired > 0) {
+            
+
+            int amount = std::min(desired, town_cargo->amount);
+            if (!broker->can_afford_unsafe(amount * price)) break; // If cannot afford then break out
+            TownCargo* town_cargo_copy = new TownCargo(*town_cargo);
+            if (is_depot_valid) 
+                town_cargo_copy->add_fee_to_pay(road_depot->get_terminal_id(), fee);
+            cargo_to_send.push_back(town_cargo_copy);
+
+            desired -= amount;
+            current_totals[type] -= amount;
+            town_cargo->transfer_cargo(amount);
+            
+            if (town_cargo->amount == 0) {
+                it = ms.erase(it);
+                delete_town_cargo(town_cargo);
                 if (ms.empty()) {
                     break;
                 }
-
-                // Checks that the current order is the first one
-                if (*ms.begin() != town_cargo) {
-                    break;
-                }
-
-                int amount = std::min(desired, town_cargo->amount);
-
-                current_totals[type] -= amount;
-                town_cargo->transfer_cargo(amount);
-
-                if (town_cargo->amount == 0) {
-                    ms.erase(ms.begin());
-                    delete_town_cargo(town_cargo);
-                    town_cargo = *ms.begin();
-                    seller_price = town_cargo->price;
-                }
+                town_cargo = *it;
             }
-            // Will queue up copies to distribute at end after lock is released
-            TownCargo* town_cargo_copy = new TownCargo(*town_cargo);
-            if (road_depot.is_valid()) 
-                town_cargo_copy->add_fee_to_pay(road_depot->get_terminal_id(), fee);
-            
-            broker->buy_cargo(town_cargo_copy); // Broker does work around paying fees and owner
-            delete town_cargo_copy;
-
-            buyer_price = broker->get_local_price(type);
+            seller_price = town_cargo->price;
             price = (buyer_price + seller_price) / 2; // Price average
-            desired = broker -> get_desired_cargo(type, price);
         }
     }
+    // No locks at this point
+    for (TownCargo* cargo: cargo_to_send) {
 
+        broker->buy_cargo(cargo); // Broker does work around paying fees and owner
+        delete cargo;
+    }
 }
 
 std::vector<bool> Town::get_accepts_vector() const {
@@ -479,13 +482,13 @@ void Town::age_all_cargo() {
 }
 
 std::multiset<TownCargo *, TownCargo::TownCargoPtrCompare>::iterator Town::return_cargo(std::multiset<TownCargo *, TownCargo::TownCargoPtrCompare>::iterator cargo_it, std::unordered_map<int, std::unordered_map<int, int>>& cargo_to_return) {
-    if ((++((*cargo_it)->age)) > 5) {
-        TownCargo* cargo = (*cargo_it);
+    TownCargo* cargo = (*cargo_it);
+    if ((++(cargo->age)) > 5) {
         int type = cargo->type;
         current_totals[type] -= cargo->amount;
         cargo->return_cargo(cargo_to_return); //Return cargo to broker
-        delete_town_cargo(cargo);             //Delete old cargo
         cargo_it = cargo_sell_orders[type].erase(cargo_it);     //Erase from set, and update iterator
+        delete_town_cargo(cargo);             //Delete old cargo
     } else {
         ++cargo_it;                  //Increment if not deleting    
     }
@@ -529,13 +532,13 @@ void Town::update_local_prices() {
     }
 }
 
-void Town::update_local_price(int type) { // TODO: when pops buy, they leave a type, amount, price thing 
+void Town::update_local_price(int type) {
     std::unordered_map<int, int> buy_prices; // Multiples and rounds price by 10
     std::unordered_map<int, int> sell_prices; // Multiples and rounds price by 10
     std::scoped_lock lock(m);
     for (const auto& cargo: cargo_sell_orders[type]) {
-        int price = (round(cargo->price * 10.0)); // Rounds to nearest tenth
-        buy_prices[price] += cargo->amount;
+        int ten_price = (round(cargo->price * 10.0)); // Rounds to nearest tenth
+        buy_prices[ten_price] += cargo->amount;
     }
     for (const auto& [ten_price, amount]: buy_orders_price_map[type]) {
         sell_prices[ten_price] += amount;
@@ -563,7 +566,7 @@ void Town::month_tick() {
     update_buy_orders();
     {
         std::scoped_lock lock(m);
-        local_pricer -> adjust_prices();
+        local_pricer -> adjust_supply_demand();
     }
     age_all_cargo();
 }
