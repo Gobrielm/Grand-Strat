@@ -235,7 +235,7 @@ void Broker::distribute_cargo() {
 
 void Broker::distribute_from_order(const TradeOrder* order) {
     std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> s;
-
+    s.insert(get_location());
     for (const auto& tile : connected_brokers) {
         if ((get_cargo_amount_outside(order->get_type())) == 0) return;
         Ref<Broker> broker = TerminalMap::get_instance() -> get_broker(tile);
@@ -270,14 +270,14 @@ void Broker::distribute_to_order(Ref<Broker> otherBroker, const TradeOrder* orde
     float price1 = get_local_price(type);
     otherBroker->report_price(type, price1);
     float price2 = otherBroker->get_local_price(type);
-    float price = std::max(price1, price2) - std::abs(price1 - price2) / 2.0f;
+    float price = (price1 + price2) / 2;
 
     if (!order->is_price_acceptable(price) || !otherBroker->is_price_acceptable(type, price)) return;
     int desired = otherBroker->get_desired_cargo(type, price);
 
     int amount = std::min(desired, order->get_amount()); 
+    amount = sell_cargo(type, amount);
     if (amount > 0) {
-        amount = sell_cargo(type, amount);
         {
             TownCargo* cargo = new TownCargo(type, amount, price, get_terminal_id());
             if (road_depot.is_valid()) {
@@ -291,13 +291,12 @@ void Broker::distribute_to_order(Ref<Broker> otherBroker, const TradeOrder* orde
 
 void Broker::report_attempt_to_sell(int type, int amount) {
     std::scoped_lock lock(m);
-    if (local_pricer) {
+    if (local_pricer && amount > 0) {
         local_pricer->add_demand(type, amount);
     }
 }
 
 void Broker::report_demand_of_brokers(int type) {
-    float price = get_local_price(type);
     std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> s;
     s.insert(get_location());
     
@@ -306,7 +305,7 @@ void Broker::report_demand_of_brokers(int type) {
         if (broker.is_null()) continue;
         s.insert(tile);
         if (broker->does_accept(type)) {
-            report_attempt_to_sell(type, broker->get_desired_cargo(type, price));
+            report_attempt_to_sell(type, broker->get_diff_between_demand_and_supply(type));
         }
     }
 
@@ -318,10 +317,15 @@ void Broker::report_demand_of_brokers(int type) {
         for (const auto &broker: other_brokers) {
             if (!s.count(broker->get_location())) {
                 s.insert(broker->get_location());
-                report_attempt_to_sell(type, broker->get_desired_cargo(type, price));
+                report_attempt_to_sell(type, broker->get_diff_between_demand_and_supply(type));
             }
         }
     }
 }
 
 void Broker::report_price(int type, float price) {}
+
+float Broker::get_diff_between_demand_and_supply(int type) const {
+    std::scoped_lock lock(m);
+    return local_pricer->get_demand(type) - local_pricer->get_supply(type);
+}

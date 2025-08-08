@@ -77,6 +77,7 @@ public:
     std::vector<bool> get_accepts_vector() const override;
     float get_local_price(int type) const override;
     float get_local_price_unsafe(int type) const override;
+    Dictionary get_local_prices() const override;
 
     //Storage Replacement
     void buy_cargo(int type, int amount, float price, int p_terminal_id) override;

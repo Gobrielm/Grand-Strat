@@ -36,7 +36,7 @@ class Broker : public FixedHold {
 
     bool can_afford(float price) const;
     bool can_afford_unsafe(float price) const;
-    Dictionary get_local_prices() const;
+    virtual Dictionary get_local_prices() const;
     virtual float get_local_price(int type) const;
     virtual float get_local_price_unsafe(int type) const;
 
@@ -81,5 +81,6 @@ class Broker : public FixedHold {
     void report_demand_of_brokers(int type);
     virtual void report_price(int type, float price);
 
-    
+    // Returns demand - supply
+    float get_diff_between_demand_and_supply(int type) const;
 };

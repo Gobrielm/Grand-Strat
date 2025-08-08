@@ -47,7 +47,7 @@ Town::Town(): Broker(Vector2i(0, 0), 0) {
     for (const auto& [type, __]: CargoInfo::get_instance()->get_base_prices()) {
         cargo_sell_orders[type] = std::multiset<TownCargo*, TownCargo::TownCargoPtrCompare>();
         current_totals[type] = 0;
-        current_prices[type] = 0;
+        current_prices[type] = local_pricer->get_local_price(type);
     }
 }
 
@@ -96,8 +96,8 @@ float Town::get_demand(int type) const {
 }
 
 //To Buy
-bool Town::is_price_acceptable(int type, float price) const {
-    return (get_local_price(type) / price) > 0.8;
+bool Town::is_price_acceptable(int type, float price) const { // Free Market
+    return true;
 }
 
 int Town::get_desired_cargo(int type, float price) const { // BUG/TODO: Kinda outdated
@@ -387,19 +387,22 @@ std::vector<bool> Town::get_accepts_vector() const {
 }
 
 float Town::get_local_price(int type) const {
-    
     std::scoped_lock lock(m);
-    if (current_prices.at(type) > 0) {
-        return current_prices.at(type);
-    }
-    return local_pricer -> get_local_price(type);
+    return current_prices.at(type);
 }
 
 float Town::get_local_price_unsafe(int type) const {
-    if (current_prices.at(type) > 0) {
-        return current_prices.at(type);
+    return current_prices.at(type);
+}
+
+Dictionary Town::get_local_prices() const {
+    Dictionary d;
+    int size = get_supply().size();
+    std::scoped_lock lock(m);
+    for (int type = 0; type < size; type++) {
+        d[type] = get_local_price_unsafe(type);
     }
-    return local_pricer -> get_local_price(type);
+    return d;
 }
 
 void Town::buy_cargo(int type, int amount, float price, int p_terminal_id) {
@@ -557,7 +560,6 @@ void Town::update_local_price(int type) {
 // Process Hooks
 void Town::day_tick() {
     sell_to_other_brokers();
-    // sell_to_other_towns();
 }
 
 void Town::month_tick() {

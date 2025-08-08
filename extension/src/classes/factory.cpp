@@ -18,9 +18,9 @@ Factory::Factory(Vector2i new_location, int player_owner, Recipe* p_recipe): Fac
 // Process Hooks
 void Factory::day_tick() {
     create_recipe();
-    // if (get_orders().size() != 0) {
-    //     distribute_cargo();
-    // }
+    if (get_orders().size() != 0) {
+        distribute_cargo();
+    }
 }
 
 void Factory::month_tick() {
