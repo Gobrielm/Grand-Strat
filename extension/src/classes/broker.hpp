@@ -39,10 +39,12 @@ class Broker : public FixedHold {
     virtual float get_local_price(int type) const;
 
     virtual int get_desired_cargo(int type, float pricePer) const;
+    virtual int get_desired_cargo_unsafe(int type, float pricePer) const;
     int get_desired_cargo_from_train(int type) const;
 
     virtual bool is_price_acceptable(int type, float pricePer) const;
 
+    // Buy Cargo deals with paying owner and dealing with fees
     virtual void buy_cargo(int type, int amount, float price, int p_terminal_id);
     virtual void buy_cargo(const TownCargo* cargo);
 

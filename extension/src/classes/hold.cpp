@@ -55,7 +55,7 @@ void Hold::initialize(Vector2i new_location, int player_owner, int p_max_amount)
 }
 
 float Hold::add_cargo(int type, float amount) {
-    int amount_to_add = get_amount_to_add(type, amount);
+    float amount_to_add = get_amount_to_add(type, amount);
     std::scoped_lock lock(m);
     storage[type] += amount_to_add;
     return amount_to_add;
@@ -105,7 +105,7 @@ Dictionary Hold::get_current_hold() const {
     std::scoped_lock lock(m);
     Dictionary d;
     for (const auto &pair : storage) {
-        d[pair.first] = round(pair.second);
+        d[pair.first] = (round(pair.second * 100)) / 100.0;
     }
     return d;
 }

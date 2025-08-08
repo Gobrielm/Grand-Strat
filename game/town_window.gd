@@ -69,11 +69,11 @@ func request_factories(coords: Vector2i) -> void:
 	if town != null:
 		for fact: FactoryTemplate in town.get_factories():
 			var details: Array = []
-			details.append(fact.get_level())				 #[0]
-			details.append(fact.get_cash())					 #[1]
-			details.append(fact.get_recipe_as_string())		 #[2]
+			details.append(fact.get_level_without_employment())#[0]
+			details.append(fact.get_cash())					   #[1]
+			details.append(fact.get_recipe_as_string())		   #[2]
 			toUpdate.push_back(details)
-	update_factories(toUpdate)
+	update_factories.rpc_id(multiplayer.get_remote_sender_id(), toUpdate)
 
 @rpc("authority", "call_local", "unreliable")
 func update_current_name(new_name: String) -> void:
@@ -100,8 +100,9 @@ func update_factories(info: Array[Array]) -> void:
 	var fact_list: ItemList = $Factory_Node/Factory_List
 	var num: int = 0
 	for fact: Array in info:
-		var text: String = "Factory/Level: " + str(fact[0]) + " /Cash: " + str(fact[1]) + "/ "
-		text += fact[2]
+		var text: String = fact[2] + "\n"
+		text += "Level: " + str(fact[0]) + " , Cash: " + str(fact[1])
+		
 		if num < fact_list.item_count:
 			fact_list.set_item_text(num, text)
 		else:

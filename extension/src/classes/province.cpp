@@ -308,9 +308,9 @@ BasePop* Province::get_pop(int pop_id) {
 }
 
 void Province::create_pops() {
-    int number_of_peasant_pops = floor(population * 0.6 / PeasantPop::get_people_per_pop());
-    int number_of_rural_pops = floor(population * 0.2 / RuralPop::get_people_per_pop());
-	int number_of_city_pops = floor(population * 0.2 / TownPop::get_people_per_pop());
+    int number_of_peasant_pops = floor(population * 0.9 / PeasantPop::get_people_per_pop()); //0.6
+    int number_of_rural_pops = floor(population * 0.05 / RuralPop::get_people_per_pop()); //0.2
+	int number_of_city_pops = floor(population * 0.05 / TownPop::get_people_per_pop()); //0.2
     for (int i = 0; i < number_of_peasant_pops; i++) {
         create_peasant_pop(0, tiles[rand() % tiles.size()]);
     }

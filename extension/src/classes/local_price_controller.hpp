@@ -12,15 +12,15 @@ class LocalPriceController: public RefCounted {
     static constexpr float MARKET_CHANGE_RATE = 0.1f; //Higher the faster
     static constexpr float TRADE_CHANGE_RATE = 0.05f; //Price changing from trades
 
-    std::vector<int> demand;
-    std::vector<int> last_month_demand;
-    std::vector<int> supply;
-    std::vector<int> last_month_supply;
+    std::vector<float> demand;
+    std::vector<float> last_month_demand;
+    std::vector<float> supply;
+    std::vector<float> last_month_supply;
     std::vector<float> local_prices;
 
     
     void adjust_cargo_price(int type, float base_price);
-    float get_difference_from_base_price(int type, std::vector<int> &p_supply, std::vector<int> &p_demand) const;
+    float get_difference_from_base_price(int type, std::vector<float> &p_supply, std::vector<float> &p_demand) const;
 
     protected:
     static void _bind_methods();
@@ -37,18 +37,18 @@ class LocalPriceController: public RefCounted {
     void adjust_prices();
     float get_current_difference_from_base_price(int type);
 
-    void add_demand(int type, int amount); //Demand is only from attempts to buy/sell
-    void add_supply(int type, int amount); //Supply is only from bought/created goods
-    int get_demand(int type) const;
-    int get_supply(int type) const;
-    int get_last_month_demand(int type) const;
-    int get_last_month_supply(int type) const;
+    void add_demand(int type, float amount); //Demand is only from attempts to buy/sell
+    void add_supply(int type, float amount); //Supply is only from bought/created goods
+    float get_demand(int type) const;
+    float get_supply(int type) const;
+    float get_last_month_demand(int type) const;
+    float get_last_month_supply(int type) const;
 
 
-    std::vector<int> get_demand() const;
-    std::vector<int> get_supply() const;
-    std::vector<int> get_last_month_demand() const;
-    std::vector<int> get_last_month_supply() const;
+    std::vector<float> get_demand() const;
+    std::vector<float> get_supply() const;
+    std::vector<float> get_last_month_demand() const;
+    std::vector<float> get_last_month_supply() const;
 
 
     float get_local_price(int type) const;

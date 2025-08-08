@@ -57,6 +57,14 @@ float Firm::get_cash() const {
     }
 }
 
+float Firm::get_cash_unsafe() const {
+    if (player_owner == 0) {
+        return cash;
+    } else {
+        return MoneyController::get_instance()->get_money(player_owner);
+    }
+}
+
 float Firm::transfer_cash(float amount) {
     amount = std::min(get_cash(), amount);
 	remove_cash(amount);

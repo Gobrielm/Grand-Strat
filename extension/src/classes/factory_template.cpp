@@ -43,6 +43,7 @@ FactoryTemplate::FactoryTemplate() {}
 
 FactoryTemplate::FactoryTemplate(Vector2i new_location, int player_owner, Recipe* p_recipe): Broker(new_location, player_owner) {
     recipe = p_recipe;
+    if (recipe == nullptr) print_error("Factory created with null recipe at location " + new_location + ".");
     local_pricer = memnew(FactoryLocalPriceController);
 }
 
@@ -97,30 +98,30 @@ std::unordered_map<int, float> FactoryTemplate::get_inputs() const {
 }
 
 void FactoryTemplate::create_recipe() {
-    int batch_size = get_batch_size();
+    double batch_size = get_batch_size();
     remove_inputs(batch_size);
     add_outputs(batch_size);
 }
 
-int FactoryTemplate::get_batch_size() const {
+double FactoryTemplate::get_batch_size() const {
     std::scoped_lock lock(m);
-    int batch_size = get_level();
+    double batch_size = get_level();
     for (auto& [type, amount]: get_inputs()) {
-        batch_size = std::min(int(storage.at(type) / amount), batch_size);
+        batch_size = std::min(storage.at(type) / double(amount), batch_size);
     }
     for (auto& [type, amount]: get_outputs()) {
-        batch_size = std::min(int((get_max_storage() - storage.at(type)) / amount), batch_size);
+        batch_size = std::min((double(get_max_storage()) - storage.at(type)) / amount, batch_size);
     }
     return batch_size;
 }
 
-void FactoryTemplate::remove_inputs(int batch_size) {
+void FactoryTemplate::remove_inputs(double batch_size) {
     for (auto& [type, amount]: get_inputs()) {
         remove_cargo(type, amount * batch_size);
     }
 }
 
-void FactoryTemplate::add_outputs(int batch_size) {
+void FactoryTemplate::add_outputs(double batch_size) {
     for (auto& [type, amount]: get_outputs()) {
         add_cargo_ignore_accepts(type, amount * batch_size);
     }
@@ -131,17 +132,17 @@ String FactoryTemplate::get_recipe_as_string() const {
     String x;
     int i = 0;
     const auto outputs = get_outputs();
-    const auto inputs = get_outputs();
-    for (const auto& [type, amount]: outputs) {
+    const auto inputs = get_inputs();
+    for (const auto& [type, amount]: inputs) {
         x += String::num(amount) + " " + cargo_info->get_cargo_name(type);
-        if (i < outputs.size() - 1) x += ", " ;
+        if (i < inputs.size() - 1) x += ", " ;
         i++;
     }
     if (inputs.size() != 0) x += " -> ";
     i = 0;
-    for (const auto& [type, amount]: inputs) {
+    for (const auto& [type, amount]: outputs) {
         x += String::num(amount) + " " + cargo_info->get_cargo_name(type);
-        if (i < inputs.size() - 1) x += ", " ;
+        if (i < outputs.size() - 1) x += ", " ;
         i++;
     }
     return x;
@@ -165,8 +166,8 @@ void FactoryTemplate::distribute_cargo() {
     }
 }
 
-int FactoryTemplate::get_level() const {
-    return floor(recipe->get_level());
+double FactoryTemplate::get_level() const {
+    return recipe->get_level();
 }
 
 int FactoryTemplate::get_level_without_employment() const {

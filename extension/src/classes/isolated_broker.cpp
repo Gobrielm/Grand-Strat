@@ -50,33 +50,27 @@ void IsolatedBroker::sell_type(Ref<Town> town, int type, int amount) {
     
 }
 
-bool IsolatedBroker::check_outputs() const {
-    for (const auto& [type, amount]: recipe->get_outputs()) {
-        if (storage.at(type) + amount > MAX_STORAGE) {
-            return false;
-        }
+double IsolatedBroker::get_batch_size() const {
+    std::scoped_lock lock(m);
+    double batch_size = recipe->get_level();
+    for (auto& [type, amount]: recipe->get_inputs()) {
+        batch_size = std::min(storage.at(type) / double(amount), batch_size);
     }
-    return true;
-}
-
-bool IsolatedBroker::check_inputs() const {
-    for (const auto& [type, amount]: recipe->get_inputs()) {
-        if (storage.at(type) - amount < 0) {
-            return false;
-        }
+    for (auto& [type, amount]: recipe->get_outputs()) {
+        batch_size = std::min((double(MAX_STORAGE) - storage.at(type)) / amount, batch_size);
     }
-    return true;
+    return batch_size;
 }
 
 void IsolatedBroker::create_recipe() {
-    if (check_outputs() && check_inputs()) {
-        std::scoped_lock lock(m);
-        for (const auto& [type, amount]: recipe->get_outputs()) {
-            storage[type] += amount;
-        }
-        for (const auto& [type, amount]: recipe->get_inputs()) {
-            storage[type] -= amount;
-        }
+    double batch_size = get_batch_size();
+    if (batch_size == 0) return;
+    std::scoped_lock lock(m);
+    for (const auto& [type, amount]: recipe->get_outputs()) {
+        storage[type] += amount * batch_size;
+    }
+    for (const auto& [type, amount]: recipe->get_inputs()) {
+        storage[type] -= amount * batch_size;
     }
 }
 

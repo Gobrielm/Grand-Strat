@@ -33,17 +33,17 @@ void LocalPriceController::set_base_prices() {
     }
 }
 
-void LocalPriceController::add_demand(int type, int amount) { demand[type] += amount; }
-void LocalPriceController::add_supply(int type, int amount) { supply[type] += amount; }
-int LocalPriceController::get_demand(int type) const { return demand.at(type); }
-int LocalPriceController::get_supply(int type) const { return supply.at(type); }
-int LocalPriceController::get_last_month_demand(int type) const { return last_month_demand.at(type); }
-int LocalPriceController::get_last_month_supply(int type) const { return last_month_supply.at(type); }
+void LocalPriceController::add_demand(int type, float amount) { demand[type] += amount; }
+void LocalPriceController::add_supply(int type, float amount) { supply[type] += amount; }
+float LocalPriceController::get_demand(int type) const { return demand.at(type); }
+float LocalPriceController::get_supply(int type) const { return supply.at(type); }
+float LocalPriceController::get_last_month_demand(int type) const { return last_month_demand.at(type); }
+float LocalPriceController::get_last_month_supply(int type) const { return last_month_supply.at(type); }
 
-std::vector<int> LocalPriceController::get_demand() const { return demand; }
-std::vector<int> LocalPriceController::get_supply() const { return supply; }
-std::vector<int> LocalPriceController::get_last_month_demand() const { return last_month_demand; }
-std::vector<int> LocalPriceController::get_last_month_supply() const { return last_month_supply; }
+std::vector<float> LocalPriceController::get_demand() const { return demand; }
+std::vector<float> LocalPriceController::get_supply() const { return supply; }
+std::vector<float> LocalPriceController::get_last_month_demand() const { return last_month_demand; }
+std::vector<float> LocalPriceController::get_last_month_supply() const { return last_month_supply; }
 
 float LocalPriceController::get_local_price(int type) const {
     return local_prices.at(type);
@@ -95,7 +95,7 @@ void LocalPriceController::adjust_cargo_price(int type, float base_price) {
     demand[type] = 0;
 }
 
-float LocalPriceController::get_difference_from_base_price(int type, std::vector<int> &p_supply, std::vector<int> &p_demand) const { // Returns percentage diff + 1
+float LocalPriceController::get_difference_from_base_price(int type, std::vector<float> &p_supply, std::vector<float> &p_demand) const { // Returns percentage diff + 1
     if (p_supply[type] == p_demand[type] && p_supply[type] == 0) {
         return 1;
     } 

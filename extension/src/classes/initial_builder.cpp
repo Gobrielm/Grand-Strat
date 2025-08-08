@@ -38,7 +38,7 @@ void InitialBuilder::build_initital_factories() {
         if (province->has_town()) {
             build_factory_type(CargoInfo::get_instance()->get_cargo_type("grain"), province);
             build_factory_type(CargoInfo::get_instance()->get_cargo_type("wood"), province);
-            // build_t2_factory_in_towns(province);
+            build_t2_factory_in_towns(province);
         }
     }
     build_and_connect_depots();
@@ -122,7 +122,7 @@ bool InitialBuilder::will_factory_by_cut_off(const Vector2i &factory_tile) const
 void InitialBuilder::build_t2_factory_in_towns(Province* province) {
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     Recipe* lumber_mill_recipe = RecipeInfo::get_instance()->get_secondary_recipe_for_type(CargoInfo::get_instance()->get_cargo_type("lumber"));
-
+    ERR_FAIL_COND_MSG(lumber_mill_recipe == nullptr, "Lumber recipe not found");
     for (const Vector2i &tile: province->get_town_tiles()) {
         Ref<Town> town = terminal_map->get_town(tile);
         Ref<AiFactory> factory = Ref<AiFactory>(memnew(AiFactory(tile, 0, lumber_mill_recipe)));

@@ -10,10 +10,11 @@ class Terminal : public RefCounted {
     GDCLASS(Terminal, RefCounted);
     static std::atomic<int> total_terminals;
     Vector2i location;
-    int player_owner;
+    
     
     protected:
     static void _bind_methods();
+    int player_owner;
     
 
     public:

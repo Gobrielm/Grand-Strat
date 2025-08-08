@@ -64,9 +64,21 @@ float Broker::get_local_price(int type) const {
 
 int Broker::get_desired_cargo(int type, float pricePer) const {
     if (trade_orders.count(type)) {
-        if (trade_orders.at(type)->is_buy_order() && is_price_acceptable(type, pricePer)) {
+        TradeOrder* order = trade_orders.at(type);
+        if (order->is_buy_order() && is_price_acceptable(type, pricePer)) {
             int canGet = std::min(int(get_max_storage() - get_cargo_amount(type)), get_amount_can_buy(pricePer));
-            return std::min(trade_orders.at(type)->get_amount(), canGet);
+            return std::min(order->get_amount(), canGet);
+        }
+    }
+    return 0;
+}
+
+int Broker::get_desired_cargo_unsafe(int type, float pricePer) const {
+    if (trade_orders.count(type)) {
+        TradeOrder* order = trade_orders.at(type);
+        if (order->is_buy_order() && order->get_limit_price() >= pricePer) {
+            int canGet = std::min(int(max_amount - storage.at(type)), int(get_cash_unsafe() / pricePer));
+            return std::min(order->get_amount(), canGet);
         }
     }
     return 0;
@@ -98,7 +110,7 @@ void Broker::buy_cargo(int type, int amount, float price, int p_terminal_id) {
 }
 
 void Broker::buy_cargo(const TownCargo* cargo) {
-    //TODO: DEAL WIHT FEES
+    //TODO: DEAL WITH FEES
     buy_cargo(cargo->type, cargo->amount, cargo->price, cargo->terminal_id);
 }
 

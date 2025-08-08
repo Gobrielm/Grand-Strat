@@ -15,41 +15,12 @@ Factory::~Factory() {}
 Factory::Factory(Vector2i new_location, int player_owner, Recipe* p_recipe): FactoryTemplate(new_location, player_owner, p_recipe) {
 }
 
-    // Recipe
-bool Factory::check_recipe() {
-    return check_outputs() && check_inputs(); // Check outputs first, since check_inputs shouldn't be run if outputs aren't open
-}
-
-bool Factory::check_inputs() {
-    bool toReturn = true;
-    for (const auto& [type, amount]: get_inputs()) {
-        {
-            std::scoped_lock lock(m);
-            local_pricer -> add_demand(type, amount);
-        }
-        if (get_cargo_amount(type) < amount) {
-            toReturn = false;
-        }
-    }
-    return toReturn;
-}
-
-bool Factory::check_outputs() {
-    for (const auto& [type, amount]: get_outputs()) {
-        if (get_max_storage() - get_cargo_amount(type) < amount) {
-            return false;
-        }
-    }
-    return true;
-}
 // Process Hooks
 void Factory::day_tick() {
-    if (check_recipe()) {
-        create_recipe();
-    }
-    if (get_orders().size() != 0) {
-        distribute_cargo();
-    }
+    create_recipe();
+    // if (get_orders().size() != 0) {
+    //     distribute_cargo();
+    // }
 }
 
 void Factory::month_tick() {

@@ -35,8 +35,7 @@ class IsolatedBroker : public Firm {
     void set_local_town(Vector2i p_town);
     void sell_cargo();
     void sell_type(Ref<Town> town, int type, int amount);
-    bool check_inputs() const;
-    bool check_outputs() const;
+    double get_batch_size() const;
     void create_recipe();
     virtual void month_tick();
 

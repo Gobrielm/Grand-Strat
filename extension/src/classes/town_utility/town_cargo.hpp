@@ -15,7 +15,7 @@ struct TownCargo {
     float price;
     int terminal_id;
 
-    std::unordered_map<int, float> fees_to_pay;
+    std::unordered_map<int, float> fees_to_pay; // Fees are dealt with by the buyer at the very end
 
     void sell_cargo(int p_amount);
     void sell_cargo(int p_amount, float p_price);

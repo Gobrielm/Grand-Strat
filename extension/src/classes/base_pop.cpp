@@ -140,7 +140,7 @@ float BasePop::get_buy_price(int type, float current_price) const {
 }
 
 float BasePop::get_buy_price_for_needed_good(int type, float current_price) const {
-    float available_money = income; // Save a bit
+    float available_money = std::min(std::max(income, current_price), wealth); // Save a bit
 
     float needed = float(get_desired(type)) / get_max_storage(type); // 0 - 1;
     if (needed == 0) return 0;
@@ -150,7 +150,6 @@ float BasePop::get_buy_price_for_needed_good(int type, float current_price) cons
         if (type == other_type) continue;
         float weighted_need = float(get_desired(other_type)) / get_max_storage(other_type); // 0 - 1;
         total_needed += weighted_need;
-        if (is_need_met(other_type)) break; // If need isn't met then just prioritize these goods
     }
     float price = available_money * (needed / total_needed);
     if (price > current_price) {
@@ -161,7 +160,7 @@ float BasePop::get_buy_price_for_needed_good(int type, float current_price) cons
 }
 
 float BasePop::get_buy_price_for_wanted_good(int type, float current_price) const {
-    if (!are_needs_met()) {
+    if (!are_needs_met() || income == 0) {
         return 0;
     }
 
@@ -237,7 +236,11 @@ void BasePop::buy_good(int type, int amount, float price) {
 }
 
 int BasePop::get_max_storage(int type) const {
-    return ceil((get_base_need(type) + get_base_want(type)) * 3.0); // Storage is based on need, so pops have 3 months without any access before bad
+    float storage = (get_base_need(type) + get_base_want(type)) * 3.0;
+    if (storage > 0) {
+        return std::max(2, int(ceil(storage)));
+    }
+    return 0; // Storage is based on need, so pops have ~3 months without any access before bad
 }
 
 int BasePop::get_education_level() const {

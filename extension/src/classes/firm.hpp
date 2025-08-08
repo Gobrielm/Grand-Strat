@@ -22,6 +22,7 @@ class Firm : public Terminal {
     void add_cash(float amount);
     void remove_cash(float amount);
     float get_cash() const;
+    float get_cash_unsafe() const;
     float transfer_cash(float amount);
     
     

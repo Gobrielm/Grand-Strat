@@ -33,7 +33,7 @@ public:
     virtual int transfer_cargo(int type, int amount);
     virtual float get_amount_to_add(int type, float amount) const;
 
-    virtual Dictionary get_current_hold() const;
+    Dictionary get_current_hold() const;
     void set_current_hold(Dictionary hold);
     float get_current_hold_total() const;
     bool is_full() const;

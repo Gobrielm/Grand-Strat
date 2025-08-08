@@ -120,12 +120,12 @@ std::vector<int> Recipe::fire_employees_and_get_vector() {
 void Recipe::upgrade() {
     std::scoped_lock lock(m);
     level++;
-    for (const auto &[type, amount]: outputs) {
-        outputs[type] = std::round(amount * (double(level) / (level - 1.0)));
-    }
-    for (const auto &[type, amount]: inputs) {
-        inputs[type] = std::round(amount * (double(level) / (level - 1.0)));
-    }
+    // for (const auto &[type, amount]: outputs) {
+    //     outputs[type] = amount * (double(level) / (level - 1.0));
+    // }
+    // for (const auto &[type, amount]: inputs) {
+    //     inputs[type] = amount * (double(level) / (level - 1.0));
+    // }
     for (const auto &[type, amount]: pops_needed) {
         pops_needed[type] = std::round(amount * (double(level) / (level - 1.0)));
     }
@@ -134,14 +134,14 @@ void Recipe::upgrade() {
 void Recipe::degrade() {
     std::scoped_lock lock(m);
     level--;
-    for (const auto &[type, amount]: outputs) {
-        outputs[type] = std::round(amount * (double(level) / (level - 1.0)));
-    }
-    for (const auto &[type, amount]: inputs) {
-        inputs[type] = std::round(amount * (double(level) / (level - 1.0)));
-    }
+    // for (const auto &[type, amount]: outputs) {
+    //     outputs[type] = (amount * (double(level) / (level + 1.0)));
+    // }
+    // for (const auto &[type, amount]: inputs) {
+    //     inputs[type] = (amount * (double(level) / (level + 1.0)));
+    // }
     for (const auto &[type, amount]: pops_needed) {
-        pops_needed[type] = std::round(amount * (double(level) / (level - 1.0)));
+        pops_needed[type] = std::round(amount * (double(level) / (level + 1.0)));
     }
 }
 
@@ -150,7 +150,7 @@ double Recipe::get_level() const {
 	if (employment == 0) {
         return 0;
     }
-	return round(get_level_without_employment() * employment / get_pops_needed_num());
+	return get_level_without_employment() * employment / get_pops_needed_num();
 }
 
 int Recipe::get_level_without_employment() const {

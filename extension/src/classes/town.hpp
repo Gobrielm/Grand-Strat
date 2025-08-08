@@ -42,15 +42,16 @@ public:
 
     virtual void initialize(Vector2i new_location);
 
-    std::vector<int> get_supply() const;
-    std::vector<int> get_demand() const;
+    std::vector<float> get_supply() const;
+    std::vector<float> get_demand() const;
     
 
-    int get_supply(int type) const;
-    int get_demand(int type) const;
+    float get_supply(int type) const;
+    float get_demand(int type) const;
 
     bool is_price_acceptable(int type, float price) const override;
     int get_desired_cargo(int type, float price) const override;
+    int get_desired_cargo_unsafe(int type, float price) const override;
 
     float get_cargo_amount(int type) const override;
 

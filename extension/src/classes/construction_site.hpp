@@ -45,6 +45,7 @@ public:
     //Overrides
     bool is_price_acceptable(int type, float pricePer) const override;
     int get_desired_cargo(int type, float pricePer) const override;
+    int get_desired_cargo_unsafe(int type, float pricePer) const override;
     int get_desired_cargo_from_train(int type, float pricePer) const;
 
     void report_price(int type, float price) override;

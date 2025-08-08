@@ -104,7 +104,7 @@ Recipe* RecipeInfo::get_primary_recipe_for_type_read_only(int output_type) const
 Recipe* RecipeInfo::get_secondary_recipe_for_type(int output_type) const {
     for (int i = 0; i < recipes.size(); i++) {
         Recipe* recipe = recipes[i];
-        if (recipe->is_primary() && recipe->does_create(output_type)) {
+        if (recipe->does_create(output_type)) {
             return new Recipe(*recipe);
         }
     }

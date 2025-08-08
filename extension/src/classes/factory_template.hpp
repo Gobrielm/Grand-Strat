@@ -51,9 +51,9 @@ public:
     std::unordered_map<int, float> get_outputs() const;
     std::unordered_map<int, float> get_inputs() const;
     void create_recipe();
-    int get_batch_size() const;
-    void remove_inputs(int batch_size);
-    void add_outputs(int batch_size);
+    double get_batch_size() const;
+    void remove_inputs(double batch_size);
+    void add_outputs(double batch_size);
     String get_recipe_as_string() const;
     int get_primary_type() const;
 
@@ -61,7 +61,7 @@ public:
     void distribute_cargo();
 
     // Level & Upgrades
-    int get_level() const;
+    double get_level() const;
     int get_level_without_employment() const;
     bool is_max_level() const;
     static int get_cost_for_upgrade();

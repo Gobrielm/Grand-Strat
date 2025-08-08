@@ -116,6 +116,13 @@ int ConstructionSite::get_desired_cargo(int type, float pricePer) const {
     return get_desired_cargo_from_train(type, pricePer);
 }
 
+int ConstructionSite::get_desired_cargo_unsafe(int type, float price) const {
+    if (accepts.count(type)) {
+        return std::min(int(max_amount - storage.at(type)), int(get_cash_unsafe() / price));
+    }
+    return 0;
+}
+
 int ConstructionSite::get_desired_cargo_from_train(int type, float pricePer) const {
     if (does_accept(type)) {
         return std::min(int(get_max_storage(type) - get_cargo_amount(type)), get_amount_can_buy(pricePer));
