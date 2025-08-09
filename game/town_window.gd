@@ -149,10 +149,10 @@ func refresh_hover() -> void:
 
 func start_hovering_type(type: int) -> void:
 	if type != type_hovered:
-		$CargoInfoPopUp/Timer.start(0.5)
+		$CargoInfoPopUp.start_hover()
 		type_hovered = type
 
-func _on_timer_timeout() -> void:
+func _on_cargo_info_pop_up_popup_requested() -> void:
 	populate_info_window.rpc_id(1, type_hovered, location)
 
 @rpc("any_peer", "call_local", "unreliable")
@@ -168,18 +168,13 @@ func populate_info_window(type: int, p_location: Vector2i) -> void:
 
 @rpc("authority", "call_local", "unreliable")
 func pop_up_info_window(info: Dictionary) -> void:
-	var pop_up: Popup = $CargoInfoPopUp
-	pop_up.position = get_mouse_position() + $Price_Node.position + Vector2(-25, 35)
-	pop_up.get_node("Name").text = info.type
-	pop_up.get_node("Price").text = info.price
-	pop_up.get_node("Quantity").text = info.amount
-	pop_up.get_node("MarketInfo").text = info.market_info
-	pop_up.popup()
+	var pop_up: cargo_info_popup = $CargoInfoPopUp
+	pop_up.pop_up_info_window(info, get_mouse_position() + $Price_Node.position + Vector2(-25, 35))
 
 func _on_price_list_mouse_entered() -> void:
 	inside_price_list = true
 
 func _on_price_list_mouse_exited() -> void:
 	inside_price_list = false
-	$CargoInfoPopUp/Timer.stop()
+	$CargoInfoPopUp.stop_hover()
 	type_hovered = -1

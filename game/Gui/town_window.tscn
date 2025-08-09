@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://nsjr55rm7j51"]
+[gd_scene load_steps=3 format=3 uid="uid://nsjr55rm7j51"]
 
 [ext_resource type="Script" uid="uid://fr52bfla55vf" path="res://town_window.gd" id="1_6vqjj"]
+[ext_resource type="PackedScene" uid="uid://b7bmwfo2vrstf" path="res://Gui/cargo_info_pop_up.tscn" id="2_6vqjj"]
 
 [node name="town_window" type="Window"]
 initial_position = 1
@@ -93,44 +94,10 @@ offset_bottom = 40.0
 bbcode_enabled = true
 scroll_active = false
 
-[node name="CargoInfoPopUp" type="Popup" parent="."]
-position = Vector2i(525, 274)
-size = Vector2i(150, 150)
-
-[node name="Name" type="Label" parent="CargoInfoPopUp"]
-offset_left = 10.0
-offset_top = 6.0
-offset_right = 53.0
-offset_bottom = 29.0
-text = "Grain"
-
-[node name="Price" type="Label" parent="CargoInfoPopUp"]
-offset_left = 86.0
-offset_top = 6.0
-offset_right = 127.0
-offset_bottom = 29.0
-text = "$10.5"
-
-[node name="Quantity" type="Label" parent="CargoInfoPopUp"]
-offset_left = 11.0
-offset_top = 29.0
-offset_right = 91.0
-offset_bottom = 52.0
-text = "Amount: 5"
-
-[node name="MarketInfo" type="Label" parent="CargoInfoPopUp"]
-offset_left = 11.0
-offset_top = 55.0
-offset_right = 113.0
-offset_bottom = 106.0
-text = "Supply: 100
-Demand: 100"
-
-[node name="Timer" type="Timer" parent="CargoInfoPopUp"]
-wait_time = 0.5
-one_shot = true
+[node name="CargoInfoPopUp" parent="." instance=ExtResource("2_6vqjj")]
+visible = false
 
 [connection signal="close_requested" from="." to="." method="_on_close_requested"]
 [connection signal="mouse_entered" from="Price_Node/Price_List" to="." method="_on_price_list_mouse_entered"]
 [connection signal="mouse_exited" from="Price_Node/Price_List" to="." method="_on_price_list_mouse_exited"]
-[connection signal="timeout" from="CargoInfoPopUp/Timer" to="." method="_on_timer_timeout"]
+[connection signal="popup_requested" from="CargoInfoPopUp" to="." method="_on_cargo_info_pop_up_popup_requested"]

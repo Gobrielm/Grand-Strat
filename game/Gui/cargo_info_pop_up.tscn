@@ -1,0 +1,43 @@
+[gd_scene load_steps=2 format=3 uid="uid://b7bmwfo2vrstf"]
+
+[ext_resource type="Script" uid="uid://x6iqthvm4uap" path="res://Gui/cargo_info_pop_up.gd" id="1_k3ho8"]
+
+[node name="CargoInfoPopUp" type="Popup"]
+size = Vector2i(127, 104)
+visible = true
+script = ExtResource("1_k3ho8")
+
+[node name="Name" type="Label" parent="."]
+offset_left = 10.0
+offset_top = 6.0
+offset_right = 53.0
+offset_bottom = 29.0
+text = "Grain"
+
+[node name="Price" type="Label" parent="."]
+offset_left = 86.0
+offset_top = 6.0
+offset_right = 127.0
+offset_bottom = 29.0
+text = "$10.5"
+
+[node name="Quantity" type="Label" parent="."]
+offset_left = 11.0
+offset_top = 29.0
+offset_right = 91.0
+offset_bottom = 52.0
+text = "Amount: 5"
+
+[node name="MarketInfo" type="Label" parent="."]
+offset_left = 11.0
+offset_top = 55.0
+offset_right = 113.0
+offset_bottom = 106.0
+text = "Supply: 100
+Demand: 100"
+
+[node name="hover_timer" type="Timer" parent="."]
+wait_time = 0.5
+one_shot = true
+
+[connection signal="timeout" from="hover_timer" to="." method="_on_hover_timer_timeout"]

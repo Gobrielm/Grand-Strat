@@ -72,6 +72,7 @@ void TerminalMap::_bind_methods() {
     ClassDB::bind_method(D_METHOD("get_station", "coords"), &TerminalMap::get_station);
     ClassDB::bind_method(D_METHOD("get_ai_station", "coords"), &TerminalMap::get_ai_station);
     ClassDB::bind_method(D_METHOD("get_town", "coords"), &TerminalMap::get_town);
+    ClassDB::bind_method(D_METHOD("get_factory", "coords"), &TerminalMap::get_factory);
 
     // Action doers
     ClassDB::bind_method(D_METHOD("set_construction_site_recipe", "coords", "selected_recipe"), &TerminalMap::set_construction_site_recipe);
@@ -487,6 +488,10 @@ Ref<StationWOMethods> TerminalMap::get_ai_station(const Vector2i &coords) {
 }
 Ref<Town> TerminalMap::get_town(const Vector2i &coords) {
     return get_terminal_as<Town>(coords);
+}
+
+Ref<Factory> TerminalMap::get_factory(const Vector2i &coords) {
+    return get_terminal_as<Factory>(coords);
 }
 
 //Action doers

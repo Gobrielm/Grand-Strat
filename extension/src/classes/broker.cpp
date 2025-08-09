@@ -24,6 +24,9 @@ void Broker::_bind_methods() {
     ClassDB::bind_method(D_METHOD("get_orders_dict"), &Broker::get_orders_dict);
     ClassDB::bind_method(D_METHOD("get_connected_broker_locations"), &Broker::get_connected_broker_locations);
     ClassDB::bind_method(D_METHOD("get_number_of_connected_terminals"), &Broker::get_number_of_connected_terminals);
+
+    ClassDB::bind_method(D_METHOD("get_last_month_supply"), &Broker::get_last_month_supply);
+    ClassDB::bind_method(D_METHOD("get_last_month_demand"), &Broker::get_last_month_demand);
 }
 
 Broker::Broker(): FixedHold() {}
@@ -328,4 +331,30 @@ void Broker::report_price(int type, float price) {}
 float Broker::get_diff_between_demand_and_supply(int type) const {
     std::scoped_lock lock(m);
     return local_pricer->get_demand(type) - local_pricer->get_supply(type);
+}
+
+Dictionary Broker::get_last_month_supply() const {
+    Dictionary d = {};
+    std::vector<float> v;
+    {
+        std::scoped_lock lock(m);
+        v = local_pricer -> get_last_month_supply();
+    }
+    for (int type = 0; type < v.size(); type++) {
+        d[type] = v[type];
+    }
+    return d;
+}
+
+Dictionary Broker::get_last_month_demand() const {
+    Dictionary d = {};
+    std::vector<float> v;
+    {
+        std::scoped_lock lock(m);
+        v = local_pricer -> get_last_month_demand();
+    }
+    for (int type = 0; type < v.size(); type++) {
+        d[type] = v[type];
+    }
+    return d;
 }

@@ -59,8 +59,6 @@ public:
     Dictionary get_fulfillment_dict() const;
     void add_factory(Ref<FactoryTemplate> fact);
     Array get_factories() const;
-    Dictionary get_last_month_supply() const;
-    Dictionary get_last_month_demand() const;
 
     //Pop stuff
     void add_pop(int pop_id);

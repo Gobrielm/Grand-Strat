@@ -118,6 +118,7 @@ public:
     Ref<StationWOMethods> get_station(const Vector2i &coords);
     Ref<StationWOMethods> get_ai_station(const Vector2i &coords);
     Ref<Town> get_town(const Vector2i &coords);
+    Ref<Factory> get_factory(const Vector2i &coords);
 
     template <typename T>
     Ref<T> get_terminal_as(const Vector2i &coords, const std::function<bool(const Vector2i &)> &type_check = nullptr) const {

@@ -5,6 +5,8 @@ var current_cargo: Dictionary
 var current_prices: Dictionary
 var current_cash: int
 var current_level: int
+var type_hovering: int = -1
+var inside_price_list: bool = false
 
 const time_every_update: int = 1
 var progress: float = 0.0
@@ -17,6 +19,7 @@ func _process(delta: float) -> void:
 	progress += delta
 	if progress > time_every_update:
 		refresh_window()
+	refresh_hover()
 
 func _on_close_requested() -> void:
 	hide()
@@ -33,6 +36,20 @@ func refresh_window() -> void:
 		request_current_name.rpc_id(1, location)
 		request_current_prices.rpc_id(1, location)
 		request_current_basic_labels.rpc_id(1, location)
+
+func refresh_hover() -> void:
+	if inside_price_list:
+		var local_pos: Vector2 = $Price_Node/Price_List.get_local_mouse_position()
+		var type: int = $Price_Node/Price_List.get_item_at_position(local_pos, true)
+		
+		start_hovering_type(type)
+	else:
+		$CargoInfoPopUp.hide()
+
+func start_hovering_type(type: int) -> void:
+	if type != type_hovering:
+		$CargoInfoPopUp.start_hover()
+		type_hovering = type
 
 @rpc("any_peer", "call_local", "unreliable")
 func request_current_cargo(coords: Vector2i) -> void:
@@ -129,4 +146,30 @@ func get_selected_name() -> String:
 			toReturn += i
 		return toReturn
 	return ""
-	
+
+func _on_price_list_mouse_entered() -> void:
+	inside_price_list = true
+
+func _on_price_list_mouse_exited() -> void:
+	inside_price_list = false
+	type_hovering = -1
+	$CargoInfoPopUp.stop_hover()
+
+func _on_cargo_info_pop_up_popup_requested() -> void:
+	populate_info_window.rpc_id(1, type_hovering, location)
+
+@rpc("any_peer", "call_local", "unreliable")
+func populate_info_window(type: int, p_location: Vector2i) -> void:
+	var info: Dictionary = {}
+	var terminal_map: TerminalMap = TerminalMap.get_instance()
+	var factory: Factory = terminal_map.get_factory(p_location)
+	info.type = CargoInfo.get_instance().get_cargo_name(type)
+	info.price = "$" + str(factory.get_local_price(type))
+	info.amount = "Amount: " + str(factory.get_cargo_amount(type))
+	info.market_info = "Supply: " + str(factory.get_last_month_supply()[type]) + '\n' + "Demand: " + str(factory.get_last_month_demand()[type])
+	pop_up_info_window.rpc_id(multiplayer.get_remote_sender_id(), info)
+
+@rpc("authority", "call_local", "unreliable")
+func pop_up_info_window(info: Dictionary) -> void:
+	var pop_up: cargo_info_popup = $CargoInfoPopUp
+	pop_up.pop_up_info_window(info, get_mouse_position() + $Price_Node.position + Vector2(-25, 35))
