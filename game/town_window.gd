@@ -161,15 +161,16 @@ func populate_info_window(type: int, p_location: Vector2i) -> void:
 	var terminal_map: TerminalMap = TerminalMap.get_instance()
 	var town: Town = terminal_map.get_town(p_location)
 	info.type = CargoInfo.get_instance().get_cargo_name(type)
-	info.price = "$" + str(town.get_local_price(type))
-	info.amount = "Amount: " + str(town.get_cargo_amount(type))
+	
+	info.price = "$" + str(Utils.round(town.get_local_price(type), 2))
+	info.amount = "Amount: " + str(Utils.round(town.get_cargo_amount(type), 2))
 	info.market_info = "Supply: " + str(town.get_last_month_supply()[type]) + '\n' + "Demand: " + str(town.get_last_month_demand()[type])
 	pop_up_info_window.rpc_id(multiplayer.get_remote_sender_id(), info)
 
 @rpc("authority", "call_local", "unreliable")
 func pop_up_info_window(info: Dictionary) -> void:
 	var pop_up: cargo_info_popup = $CargoInfoPopUp
-	pop_up.pop_up_info_window(info, get_mouse_position() + $Price_Node.position + Vector2(-25, 35))
+	pop_up.pop_up_info_window(info, get_mouse_position() + Vector2(position))
 
 func _on_price_list_mouse_entered() -> void:
 	inside_price_list = true

@@ -9,6 +9,7 @@ func pop_up_info_window(info: Dictionary, position_to_popup: Vector2) -> void:
 	get_node("Quantity").text = info.amount
 	get_node("MarketInfo").text = info.market_info
 	popup()
+	position = position_to_popup
 
 func start_hover() -> void:
 	$hover_timer.start(0.5)

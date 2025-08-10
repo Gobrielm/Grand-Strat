@@ -164,12 +164,12 @@ func populate_info_window(type: int, p_location: Vector2i) -> void:
 	var terminal_map: TerminalMap = TerminalMap.get_instance()
 	var factory: Factory = terminal_map.get_factory(p_location)
 	info.type = CargoInfo.get_instance().get_cargo_name(type)
-	info.price = "$" + str(factory.get_local_price(type))
-	info.amount = "Amount: " + str(factory.get_cargo_amount(type))
-	info.market_info = "Supply: " + str(factory.get_last_month_supply()[type]) + '\n' + "Demand: " + str(factory.get_last_month_demand()[type])
+	info.price = "$" + str(Utils.round(factory.get_local_price(type), 2))
+	info.amount = "Amount: " + str(Utils.round(factory.get_cargo_amount(type), 2))
+	info.market_info = "Supply: " + str(Utils.round(factory.get_last_month_supply()[type], 2)) + '\n' + "Demand: " + str(Utils.round(factory.get_last_month_demand()[type], 2))
 	pop_up_info_window.rpc_id(multiplayer.get_remote_sender_id(), info)
 
 @rpc("authority", "call_local", "unreliable")
 func pop_up_info_window(info: Dictionary) -> void:
 	var pop_up: cargo_info_popup = $CargoInfoPopUp
-	pop_up.pop_up_info_window(info, get_mouse_position() + $Price_Node.position + Vector2(-25, 35))
+	pop_up.pop_up_info_window(info, get_mouse_position() + Vector2(position))
