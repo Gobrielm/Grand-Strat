@@ -321,6 +321,8 @@ void Town::distribute_type_to_broker(int type, Ref<Broker> broker, Ref<RoadDepot
         float price = buyer_price; // Just use buyer price, why not
         int desired = broker -> get_desired_cargo_unsafe(type, price);
 
+        local_pricer->add_demand(type, desired);
+        
         while (desired > 0) {
             
 
@@ -469,9 +471,6 @@ std::multiset<TownCargo *, TownCargo::TownCargoPtrCompare>::iterator Town::retur
     if ((++(cargo->age)) > 5) {
         int type = cargo->type;
         current_totals[type] -= cargo->amount;
-        if (cargo->amount > 10000) {
-            print_line("A");
-        }
         cargo->return_cargo(cargo_to_return); //Return cargo to broker
         cargo_it = cargo_sell_orders[type].erase(cargo_it);     //Erase from set, and update iterator
         delete_town_cargo(cargo);             //Delete old cargo
