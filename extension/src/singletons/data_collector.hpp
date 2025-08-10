@@ -15,9 +15,12 @@ private:
     std::vector<float> factory_ave_level;
     std::vector<int> grain_demand;
     std::vector<int> grain_supply;
-    std::vector<float> grain_fulfillment;
+    std::vector<int> starving_pops;
     std::vector<int> broke_pops;
+    std::vector<float> unemployement_rate;
     static DataCollector* singleton_instance;
+
+    bool is_collecting_data;
 
 protected:
     static void _bind_methods();

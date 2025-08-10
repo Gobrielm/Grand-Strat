@@ -78,9 +78,12 @@ class Province : public Object {
 
     // === Pops ===
     // Info Stuff
-    double get_total_wealth_of_pops();
-    float get_needs_met_of_pops();
-    int get_number_of_broke_pops();
+    int get_number_of_pops() const;
+    double get_total_wealth_of_pops() const;
+    float get_needs_met_of_pops() const;
+    int get_number_of_broke_pops() const;
+    int get_number_of_starving_pops() const;
+    int get_number_of_unemployed_pops() const;
 
 
     // Global pop functions

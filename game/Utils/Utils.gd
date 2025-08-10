@@ -6,8 +6,6 @@ static var world_map: TileMapLayer = null
 static var background_music: AudioStreamPlayer = null
 static var unit_map: TileMapLayer = null
 
-static var mutex: Mutex = Mutex.new()
-
 static func round(num: float, places: int) -> float:
 	return round(num * pow(10, places)) / pow(10, places)
 

@@ -74,6 +74,8 @@ public:
     //Economy stats
     float get_average_cash_of_pops() const;
     int get_number_of_broke_pops() const;
+    int get_number_of_starving_pops() const;
+    float get_unemployment_rate() const;
 
     // Country to province mapping
     void add_province_to_country(Province* prov, int country_id);

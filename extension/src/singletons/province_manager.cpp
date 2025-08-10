@@ -187,6 +187,26 @@ int ProvinceManager::get_number_of_broke_pops() const {
     return total_pops;
 }
 
+int ProvinceManager::get_number_of_starving_pops() const {
+    int total_pops = 0;
+    std::shared_lock lock(province_mutex);
+    for (const auto& [__, province]: provinces) {
+        total_pops += province->get_number_of_starving_pops();
+    }
+    return total_pops;
+}
+
+float ProvinceManager::get_unemployment_rate() const {
+    int total_pops = 0;
+    int unemployed = 0;
+    std::shared_lock lock(province_mutex);
+    for (const auto& [__, province]: provinces) {
+        total_pops += province->get_number_of_pops();
+        unemployed += province->get_number_of_unemployed_pops();
+    }
+    return float(unemployed) / total_pops;
+}
+
 void ProvinceManager::add_province_to_country(Province* prov, int country_id) {
     std::unique_lock lock(province_mutex);
     int old_id = prov->get_country_id();

@@ -26,11 +26,13 @@ func create_countries() -> void:
 		province_manager.add_province_to_country(province, 1)
 		for tile: Vector2i in province.get_tiles():
 			add_tile_to_country(tile, 1)
+	CountryManager.get_instance().create_country(1)
 	for province: Province in province_manager.get_provinces():
 		if province.get_country_id() == -1:
 			province_manager.add_province_to_country(province, 2)
 			for cell: Vector2i in province.get_tiles():
 				add_tile_to_country(cell, 2)
+	CountryManager.get_instance().create_country(2)
 
 func add_tile_to_country(tile: Vector2i, country_id: int) -> void:
 	if !country_id_to_tiles_owned.has(country_id):
@@ -72,6 +74,7 @@ func add_player_to_country(coords: Vector2i) -> void:
 		
 		country_id_to_player_id[country_id] = player_id
 		player_id_to_country_id[player_id] = country_id
+		CountryManager.get_instance().assign_country_to_player_id(country_id, player_id)
 		select_nation.rpc()
 		play_noise.rpc_id(player_id)
 

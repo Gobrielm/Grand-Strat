@@ -122,6 +122,22 @@ float BasePop::get_sol() const {
     return get_income();
 }
 
+bool BasePop::is_starving() const {
+    return months_starving != 0;
+}
+
+bool BasePop::is_in_mild_starvation() const {
+    return months_starving > 0 && months_starving <= 2;
+}
+
+bool BasePop::is_in_medium_starvation() const {
+    return months_starving > 2 && months_starving <= 5;
+}
+
+bool BasePop::is_in_high_starvation() const {
+    return months_starving > 5;
+}
+
 float BasePop::get_base_need(int type) const {
     return base_needs.count(type) == 1 ? base_needs[type]: 0;
 }
@@ -271,6 +287,11 @@ void BasePop::month_tick() {
         if (internal_storage[type] < 0) {
             // DO something
             internal_storage[type] = 0;
+            if (type == 10) {
+                months_starving++;
+            }
+        } else if (type == 10) {
+            months_starving = 0;
         }
     }
 }

@@ -37,7 +37,8 @@
 #include "../singletons/data_collector.hpp"
 #include "../singletons/province_manager.hpp"
 #include "../singletons/factory_creator.hpp"
-
+#include "../singletons/user_singletons/country_manager.hpp"
+#include "../singletons/user_singletons/country.hpp"
 
 
 
@@ -84,6 +85,8 @@ void initialize_gdextension_types(ModuleInitializationLevel p_level)
 	GDREGISTER_CLASS(DataCollector);
 	GDREGISTER_CLASS(ProvinceManager);
 	GDREGISTER_CLASS(FactoryCreator);
+	GDREGISTER_CLASS(Country);
+	GDREGISTER_CLASS(CountryManager);
 	StaticRegistry::initialize();
 	
 }

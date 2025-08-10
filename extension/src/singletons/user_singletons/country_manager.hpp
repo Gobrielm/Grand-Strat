@@ -1,6 +1,6 @@
 #pragma once
 
-#include "country_instance.hpp"
+#include "country.hpp"
 
 #include <unordered_map>
 #include <mutex>
@@ -17,19 +17,21 @@ private:
     mutable std::mutex m;
     std::unordered_map<int, Ref<Country>> countries;
     static Ref<CountryManager> singleton_instance;
-    static constexpr int INITIAL_AMOUNT_OF_MONEY = 10000;
 
 protected:
     static void _bind_methods();
 
 public:
-    CountryManager(const Array& peers = Array());
+    CountryManager();
     
-    static void create(const Array& peers);
+    static void create();
     static Ref<CountryManager> get_instance();
 
-    void add_country(int new_id);
+    void create_country(int country_id);
+    void assign_country_to_player_id(int country_id, int player_id);
     void delete_country(int id);
 
     Ref<Country> get_country(int p_id) const;
+
+    void month_tick();
 };

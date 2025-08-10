@@ -2,12 +2,14 @@
 #include "static_registry.hpp"
 #include "../singletons/recipe_info.hpp"
 #include "../singletons/factory_creator.hpp"
+#include "../singletons/user_singletons/country_manager.hpp"
 
 void StaticRegistry::initialize() {
     CargoInfo::initialize_singleton();
     LocalPriceController::set_base_prices();
     RecipeInfo::create();
     FactoryCreator::create();
+    CountryManager::create();
     
     std::unordered_map<int, float> needs;
     Ref<CargoInfo> cargo_info = CargoInfo::get_instance(); //TODO: Should be expanded and moved elsewhere

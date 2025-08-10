@@ -19,7 +19,7 @@ void DataCollector::_notification(int what) {
     }
 }
 
-DataCollector::DataCollector() {}
+DataCollector::DataCollector(): is_collecting_data(true) {}
 DataCollector::~DataCollector() {}
 
 void DataCollector::create() {
@@ -32,15 +32,20 @@ DataCollector* DataCollector::get_instance() {
 }
 
 void DataCollector::month_tick() {
-    road_depot_data_points.push_back(TerminalMap::get_instance() -> get_average_cash_of_road_depot());
-    factory_data_points.push_back(TerminalMap::get_instance() -> get_average_cash_of_factory());
-    pops_data_points.push_back(ProvinceManager::get_instance() -> get_average_cash_of_pops());
-    factory_ave_level.push_back(TerminalMap::get_instance() -> get_average_factory_level());
-    grain_demand.push_back(TerminalMap::get_instance() -> get_grain_demand());
-    grain_supply.push_back(TerminalMap::get_instance() -> get_grain_supply());
-    grain_fulfillment.push_back(grain_demand.back() == 0 ? 0: float(grain_supply.back()) / grain_demand.back());
-    broke_pops.push_back(ProvinceManager::get_instance() -> get_number_of_broke_pops());
-    write_data_to_file();
+    Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
+    Ref<ProvinceManager> province_manager = ProvinceManager::get_instance();
+    if (is_collecting_data) {
+        road_depot_data_points.push_back(terminal_map -> get_average_cash_of_road_depot());
+        factory_data_points.push_back(terminal_map -> get_average_cash_of_factory());
+        pops_data_points.push_back(province_manager -> get_average_cash_of_pops());
+        factory_ave_level.push_back(terminal_map -> get_average_factory_level());
+        grain_demand.push_back(terminal_map -> get_grain_demand());
+        grain_supply.push_back(terminal_map -> get_grain_supply());
+        starving_pops.push_back(province_manager->get_number_of_starving_pops());
+        broke_pops.push_back(province_manager -> get_number_of_broke_pops());
+        unemployement_rate.push_back(province_manager->get_unemployment_rate());
+        write_data_to_file();
+    }
 }
 
 void DataCollector::write_data_to_file() {
@@ -79,8 +84,8 @@ void DataCollector::write_data_to_file() {
         file << x;
         file << ",";
     }
-    file << "\nGrain_fulfillment,\n";
-    for (float x: grain_fulfillment) {
+    file << "\nStarving_pops,\n";
+    for (int x: starving_pops) {
         file << x;
         file << ",";
     }

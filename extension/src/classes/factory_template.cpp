@@ -264,10 +264,10 @@ float FactoryTemplate::get_theoretical_gross_profit() const {
     float available = 0;
     
     for (const auto &[type, amount]: get_inputs()) {
-        available -= get_local_price(type) * amount;
+        available -= get_local_price(type) * amount * std::max(get_level(), 1.0);
     }
     for (const auto &[type, amount]: get_outputs()) {
-        available += get_local_price(type) * amount;
+        available += get_local_price(type) * amount * std::max(get_level(), 1.0);
     }
     available *= 30;
     return available;

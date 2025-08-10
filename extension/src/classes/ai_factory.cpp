@@ -34,13 +34,9 @@ void AiFactory::change_sell_orders() {
 
 void AiFactory::change_order(int type, bool buy) {
     std::unordered_map<int, float> outputs = get_outputs();
-    int amount = (buy ? get_inputs()[type]: outputs[type]) * get_level();
+    int amount = round((buy ? get_inputs()[type]: outputs[type]) * get_level() * 1.2);
     float price = get_local_price(type);
     float limit_price = buy ? price * 1.2: price * 0.8;
-
-    if (get_cargo_amount(type) > get_max_storage() * MAX_AMOUNT_WANTED && outputs.count(type)) {
-        amount *= 2;
-    }
     
     if (get_order(type) == nullptr) {
         place_order(type, amount, buy, limit_price);

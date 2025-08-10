@@ -10,26 +10,22 @@ class Country : public RefCounted {
     GDCLASS(Country, RefCounted);
 
 private:
-    const int id;
+    static constexpr int DEFAULT_MINTING = 5000; 
+    const int country_id;
     int player_id;
-    float money;
+    int minting;
     
 protected:
     static void _bind_methods();
 
 public:
-    Country(int p_id = -1);
+    Country(int p_country_id = -1);
     
-    static Ref<Country> create_instance(int p_id = -1);
+    static Ref<Country> create_instance();
 
-    void add_money(float amount);
-    void remove_money(float amount);
-    float get_money() const;
-    float transfer_money(float amount);
-    bool has_enough_money(int amount) const;
+    int get_country_id() const;
 
     void assign_player_id(int p_player_id);
-
-
+    void month_tick();
     
 };

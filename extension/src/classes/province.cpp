@@ -249,7 +249,12 @@ Vector2i Province::get_closest_town_to_tile(Vector2i tile, std::vector<Vector2i>
     return closest_tile;
 }   
 
-double Province::get_total_wealth_of_pops() {
+int Province::get_number_of_pops() const {
+    std::shared_lock lock(pops_lock);
+    return pops.size();
+}
+
+double Province::get_total_wealth_of_pops() const {
     double total = 0;
     std::shared_lock lock(pops_lock);
     for (const auto& [__, pop]: pops) {
@@ -258,7 +263,7 @@ double Province::get_total_wealth_of_pops() {
     return total;
 }
 
-float Province::get_needs_met_of_pops() {
+float Province::get_needs_met_of_pops() const {
     double total = 0;
     std::shared_lock lock(pops_lock);
     for (const auto& [__, pop]: pops) {
@@ -267,11 +272,33 @@ float Province::get_needs_met_of_pops() {
     return total;
 }
 
-int Province::get_number_of_broke_pops() {
+int Province::get_number_of_broke_pops() const {
     int total = 0;
     std::shared_lock lock(pops_lock);
     for (const auto& [__, pop]: pops) {
         if (pop->get_wealth() < 15) {
+            total++;
+        }
+    }
+    return total;
+}
+
+int Province::get_number_of_starving_pops() const {
+    int total = 0;
+    std::shared_lock lock(pops_lock);
+    for (const auto& [__, pop]: pops) {
+        if (pop->is_starving()) {
+            total++;
+        }
+    }
+    return total;
+}
+
+int Province::get_number_of_unemployed_pops() const {
+    int total = 0;
+    std::shared_lock lock(pops_lock);
+    for (const auto& [__, pop]: pops) {
+        if (pop->is_seeking_employment()) {
             total++;
         }
     }

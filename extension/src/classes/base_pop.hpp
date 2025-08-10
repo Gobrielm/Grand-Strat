@@ -26,6 +26,7 @@ class BasePop : public Object {
     Variant culture;
     float income;
     int employement_id;
+    int months_starving = 0;
 
     std::unordered_map<int, float> internal_storage;
     
@@ -57,6 +58,11 @@ class BasePop : public Object {
     bool is_income_acceptable(float p_income) const;
     float get_expected_income() const;
     float get_sol() const;
+
+    bool is_starving() const;
+    bool is_in_mild_starvation() const;
+    bool is_in_medium_starvation() const;
+    bool is_in_high_starvation() const;
 
     float get_base_need(int type) const;
     float get_base_want(int type) const;

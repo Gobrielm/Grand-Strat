@@ -155,47 +155,54 @@ void Town::add_pop(int pop_id) {
 
 void Town::sell_to_pop(BasePop* pop) { // Called from Province, do not call locally
     std::unordered_map<int, float> money_to_pay; // Queued up money to distribute to owners of cargo sold
-    std::scoped_lock lock(m);
+    
+    {   
+        std::scoped_lock lock(m);
 
-    for (auto& [type, ms] : cargo_sell_orders) {
-        auto sell_it = ms.begin();
-        TownCargo* sell_order;
-        int desired = pop->get_desired(type);
-        if (desired == 0) {
-            continue;
+        for (auto& [type, ms] : cargo_sell_orders) {
+            auto sell_it = ms.begin();
+            TownCargo* sell_order;
+            int desired = pop->get_desired(type);
+            
+            if (desired == 0) {
+                continue;
+            }
+
+            local_pricer->add_demand(type, desired);
+
+            while (sell_it != ms.end()) {
+                sell_order = *sell_it;
+
+                const float seller_price = sell_order->price;
+                const float buyer_price = pop->get_buy_price(type, seller_price);
+                buy_orders_price_map[type][round(buyer_price * 10)] += desired;
+                
+                float price = (buyer_price + seller_price) / 2; // Price average
+
+                if (((price / buyer_price) - 1) > PopOrder::MAX_DIFF) { // Too high for buyer no deal
+                    break;
+                }
+                if ((1 - (price / seller_price)) > PopOrder::MAX_DIFF) { // Too low for seller no deal
+                    break;
+                }
+
+                int amount = std::min(pop->get_desired(type, price), sell_order->amount);
+                if (amount == 0) {
+                    break;
+                }
+
+                sell_order->sell_cargo(amount, price, money_to_pay); // Calls with money_to_pay
+                pop->buy_good(type, amount, price);
+
+                if (sell_order->amount == 0) {
+                    sell_it = ms.erase(sell_it);
+                    delete_town_cargo(sell_order);
+                } else {
+                    break;
+                }
+            }
         }
-        local_pricer->add_demand(type, desired);
-
-        while (sell_it != ms.end()) {
-            sell_order = *sell_it;
-
-            const float buyer_price = pop->get_buy_price(type, get_local_price_unsafe(type));
-            buy_orders_price_map[type][round(buyer_price * 10)] += desired;
-            const float seller_price = sell_order->price;
-            float price = (buyer_price + seller_price) / 2; // Price average
-
-            if (((price / buyer_price) - 1) > PopOrder::MAX_DIFF) { // Too high for buyer no deal
-                break;
-            }
-            if ((1 - (price / seller_price)) > PopOrder::MAX_DIFF) { // Too low for seller no deal
-                break;
-            }
-
-            int amount = std::min(pop->get_desired(type, price), sell_order->amount);
-            if (amount == 0) {
-                break;
-            }
-
-            sell_order->sell_cargo(amount, price, money_to_pay); // Calls with money_to_pay
-            pop->buy_good(type, amount, price);
-
-            if (sell_order->amount == 0) {
-                sell_it = ms.erase(sell_it);
-                delete_town_cargo(sell_order);
-            } else {
-                break;
-            }
-        }
+    
     }
 
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
