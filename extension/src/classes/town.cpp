@@ -320,9 +320,12 @@ void Town::distribute_type_to_broker(int type, Ref<Broker> broker, Ref<RoadDepot
 
         float price = buyer_price; // Just use buyer price, why not
         int desired = broker -> get_desired_cargo_unsafe(type, price);
+        if (Ref<Town>(broker).is_valid()) {
+            desired = std::max(broker->get_diff_between_demand_and_supply_unsafe(type), 0.0f);
+        }
 
         local_pricer->add_demand(type, desired);
-        
+
         while (desired > 0) {
             
 

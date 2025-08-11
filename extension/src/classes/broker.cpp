@@ -333,6 +333,10 @@ float Broker::get_diff_between_demand_and_supply(int type) const {
     return local_pricer->get_demand(type) - local_pricer->get_supply(type);
 }
 
+float Broker::get_diff_between_demand_and_supply_unsafe(int type) const {
+    return local_pricer->get_demand(type) - local_pricer->get_supply(type);
+}
+
 Dictionary Broker::get_last_month_supply() const {
     Dictionary d = {};
     std::vector<float> v;

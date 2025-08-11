@@ -84,13 +84,18 @@ void DataCollector::write_data_to_file() {
         file << x;
         file << ",";
     }
-    file << "\nStarving_pops,\n";
+    file << "\nStarving pops,\n";
     for (int x: starving_pops) {
         file << x;
         file << ",";
     }
-    file << "\nBroke_pops,\n";
+    file << "\nBroke pops,\n";
     for (int x: broke_pops) {
+        file << x;
+        file << ",";
+    }
+    file << "\nUnemployment Rate,\n";
+    for (float x: unemployement_rate) {
         file << x;
         file << ",";
     }

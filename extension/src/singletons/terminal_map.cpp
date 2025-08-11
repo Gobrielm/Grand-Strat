@@ -572,12 +572,13 @@ float TerminalMap::get_average_factory_level() const {
 }
 
 int TerminalMap::get_grain_demand() const {
-    float total_demand = 0;
+    double total_demand = 0;
     std::shared_lock lock(cargo_map_mutex);
     for (const auto &[__, terminal]: terminal_id_to_terminal) {
         Ref<Town> typed = Ref<Town>(terminal);
         if (typed.is_valid()) {
-            total_demand += int(typed -> get_last_month_demand().get(CargoInfo::get_instance()->get_cargo_type("grain"), 0));
+            double num = double(typed -> get_last_month_demand().get(CargoInfo::get_instance()->get_cargo_type("grain"), 0.0));
+            total_demand += num;
         }
     }
     return round(total_demand);
@@ -590,7 +591,7 @@ int TerminalMap::get_grain_supply() const {
     for (const auto &[__, terminal]: terminal_id_to_terminal) {
         Ref<Town> typed = Ref<Town>(terminal);
         if (typed.is_valid()) {
-            total_supply += int(typed -> get_last_month_supply().get(CargoInfo::get_instance()->get_cargo_type("grain"), 0));
+            total_supply += float(typed -> get_last_month_supply().get(CargoInfo::get_instance()->get_cargo_type("grain"), 0.0f));
         }
     }
     return round(total_supply);
