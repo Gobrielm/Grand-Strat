@@ -71,9 +71,9 @@ public:
     Ref<FactoryTemplate> find_employment(BasePop* pop) const;
 
     //Selling to brokers
-    void sell_to_other_brokers();
-    void distribute_type(int type);
-    void distribute_type_to_broker(int type, Ref<Broker> broker, Ref<RoadDepot> road_depot = Ref<RoadDepot>(nullptr));
+    void distribute_cargo() override;
+    void distribute_type(int type) override;
+    void distribute_type_to_broker(int type, Ref<Broker> broker, Ref<RoadDepot> road_depot = Ref<RoadDepot>(nullptr)) override;
     std::vector<bool> get_accepts_vector() const override;
     float get_local_price(int type) const override;
     float get_local_price_unsafe(int type) const override;
@@ -87,7 +87,7 @@ public:
     float add_cargo(int type, float amount) override;
     void age_all_cargo();
     std::multiset<TownCargo *, TownCargo::TownCargoPtrCompare>::iterator return_cargo(std::multiset<TownCargo *, TownCargo::TownCargoPtrCompare>::iterator cargo_it, std::unordered_map<int, std::unordered_map<int, int>>& cargo_to_return);
-    bool does_cargo_exist(int terminal_id, int type) const;
+    bool does_cargo_exist(int p_terminal_id, int type) const;
 
     void update_buy_orders();
     void update_local_prices();

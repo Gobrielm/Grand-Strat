@@ -46,6 +46,7 @@ public:
     // Used for max price to buy
     float get_max_price(int type) const; 
     bool does_create(int type) const;
+    bool does_accept(int type) const override;
 
     // Production
     std::unordered_map<int, float> get_outputs() const;

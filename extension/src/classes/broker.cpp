@@ -98,8 +98,7 @@ int Broker::get_desired_cargo_unsafe(int type, float pricePer) const {
 
 //For buying
 bool Broker::is_price_acceptable(int type, float pricePer) const {
-    std::scoped_lock lock(m);
-    return trade_orders.at(type)->get_limit_price() >= pricePer;
+    return get_local_price(type) * 1.1 >= pricePer; // Within 10% of local price
 }
 
 void Broker::buy_cargo(int type, int amount, float price, int p_terminal_id) {
@@ -230,30 +229,40 @@ void Broker::distribute_cargo() {
     ERR_FAIL_MSG("DEFAULT IMPLEMENTATION");
 }
 
-void Broker::distribute_from_order(const TradeOrder* order) {
-    std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> s;
-    s.insert(get_location());
-    for (const auto& tile : connected_brokers) {
-        if ((get_cargo_amount_outside(order->get_type())) == 0) return;
-        Ref<Broker> broker = TerminalMap::get_instance() -> get_broker(tile);
-        if (broker.is_null()) continue;
-        s.insert(tile);
-        if (broker->does_accept(order->get_type())) {
-            distribute_to_order(broker, order);
+void Broker::distribute_type(int type) {
+    if (int(get_cargo_amount(type)) == 0) return;
+    std::set<TradeInteraction*, TradeInteractionPtrCompare> brokers_to_sell_to = get_brokers_to_distribute_to(type); // Sorted by highest price
+
+    int current_amount = get_cargo_amount(type);
+    for (auto it = brokers_to_sell_to.begin(); it != brokers_to_sell_to.end(); it++) {
+        TradeInteraction* top = *it;
+        if (current_amount > 0) {
+            distribute_type_to_broker(type, top->main_buyer, top->middleman);
         }
-    }
-    for (const auto& tile: connected_stations) {
-        if (get_cargo_amount_outside(order->get_type()) == 0) return;
-        Ref<RoadDepot> road_depot = TerminalMap::get_instance() -> get_terminal_as<RoadDepot>(tile);
-        if (road_depot.is_null()) continue;
-        distribute_to_road_depot_brokers(road_depot, order, s);
+        delete top;
+        current_amount = get_cargo_amount(type);
     }
     
 }
 
 std::set<TradeInteraction*, TradeInteractionPtrCompare> Broker::get_brokers_to_distribute_to(int type) {
-    std::set<TradeInteraction*, TradeInteractionPtrCompare> s;
-    ERR_FAIL_V_MSG(s, "A");
+    std::set<TradeInteraction*, TradeInteractionPtrCompare> brokers_to_sell_to; // Sorted by highest price
+    std::unordered_set<int> s; // Broker locations already looked at
+    s.insert(terminal_id);
+
+    for (const auto& tile : connected_brokers) {
+        Ref<Broker> broker = TerminalMap::get_instance() -> get_broker(tile);
+        if (broker.is_null()) continue;
+        add_broker_to_sorted_set(type, s, brokers_to_sell_to, new TradeInteraction(get_price_average(type, broker), broker));
+    }
+    for (const auto& tile: connected_stations) {
+        Ref<RoadDepot> road_depot = TerminalMap::get_instance() -> get_terminal_as<RoadDepot>(tile);
+        if (road_depot.is_null()) continue;
+        for (auto& broker: road_depot->get_available_brokers(type)) {
+            add_broker_to_sorted_set(type, s, brokers_to_sell_to, new TradeInteraction(get_price_average(type, broker), broker));
+        }
+    }
+    return brokers_to_sell_to;
 }
 
 float Broker::get_price_average(int type, Ref<Broker> other) const {
@@ -270,28 +279,16 @@ void Broker::add_broker_to_sorted_set(int type, std::unordered_set<int> &s, std:
     }
 }
 
-void Broker::distribute_to_road_depot_brokers(Ref<RoadDepot> road_depot, const TradeOrder* order, std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> &s) {
-    std::vector<Ref<Broker>> other_brokers = road_depot->get_available_brokers(order->get_type());
-    for (auto broker: other_brokers) {
-        if (!s.count(broker->get_location())) {
-            s.insert(broker->get_location());
-            distribute_to_order(broker, order, road_depot);
-        }
-    }
-}
-
-void Broker::distribute_to_order(Ref<Broker> otherBroker, const TradeOrder* order, Ref<RoadDepot> road_depot) { 
-    
-    int type = order->get_type();
+void Broker::distribute_type_to_broker(int type, Ref<Broker> otherBroker, Ref<RoadDepot> road_depot) { 
     float price1 = get_local_price(type);
     otherBroker->report_price(type, price1);
     float price2 = otherBroker->get_local_price(type);
     float price = (price1 + price2) / 2;
 
-    if (!order->is_price_acceptable(price) || !otherBroker->is_price_acceptable(type, price)) return;
+    if (!is_price_acceptable(type, price) || !otherBroker->is_price_acceptable(type, price)) return;
     int desired = otherBroker->get_desired_cargo(type, price);
 
-    int amount = std::min(desired, order->get_amount()); 
+    int amount = std::min(desired, int(get_cargo_amount(type))); 
     amount = sell_cargo(type, amount);
     if (amount > 0) {
         {

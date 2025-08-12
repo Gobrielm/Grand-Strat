@@ -79,10 +79,9 @@ class Broker : public FixedHold {
     int get_number_of_connected_terminals() const;
 
     virtual void distribute_cargo(); // abstract
-    virtual void distribute_from_order(const TradeOrder* order);
+    virtual void distribute_type(int type);
     
-    void distribute_to_road_depot_brokers(Ref<RoadDepot> road_depot, const TradeOrder* order, std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> &s);
-    void distribute_to_order(Ref<Broker> otherBroker, const TradeOrder* order, Ref<RoadDepot> road_depot = nullptr);
+    virtual void distribute_type_to_broker(int type, Ref<Broker> otherBroker, Ref<RoadDepot> road_depot = nullptr);
 
     void report_attempt_to_sell(int type, int amount);
     void report_demand_of_brokers(int type);

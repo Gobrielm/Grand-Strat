@@ -1,0 +1,4 @@
+peasant, grain, 1, wood, 0.3, salt, 0.1,
+rural, grain, 0.8, bread, 0.4, 
+town, grain, 0.7, bread, 0.5, 
+none,

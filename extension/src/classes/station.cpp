@@ -90,7 +90,7 @@ void StationWOMethods::distribute_cargo() {
     
     for (const auto& [__, order] : get_orders()) {
         if (order->is_sell_order()) {
-            distribute_from_order(order);
+            distribute_type(order->get_type());
         }
     }
 }

@@ -1,11 +1,11 @@
 #include "base_pop.hpp"
 #include "../singletons/terminal_map.hpp"
+#include "../singletons/cargo_info.hpp"
 #include <godot_cpp/core/class_db.hpp>
+#include <sstream>
+#include <fstream>
 
 void BasePop::_bind_methods() {
-    ClassDB::bind_static_method(BasePop::get_class_static(), D_METHOD("get_people_per_pop"), &BasePop::get_people_per_pop);
-
-
     ClassDB::bind_method(D_METHOD("get_pop_id"), &BasePop::get_pop_id);
     ClassDB::bind_method(D_METHOD("get_home_prov_id"), &BasePop::get_home_prov_id);
     ClassDB::bind_method(D_METHOD("is_seeking_employment"), &BasePop::is_seeking_employment);
@@ -25,17 +25,44 @@ void BasePop::_bind_methods() {
 }
 
 std::atomic<int> BasePop::total_pops = 0;
-std::unordered_map<int, float> BasePop::base_needs;
-std::unordered_map<int, float> BasePop::specialities;
 
-BasePop::BasePop(): BasePop(-1, Vector2i(0, 0), -1) {}
+std::unordered_map<PopTypes, int> BasePop::PEOPLE_PER_POP = {
+    {rural, 1000},
+    {town, 1000},
+    {peasant, 1000},
+    {none, 0}
+};
 
-BasePop::BasePop(int p_home_prov_id, Vector2i p_location, Variant p_culture): pop_id(total_pops++) {
+std::unordered_map<PopTypes, int> BasePop::INITIAL_WEALTH = {
+    {rural, 1000},
+    {town, 1000},
+    {peasant, 1000},
+    {none, 0}
+};
+
+std::unordered_map<PopTypes, std::unordered_map<int, float>> BasePop::base_needs;
+
+std::unordered_map<PopTypes, std::unordered_map<int, float>> BasePop::specialities;
+
+BasePop* BasePop::create_rural_pop(int p_home_prov_id, Vector2i p_location, Variant p_culture) {
+    return memnew(BasePop(p_home_prov_id, p_location, p_culture, rural));
+}
+BasePop* BasePop::create_peasant_pop(int p_home_prov_id, Vector2i p_location, Variant p_culture) {
+    return memnew(BasePop(p_home_prov_id, p_location, p_culture, peasant));
+}
+BasePop* BasePop::create_town_pop(int p_home_prov_id, Vector2i p_location, Variant p_culture) {
+    return memnew(BasePop(p_home_prov_id, p_location, p_culture, town));
+}
+
+BasePop::BasePop(): BasePop(-1, Vector2i(0, 0), -1, none) {}
+
+BasePop::BasePop(int p_home_prov_id, Vector2i p_location, Variant p_culture, PopTypes p_pop_type): pop_id(total_pops++) {
     location = p_location;
     home_prov_id = p_home_prov_id;
     culture = p_culture;
+    pop_type = p_pop_type;
     
-    wealth = INITIAL_WEALTH;
+    wealth = INITIAL_WEALTH.at(pop_type);
     income = 0.0;
     education_level = 0;
     for (const auto &[type, __]: base_needs) {
@@ -46,20 +73,77 @@ BasePop::BasePop(int p_home_prov_id, Vector2i p_location, Variant p_culture): po
     }
 }
 
-BasePop::~BasePop() {}
+BasePop::~BasePop() {
+    ERR_FAIL_COND_MSG(employement_id != -2, "Destroyed pop that was employed");
+}
 
 String BasePop::_to_string() const {
     return "BasePop";
 }
 
-void BasePop::create_base_needs(std::unordered_map<int, float> p_base_needs) {
-    for (const auto [type, amount]: p_base_needs) {
-        base_needs[type] = amount;
-    }
+void BasePop::create_base_needs() {
+    base_needs = create_needs("pop_needs.xlsx");
+}
+void BasePop::create_base_wants() {
+    specialities = create_needs("pop_wants.xlsx");
 }
 
-int BasePop::get_people_per_pop() {
-    return PEOPLE_PER_POP;
+std::unordered_map<PopTypes, std::unordered_map<int, float>> BasePop::create_needs(std::string file_name) {
+    std::unordered_map<PopTypes, std::unordered_map<int, float>> needs_map;
+
+    std::unordered_map<std::string, PopTypes> pop_type_map = {
+        {"peasant", peasant},
+        {"rural", rural},
+        {"town", town},
+        {"none", none}
+    };
+
+    std::ifstream file(file_name);
+    if (!file.is_open()) {
+        std::cerr << "Failed to open " << file_name << "\n";
+        return needs_map;
+    }
+
+    Ref<CargoInfo> cargo_info = CargoInfo::get_instance();
+    std::string line;
+
+    while (std::getline(file, line)) {
+        // Remove trailing commas/whitespace
+        line.erase(std::remove_if(line.begin(), line.end(), ::isspace), line.end());
+
+        if (line.empty()) continue;
+
+        std::stringstream ss(line);
+        std::string token;
+
+        // First token is the pop type string
+        if (!std::getline(ss, token, ',')) continue;
+        if (pop_type_map.find(token) == pop_type_map.end()) {
+            std::cerr << "Unknown pop type: " << token << "\n";
+            continue;
+        }
+        PopTypes pop_type = pop_type_map[token];
+
+        // Read cargo-name/value pairs
+        while (true) {
+            std::string cargo_name;
+            if (!std::getline(ss, cargo_name, ',')) break;
+            if (cargo_name.empty()) break;
+
+            std::string amount_str;
+            if (!std::getline(ss, amount_str, ',')) break;
+
+            float amount = std::stof(amount_str);
+            int cargo_id = cargo_info->get_cargo_type(cargo_name.c_str());
+            needs_map[pop_type][cargo_id] = amount;
+        }
+    }
+
+    return needs_map;
+}
+
+int BasePop::get_people_per_pop(PopTypes pop_type) {
+    return PEOPLE_PER_POP.at(pop_type);
 }
 
 int BasePop::get_pop_id() const {
@@ -75,6 +159,17 @@ void BasePop::set_location(Vector2i p_location) {
 }
 Vector2i BasePop::get_location() const {
     return location;
+}
+
+PopTypes BasePop::get_type() const {
+    return pop_type;
+}
+
+std::unordered_map<int, float> BasePop::get_base_needs() const {
+    return base_needs.at(pop_type);
+}
+std::unordered_map<int, float> BasePop::get_base_wants() const {
+    return specialities.at(pop_type);
 }
 
 void BasePop::set_home_prov_id(int p_home_prov_id) {
@@ -102,6 +197,7 @@ void BasePop::employ(int p_employement_id, float wage) {
 
 void BasePop::fire() {
     income = 0;
+    employement_id = -2;
 }
 
 float BasePop::get_income() const {
@@ -139,16 +235,16 @@ bool BasePop::is_in_high_starvation() const {
 }
 
 float BasePop::get_base_need(int type) const {
-    return base_needs.count(type) == 1 ? base_needs[type]: 0;
+    return get_base_needs().count(type) == 1 ? get_base_needs()[type]: 0;
 }
 float BasePop::get_base_want(int type) const {
-    return specialities.count(type) == 1 ? specialities[type]: 0;
+    return get_base_wants().count(type) == 1 ? get_base_wants()[type]: 0;
 }
 
 float BasePop::get_buy_price(int type, float current_price) const {
     if (get_max_storage(type) == 0) {
         return 0;
-    } else if (base_needs.count(type)) {
+    } else if (get_base_needs().count(type)) {
         return get_buy_price_for_needed_good(type, current_price);
     } else {
         return get_buy_price_for_wanted_good(type, current_price);
@@ -228,7 +324,7 @@ int BasePop::get_desired(int type) const {
         return 0;
     }
     int amount = int(get_max_storage(type) - internal_storage.at(type));
-    if ((income == 0.0 || !are_needs_met()) && !base_needs.count(type)) {
+    if ((income == 0.0 || !are_needs_met()) && !get_base_needs().count(type)) {
         return 0; // Don't buy if not neccessary and no job
     }
 	
@@ -237,7 +333,7 @@ int BasePop::get_desired(int type) const {
 
 int BasePop::get_desired(int type, float price) const {
     int amount = std::min(int(wealth / price), int(get_max_storage(type) - internal_storage.at(type)));
-    if (income == 0.0 && !base_needs.count(type)) {
+    if (income == 0.0 && !get_base_needs().count(type)) {
         return 0; // Don't buy if not neccessary and no job
     }
 	
@@ -278,7 +374,7 @@ Variant BasePop::get_culture() const {
 }
 
 float BasePop::get_average_fulfillment() const {
-    return std::fmin((internal_storage.at(10) / base_needs.at(10)), 1.0);
+    return std::fmin((internal_storage.at(10) / get_base_needs().at(10)), 1.0);
 }
 
 void BasePop::month_tick() {

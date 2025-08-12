@@ -1,7 +1,4 @@
 #include "recipe.hpp"
-#include "../Pops/rural_pop.hpp"
-#include "../town_pop.hpp"
-#include "../Pops/peasant_pop.hpp"
 
 Recipe::Recipe() {
     level = 1;
@@ -44,19 +41,7 @@ Dictionary Recipe::get_outputs_dict() const {
 }
 
 bool Recipe::is_pop_needed(const BasePop* pop) const {
-    return does_need_pop_type(get_pop_type(pop));
-}
-
-PopTypes Recipe::get_pop_type(const BasePop* pop) const {
-    String pop_class = pop->get_class();
-    if (pop_class == "PeasantPop") { // Checks pop is needed and if it has enough
-        return peasant;
-    } else if (pop_class == "TownPop") {
-        return town;
-    } else if (pop_class == "RuralPop") {
-        return rural;
-    }
-    return none;
+    return does_need_pop_type(pop->get_type());
 }
 
 bool Recipe::does_need_pop_type(PopTypes pop_type) const {
@@ -66,7 +51,7 @@ bool Recipe::does_need_pop_type(PopTypes pop_type) const {
 
 void Recipe::add_pop(BasePop* pop) {
     std::scoped_lock lock(m);
-    employees[get_pop_type(pop)].push_back(pop->get_pop_id());
+    employees[pop->get_type()].push_back(pop->get_pop_id());
 }
 
 void Recipe::remove_pop(int pop_id, PopTypes pop_type) {

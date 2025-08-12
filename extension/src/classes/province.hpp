@@ -7,9 +7,6 @@
 #include <vector>
 
 class BasePop;
-class RuralPop;
-class PeasantPop;
-class TownPop;
 class Terminal;
 class FactoryTemplate;
 class Town;

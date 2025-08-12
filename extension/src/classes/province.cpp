@@ -2,9 +2,6 @@
 #include "../singletons/cargo_info.hpp"
 #include "province.hpp"
 #include "base_pop.hpp"
-#include "pops/rural_pop.hpp"
-#include "pops/peasant_pop.hpp"
-#include "town_pop.hpp"
 #include "terminal.hpp"
 #include "factory_template.hpp"
 #include "town.hpp"
@@ -335,9 +332,9 @@ BasePop* Province::get_pop(int pop_id) {
 }
 
 void Province::create_pops() {
-    int number_of_peasant_pops = floor(population * 0.9 / PeasantPop::get_people_per_pop()); //0.6
-    int number_of_rural_pops = floor(population * 0.05 / RuralPop::get_people_per_pop()); //0.2
-	int number_of_city_pops = floor(population * 0.05 / TownPop::get_people_per_pop()); //0.2
+    int number_of_peasant_pops = floor(population * 0.9 / BasePop::get_people_per_pop(peasant));
+    int number_of_rural_pops = floor(population * 0.05 / BasePop::get_people_per_pop(rural));
+	int number_of_city_pops = floor(population * 0.05 / BasePop::get_people_per_pop(town));
     for (int i = 0; i < number_of_peasant_pops; i++) {
         create_peasant_pop(0, tiles[rand() % tiles.size()]);
     }
@@ -360,7 +357,7 @@ void Province::create_pops() {
 }
 
 void Province::create_peasant_pop(Variant culture, Vector2i p_location) {
-    PeasantPop* pop = memnew(PeasantPop(province_id, p_location, culture));
+    BasePop* pop = BasePop::create_peasant_pop(province_id, p_location, culture);
     {
         std::unique_lock lock(pops_lock);
         peasant_pops.insert(pop->get_pop_id());
@@ -369,7 +366,7 @@ void Province::create_peasant_pop(Variant culture, Vector2i p_location) {
 }
 
 void Province::create_rural_pop(Variant culture, Vector2i p_location) {
-    RuralPop* pop = memnew(RuralPop(province_id, p_location, culture));
+    BasePop* pop = BasePop::create_rural_pop(province_id, p_location, culture);
     {
         std::unique_lock lock(pops_lock);
         rural_pops.insert(pop->get_pop_id());
@@ -378,7 +375,7 @@ void Province::create_rural_pop(Variant culture, Vector2i p_location) {
 }
 
 int Province::create_town_pop(Variant culture, Vector2i p_location) {
-    TownPop* pop = memnew(TownPop(province_id, p_location, culture));
+    BasePop* pop = BasePop::create_town_pop(province_id, p_location, culture);
     {
         std::unique_lock lock(pops_lock);
         town_pops.insert(pop->get_pop_id());

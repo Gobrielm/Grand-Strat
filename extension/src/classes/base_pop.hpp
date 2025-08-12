@@ -7,16 +7,23 @@
 
 using namespace godot;
 
+enum PopTypes {
+    peasant = 0,
+    rural = 1,
+    town = 2,
+    
+    none = 99
+};
+
 class FactoryTemplate;
 
 class BasePop : public Object {
     GDCLASS(BasePop, Object);
-
-    static constexpr int PEOPLE_PER_POP = 1000;
-    static constexpr int INITIAL_WEALTH = 1000;
+    static std::unordered_map<PopTypes, int> PEOPLE_PER_POP;
+    static std::unordered_map<PopTypes, int> INITIAL_WEALTH;
     static std::atomic<int> total_pops;
-    static std::unordered_map<int, float> base_needs;
-    static std::unordered_map<int, float> specialities;
+    static std::unordered_map<PopTypes, std::unordered_map<int, float>> base_needs;
+    static std::unordered_map<PopTypes, std::unordered_map<int, float>> specialities;
     
     Vector2i location;
     const int pop_id;
@@ -25,8 +32,11 @@ class BasePop : public Object {
     int home_prov_id;
     Variant culture;
     float income;
-    int employement_id;
+    int employement_id = -2;
     int months_starving = 0;
+
+    PopTypes pop_type;
+
 
     std::unordered_map<int, float> internal_storage;
     
@@ -42,13 +52,26 @@ class BasePop : public Object {
 
     public:
 
-    static void create_base_needs(std::unordered_map<int, float> p_base_needs);
-    static int get_people_per_pop();
+    // Constructors
+    static BasePop* create_rural_pop(int p_home_prov_id, Vector2i p_location, Variant p_culture);
+    static BasePop* create_peasant_pop(int p_home_prov_id, Vector2i p_location, Variant p_culture);
+    static BasePop* create_town_pop(int p_home_prov_id, Vector2i p_location, Variant p_culture);
+
+
+    static void create_base_needs();
+    static void create_base_wants();
+    static std::unordered_map<PopTypes, std::unordered_map<int, float>> create_needs(std::string file_name);
+    static int get_people_per_pop(PopTypes pop_type);
     int get_pop_id() const;
     void set_home_prov_id(int p_home_prov_id);
     int get_home_prov_id() const;
     void set_location(Vector2i p_location);
     Vector2i get_location() const;
+
+    //Types
+    PopTypes get_type() const;
+    std::unordered_map<int, float> get_base_needs() const;
+    std::unordered_map<int, float> get_base_wants() const;
 
     bool is_seeking_employment() const;
     void pay_wage(float wage);
@@ -80,6 +103,6 @@ class BasePop : public Object {
     void month_tick();
 
     BasePop();
-    BasePop(int p_home_prov_id, Vector2i p_location, Variant p_culture);
+    BasePop(int p_home_prov_id, Vector2i p_location, Variant p_culture, PopTypes p_pop_type);
     ~BasePop();
 };

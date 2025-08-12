@@ -2,6 +2,7 @@
 #include "factory_local_price_controller.hpp"
 #include "factory_utility/recipe.hpp"
 #include "base_pop.hpp"
+#include "broker_utility/trade_interaction.hpp"
 #include "../singletons/cargo_info.hpp"
 #include "../singletons/terminal_map.hpp"
 #include "../singletons/province_manager.hpp"
@@ -89,6 +90,10 @@ bool FactoryTemplate::does_create(int type) const {
     return get_outputs().count(type);
 }
 
+bool FactoryTemplate::does_accept(int type) const {
+    return get_inputs().count(type);
+}
+
 std::unordered_map<int, float> FactoryTemplate::get_outputs() const {
     return recipe->get_outputs();
 }
@@ -158,11 +163,8 @@ int FactoryTemplate::get_primary_type() const {
 
 void FactoryTemplate::distribute_cargo() {
     for (const auto& [type, __]: get_outputs()) {
-        TradeOrder* order = get_order(type);
-        if (order && order->is_sell_order()) {
-            report_demand_of_brokers(type);
-            distribute_from_order(order);
-        }
+        report_demand_of_brokers(type);
+        distribute_type(type);
     }
 }
 

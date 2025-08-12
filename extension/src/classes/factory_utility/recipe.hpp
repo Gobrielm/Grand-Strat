@@ -5,13 +5,6 @@
 
 using namespace godot;
 
-enum PopTypes {
-    rural = 1,
-    town = 2,
-    peasant = 3,
-    none = 99
-};
-
 class BasePop;
 
 class Recipe {
@@ -22,7 +15,6 @@ class Recipe {
     mutable std::mutex m;
 
     protected:
-    PopTypes get_pop_type(const BasePop* pop) const;
     bool does_need_pop_type(PopTypes pop_type) const;
     void remove_pop(int pop_id, PopTypes pop_type);
 

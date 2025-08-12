@@ -32,8 +32,6 @@ void Town::_bind_methods() {
 
     // Selling
     ClassDB::bind_method(D_METHOD("get_total_pops"), &Town::get_total_pops);
-    ClassDB::bind_method(D_METHOD("sell_to_other_brokers"), &Town::sell_to_other_brokers);
-    ClassDB::bind_method(D_METHOD("distribute_from_order", "order"), &Town::distribute_from_order);
 
     // Game Loop
     ClassDB::bind_method(D_METHOD("day_tick"), &Town::day_tick);
@@ -248,7 +246,7 @@ Ref<FactoryTemplate> Town::find_employment(BasePop* pop) const {
 }
 
 //Selling to brokers
-void Town::sell_to_other_brokers() {
+void Town::distribute_cargo() {
     std::vector<float> supply = get_supply();
 	for (int type = 0; type < supply.size(); type++) {
         report_demand_of_brokers(type);
@@ -494,11 +492,10 @@ std::multiset<TownCargo *, TownCargo::TownCargoPtrCompare>::iterator Town::retur
     return cargo_it;
 }
 
-bool Town::does_cargo_exist(int terminal_id, int type) const {
-    auto it = town_cargo_tracker.find(terminal_id);
-    if (it != town_cargo_tracker.end()) {
-        auto type_it = (it->second).find(type);
-        return type_it != (it->second).end();
+bool Town::does_cargo_exist(int p_terminal_id, int type) const {
+    if (town_cargo_tracker.count(p_terminal_id)) {
+        auto cargo_map = (town_cargo_tracker.at(p_terminal_id));
+        return cargo_map.count(type);
     } 
     return false;
 }
@@ -556,7 +553,7 @@ void Town::update_local_price(int type) {
 
 // Process Hooks
 void Town::day_tick() {
-    sell_to_other_brokers();
+    distribute_cargo();
 }
 
 void Town::month_tick() {

@@ -6,9 +6,6 @@
 
 #include "static_registry.hpp"
 #include "../classes/base_pop.hpp"
-#include "../classes/pops/rural_pop.hpp"
-#include "../classes/pops/peasant_pop.hpp"
-#include "../classes/town_pop.hpp"
 #include "../classes/province.hpp"
 #include "../classes/trade_order.hpp"
 #include "../classes/local_price_controller.hpp"
@@ -56,9 +53,6 @@ void initialize_gdextension_types(ModuleInitializationLevel p_level)
 	GDREGISTER_CLASS(FactoryLocalPriceController);
 	GDREGISTER_CLASS(MoneyController);
 	GDREGISTER_CLASS(BasePop);
-	GDREGISTER_CLASS(RuralPop);
-	GDREGISTER_CLASS(PeasantPop);
-	GDREGISTER_CLASS(TownPop);
 	GDREGISTER_CLASS(Province);
 	GDREGISTER_CLASS(TradeOrder);
 	GDREGISTER_CLASS(Terminal);
