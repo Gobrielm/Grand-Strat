@@ -2,6 +2,7 @@
 #include "../singletons/cargo_info.hpp"
 #include "../singletons/province_manager.hpp"
 #include "../singletons/terminal_map.hpp"
+#include "broker_utility/trade_interaction.hpp"
 #include <godot_cpp/core/class_db.hpp>
 #include <map>
 #include <algorithm>
@@ -103,6 +104,7 @@ int Town::get_desired_cargo(int type, float price) const { // BUG/TODO: Kinda ou
 int Town::get_desired_cargo_unsafe(int type, float price) const {
     return get_desired_cargo(type, price);
 }
+
 
 float Town::get_cargo_amount(int type) const {
     ERR_FAIL_COND_V_EDMSG(!current_totals.count(type), 0, "No cargo of type: " + String::num(type));
@@ -256,28 +258,39 @@ void Town::sell_to_other_brokers() {
 }
 
 void Town::distribute_type(int type) {
+    std::set<TradeInteraction*, TradeInteractionPtrCompare> brokers_to_sell_to = get_brokers_to_distribute_to(type); // Sorted by highest price
+
+    int current_amount = get_cargo_amount(type);
+    for (auto it = brokers_to_sell_to.begin(); it != brokers_to_sell_to.end(); it++) {
+        TradeInteraction* top = *it;
+        if (current_amount > 0) {
+            distribute_type_to_broker(type, top->main_buyer, top->middleman);
+        }
+        delete top;
+        current_amount = get_cargo_amount(type);
+    }
+}
+
+std::set<TradeInteraction*, TradeInteractionPtrCompare> Town::get_brokers_to_distribute_to(int type) {
+    std::set<TradeInteraction*, TradeInteractionPtrCompare> brokers_to_sell_to; // Sorted by highest price
+    std::unordered_set<int> s; // Broker locations already looked at
     //Distribute to local factories
     {
         std::scoped_lock lock(internal_factories_mutex);
         for (const auto& [__, fact_vector]: internal_factories) {
             for (Ref<FactoryTemplate> fact: fact_vector) {
-                if (fact->does_accept(type)) {
-                    distribute_type_to_broker(type, fact);
-                }
+                add_broker_to_sorted_set(type, s, brokers_to_sell_to, new TradeInteraction(get_price_average(type, fact), fact));
             }
         }
     }
 	
-    std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> s;
-    s.insert(get_location());
+    s.insert(terminal_id); // Add self, after internal factories
+    
 	//Distribute to other brokers
 	for (const auto tile: connected_brokers) {
-        s.insert(tile);
         Ref<Broker> broker = TerminalMap::get_instance() -> get_broker(tile);
         if (broker.is_null()) continue;
-		if (broker->does_accept(type)) {
-            distribute_type_to_broker(type, broker);
-        }
+        add_broker_to_sorted_set(type, s, brokers_to_sell_to, new TradeInteraction(get_price_average(type, broker), broker));
     }
 
     // Distribute using stations to other brokers
@@ -286,12 +299,10 @@ void Town::distribute_type(int type) {
         if (road_depot.is_null()) continue;
         std::vector<Ref<Broker>> other_brokers = road_depot->get_available_brokers(type);
         for (auto& broker: other_brokers) {
-            if (!s.count(broker->get_location())) {
-                s.insert(broker->get_location());
-                distribute_type_to_broker(type, broker, road_depot);
-            }
+            add_broker_to_sorted_set(type, s, brokers_to_sell_to, new TradeInteraction(get_price_average(type, broker), broker, road_depot));
         }
     }
+    return brokers_to_sell_to;
 }
 
 void Town::distribute_type_to_broker(int type, Ref<Broker> broker, Ref<RoadDepot> road_depot) {

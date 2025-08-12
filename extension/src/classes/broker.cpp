@@ -2,6 +2,8 @@
 #include "road_depot.hpp"
 #include "../singletons/terminal_map.hpp"
 #include "town_utility/town_cargo.hpp"
+#include "broker_utility/trade_interaction.hpp"
+#include "broker_utility/trade_interaction_compare.hpp"
 #include <algorithm>
 #include <cmath>
 
@@ -13,7 +15,6 @@ void Broker::_bind_methods() {
     ClassDB::bind_method(D_METHOD("get_local_prices"), &Broker::get_local_prices);
     ClassDB::bind_method(D_METHOD("get_local_price", "type"), &Broker::get_local_price);
     ClassDB::bind_method(D_METHOD("get_desired_cargo", "type", "pricePer"), &Broker::get_desired_cargo);
-    ClassDB::bind_method(D_METHOD("get_desired_cargo_from_train", "type"), &Broker::get_desired_cargo_from_train);
     ClassDB::bind_method(D_METHOD("is_price_acceptable", "type", "pricePer"), &Broker::is_price_acceptable);
     ClassDB::bind_method(D_METHOD("place_order", "type", "amount", "buy", "max_price"), &Broker::place_order);
     ClassDB::bind_method(D_METHOD("edit_order", "type", "amount", "buy", "max_price"), &Broker::edit_order);
@@ -91,13 +92,6 @@ int Broker::get_desired_cargo_unsafe(int type, float pricePer) const {
             int canGet = std::min(int(max_amount - storage.at(type)), int(get_cash_unsafe() / pricePer));
             return std::min(order->get_amount(), canGet);
         }
-    }
-    return 0;
-}
-
-int Broker::get_desired_cargo_from_train(int type) const {
-    if (does_accept(type)) {
-        return std::min(int(get_max_storage() - get_cargo_amount(type)), get_amount_can_buy(get_local_price(type)));
     }
     return 0;
 }
@@ -255,6 +249,25 @@ void Broker::distribute_from_order(const TradeOrder* order) {
         distribute_to_road_depot_brokers(road_depot, order, s);
     }
     
+}
+
+std::set<TradeInteraction*, TradeInteractionPtrCompare> Broker::get_brokers_to_distribute_to(int type) {
+    std::set<TradeInteraction*, TradeInteractionPtrCompare> s;
+    ERR_FAIL_V_MSG(s, "A");
+}
+
+float Broker::get_price_average(int type, Ref<Broker> other) const {
+    return (get_local_price(type) + other->get_local_price(type)) / 2.0;
+}
+
+void Broker::add_broker_to_sorted_set(int type, std::unordered_set<int> &s, std::set<TradeInteraction*, TradeInteractionPtrCompare> &trade_interactions, TradeInteraction* trade_interaction) {
+    Ref<Broker> broker = trade_interaction->main_buyer;
+    if (!s.count(broker->get_terminal_id()) && broker->get_desired_cargo(type, trade_interaction->price) > 0) {
+        trade_interactions.insert(trade_interaction);
+        s.insert(broker->get_terminal_id());
+    } else {
+        delete trade_interaction;
+    }
 }
 
 void Broker::distribute_to_road_depot_brokers(Ref<RoadDepot> road_depot, const TradeOrder* order, std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> &s) {

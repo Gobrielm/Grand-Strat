@@ -34,7 +34,7 @@ struct TownCargo {
         bool operator()(const TownCargo* lhs, const TownCargo* rhs) const {
             if (lhs->price == rhs->price)
                 return lhs < rhs; // fallback to pointer address
-            return lhs->price > rhs->price; // lowest price first
+            return lhs->price < rhs->price; // lowest price first
         }
     };
 };

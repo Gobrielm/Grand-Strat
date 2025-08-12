@@ -32,6 +32,8 @@ protected:
     std::unordered_map<int, float> current_prices; // Keep track of prices from last month
     std::unordered_map<int, int> current_totals; // Keeps track of current totals of goods
 
+    std::set<TradeInteraction*, TradeInteractionPtrCompare> get_brokers_to_distribute_to(int type) override;
+
 public:
     Town();
     virtual ~Town();

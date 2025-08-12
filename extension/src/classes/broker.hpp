@@ -6,11 +6,14 @@
 
 #include "local_price_controller.hpp"
 #include "../utility/vector2i_hash.hpp"
+#include "broker_utility/trade_interaction_compare.hpp"
 #include <unordered_map>
+#include <set>
 #include <unordered_set>
 #include <memory>
 
 class TownCargo;
+struct TradeInteraction;
 
 using namespace godot;
 
@@ -25,6 +28,10 @@ class Broker : public FixedHold {
     std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> connected_stations;
     LocalPriceController* local_pricer = nullptr;
     const float MAX_TRADE_MARGIN = 1.05f;
+
+    virtual std::set<TradeInteraction*, TradeInteractionPtrCompare> get_brokers_to_distribute_to(int type); // Abstract
+    float get_price_average(int type, Ref<Broker> other) const;
+    void add_broker_to_sorted_set(int type, std::unordered_set<int> &s, std::set<TradeInteraction*, TradeInteractionPtrCompare> &trade_interactions, TradeInteraction* trade_interaction);
 
     public:
     
@@ -42,7 +49,6 @@ class Broker : public FixedHold {
 
     virtual int get_desired_cargo(int type, float pricePer) const;
     virtual int get_desired_cargo_unsafe(int type, float pricePer) const;
-    int get_desired_cargo_from_train(int type) const;
 
     virtual bool is_price_acceptable(int type, float pricePer) const;
 
@@ -74,6 +80,7 @@ class Broker : public FixedHold {
 
     virtual void distribute_cargo(); // abstract
     virtual void distribute_from_order(const TradeOrder* order);
+    
     void distribute_to_road_depot_brokers(Ref<RoadDepot> road_depot, const TradeOrder* order, std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> &s);
     void distribute_to_order(Ref<Broker> otherBroker, const TradeOrder* order, Ref<RoadDepot> road_depot = nullptr);
 
