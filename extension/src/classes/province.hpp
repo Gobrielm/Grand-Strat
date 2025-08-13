@@ -10,6 +10,7 @@ class BasePop;
 class Terminal;
 class FactoryTemplate;
 class Town;
+enum PopTypes;
 
 using namespace godot;
 
@@ -25,11 +26,8 @@ class Province : public Object {
     std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> terminal_tiles; //Doesn't 'own' Terminals yet
     std::unordered_map<Vector2i, Vector2i, godot_helpers::Vector2iHasher> closest_town_to_tile;
 
+    std::unordered_map<PopTypes, std::unordered_set<int>> pop_types;
     std::unordered_map<int, BasePop*> pops;
-
-    std::unordered_set<int> rural_pops; //Owns pops
-    std::unordered_set<int> peasant_pops; //Owns pops
-    std::unordered_set<int> town_pops; //Owns pops
 
     protected:
     static void _bind_methods();
@@ -51,8 +49,6 @@ class Province : public Object {
     void add_tile(Vector2i coords);
     int get_population() const;
     int get_demand_for_grain() const; // Used exclusively for initial builder
-    int get_number_of_city_pops() const;
-    const std::unordered_set<int> get_rural_pop_ids() const;
     void add_population(int population_to_add);
     void set_population(int new_population);
     int get_province_id() const;
@@ -81,6 +77,8 @@ class Province : public Object {
     int get_number_of_broke_pops() const;
     int get_number_of_starving_pops() const;
     int get_number_of_unemployed_pops() const;
+    int get_number_of_peasants() const;
+    int get_number_of_city_pops() const;
 
 
     // Global pop functions
@@ -104,6 +102,7 @@ class Province : public Object {
     Ref<FactoryTemplate> find_rural_employment(BasePop* pop) const;
     Ref<FactoryTemplate> find_urban_employment(BasePop* pop) const;
     void month_tick();
+    void change_pops();
     void sell_to_pops();
     
 

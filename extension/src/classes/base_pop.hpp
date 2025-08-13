@@ -34,6 +34,7 @@ class BasePop : public Object {
     float income;
     int employement_id = -2;
     int months_starving = 0;
+    int months_without_job = 0;
 
     PopTypes pop_type;
 
@@ -70,10 +71,13 @@ class BasePop : public Object {
 
     //Types
     PopTypes get_type() const;
+    static float get_base_need(PopTypes pop_type, int type);
+    static float get_base_want(PopTypes pop_type, int type);
     std::unordered_map<int, float> get_base_needs() const;
     std::unordered_map<int, float> get_base_wants() const;
 
     bool is_seeking_employment() const;
+    bool is_unemployed() const;
     void pay_wage(float wage);
     void employ(int p_employement_id, float wage);
     void fire();
@@ -100,6 +104,14 @@ class BasePop : public Object {
     float transfer_wealth();
     Variant get_culture() const;
     float get_average_fulfillment() const;
+
+    //Changing Pop Type
+    bool will_degrade() const;
+    void degrade();
+    bool will_upgrade() const;
+    void upgrade();
+    void reset_and_fill_storage(); // Fills storage with needs, but just instaiates wants
+
     void month_tick();
 
     BasePop();

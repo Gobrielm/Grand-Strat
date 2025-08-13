@@ -65,12 +65,7 @@ BasePop::BasePop(int p_home_prov_id, Vector2i p_location, Variant p_culture, Pop
     wealth = INITIAL_WEALTH.at(pop_type);
     income = 0.0;
     education_level = 0;
-    for (const auto &[type, __]: base_needs) {
-        internal_storage[type] = 0.0;
-    }
-    for (const auto &[type, __]: specialities) {
-        internal_storage[type] = 0.0;
-    }
+    reset_and_fill_storage();
 }
 
 BasePop::~BasePop() {
@@ -165,6 +160,13 @@ PopTypes BasePop::get_type() const {
     return pop_type;
 }
 
+float BasePop::get_base_need(PopTypes pop_type, int type) {
+    return base_needs[pop_type][type];
+}
+float BasePop::get_base_want(PopTypes pop_type, int type) {
+    return specialities[pop_type][type];
+}
+
 std::unordered_map<int, float> BasePop::get_base_needs() const {
     return base_needs.at(pop_type);
 }
@@ -183,6 +185,10 @@ bool BasePop::is_seeking_employment() const {
         //TODO
         return false;
     }
+}
+
+bool BasePop::is_unemployed() const {
+    return employement_id == -2 && income == 0;
 }
 
 void BasePop::pay_wage(float wage) {
@@ -377,6 +383,39 @@ float BasePop::get_average_fulfillment() const {
     return std::fmin((internal_storage.at(10) / get_base_needs().at(10)), 1.0);
 }
 
+bool BasePop::will_degrade() const {
+    return months_without_job > 5;
+}
+
+void BasePop::degrade() {
+    if (pop_type == rural) {
+        pop_type = peasant;
+        reset_and_fill_storage();
+        months_without_job = 0;
+    }
+}
+
+bool BasePop::will_upgrade() const {
+    return (pop_type == peasant && wealth > 1000);
+}
+
+void BasePop::upgrade() {
+    if (pop_type == peasant) {
+        pop_type = rural;
+        reset_and_fill_storage();
+    }
+}
+
+void BasePop::reset_and_fill_storage() {
+    internal_storage.clear();
+    for (const auto &[type, __]: base_needs[pop_type]) {
+        internal_storage[type] = get_max_storage(type);
+    }
+    for (const auto &[type, __]: specialities[pop_type]) {
+        internal_storage[type] = 0;
+    }
+}
+
 void BasePop::month_tick() {
     for (const auto& [type, __]: internal_storage) {
         internal_storage[type] -= (get_base_need(type) + get_base_want(type));
@@ -389,5 +428,11 @@ void BasePop::month_tick() {
         } else if (type == 10) {
             months_starving = 0;
         }
+    }
+
+    if (is_unemployed()) {
+        months_without_job++;
+    } else {
+        months_without_job = 0;
     }
 }

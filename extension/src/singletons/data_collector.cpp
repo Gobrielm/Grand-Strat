@@ -44,6 +44,7 @@ void DataCollector::month_tick() {
         starving_pops.push_back(province_manager->get_number_of_starving_pops());
         broke_pops.push_back(province_manager -> get_number_of_broke_pops());
         unemployement_rate.push_back(province_manager->get_unemployment_rate());
+        number_of_peasants.push_back(province_manager->get_number_of_peasants());
         write_data_to_file();
     }
 }
@@ -96,6 +97,11 @@ void DataCollector::write_data_to_file() {
     }
     file << "\nUnemployment Rate,\n";
     for (float x: unemployement_rate) {
+        file << x;
+        file << ",";
+    }
+    file << "\nNumber Of Peasants,\n";
+    for (int x: number_of_peasants) {
         file << x;
         file << ",";
     }

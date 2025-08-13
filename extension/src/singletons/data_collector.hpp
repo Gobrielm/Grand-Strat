@@ -18,6 +18,7 @@ private:
     std::vector<int> starving_pops;
     std::vector<int> broke_pops;
     std::vector<float> unemployement_rate;
+    std::vector<int> number_of_peasants;
     static DataCollector* singleton_instance;
 
     bool is_collecting_data;
