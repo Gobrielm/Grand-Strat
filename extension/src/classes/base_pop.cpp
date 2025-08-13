@@ -192,6 +192,10 @@ bool BasePop::is_unemployed() const {
 }
 
 void BasePop::pay_wage(float wage) {
+    if (std::isnan(wage)) {
+        ERR_FAIL_MSG("NaN wage detected");
+    }
+    
     wealth += wage;
     income = wage;
 }
@@ -248,23 +252,21 @@ float BasePop::get_base_want(int type) const {
 }
 
 float BasePop::get_buy_price(int type, float current_price) const {
-    if (get_max_storage(type) == 0) {
-        return 0;
-    } else if (get_base_needs().count(type)) {
+    if (get_base_need(type) > 0) {
         return get_buy_price_for_needed_good(type, current_price);
-    } else {
+    } else if (get_base_want(type) > 0) {
         return get_buy_price_for_wanted_good(type, current_price);
     }
+    return 0;
 }
 
 float BasePop::get_buy_price_for_needed_good(int type, float current_price) const {
     float available_money = std::min(std::max(income, current_price), wealth); // Save a bit
-
     float needed = float(get_desired(type)) / get_max_storage(type); // 0 - 1;
     if (needed == 0) return 0;
 
     float total_needed = needed;
-    for (const auto& [other_type, amount]: base_needs) {
+    for (const auto& [other_type, amount]: get_base_needs()) {
         if (type == other_type) continue;
         float weighted_need = float(get_desired(other_type)) / get_max_storage(other_type); // 0 - 1;
         total_needed += weighted_need;
@@ -288,13 +290,13 @@ float BasePop::get_buy_price_for_wanted_good(int type, float current_price) cons
     if (wanted == 0) return 0;
 
     float total_wanted = wanted;
-    for (const auto& [other_type, __]: specialities) {
+    for (const auto& [other_type, __]: get_base_wants()) {
         if (type == other_type) continue;
         float weighted_want = float(get_desired(other_type)) / get_max_storage(other_type); // 0 - 1;
         total_wanted += weighted_want;
         if (!is_want_met(type)) break;
     }
-    for (const auto& [other_type, __]: base_needs) {
+    for (const auto& [other_type, __]: get_base_needs()) {
         if (type == other_type) continue;
         float weighted_need = float(get_desired(other_type)) / get_max_storage(other_type); // 0 - 1;
         total_wanted += weighted_need;
@@ -347,10 +349,17 @@ int BasePop::get_desired(int type, float price) const {
 }
 
 void BasePop::buy_good(int type, int amount, float price) {
+    if (std::isnan(price)) {
+        ERR_FAIL_MSG("NaN in buy_good inputs");
+    }
+    if (amount < 0) {
+        ERR_FAIL_MSG("Amount is negitive");
+    }
     wealth -= amount * price;
     internal_storage[type] += amount;
-	if (wealth < 0) //TODO, uh-oh
+	if (wealth < 0) { //TODO, uh-oh
         ERR_FAIL_MSG("Not enough money to buy good as pop");
+    }
 }
 
 int BasePop::get_max_storage(int type) const {
@@ -358,7 +367,7 @@ int BasePop::get_max_storage(int type) const {
     if (storage > 0) {
         return std::max(2, int(ceil(storage)));
     }
-    return 0; // Storage is based on need, so pops have ~3 months without any access before bad
+    return 0; // Storage is based on need, so pops have ~3 + 1 months without any access before bad
 }
 
 int BasePop::get_education_level() const {
@@ -396,7 +405,7 @@ void BasePop::degrade() {
 }
 
 bool BasePop::will_upgrade() const {
-    return (pop_type == peasant && wealth > 1000);
+    return (pop_type == peasant && wealth > 10000);
 }
 
 void BasePop::upgrade() {

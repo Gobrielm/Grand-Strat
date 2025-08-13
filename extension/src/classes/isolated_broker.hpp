@@ -31,8 +31,12 @@ class IsolatedBroker : public Firm {
     IsolatedBroker(Vector2i p_location, int p_owner);
 
     void add_pop(BasePop* pop);
+    float get_wage() const;
+    float get_theoretical_gross_profit() const;
+    void pay_employees();
 
     void set_local_town(Vector2i p_town);
+    Ref<Town> get_local_town() const;
     void sell_cargo();
     void sell_type(Ref<Town> town, int type, int amount);
     double get_batch_size() const;

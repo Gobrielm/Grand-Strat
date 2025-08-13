@@ -23,11 +23,13 @@ class ProvinceManager : public RefCounted {
     std::unordered_map<Vector2i, int, godot_helpers::Vector2iHasher> tiles_to_province_id;
     std::unordered_map<int, std::unordered_set<int>> country_id_to_province_ids;
 
+    //Timing
+    std::chrono::time_point<std::chrono::high_resolution_clock> start_time;
+
 
     std::thread month_tick_checker; //used to check if next day is ready without blocking
     std::mutex month_tick_checker_mutex;
     std::condition_variable month_tick_checker_cv;
-    bool month_tick_check_requested = false;
 
     void month_tick_check();
 

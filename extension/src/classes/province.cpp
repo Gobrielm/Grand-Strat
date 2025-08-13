@@ -605,4 +605,19 @@ void Province::sell_to_pops() {
         town->sell_to_pop(pop);
     }
 
+    CONST_PEASANT_POP_LOOP() {
+        BasePop* pop = get_pop(pop_id);
+        pop->month_tick();
+        if (!closest_town_to_tile.count(pop->get_location())) {
+            // Peasant pops may exist in province without town
+            continue;
+        }
+        Ref<Town> town = TerminalMap::get_instance()->get_town(closest_town_to_tile[pop->get_location()]);
+        if (town.is_null()) {
+            print_error("Towns and terminals are desynced at " + pop->get_location());
+            continue;
+        }
+        town->sell_to_pop(pop);
+    }
+
 }

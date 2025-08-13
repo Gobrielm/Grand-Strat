@@ -6,7 +6,7 @@ TerminalMapThreadPool::TerminalMapThreadPool() {
     day_worker_threads.push_back(std::thread(&TerminalMapThreadPool::day_thread_processor, this));
     day_tick_checker = std::thread(&TerminalMapThreadPool::day_tick_check, this);
     month_tick_checker = std::thread(&TerminalMapThreadPool::month_tick_check, this);
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < 4; i++) {
         month_worker_threads.push_back(std::thread(&TerminalMapThreadPool::month_thread_processor, this));
     }
     terminal_map = TerminalMap::get_instance().ptr();
@@ -39,7 +39,7 @@ void TerminalMapThreadPool::day_tick_check() {
         day_jobs_cv.wait(lock, [this](){ // Waits for last day ticks jobs to be done
             return day_jobs == 0; 
         });
-        
+        start_time = std::chrono::high_resolution_clock::now();
         day_tick_helper();
     }
 }
@@ -69,7 +69,6 @@ void TerminalMapThreadPool::month_tick_check() {
             });
         }
         
-
         month_tick_helper();
     }
 }
@@ -113,6 +112,8 @@ void TerminalMapThreadPool::day_thread_processor() {
 
         if (--day_jobs == 0) {
             day_jobs_cv.notify_one();  // Wake main thread
+            std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - start_time;
+            // print_line("Terminal Map Day Tick Took " + String::num_scientific(elapsed.count()) + " seconds");
         }
     }
 }

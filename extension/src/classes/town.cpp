@@ -176,7 +176,12 @@ void Town::sell_to_pop(BasePop* pop) { // Called from Province, do not call loca
                 const float seller_price = sell_order->price;
                 const float buyer_price = pop->get_buy_price(type, seller_price);
                 buy_orders_price_map[type][round(buyer_price * 10)] += desired;
-                
+                if (std::isnan(seller_price)) {
+                    ERR_FAIL_MSG("seller price is nan");
+                }
+                if (std::isnan(buyer_price)) {
+                    ERR_FAIL_MSG("buyer_price is nan");
+                }
                 float price = (buyer_price + seller_price) / 2; // Price average
 
                 if (((price / buyer_price) - 1) > PopOrder::MAX_DIFF) { // Too high for buyer no deal
@@ -453,7 +458,6 @@ void Town::encode_existing_cargo(TownCargo* existing_town_cargo, const TownCargo
 
 float Town::add_cargo(int type, float amount) {
     ERR_FAIL_V_EDMSG(0, "Add cargo shouldn't be used on towns");
-    return 0;
 }
 
 void Town::age_all_cargo() {

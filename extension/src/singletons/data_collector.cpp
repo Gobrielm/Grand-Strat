@@ -32,6 +32,8 @@ DataCollector* DataCollector::get_instance() {
 }
 
 void DataCollector::month_tick() {
+    auto start_time = std::chrono::high_resolution_clock::now();
+
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     Ref<ProvinceManager> province_manager = ProvinceManager::get_instance();
     if (is_collecting_data) {
@@ -47,6 +49,10 @@ void DataCollector::month_tick() {
         number_of_peasants.push_back(province_manager->get_number_of_peasants());
         write_data_to_file();
     }
+
+    auto end_time = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = end_time - start_time;
+    // print_line("Data Collector Month Tick Took " + String::num_scientific(elapsed.count()) + " seconds");
 }
 
 void DataCollector::write_data_to_file() {

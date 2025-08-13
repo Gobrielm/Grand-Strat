@@ -16,6 +16,8 @@ ProvinceManager::ProvinceManager() {
 
 ProvinceManager::~ProvinceManager() {
     stop = true;
+    month_tick_checker_cv.notify_all();
+    condition.notify_all();
 }
 
 void ProvinceManager::_bind_methods() {
@@ -168,12 +170,12 @@ Province* ProvinceManager::get_province(int id) const {
 }
 
 float ProvinceManager::get_average_cash_of_pops() const {
-    float total_wealth = 0;
-    int total_pops = 0;
+    double total_wealth = 0;
+    long total_pops = 0;
     std::shared_lock lock(province_mutex);
     for (const auto& [__, province]: provinces) {
         total_wealth += province->get_total_wealth_of_pops();
-        total_pops += province->count_pops();
+        total_pops += province->get_number_of_pops();
     }
     return total_wealth / total_pops;
 }
@@ -249,11 +251,6 @@ std::unordered_set<int> ProvinceManager::get_country_provinces(int country_id) c
 }
 
 void ProvinceManager::month_tick() {
-    TerminalMap::get_instance()->pause_time();
-    {
-        std::lock_guard<std::mutex> lock(month_tick_checker_mutex);
-        month_tick_check_requested = true;
-    }
     month_tick_checker_cv.notify_one();
 }
 
@@ -261,31 +258,32 @@ void ProvinceManager::month_tick_check() {
     while (!stop) {
         {
             std::unique_lock<std::mutex> lock(month_tick_checker_mutex); // Waits for month tick
-            month_tick_checker_cv.wait(lock, [this](){
-                return month_tick_check_requested || stop;
-            });
-            month_tick_check_requested = false;
-            TerminalMap::get_instance()->unpause_time();
+            month_tick_checker_cv.wait(lock);
+            
         }
-
+        TerminalMap::get_instance()->pause_time(); // Pause time while dealing with last months work
         {   
             std::unique_lock<std::mutex> lock(jobs_done_mutex);
             jobs_done_cv.wait(lock, [this](){ // Sleeps and waits for jobs to be done 
                 return jobs_remaining == 0; 
             });
         }
+        TerminalMap::get_instance()->unpause_time();
+        start_time = std::chrono::high_resolution_clock::now();
         month_tick_helper();
     }
 }
 
 void ProvinceManager::month_tick_helper() {
     {
-        std::shared_lock lock(province_mutex);
+        std::shared_lock lock(province_mutex); // Lock for provinces
+        std::unique_lock lock1(m); // Lock for provinces to process
         for (const auto &[__, province]: provinces) {
             provinces_to_process.push_back(province);
         }
-        jobs_remaining  = provinces_to_process.size();
+        
     }
+    jobs_remaining  = provinces_to_process.size();
     
     condition.notify_all();
 }   
@@ -312,6 +310,8 @@ void ProvinceManager::thread_processor() {
 
         if (--jobs_remaining == 0) {
             jobs_done_cv.notify_one();  // Wake main thread
+            std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - start_time;
+            // print_line("Provinces Month Tick Took " + String::num_scientific(elapsed.count()) + " seconds");
         }
     }
 }

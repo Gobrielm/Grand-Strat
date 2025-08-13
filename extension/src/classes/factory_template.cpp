@@ -266,7 +266,7 @@ float FactoryTemplate::get_theoretical_gross_profit() const {
     float available = 0;
     
     for (const auto &[type, amount]: get_inputs()) {
-        available -= get_local_price(type) * amount * std::max(get_level(), 1.0);
+        available -= get_local_price(type) * amount * std::max(get_level(), 1.0); // Always assume that the business will pay according to the first level, so hiring wont bug out
     }
     for (const auto &[type, amount]: get_outputs()) {
         available += get_local_price(type) * amount * std::max(get_level(), 1.0);

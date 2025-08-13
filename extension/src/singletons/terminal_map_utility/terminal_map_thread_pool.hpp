@@ -18,6 +18,7 @@ class TerminalMapThreadPool {
     TerminalMap* terminal_map = nullptr;
 
     std::mutex m;
+    std::chrono::time_point<std::chrono::high_resolution_clock> start_time;
 
     std::thread day_tick_checker; //used to check if next day is ready without blocking
     std::mutex day_tick_checker_mutex;
