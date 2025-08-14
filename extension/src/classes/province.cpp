@@ -496,25 +496,31 @@ int Province::count_pops() const {
 }
 
 void Province::find_employment_for_pops() {
-    find_employment_for_rural_pops();
-}
-
-void Province::find_employment_for_town_pops() {
-    //TODO: Create
+    // find_employment_for_rural_pops();
+    // find_employment_for_town_pops();
 }
 
 void Province::find_employment_for_rural_pops() {
-    Ref<FactoryTemplate> work;
-    std::unique_lock lock(pops_lock);
-    
-    for (const auto &pop_id: pop_types[rural]) {
-        BasePop* pop = get_pop(pop_id);
-        if (pop -> is_seeking_employment()) {
-            if (work.is_valid() && work->is_hiring(pop)) {
-                work->employ_pop(pop);
-            } else {
-                work = find_rural_employment(pop);
-                if (work.is_valid()) {
+    auto s = get_rural_employment_sorted_by_wage();
+    auto it = s.begin();
+    if (it == s.end()) {
+        // No Available factories hiring
+        return;
+    }
+
+    {
+        Ref<FactoryTemplate> work = *it;
+        std::unique_lock lock(pops_lock);
+        for (const auto &pop_id: pop_types[rural]) {
+            BasePop* pop = get_pop(pop_id);
+            if (pop -> is_seeking_employment()) {
+                while (!work->is_hiring(rural)) {
+                    it++;
+                    if (it == s.end()) return;
+                    work = *it;
+                }
+
+                if (pop->is_wage_acceptable(work->get_wage())) {
                     work->employ_pop(pop);
                 }
             }
@@ -522,42 +528,79 @@ void Province::find_employment_for_rural_pops() {
     }
 }
 
-Ref<FactoryTemplate> Province::find_rural_employment(BasePop* pop) const {
-    float max_wage = 0.0;
-    Ref<FactoryTemplate> best_fact = Ref<FactoryTemplate>(nullptr);
+void Province::find_employment_for_town_pops() {
+    // Gets the employement opputunities for each town as they will be needed by pops in those towns
+    std::unordered_map<Vector2i, std::set<Ref<FactoryTemplate>, FactoryTemplate::FactoryWageCompare>, godot_helpers::Vector2iHasher> m;
+    std::unordered_map<Vector2i, std::set<godot::Ref<FactoryTemplate>, FactoryTemplate::FactoryWageCompare>::iterator, godot_helpers::Vector2iHasher> it_map;
+    std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> towns_with_employement;
+    for (const auto& tile: get_town_tiles()) {
+        m[tile] = get_town_employment_sorted_by_wage(tile);
+        it_map[tile] = m[tile].begin();
+        if (it_map[tile] != m[tile].end()) {
+            // Available factories hiring
+            towns_with_employement.insert(tile);
+        }
+    }
+    if (towns_with_employement.size() == 0) return;
+    Ref<FactoryTemplate> work;
+    std::unique_lock lock(pops_lock);
     
+    for (const auto &pop_id: pop_types[town]) {
+        BasePop* pop = get_pop(pop_id);
+        if (pop -> is_seeking_employment()) {
+            Vector2i pop_location = pop->get_location();
+            if (!m.count(pop_location)) {
+                ERR_FAIL_MSG("Town Pop not located in town or province doesn't have town at " + pop_location);
+            }
+            if (!towns_with_employement.count(pop_location)) continue;
+
+            auto& it = it_map[pop_location];
+
+            work = *(it);
+            if (work.is_null()) {
+                ERR_FAIL_MSG("Factory is null");
+            }
+            while (!work->is_hiring(town)) {
+                it++;
+                if (it == m[pop_location].end()) {
+                    towns_with_employement.erase(pop_location);
+                    if (towns_with_employement.size() == 0) return;
+                    break;
+                }
+                work = *(it);
+            }
+            if (!towns_with_employement.count(pop_location)) continue;
+
+            if (pop->is_wage_acceptable(work->get_wage())) {
+                print_line("Employed");
+                work->employ_pop(pop);
+            }
+        }
+    }
+}
+
+std::set<Ref<FactoryTemplate>, FactoryTemplate::FactoryWageCompare> Province::get_rural_employment_sorted_by_wage() const {
+    std::set<Ref<FactoryTemplate>, FactoryTemplate::FactoryWageCompare> s;
     for (const auto &tile: terminal_tiles) {
         Ref<FactoryTemplate> fact = TerminalMap::get_instance() -> get_terminal_as<FactoryTemplate>(tile);
         if (fact.is_null()) continue;
 
         float wage = fact -> get_wage();
-        if (fact->is_hiring(pop) && wage > max_wage) {
-            best_fact = fact;
-            max_wage = wage;
+        if (fact->is_hiring(rural)) {
+            s.insert(fact);
         }
-
     }
-	return best_fact;
+    return s;
 }
 
-Ref<FactoryTemplate> Province::find_urban_employment(BasePop* pop) const {
-    float max_wage = 0.0;
-    Ref<FactoryTemplate> best_fact = nullptr;
-    for (const Vector2i& tile: get_town_tiles()) {
-        Ref<Town> town = TerminalMap::get_instance() -> get_town(tile);
+std::set<Ref<FactoryTemplate>, FactoryTemplate::FactoryWageCompare> Province::get_town_employment_sorted_by_wage(Vector2i town_location) const {
+    Ref<Town> town_ref = TerminalMap::get_instance()->get_town(town_location);
+    ERR_FAIL_COND_V_MSG(town_ref.is_null(), (std::set<Ref<FactoryTemplate>, FactoryTemplate::FactoryWageCompare>()), "Location sent is to a null town");
+    return town_ref->get_employment_sorted_by_wage(town);
+}
 
-        if (town.is_null()) continue;
-
-        Ref<FactoryTemplate> fact = town -> find_employment(pop);
-        
-        if (fact.is_null()) continue;
-        
-        if (fact -> get_wage() > max_wage) {
-            best_fact = fact;
-            max_wage = fact -> get_wage();
-        }
-    }
-    return best_fact;
+Ref<Town> Province::get_closest_town_to_pop(BasePop* pop) const {
+    return TerminalMap::get_instance()->get_town(closest_town_to_tile.at(pop->get_location()));
 }
 
 void Province::month_tick() {
@@ -620,7 +663,7 @@ void Province::sell_to_pops() {
             // Rural pops may exist in province without town
             continue;
         }
-        Ref<Town> town = TerminalMap::get_instance()->get_town(closest_town_to_tile[pop->get_location()]);
+        Ref<Town> town = get_closest_town_to_pop(pop);
         if (town.is_null()) {
             print_error("Towns and terminals are desynced at " + pop->get_location());
             continue;
@@ -635,7 +678,7 @@ void Province::sell_to_pops() {
             // Peasant pops may exist in province without town
             continue;
         }
-        Ref<Town> town = TerminalMap::get_instance()->get_town(closest_town_to_tile[pop->get_location()]);
+        Ref<Town> town = get_closest_town_to_pop(pop);
         if (town.is_null()) {
             print_error("Towns and terminals are desynced at " + pop->get_location());
             continue;

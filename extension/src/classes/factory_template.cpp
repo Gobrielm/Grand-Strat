@@ -26,7 +26,6 @@ void FactoryTemplate::_bind_methods() {
 
     ClassDB::bind_method(D_METHOD("get_last_month_income"), &FactoryTemplate::get_last_month_income);
 
-    ClassDB::bind_method(D_METHOD("is_hiring", "pop"), &FactoryTemplate::is_hiring);
     ClassDB::bind_method(D_METHOD("is_firing"), &FactoryTemplate::is_firing);
     ClassDB::bind_method(D_METHOD("get_wage"), &FactoryTemplate::get_wage);
 
@@ -35,8 +34,6 @@ void FactoryTemplate::_bind_methods() {
 
     ClassDB::bind_method(D_METHOD("day_tick"), &FactoryTemplate::day_tick);
     ClassDB::bind_method(D_METHOD("month_tick"), &FactoryTemplate::month_tick);
-
-    ADD_SIGNAL(MethodInfo("Check_Tile_Magnitude", PropertyInfo(Variant::OBJECT, "fact"), PropertyInfo(Variant::INT, "curr_mag")));
 }
 
 FactoryTemplate::FactoryTemplate() {}
@@ -188,13 +185,6 @@ int FactoryTemplate::get_cost_for_upgrade() {
     return COST_FOR_UPGRADE;
 }
 
-void FactoryTemplate::check_for_upgrade() {
-    //Signal will check with cargo_values to see if it can upgrade
-    if (get_inputs().size() == 0 && get_outputs().size() == 1) {
-        emit_signal("Check_Tile_Magnitude", this, get_level_without_employment());
-    }
-}
-
 void FactoryTemplate::upgrade() {
     int cost = get_cost_for_upgrade();
     if (get_cash() >= cost && can_factory_upgrade()) {
@@ -243,8 +233,8 @@ float FactoryTemplate::get_last_month_income() const {
     return income_list.front();
 }
 
-bool FactoryTemplate::is_hiring(const BasePop* pop) const {
-    return recipe->is_pop_needed(pop) && get_theoretical_gross_profit() > 0; // TODO: Check requirements
+bool FactoryTemplate::is_hiring(PopTypes pop_type) const {
+    return recipe->is_pop_type_needed(pop_type) && get_theoretical_gross_profit() > 0; // TODO: Check requirements
 }
 
 bool FactoryTemplate::is_firing() const {
@@ -255,7 +245,7 @@ bool FactoryTemplate::is_firing() const {
 }
 
 float FactoryTemplate::get_wage() const {
-    float gross_profit = std::min(float(get_theoretical_gross_profit() * 0.9), get_cash());
+    float gross_profit = std::min(float(get_theoretical_gross_profit()), get_cash());
     
     if (!recipe->get_pops_needed_num()) return 0;
     
@@ -289,7 +279,7 @@ float FactoryTemplate::get_real_gross_profit(int months_to_average) const {
 }
 
 void FactoryTemplate::employ_pop(BasePop* pop) {
-    if (is_hiring(pop)) {
+    if (is_hiring(pop->get_type())) {
         recipe->add_pop(pop);
         pop->employ(terminal_id, get_wage());
         pop->set_location(get_location());

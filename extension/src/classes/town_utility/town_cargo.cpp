@@ -62,6 +62,7 @@ void TownCargo::pay_fees(float &total_price) {
 
 void TownCargo::transfer_cargo(int p_amount) {
     amount -= p_amount;
+    ERR_FAIL_COND_MSG(amount < 0, "Transfered too much cargo leaving amount at " + String::num(amount));
 }
 
 void TownCargo::return_cargo() {

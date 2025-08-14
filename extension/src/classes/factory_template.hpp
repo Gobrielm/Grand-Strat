@@ -10,6 +10,7 @@ using namespace godot;
 
 class Recipe;
 class BasePop;
+enum PopTypes;
 
 class FactoryTemplate : public Broker {
     GDCLASS(FactoryTemplate, Broker)
@@ -66,14 +67,13 @@ public:
     int get_level_without_employment() const;
     bool is_max_level() const;
     static int get_cost_for_upgrade();
-    void check_for_upgrade();
     void upgrade();
     void admin_upgrade();
     void update_income_array();
     float get_last_month_income() const;
 
     // Employment
-    bool is_hiring(const BasePop* pop) const;
+    bool is_hiring(PopTypes pop_type) const;
     bool is_firing() const;
     float get_wage() const;
     float get_theoretical_gross_profit() const;
@@ -85,4 +85,17 @@ public:
     // Process Hooks
     virtual void day_tick();
     virtual void month_tick();
+
+
+    struct FactoryWageCompare {
+        bool operator()(const Ref<FactoryTemplate>& a, const Ref<FactoryTemplate>& b) const {
+            float a_wage = a->get_wage();
+            float b_wage = a->get_wage();
+            if (a_wage == b_wage) {
+                return &a > &b;
+            }
+            return a_wage > b_wage; // highest wage first
+        }
+    };
+
 };

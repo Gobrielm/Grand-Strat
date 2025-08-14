@@ -13,8 +13,6 @@ void BasePop::_bind_methods() {
     ClassDB::bind_method(D_METHOD("employ", "wage"), &BasePop::employ);
     ClassDB::bind_method(D_METHOD("fire"), &BasePop::fire);
     ClassDB::bind_method(D_METHOD("get_income"), &BasePop::get_income);
-    ClassDB::bind_method(D_METHOD("is_income_acceptable", "p_income"), &BasePop::is_income_acceptable);
-    ClassDB::bind_method(D_METHOD("get_expected_income"), &BasePop::get_expected_income);
     ClassDB::bind_method(D_METHOD("get_sol"), &BasePop::get_sol);
     ClassDB::bind_method(D_METHOD("buy_good", "type", "price"), &BasePop::buy_good);
     ClassDB::bind_method(D_METHOD("get_education_level"), &BasePop::get_education_level);
@@ -222,13 +220,16 @@ float BasePop::get_income() const {
     return income;
 }
 
-bool BasePop::is_income_acceptable(float p_income) const {
-    return p_income > get_expected_income() && p_income > get_income();
+bool BasePop::is_wage_acceptable(float p_wage) const {
+    return p_wage > income;
 }
 
-float BasePop::get_expected_income() const {
-    //TODO
-    return 0;
+float BasePop::get_expected_income(std::unordered_map<int, float> current_prices) const { // TODO: For now only care about grain
+    float exp_income = 0;
+    for (const auto& [type, amount]: get_base_needs()) {
+        exp_income += current_prices.at(type) * amount;
+    }
+    return exp_income;
 }
 
 float BasePop::get_sol() const {
@@ -269,8 +270,9 @@ float BasePop::get_buy_price(int type, float current_price) const {
 }
 
 float BasePop::get_buy_price_for_needed_good(int type, float current_price) const {
-    float available_money = std::min(std::max(income, current_price), wealth); // Save a bit
     float needed = float(get_desired(type)) / get_max_storage(type); // 0 - 1;
+    float mult = (needed == 1) ? (1 + ((rand() % 5) / 100.0)): 1;
+    float available_money = std::min(std::max(income, current_price * mult), wealth); // Save a bit
     if (needed == 0) return 0;
 
     float total_needed = needed;
@@ -292,7 +294,7 @@ float BasePop::get_buy_price_for_wanted_good(int type, float current_price) cons
         return 0;
     }
 
-    float available_money = income * 0.95; // Save a bit
+    float available_money = income; // Save a bit
     
     float wanted = float(get_desired(type)) / get_max_storage(type); // 0 - 1;
     if (wanted == 0) return 0;
@@ -339,16 +341,16 @@ int BasePop::get_desired(int type) const {
     if (!internal_storage.count(type)) {
         return 0;
     }
-    int amount = int(get_max_storage(type) - internal_storage.at(type));
-    if ((income == 0.0 || !are_needs_met()) && !get_base_needs().count(type)) {
-        return 0; // Don't buy if not neccessary and no job
+    int amount = std::max(int(get_max_storage(type) - internal_storage.at(type)), 0);
+    if (income == 0 && !get_base_needs().count(type)) { // Don't buy if not neccessary and no job
+        return 0; 
     }
 	
 	return amount;
 }
 
 int BasePop::get_desired(int type, float price) const {
-    int amount = std::min(int(wealth / price), int(get_max_storage(type) - internal_storage.at(type)));
+    int amount = std::max(std::min(int(wealth / price), int(get_max_storage(type) - internal_storage.at(type))), 0);
     if (income == 0.0 && !get_base_needs().count(type)) {
         return 0; // Don't buy if not neccessary and no job
     }

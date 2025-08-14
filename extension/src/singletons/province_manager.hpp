@@ -15,8 +15,6 @@ using namespace godot;
 class ProvinceManager : public RefCounted {
     GDCLASS(ProvinceManager, RefCounted);
 
-
-    mutable std::mutex m;
     mutable std::shared_mutex province_mutex;
     static Ref<ProvinceManager> singleton_instance;
     std::unordered_map<int, Province*> provinces;
@@ -29,12 +27,14 @@ class ProvinceManager : public RefCounted {
 
     std::thread month_tick_checker; //used to check if next day is ready without blocking
     std::mutex month_tick_checker_mutex;
+    bool month_tick_flag = false;
     std::condition_variable month_tick_checker_cv;
 
     void month_tick_check();
 
     void month_tick_helper();
     std::vector<std::thread> worker_threads;
+    mutable std::mutex provinces_to_process_mutex;
     std::vector<Province*> provinces_to_process;
     std::condition_variable condition;
     std::atomic<bool> stop = false;
@@ -42,6 +42,7 @@ class ProvinceManager : public RefCounted {
     std::atomic<int> jobs_remaining = 0;
     std::condition_variable jobs_done_cv;
     std::mutex jobs_done_mutex;
+    
 
 protected:
     static void _bind_methods();

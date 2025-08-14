@@ -44,6 +44,7 @@ Town::Town(): Broker(Vector2i(0, 0), 0) {
     for (const auto& [type, __]: CargoInfo::get_instance()->get_base_prices()) {
         current_totals[type] = 0;
         current_prices[type] = local_pricer->get_local_price(type);
+        cargo_sell_orders[type];
     }
 }
 
@@ -53,6 +54,7 @@ Town::Town(Vector2i new_location): Broker(new_location, 0) {
     for (const auto& [type, __]: CargoInfo::get_instance()->get_base_prices()) {
         current_totals[type] = 0;
         current_prices[type] = local_pricer->get_local_price(type);
+        cargo_sell_orders[type];
     }
 }
 
@@ -160,22 +162,27 @@ void Town::sell_to_pop(BasePop* pop) { // Called from Province, do not call loca
         std::scoped_lock lock(m);
 
         for (auto& [type, ms] : cargo_sell_orders) {
-            auto sell_it = ms.begin();
-            TownCargo* sell_order;
             int desired = pop->get_desired(type);
             
             if (desired == 0) {
                 continue;
             }
+            
+            auto sell_it = ms.begin();
+            TownCargo* sell_order;
+            
 
             local_pricer->add_demand(type, desired);
+
+            float ten_theo_price = round(pop->get_buy_price(type, get_local_price_unsafe(type)) * 10);
+            buy_orders_price_map[type][ten_theo_price] += desired; // Only add to buy_orders once
 
             while (sell_it != ms.end()) {
                 sell_order = *sell_it;
 
                 const float seller_price = sell_order->price;
                 const float buyer_price = pop->get_buy_price(type, seller_price);
-                buy_orders_price_map[type][round(buyer_price * 10)] += desired;
+
                 if (std::isnan(seller_price)) {
                     ERR_FAIL_MSG("seller price is nan");
                 }
@@ -235,19 +242,17 @@ int Town::get_total_pops() const {
     return town_pop_ids.size();
 }
 
-Ref<FactoryTemplate> Town::find_employment(BasePop* pop) const {
-    float max_wage = 0.0;
-    Ref<FactoryTemplate> best_fact = nullptr;
+std::set<Ref<FactoryTemplate>, FactoryTemplate::FactoryWageCompare> Town::get_employment_sorted_by_wage(PopTypes pop_type) const {
+    std::set<Ref<FactoryTemplate>, FactoryTemplate::FactoryWageCompare> s;
 
     std::scoped_lock lock(internal_factories_mutex);
     for (const auto &[__, fact_vector]: internal_factories) {
         for (const auto &fact: fact_vector) {
-            if (fact->is_hiring(pop) && fact -> get_wage() > max_wage)
-                best_fact = fact;
-                max_wage = fact -> get_wage();
+            if (fact->is_hiring(pop_type))
+                s.insert(fact);
         }
     }
-	return best_fact;
+	return s;
 }
 
 //Selling to brokers
@@ -404,6 +409,11 @@ Dictionary Town::get_local_prices() const {
     return d;
 }
 
+std::unordered_map<int, float> Town::get_local_prices_map() {
+    std::scoped_lock lock(m);
+    return current_prices; 
+}
+
 void Town::buy_cargo(int type, int amount, float price, int p_terminal_id) {
     TownCargo* new_town_cargo = new TownCargo(type, amount, price, p_terminal_id);
     {
@@ -442,6 +452,7 @@ void Town::encode_cargo(TownCargo* town_cargo) {
 
     local_pricer -> add_supply(type, amount);
     cargo_sell_orders[type].insert(town_cargo);
+    town_cargo_tracker[town_cargo->terminal_id][type] = town_cargo;
     current_totals[type] += amount;
 }
 
@@ -527,29 +538,39 @@ void Town::update_buy_orders() {
 }
 
 void Town::update_local_prices() {
-    for (const auto &[type, __]: cargo_sell_orders) {
+    std::vector<float> v;
+    {
+        std::scoped_lock lock(m);
+        v = local_pricer -> get_last_month_demand();
+    }
+
+    for (int type = 0; type < v.size(); type++) {
         update_local_price(type);
     }
 }
 
-void Town::update_local_price(int type) {
+void Town::update_local_price(int type) { // Chooses prices based on the highest trade volume, ie buy_orders + seller_orders at a price
     std::unordered_map<int, int> buy_prices; // Multiples and rounds price by 10
     std::unordered_map<int, int> sell_prices; // Multiples and rounds price by 10
     std::scoped_lock lock(m);
-    if (cargo_sell_orders.size() == 0 || buy_orders_price_map.size() == 0) return;
+    if (cargo_sell_orders[type].size() == 0 && buy_orders_price_map[type].size() == 0) return;
+
     for (const auto& cargo: cargo_sell_orders[type]) {
         int ten_price = (round(cargo->price * 10.0)); // Rounds to nearest tenth
         buy_prices[ten_price] += cargo->amount;
+        sell_prices.emplace(ten_price, 0);
     }
     for (const auto& [ten_price, amount]: buy_orders_price_map[type]) {
         sell_prices[ten_price] += amount;
+        buy_prices.emplace(ten_price, 0);
     }
-    int diff = -1;
+    buy_orders_price_map.clear();
+    int mag = 0;
     for (const auto& [ten_price, amount]: buy_prices) {
-        int temp_diff = abs(sell_prices[ten_price] - amount);
+        int temp_mag = sell_prices[ten_price] + amount;
         float price = ten_price / 10.0;
-        if (temp_diff < diff || diff == -1) {
-            diff = temp_diff;
+        if (temp_mag > mag) {
+            mag = temp_mag;
             current_prices[type] = price;
         }
     }
@@ -562,7 +583,7 @@ void Town::day_tick() {
 
 void Town::month_tick() {
 
-    update_local_prices();
+    // update_local_prices();
     update_buy_orders();
     {
         std::scoped_lock lock(m);

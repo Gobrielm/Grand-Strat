@@ -40,8 +40,8 @@ Dictionary Recipe::get_outputs_dict() const {
     return d;
 }
 
-bool Recipe::is_pop_needed(const BasePop* pop) const {
-    return does_need_pop_type(pop->get_type());
+bool Recipe::is_pop_type_needed(PopTypes pop_type) const {
+    return does_need_pop_type(pop_type);
 }
 
 bool Recipe::does_need_pop_type(PopTypes pop_type) const {

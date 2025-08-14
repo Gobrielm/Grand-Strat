@@ -26,7 +26,7 @@ class Recipe {
     Recipe(const Recipe& other);
     Dictionary get_inputs_dict() const;
     Dictionary get_outputs_dict() const;
-    bool is_pop_needed(const BasePop* pop) const;
+    bool is_pop_type_needed(PopTypes pop_type) const;
     void add_pop(BasePop* pop);
     
     int get_employement() const;

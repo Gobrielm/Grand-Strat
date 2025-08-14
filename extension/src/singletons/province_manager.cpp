@@ -8,7 +8,7 @@ using namespace godot;
 Ref<ProvinceManager> ProvinceManager::singleton_instance = nullptr;
 
 ProvinceManager::ProvinceManager() {
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 6; i++) {
         worker_threads.push_back(std::thread(&ProvinceManager::thread_processor, this));
     }
     month_tick_checker = std::thread(&ProvinceManager::month_tick_check, this);
@@ -251,6 +251,10 @@ std::unordered_set<int> ProvinceManager::get_country_provinces(int country_id) c
 }
 
 void ProvinceManager::month_tick() {
+    {
+        std::scoped_lock lock(month_tick_checker_mutex);
+        month_tick_flag = true;
+    }
     month_tick_checker_cv.notify_one();
 }
 
@@ -258,13 +262,13 @@ void ProvinceManager::month_tick_check() {
     while (!stop) {
         {
             std::unique_lock<std::mutex> lock(month_tick_checker_mutex); // Waits for month tick
-            month_tick_checker_cv.wait(lock);
-            
+            month_tick_checker_cv.wait(lock, [this] { return stop || month_tick_flag; } );
+            month_tick_flag = false;
         }
         TerminalMap::get_instance()->pause_time(); // Pause time while dealing with last months work
         {   
             std::unique_lock<std::mutex> lock(jobs_done_mutex);
-            jobs_done_cv.wait(lock, [this](){ // Sleeps and waits for jobs to be done 
+            jobs_done_cv.wait(lock, [this] { // Sleeps and waits for jobs to be done 
                 return jobs_remaining == 0; 
             });
         }
@@ -276,8 +280,8 @@ void ProvinceManager::month_tick_check() {
 
 void ProvinceManager::month_tick_helper() {
     {
+        std::unique_lock lock1(provinces_to_process_mutex);
         std::shared_lock lock(province_mutex); // Lock for provinces
-        std::unique_lock lock1(m); // Lock for provinces to process
         for (const auto &[__, province]: provinces) {
             provinces_to_process.push_back(province);
         }
@@ -293,7 +297,7 @@ void ProvinceManager::thread_processor() {
         Province* to_process = nullptr;
 
         {
-            std::unique_lock<std::mutex> lock(m);
+            std::unique_lock<std::mutex> lock(provinces_to_process_mutex);
             condition.wait(lock, [this]() {
                 return !provinces_to_process.empty() || stop;
             });
@@ -309,9 +313,9 @@ void ProvinceManager::thread_processor() {
         to_process->month_tick();
 
         if (--jobs_remaining == 0) {
-            jobs_done_cv.notify_one();  // Wake main thread
             std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - start_time;
-            // print_line("Provinces Month Tick Took " + String::num_scientific(elapsed.count()) + " seconds");
+            print_line("Provinces Month Tick Took " + String::num_scientific(elapsed.count()) + " seconds");
+            jobs_done_cv.notify_one();  // Wake main thread
         }
     }
 }
