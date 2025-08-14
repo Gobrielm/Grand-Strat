@@ -77,23 +77,46 @@ int Province::get_population() const {
     return population;
 }
 
- int Province::get_demand_for_grain() const {
+float Province::get_theoretical_supply_of_grain_from_peasants() const {
     std::unique_ptr<Recipe> peasant_recipe = SubsistenceFarm::get_recipe();
+    float grain_o = (peasant_recipe->get_outputs().begin())->second;
+    int pops_needed = peasant_recipe->get_pops_needed_num();
+
+    std::scoped_lock lock(m);
+    return (grain_o * pop_types.at(peasant).size()) / pops_needed;
+}
+
+float Province::get_demand_for_cargo(int type) const {
     float total_demand = 0;
     {
         std::scoped_lock lock(m);
-        total_demand += pop_types.at(rural).size() * BasePop::get_base_need(rural, 10); // Rural demand
-        total_demand += pop_types.at(town).size() * BasePop::get_base_need(town, 10); // Town demand
-        total_demand += pop_types.at(peasant).size() * BasePop::get_base_need(peasant, 10); // Peasant demand
+        total_demand += pop_types.at(rural).size() * BasePop::get_base_need(rural, type); // Rural demand
+        total_demand += pop_types.at(town).size() * BasePop::get_base_need(town, type); // Town demand
+        total_demand += pop_types.at(peasant).size() * BasePop::get_base_need(peasant, type); // Peasant demand
+    }
+    return total_demand;
+}
 
-        float grain_o = (peasant_recipe->get_outputs().begin())->second;
-        int pops_needed = peasant_recipe->get_pops_needed_num();
-        total_demand -= (grain_o * pop_types.at(peasant).size()) / pops_needed;
+std::unordered_map<int, float> Province::get_demand_for_needed_goods() const {
+    std::unordered_map<int, float> toReturn;
+    std::unordered_map<PopTypes, size_t> pop_size = {
+        {rural, pop_types.at(rural).size()},
+        {town, pop_types.at(town).size()},
+        {peasant, pop_types.at(peasant).size()}
+    };
+    for (const auto& [type, amount]: BasePop::get_base_needs(rural)) {
+        toReturn[type] += amount * pop_size[rural];   
     }
-    if (total_demand < 0) {
-        return 0;
+    for (const auto& [type, amount]: BasePop::get_base_needs(peasant)) {
+        toReturn[type] += amount * pop_size[peasant];   
     }
-    return round(total_demand);
+    for (const auto& [type, amount]: BasePop::get_base_needs(town)) {
+        toReturn[type] += amount * pop_size[town];   
+    }
+
+    toReturn[10] -= get_theoretical_supply_of_grain_from_peasants();
+    
+    return toReturn;
 }
 
 void Province::add_population(int population_to_add) {

@@ -25,8 +25,8 @@ void RecipeInfo::add_recipes() {
     create_recipe({{}, {{"coal", 1.0f}}}, {{rural, 1}});
     create_recipe({{}, {{"copper", 1.0f}}}, {{rural, 1}});
     create_recipe({{}, {{"zinc", 1.0f}}}, {{rural, 1}});
-    create_recipe({{}, {{"wood", 1.0f}}}, {{rural, 1}});
-    create_recipe({{}, {{"salt", 1.0f}}}, {{rural, 1}});
+    create_recipe({{}, {{"wood", 0.1f}}}, {{rural, 2}});
+    create_recipe({{}, {{"salt", 0.05f}}}, {{rural, 2}});
     create_recipe({{}, {{"grain", 0.1f}}}, {{rural, 2}});
     create_recipe({{}, {{"livestock", 1.0f}}}, {{rural, 1}});
     create_recipe({{}, {{"fish", 1.0f}}}, {{rural, 1}});

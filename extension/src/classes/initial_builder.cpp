@@ -38,6 +38,7 @@ void InitialBuilder::build_initital_factories() {
         if (province->has_town()) {
             build_factory_type(CargoInfo::get_instance()->get_cargo_type("grain"), province);
             build_factory_type(CargoInfo::get_instance()->get_cargo_type("wood"), province);
+            build_factory_type(CargoInfo::get_instance()->get_cargo_type("salt"), province);
             build_t2_factory_in_towns(province);
         }
     }
@@ -74,12 +75,17 @@ void InitialBuilder::build_factory_type(int type, Province* province) {
 }
 
 int InitialBuilder::get_levels_to_build(int type, Province* province) const {
-    int num_pop = province->get_number_of_city_pops();
+    int num_pop = province->get_number_of_pops();
     String cargo_name = CargoInfo::get_instance()->get_cargo_name(type);
+    std::unordered_map<int, float> cargo_needed = province->get_demand_for_needed_goods();
+    ERR_FAIL_COND_V_MSG(!cargo_needed.count(type), 0, "No Demand for good of type: " + cargo_name);
+    float demand = round(cargo_needed.at(type));
     if (cargo_name == "grain") {
-        return get_levels_to_build_helper(type, province->get_demand_for_grain());
+        return get_levels_to_build_helper(type, demand);
     } else if (cargo_name == "wood") {
-        return get_levels_to_build_helper(type, num_pop / 4);
+        return get_levels_to_build_helper(type, demand / 3 * 2);
+    } else if (cargo_name == "salt") {
+        return get_levels_to_build_helper(type, demand / 3 * 2);
     }
     return 0;
 }
@@ -121,14 +127,20 @@ bool InitialBuilder::will_factory_by_cut_off(const Vector2i &factory_tile) const
 
 void InitialBuilder::build_t2_factory_in_towns(Province* province) {
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
-    Recipe* lumber_mill_recipe = RecipeInfo::get_instance()->get_secondary_recipe_for_type(CargoInfo::get_instance()->get_cargo_type("lumber"));
-    ERR_FAIL_COND_MSG(lumber_mill_recipe == nullptr, "Lumber recipe not found");
+    Ref<CargoInfo> cargo_info = CargoInfo::get_instance();
     for (const Vector2i &tile: province->get_town_tiles()) {
         Ref<Town> town = terminal_map->get_town(tile);
-        Ref<AiFactory> factory = Ref<AiFactory>(memnew(AiFactory(tile, 0, lumber_mill_recipe)));
-        TerminalMap::get_instance()->create_isolated_terminal(factory);
-        town->add_factory(factory);
+        build_t2_factory_in_town(town, cargo_info->get_cargo_type("lumber"));
+        build_t2_factory_in_town(town, cargo_info->get_cargo_type("bread"));
     }
+}
+
+void InitialBuilder::build_t2_factory_in_town(Ref<Town> town, int output_type) {
+    Recipe* recipe = RecipeInfo::get_instance()->get_secondary_recipe_for_type(output_type);
+    ERR_FAIL_COND_MSG(recipe == nullptr, "Recipe is null from type: " + CargoInfo::get_instance()->get_cargo_name(output_type));
+    Ref<AiFactory> factory = Ref<AiFactory>(memnew(AiFactory(town->get_location(), 0, recipe)));
+    TerminalMap::get_instance()->create_isolated_terminal(factory);
+    town->add_factory(factory);
 }
 
 void InitialBuilder::build_and_connect_depots() {

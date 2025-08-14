@@ -98,6 +98,8 @@ func get_atlas_cell(primary_type: int = -1) -> Vector2i:
 			return Vector2i(3, 0)
 		elif primary_type == 10 or primary_type == 13 or primary_type == 14 or (primary_type >= 16 and primary_type <= 19):
 			return Vector2i(4, 0)
+		elif primary_type == 8:
+			return Vector2i(1, 0)
 	return Vector2i(4, 1)
 
 func create_construction_site(_player_id: int, coords: Vector2i) -> void:

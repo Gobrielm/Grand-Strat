@@ -167,6 +167,14 @@ float BasePop::get_base_want(PopTypes pop_type, int type) {
     return specialities[pop_type][type];
 }
 
+std::unordered_map<int, float> BasePop::get_base_needs(PopTypes pop_type) {
+    return base_needs[pop_type];
+}
+
+std::unordered_map<int, float> BasePop::get_base_wants(PopTypes pop_type) {
+    return specialities[pop_type];
+}
+
 std::unordered_map<int, float> BasePop::get_base_needs() const {
     return base_needs.at(pop_type);
 }

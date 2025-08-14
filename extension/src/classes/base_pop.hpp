@@ -73,6 +73,8 @@ class BasePop : public Object {
     PopTypes get_type() const;
     static float get_base_need(PopTypes pop_type, int type);
     static float get_base_want(PopTypes pop_type, int type);
+    static std::unordered_map<int, float> get_base_needs(PopTypes pop_type);
+    static std::unordered_map<int, float> get_base_wants(PopTypes pop_type);
     std::unordered_map<int, float> get_base_needs() const;
     std::unordered_map<int, float> get_base_wants() const;
 

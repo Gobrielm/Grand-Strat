@@ -48,7 +48,9 @@ class Province : public Object {
     //Godot Facing
     void add_tile(Vector2i coords);
     int get_population() const;
-    int get_demand_for_grain() const; // Used exclusively for initial builder
+    std::unordered_map<int, float> get_demand_for_needed_goods() const;
+    float get_theoretical_supply_of_grain_from_peasants() const;
+    float get_demand_for_cargo(int type) const;
     void add_population(int population_to_add);
     void set_population(int new_population);
     int get_province_id() const;
