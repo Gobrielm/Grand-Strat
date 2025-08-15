@@ -33,6 +33,12 @@ func change_pause(p_pause: bool) -> void:
 	paused = p_pause
 	m.unlock()
 
+func frontend_pause(p_pause: bool) -> void:
+	if p_pause:
+		backend_pause()
+	else:
+		backend_unpause()
+
 func backend_pause() -> void:
 	m.lock()
 	threads_request_pause += 1

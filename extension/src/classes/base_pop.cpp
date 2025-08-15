@@ -271,17 +271,12 @@ float BasePop::get_buy_price(int type, float current_price) const {
 
 float BasePop::get_buy_price_for_needed_good(int type, float current_price) const {
     float needed = float(get_desired(type)) / get_max_storage(type); // 0 - 1;
-    float mult = (needed == 1) ? (1 + ((rand() % 5) / 100.0)): 1;
-    float available_money = std::min(std::max(income, current_price * mult), wealth); // Save a bit
     if (needed == 0) return 0;
 
-    float total_needed = needed;
-    for (const auto& [other_type, amount]: get_base_needs()) {
-        if (type == other_type) continue;
-        float weighted_need = float(get_desired(other_type)) / get_max_storage(other_type); // 0 - 1;
-        total_needed += weighted_need;
-    }
-    float price = available_money * (needed / total_needed);
+    float mult = (needed == 1) ? (1 + ((rand() % 5) / 100.0)): 1;
+    float available_money = std::min(std::max(income, current_price * mult), wealth);
+
+    float price = available_money;
     if (price > current_price) {
         return (price + current_price) / 2;
     } else {

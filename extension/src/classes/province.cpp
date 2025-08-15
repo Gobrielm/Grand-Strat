@@ -496,8 +496,8 @@ int Province::count_pops() const {
 }
 
 void Province::find_employment_for_pops() {
-    // find_employment_for_rural_pops();
-    // find_employment_for_town_pops();
+    find_employment_for_rural_pops();
+    find_employment_for_town_pops();
 }
 
 void Province::find_employment_for_rural_pops() {

@@ -160,7 +160,7 @@ void Town::sell_to_pop(BasePop* pop) { // Called from Province, do not call loca
     
     {   
         std::scoped_lock lock(m);
-
+        
         for (auto& [type, ms] : cargo_sell_orders) {
             int desired = pop->get_desired(type);
             
@@ -335,18 +335,17 @@ void Town::distribute_type_to_broker(int type, Ref<Broker> broker, Ref<RoadDepot
         float buyer_price = broker->get_local_price_unsafe(type);
         float seller_price = town_cargo->price;
 
-        if ((buyer_price * (1 - fee)) < seller_price) return; // If seller wants more than buyer is willing to pay taking into account fee, then simply don't sell
+        if ((buyer_price / (1 + fee)) > seller_price) return; // If seller wants more than buyer is willing to pay taking into account fee, then simply don't sell
 
         float price = buyer_price; // Just use buyer price, why not
         int desired = broker -> get_desired_cargo_unsafe(type, price);
         if (Ref<Town>(broker).is_valid()) {
-            desired = std::max(broker->get_diff_between_demand_and_supply_unsafe(type), 0.0f);
+            desired = std::max(broker->get_diff_between_demand_and_supply_unsafe(type), 0.0f); // TODO: Doesn't work entirely as intended
         }
 
         local_pricer->add_demand(type, desired);
 
         while (desired > 0) {
-            
 
             int amount = std::min(desired, town_cargo->amount);
             if (!broker->can_afford_unsafe(amount * price)) break; // If cannot afford then break out
@@ -367,9 +366,11 @@ void Town::distribute_type_to_broker(int type, Ref<Broker> broker, Ref<RoadDepot
                     break;
                 }
                 town_cargo = *it;
+                seller_price = town_cargo->price;
+                if ((buyer_price / (1 + fee)) > seller_price) break;
+            } else {
+                break; // Didn't buy the full amount, must not afford it all?
             }
-            seller_price = town_cargo->price;
-            if ((buyer_price * (1 - fee)) < seller_price) return;
         }
     }
     // No locks at this point
@@ -557,14 +558,14 @@ void Town::update_local_price(int type) { // Chooses prices based on the highest
 
     for (const auto& cargo: cargo_sell_orders[type]) {
         int ten_price = (round(cargo->price * 10.0)); // Rounds to nearest tenth
-        buy_prices[ten_price] += cargo->amount;
-        sell_prices.emplace(ten_price, 0);
-    }
-    for (const auto& [ten_price, amount]: buy_orders_price_map[type]) {
-        sell_prices[ten_price] += amount;
+        sell_prices[ten_price] += cargo->amount;
         buy_prices.emplace(ten_price, 0);
     }
-    buy_orders_price_map.clear();
+    for (const auto& [ten_price, amount]: buy_orders_price_map[type]) {
+        buy_prices[ten_price] += amount;
+        sell_prices.emplace(ten_price, 0);
+    }
+    buy_orders_price_map[type].clear();
     int mag = 0;
     for (const auto& [ten_price, amount]: buy_prices) {
         int temp_mag = sell_prices[ten_price] + amount;
@@ -583,7 +584,7 @@ void Town::day_tick() {
 
 void Town::month_tick() {
 
-    // update_local_prices();
+    update_local_prices();
     update_buy_orders();
     {
         std::scoped_lock lock(m);

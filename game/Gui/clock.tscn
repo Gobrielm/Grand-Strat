@@ -48,8 +48,9 @@ offset_top = 8.0
 offset_right = 262.0
 offset_bottom = 66.0
 scale = Vector2(0.5, 0.5)
+toggle_mode = true
 icon = ExtResource("2_5dn2f")
 flat = true
 
 [connection signal="drag_ended" from="game_speed" to="." method="_on_game_speed_drag_ended"]
-[connection signal="pressed" from="pause" to="." method="_on_pause_pressed"]
+[connection signal="toggled" from="pause" to="." method="_on_pause_toggled"]
