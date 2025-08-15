@@ -26,7 +26,7 @@ private:
 
 protected:
     static void _bind_methods();
-    std::unordered_map<int, std::unordered_map<int, int>> buy_orders_price_map; // type -> price * 10 -> amount
+    std::unordered_map<int, std::unordered_map<int, int>> cargo_sold_map; // type -> price * 10 -> amount
     std::unordered_map<int, std::multiset<TownCargo*, TownCargo::TownCargoPtrCompare>> cargo_sell_orders; // Lowest price first
     std::unordered_map<int, std::unordered_map<int, TownCargo*>> town_cargo_tracker; // Owner id -> type -> TownCargo*
     std::unordered_map<int, float> current_prices; // Keep track of prices from last month
@@ -89,6 +89,8 @@ public:
     void age_all_cargo();
     std::multiset<TownCargo *, TownCargo::TownCargoPtrCompare>::iterator return_cargo(std::multiset<TownCargo *, TownCargo::TownCargoPtrCompare>::iterator cargo_it, std::unordered_map<int, std::unordered_map<int, int>>& cargo_to_return);
     bool does_cargo_exist(int p_terminal_id, int type) const;
+
+    void report_sale(int type, float price, float amount);
 
     void update_buy_orders();
     void update_local_prices();

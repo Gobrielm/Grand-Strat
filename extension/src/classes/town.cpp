@@ -171,11 +171,7 @@ void Town::sell_to_pop(BasePop* pop) { // Called from Province, do not call loca
             auto sell_it = ms.begin();
             TownCargo* sell_order;
             
-
-            local_pricer->add_demand(type, desired);
-
-            float ten_theo_price = round(pop->get_buy_price(type, get_local_price_unsafe(type)) * 10);
-            buy_orders_price_map[type][ten_theo_price] += desired; // Only add to buy_orders once
+            local_pricer -> add_demand(type, desired);
 
             while (sell_it != ms.end()) {
                 sell_order = *sell_it;
@@ -202,7 +198,7 @@ void Town::sell_to_pop(BasePop* pop) { // Called from Province, do not call loca
                 if (amount == 0) {
                     break;
                 }
-
+                report_sale(type, price, amount);
                 sell_order->sell_cargo(amount, price, money_to_pay); // Calls with money_to_pay
                 pop->buy_good(type, amount, price);
 
@@ -343,7 +339,7 @@ void Town::distribute_type_to_broker(int type, Ref<Broker> broker, Ref<RoadDepot
             desired = std::max(broker->get_diff_between_demand_and_supply_unsafe(type), 0.0f); // TODO: Doesn't work entirely as intended
         }
 
-        local_pricer->add_demand(type, desired);
+        local_pricer -> add_demand(type, desired);
 
         while (desired > 0) {
 
@@ -354,7 +350,7 @@ void Town::distribute_type_to_broker(int type, Ref<Broker> broker, Ref<RoadDepot
             if (is_depot_valid) 
                 town_cargo_copy->add_fee_to_pay(road_depot->get_terminal_id(), fee);
             cargo_to_send.push_back(town_cargo_copy);
-
+            report_sale(type, price, amount);
             desired -= amount;
             current_totals[type] -= amount;
             town_cargo->transfer_cargo(amount);
@@ -516,6 +512,10 @@ bool Town::does_cargo_exist(int p_terminal_id, int type) const {
     return false;
 }
 
+void Town::report_sale(int type, float price, float amount) {
+    cargo_sold_map[type][round(price * 10)] += amount;
+}
+
 //Economy Stats
 
 void Town::update_buy_orders() {
@@ -550,31 +550,25 @@ void Town::update_local_prices() {
     }
 }
 
-void Town::update_local_price(int type) { // Chooses prices based on the highest trade volume, ie buy_orders + seller_orders at a price
-    std::unordered_map<int, int> buy_prices; // Multiples and rounds price by 10
-    std::unordered_map<int, int> sell_prices; // Multiples and rounds price by 10
+void Town::update_local_price(int type) { // Creates a weighted average of cargo sold
     std::scoped_lock lock(m);
-    if (cargo_sell_orders[type].size() == 0 && buy_orders_price_map[type].size() == 0) return;
+    if (cargo_sell_orders[type].size() == 0 && cargo_sold_map[type].size() == 0) return;
+    if (cargo_sold_map[type].size() != 0 && cargo_sell_orders[type].size() == 0) {
+        //TODO: Build a heurisitc on potentially raising price or smth 
+        return;
+    }
 
-    for (const auto& cargo: cargo_sell_orders[type]) {
-        int ten_price = (round(cargo->price * 10.0)); // Rounds to nearest tenth
-        sell_prices[ten_price] += cargo->amount;
-        buy_prices.emplace(ten_price, 0);
+    int total_weight = 0;
+    float sum_of_weighted_terms = 0;
+    for (const auto& [ten_price, amount]: cargo_sold_map[type]) {
+        float weighted_ave = ten_price / 10.0 * amount;
+        total_weight += amount;
+        sum_of_weighted_terms += weighted_ave;
     }
-    for (const auto& [ten_price, amount]: buy_orders_price_map[type]) {
-        buy_prices[ten_price] += amount;
-        sell_prices.emplace(ten_price, 0);
-    }
-    buy_orders_price_map[type].clear();
-    int mag = 0;
-    for (const auto& [ten_price, amount]: buy_prices) {
-        int temp_mag = sell_prices[ten_price] + amount;
-        float price = ten_price / 10.0;
-        if (temp_mag > mag) {
-            mag = temp_mag;
-            current_prices[type] = price;
-        }
-    }
+
+    current_prices[type] = sum_of_weighted_terms / total_weight;
+
+    cargo_sold_map[type].clear();
 }
 
 // Process Hooks
