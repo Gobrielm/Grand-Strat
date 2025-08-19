@@ -160,7 +160,7 @@ int FactoryTemplate::get_primary_type() const {
 
 void FactoryTemplate::distribute_cargo() {
     for (const auto& [type, __]: get_outputs()) {
-        report_demand_of_brokers(type);
+        survey_broad_market(type);
         distribute_type(type);
     }
 }

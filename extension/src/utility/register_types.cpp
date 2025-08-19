@@ -8,8 +8,6 @@
 #include "../classes/base_pop.hpp"
 #include "../classes/province.hpp"
 #include "../classes/trade_order.hpp"
-#include "../classes/local_price_controller.hpp"
-#include "../classes/factory_local_price_controller.hpp"
 #include "../classes/terminal.hpp"
 #include "../classes/firm.hpp"
 #include "../classes/hold.hpp"
@@ -49,8 +47,6 @@ void initialize_gdextension_types(ModuleInitializationLevel p_level)
 	}
 
 	//--verbose in godot for more details
-	GDREGISTER_CLASS(LocalPriceController);
-	GDREGISTER_CLASS(FactoryLocalPriceController);
 	GDREGISTER_CLASS(MoneyController);
 	GDREGISTER_CLASS(BasePop);
 	GDREGISTER_CLASS(Province);

@@ -25,6 +25,6 @@ void Factory::month_tick() {
     FactoryTemplate::month_tick();
     {
         std::scoped_lock lock(m);
-        local_pricer->adjust_prices();
+        local_pricer->update_local_prices();
     }
 }

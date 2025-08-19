@@ -123,10 +123,6 @@ int Broker::sell_cargo(int type, int amount) {
 }
 
 float Broker::add_cargo_ignore_accepts(int type, float amount) { //Make sure 
-    {
-        std::scoped_lock lock(m);
-        local_pricer -> add_supply(type, amount);
-    }
     return FixedHold::add_cargo_ignore_accepts(type, amount);
 }
 
@@ -136,10 +132,7 @@ void Broker::report_change_in_cash(float amount) {
 }
 
 float Broker::add_cargo(int type, float amount) { // If amount is ever negitive, it will break
-    amount = FixedHold::add_cargo(type, amount);
-    std::scoped_lock lock(m);
-    local_pricer -> add_supply(type, amount);
-    return amount;
+    return FixedHold::add_cargo(type, amount);
 }
 
 void Broker::place_order(int type, int amount, bool buy, float maxPrice) {
@@ -281,7 +274,6 @@ void Broker::add_broker_to_sorted_set(int type, std::unordered_set<int> &s, std:
 
 void Broker::distribute_type_to_broker(int type, Ref<Broker> otherBroker, Ref<RoadDepot> road_depot) { 
     float price1 = get_local_price(type);
-    otherBroker->report_price(type, price1);
     float price2 = otherBroker->get_local_price(type);
     float price = (price1 + price2) / 2;
 
@@ -302,14 +294,7 @@ void Broker::distribute_type_to_broker(int type, Ref<Broker> otherBroker, Ref<Ro
     }
 }
 
-void Broker::report_attempt_to_sell(int type, int amount) {
-    std::scoped_lock lock(m);
-    if (local_pricer && amount > 0) {
-        local_pricer->add_demand(type, amount);
-    }
-}
-
-void Broker::report_demand_of_brokers(int type) {
+void Broker::survey_broad_market(int type) {
     std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> s;
     s.insert(get_location());
     
@@ -317,9 +302,7 @@ void Broker::report_demand_of_brokers(int type) {
         Ref<Broker> broker = TerminalMap::get_instance() -> get_broker(tile);
         if (broker.is_null()) continue;
         s.insert(tile);
-        if (broker->does_accept(type)) {
-            report_attempt_to_sell(type, broker->get_diff_between_demand_and_supply(type));
-        }
+        survey_broker_market(type, broker);
     }
 
     for (const auto& tile: connected_stations) {
@@ -330,17 +313,42 @@ void Broker::report_demand_of_brokers(int type) {
         for (const auto &broker: other_brokers) {
             if (!s.count(broker->get_location())) {
                 s.insert(broker->get_location());
-                report_attempt_to_sell(type, broker->get_diff_between_demand_and_supply(type));
+                survey_broker_market(type, broker);
             }
         }
     }
 }
 
-void Broker::report_price(int type, float price) {}
+void Broker::survey_broker_market(int type, Ref<Broker> broker) {
+    if (broker->does_accept(type)) {
+        float local_price = get_local_price(type);
+        float o_local_price = broker->get_local_price(type);
+        add_surveyed_demand(type, o_local_price, broker->get_desired_cargo(type, o_local_price));
+        broker->add_surveyed_supply(type, local_price, get_desired_cargo(type, local_price));
+    }
+}
 
 float Broker::get_diff_between_demand_and_supply(int type) const {
     std::scoped_lock lock(m);
     return local_pricer->get_demand(type) - local_pricer->get_supply(type);
+}
+
+void Broker::add_surveyed_demand(int type, float price, float amount) {
+    std::scoped_lock lock(m);
+    local_pricer->add_demand(type, price, amount);
+}
+
+void Broker::add_surveyed_supply(int type, float price, float amount) {
+    std::scoped_lock lock(m);
+    local_pricer->add_supply(type, price, amount);
+}
+
+void Broker::add_surveyed_demand_unsafe(int type, float price, float amount) {
+    local_pricer->add_demand(type, price, amount);
+}
+
+void Broker::add_surveyed_supply_unsafe(int type, float price, float amount) {
+    local_pricer->add_supply(type, price, amount);
 }
 
 float Broker::get_diff_between_demand_and_supply_unsafe(int type) const {
@@ -348,27 +356,11 @@ float Broker::get_diff_between_demand_and_supply_unsafe(int type) const {
 }
 
 Dictionary Broker::get_last_month_supply() const {
-    Dictionary d = {};
-    std::vector<float> v;
-    {
-        std::scoped_lock lock(m);
-        v = local_pricer -> get_last_month_supply();
-    }
-    for (int type = 0; type < v.size(); type++) {
-        d[type] = v[type];
-    }
-    return d;
+    std::scoped_lock lock(m);
+    return local_pricer->get_last_month_supply_dict();
 }
 
 Dictionary Broker::get_last_month_demand() const {
-    Dictionary d = {};
-    std::vector<float> v;
-    {
-        std::scoped_lock lock(m);
-        v = local_pricer -> get_last_month_demand();
-    }
-    for (int type = 0; type < v.size(); type++) {
-        d[type] = v[type];
-    }
-    return d;
+    std::scoped_lock lock(m);
+    return local_pricer->get_last_month_demand_dict();
 }

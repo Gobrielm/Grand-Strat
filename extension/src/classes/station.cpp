@@ -49,7 +49,7 @@ float StationWOMethods::get_local_price(int type) const {
         amount_total += order->get_amount();
         market_price += order->get_amount() * broker->get_local_price(type);
     }
-    float max_price = CargoInfo::get_instance() -> get_base_prices().at(type) * LocalPriceController::MAX_DIFF;
+    float max_price = CargoInfo::get_instance() -> get_base_prices().at(type) * 1.5;
     return amount_total == 0 ? max_price : market_price / amount_total;
 }
 

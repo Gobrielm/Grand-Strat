@@ -130,11 +130,6 @@ int ConstructionSite::get_desired_cargo_from_train(int type, float pricePer) con
     return 0;
 }
 
-void ConstructionSite::report_price(int type, float price) {
-    std::scoped_lock lock(m);
-    local_pricer -> move_price(type, price);
-}
-
 //Tickers
 void ConstructionSite::day_tick() {}
 

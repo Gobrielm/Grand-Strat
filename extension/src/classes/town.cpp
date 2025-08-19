@@ -163,7 +163,8 @@ void Town::sell_to_pop(BasePop* pop) { // Called from Province, do not call loca
         
         for (auto& [type, ms] : cargo_sell_orders) {
             int desired = pop->get_desired(type);
-            
+            float pop_price = pop->get_buy_price(type, get_local_price_unsafe(type));
+
             if (desired == 0) {
                 continue;
             }
@@ -171,7 +172,7 @@ void Town::sell_to_pop(BasePop* pop) { // Called from Province, do not call loca
             auto sell_it = ms.begin();
             TownCargo* sell_order;
             
-            local_pricer -> add_demand(type, desired);
+            local_pricer -> add_demand(type, pop_price, desired); // Only add demand since its not part of survey_broad_market()
             local_demand[type] += desired;
 
             while (sell_it != ms.end()) {
@@ -259,7 +260,7 @@ std::set<Ref<FactoryTemplate>, FactoryTemplate::FactoryWageCompare> Town::get_em
 void Town::distribute_cargo() {
     std::vector<float> supply = get_supply();
 	for (int type = 0; type < supply.size(); type++) {
-        report_demand_of_brokers(type);
+        survey_broad_market(type);
         if (cargo_sell_orders[type].empty()) continue;
 		distribute_type(type);
     }
@@ -342,8 +343,6 @@ void Town::distribute_type_to_broker(int type, Ref<Broker> broker, Ref<RoadDepot
         if (Ref<Town>(broker).is_valid()) {
             desired = std::max(broker->get_diff_between_demand_and_supply_unsafe(type) / 30, 0.0f); // TODO: Doesn't work entirely as intended
         }
-
-        if (desired > 0) local_pricer -> add_demand(type, desired);
         
 
         while (desired > 0) {
@@ -457,7 +456,6 @@ void Town::encode_cargo(TownCargo* town_cargo) {
     int type = town_cargo->type;
     int amount = town_cargo->amount;
 
-    local_pricer -> add_supply(type, amount);
     cargo_sell_orders[type].insert(town_cargo);
     town_cargo_tracker[town_cargo->terminal_id][type] = town_cargo;
     current_totals[type] += amount;
@@ -469,7 +467,6 @@ void Town::encode_existing_cargo(TownCargo* existing_town_cargo, const TownCargo
     existing_town_cargo->age = 0;
     int additional_amount = new_town_cargo->amount;
 
-    local_pricer -> add_supply(type, additional_amount);
     current_totals[type] += additional_amount;
     existing_town_cargo->amount += additional_amount;
 }
@@ -641,7 +638,7 @@ void Town::month_tick() {
     update_buy_orders();
     {
         std::scoped_lock lock(m);
-        local_pricer -> adjust_supply_demand();
+        local_pricer -> update_local_prices();
         //TEMP
         for (int type = 0; type < local_pricer->get_supply().size(); type++) {
             old_local_demand[type] = local_demand[type];

@@ -83,9 +83,14 @@ class Broker : public FixedHold {
     
     virtual void distribute_type_to_broker(int type, Ref<Broker> otherBroker, Ref<RoadDepot> road_depot = nullptr);
 
-    void report_attempt_to_sell(int type, int amount);
-    void report_demand_of_brokers(int type);
-    virtual void report_price(int type, float price);
+    void survey_broad_market(int type);
+    void survey_broker_market(int type, Ref<Broker> broker);
+
+    void add_surveyed_demand(int type, float price, float amount);
+    void add_surveyed_supply(int type, float price, float amount);
+
+    void add_surveyed_demand_unsafe(int type, float price, float amount);
+    void add_surveyed_supply_unsafe(int type, float price, float amount);
 
     // Returns demand - supply
     virtual float get_diff_between_demand_and_supply(int type) const; // TEMP VIRTUAL

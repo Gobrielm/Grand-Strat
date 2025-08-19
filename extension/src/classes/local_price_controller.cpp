@@ -7,15 +7,15 @@ using namespace godot;
 
 std::vector<float> LocalPriceController::base_prices = {};
 
-void LocalPriceController::_bind_methods() {}
-
 LocalPriceController::LocalPriceController() {
+    int type = 0;
     for (const auto &price: base_prices) {
-        local_prices.push_back(price);
-        supply.push_back(0);
-        demand.push_back(0);
-        last_month_supply.push_back(0);
-        last_month_demand.push_back(0);
+        current_prices[type] = price;
+        supply[type];
+        demand[type];
+        last_month_supply[type];
+        last_month_demand[type];
+        type++;
     }
 }
 
@@ -33,103 +33,151 @@ void LocalPriceController::set_base_prices() {
     }
 }
 
-void LocalPriceController::add_demand(int type, float amount) { demand[type] += amount; }
-void LocalPriceController::add_supply(int type, float amount) { supply[type] += amount; }
-float LocalPriceController::get_demand(int type) const { return demand.at(type); }
-float LocalPriceController::get_supply(int type) const { return supply.at(type); }
-float LocalPriceController::get_last_month_demand(int type) const { return last_month_demand.at(type); }
-float LocalPriceController::get_last_month_supply(int type) const { return last_month_supply.at(type); }
+void LocalPriceController::update_local_prices() {
+    for (const auto& [type, __]: current_prices) {
+        update_local_price(type);
+    }
+}
 
-std::vector<float> LocalPriceController::get_demand() const { return demand; }
-std::vector<float> LocalPriceController::get_supply() const { return supply; }
-std::vector<float> LocalPriceController::get_last_month_demand() const { return last_month_demand; }
-std::vector<float> LocalPriceController::get_last_month_supply() const { return last_month_supply; }
+void LocalPriceController::update_local_price(int type) { // Creates a weighted average of cargo sold
+    if (demand[type].size() != 0) {
+        current_prices[type] = get_weighted_average(demand[type]);
+    } else if (supply[type].size() != 0) {
+        current_prices[type] = get_weighted_average(supply[type]);
+    }   
+
+    ERR_FAIL_COND_MSG(std::isnan(current_prices[type]), "Type: " + CargoInfo::get_instance()->get_cargo_name(type) + " has null price!");
+
+    last_month_supply[type] = supply[type];
+    supply[type].clear();
+    last_month_demand[type] = demand[type];
+    demand[type].clear();
+}
+
+template <typename Compare>
+double LocalPriceController::get_weighted_average(std::map<int, float, Compare> &m) const {
+    float total_weight = 0;
+    double sum_of_weighted_terms = 0;
+    for (const auto& [ten_price, amount]: m) {
+        float weighted_ave = (ten_price / 10.0) * amount;
+        total_weight += amount;
+        sum_of_weighted_terms += weighted_ave;
+    }   
+    ERR_FAIL_COND_V_MSG(total_weight == 0, 0.0, "Total Amount sold is 0 yet was not erased!");
+    return sum_of_weighted_terms / total_weight;
+}
+
+void LocalPriceController::add_demand(int type, float price, float amount) { demand[type][round(price * 10)] += amount; }
+void LocalPriceController::add_supply(int type, float price, float amount) { supply[type][round(price * 10)] += amount; }
+float LocalPriceController::get_demand(int type) const { 
+    float amount = 0;
+    for (const auto& [__, amnt]: demand.at(type)) {
+        amount += amnt;
+    }
+    return amount;
+}
+
+float LocalPriceController::get_supply(int type) const { 
+    float amount = 0;
+    for (const auto& [__, amnt]: supply.at(type)) {
+        amount += amnt;
+    }
+    return amount; 
+}
+
+float LocalPriceController::get_last_month_demand(int type) const { 
+    float amount = 0;
+    for (const auto& [__, amnt]: last_month_demand.at(type)) {
+        amount += amnt;
+    }
+    return amount; 
+}
+
+float LocalPriceController::get_last_month_supply(int type) const { 
+    float amount = 0;
+    for (const auto& [__, amnt]: last_month_supply.at(type)) {
+        amount += amnt;
+    }
+    return amount; 
+}
+
+std::vector<float> LocalPriceController::get_demand() const { 
+    std::vector<float> v;
+    for (const auto& [__, m]: demand) {
+        v.push_back(0);
+        for (const auto& [__, amount]: m) {
+            v.back() += amount;
+        }
+    }
+    return v; 
+}
+std::vector<float> LocalPriceController::get_supply() const { 
+    std::vector<float> v;
+    for (const auto& [__, m]: supply) {
+        v.push_back(0);
+        for (const auto& [__, amount]: m) {
+            v.back() += amount;
+        }
+    }
+    return v; 
+}
+std::vector<float> LocalPriceController::get_last_month_demand() const { 
+    std::vector<float> v;
+    for (const auto& [__, m]: last_month_demand) {
+        v.push_back(0);
+        for (const auto& [__, amount]: m) {
+            v.back() += amount;
+        }
+    }
+    return v; 
+}
+std::vector<float> LocalPriceController::get_last_month_supply() const { 
+    std::vector<float> v;
+    for (const auto& [__, m]: last_month_supply) {
+        v.push_back(0);
+        for (const auto& [__, amount]: m) {
+            v.back() += amount;
+        }
+    }
+    return v; 
+}
+
+Dictionary LocalPriceController::get_last_month_demand_dict() const {
+    Dictionary d;
+    for (const auto& [type, m]: last_month_demand) {
+        float total = 0;
+        for (const auto& [__, amount]: m) {
+            total += amount;
+        }
+        d[type] = total;
+    }
+    return d;
+}
+
+Dictionary LocalPriceController::get_last_month_supply_dict() const {
+    Dictionary d;
+    for (const auto& [type, m]: last_month_supply) {
+        float total = 0;
+        for (const auto& [__, amount]: m) {
+            total += amount;
+        }
+        d[type] = total;
+    }
+    return d;
+}
 
 float LocalPriceController::get_local_price(int type) const {
-    return local_prices.at(type);
+    return current_prices.at(type);
 }
 
 float LocalPriceController::get_base_price(int type) {
     return base_prices.at(type);
 }
 
-void LocalPriceController::move_price(int type, float price) { //Calling on failure
-    float base_price = get_base_price(type);
-    float current_diff_from_base = local_prices[type] / base_price;
-    float other_diff_from_base = price / base_price;
-
-    //Closer than 10% diff
-    float change_of_price = (other_diff_from_base - current_diff_from_base); // Discrepancy_of_price
-
-    change_of_price = std::min(TRADE_CHANGE_RATE, change_of_price); // Can only change as fast as the change rate
-    local_prices[type] = base_price * (current_diff_from_base + change_of_price); 
-}
-
-void LocalPriceController::adjust_prices() {
-    int type = 0;
-	for (const auto& base_price: base_prices) {
-        adjust_cargo_price(type, base_price);
-        type++;
-    }
-}
-
-void LocalPriceController::adjust_supply_demand() {
-    int type = 0;
-	for (const auto& base_price: base_prices) {
-        last_month_supply[type] = supply[type];
-        supply[type] = 0;
-        last_month_demand[type] = demand[type];
-        demand[type] = 0;
-        type++;
-    }
-}
-
-void LocalPriceController::adjust_cargo_price(int type, float base_price) {
-
-    float diff_from_base = get_current_difference_from_base_price(type);
-
-    float current_diff_from_base = local_prices[type] / base_price;
-
-    float change_of_price = (diff_from_base - current_diff_from_base) * MARKET_CHANGE_RATE; // Discrepancy_of_price
-        
-    if (get_demand(type) == get_supply(type) && get_demand(type) != 0) { //If supply matches demand don't change price
-        change_of_price = 0;
-    }
-
-    if (abs(change_of_price) > 0.01f) {
-        local_prices[type] = base_price * (current_diff_from_base + change_of_price); 
-    }
-    
-    last_month_supply[type] = supply[type];
-    supply[type] = 0;
-    last_month_demand[type] = demand[type];
-    demand[type] = 0;
-}
-
-float LocalPriceController::get_difference_from_base_price(int type, std::vector<float> &p_supply, std::vector<float> &p_demand) const { // Returns percentage diff + 1
-    if (p_supply[type] == p_demand[type] && p_supply[type] == 0) {
-        return 1;
-    } 
-    //If no demand, then make price very cheap
-    float diff_from_base = 1 + (p_demand[type] == 0 ? -1: float(p_demand[type] - p_supply[type]) / p_demand[type]);
-    diff_from_base = std::min(diff_from_base, get_max_diff());
-    diff_from_base = std::max(diff_from_base, 1 / get_max_diff());
-
-    return diff_from_base; //+>1 if demand > supply
-}
-
-float LocalPriceController::get_current_difference_from_base_price(int type) {
-    return get_difference_from_base_price(type, supply, demand);
-}
-
 Dictionary LocalPriceController::get_local_prices() {
     Dictionary d;
-    for (int type = 0; type < local_prices.size(); type++) {
-        d[type] = local_prices[type];
+    for (const auto& [type, price]: current_prices) {
+        d[type] = price;
     }
     return d;
-}
-
-float LocalPriceController::get_max_diff() const {
-    return MAX_DIFF;
 }

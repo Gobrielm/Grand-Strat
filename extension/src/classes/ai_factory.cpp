@@ -1,5 +1,6 @@
 #include "../singletons/terminal_map.hpp"
 #include "ai_factory.hpp"
+#include "factory_utility/recipe.hpp"
 
 void AiFactory::_bind_methods() {
     ClassDB::bind_method(D_METHOD("day_tick"), &AiFactory::day_tick);
@@ -55,20 +56,9 @@ void AiFactory::consider_upgrade() {
 }
 
 void AiFactory::consider_upgrade_primary() {
-    float total_diff = 0.0;
-	int amount = 0;
-	for (auto& [type, __]: get_outputs()) {
-        int max_value = TerminalMap::get_instance() -> get_cargo_value_of_tile(get_location(), type);
-        if (max_value < get_level_without_employment()) {
-            return;
-        }
-		total_diff += local_pricer -> get_current_difference_from_base_price(type) - 1;
-		amount += 1;
-    }
-	total_diff /= amount;
-	//TODO: Consider changing constant
+    float gross_prof = get_theoretical_gross_profit() - (get_wage() * recipe->get_pops_needed_num());
     
-	if (total_diff > -0.05 && get_cost_for_upgrade() * CASH_NEEDED_MULTIPLIER < get_cash()) {
+	if (gross_prof > 0 && get_cost_for_upgrade() * CASH_NEEDED_MULTIPLIER < get_cash()) {
         upgrade();
     }
 }

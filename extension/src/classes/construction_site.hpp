@@ -48,8 +48,6 @@ public:
     int get_desired_cargo_unsafe(int type, float pricePer) const override;
     int get_desired_cargo_from_train(int type, float pricePer) const;
 
-    void report_price(int type, float price) override;
-
     // Process Hooks
     virtual void day_tick() override;
     virtual void month_tick() override;
