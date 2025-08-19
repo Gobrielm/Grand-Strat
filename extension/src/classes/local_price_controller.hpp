@@ -7,7 +7,8 @@
 using namespace godot;
 
 class LocalPriceController {
-    
+    protected:
+
     static std::vector<float> base_prices;
     
     // All of these are surveyed from other markets and represent a host of buyers' and sellers' prices
@@ -27,8 +28,6 @@ class LocalPriceController {
 
     template <typename Compare>
     double get_weighted_average(std::map<int, float, Compare> &m) const;
-
-    protected:
 
     public:
 

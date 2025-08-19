@@ -3,6 +3,7 @@
 #include "../singletons/province_manager.hpp"
 #include "../singletons/terminal_map.hpp"
 #include "broker_utility/trade_interaction.hpp"
+#include "town_utility/town_local_price_controller.hpp"
 #include <godot_cpp/core/class_db.hpp>
 #include <map>
 #include <algorithm>
@@ -40,9 +41,8 @@ void Town::_bind_methods() {
 
 Town::Town(): Broker(Vector2i(0, 0), 0) {
     set_max_storage(DEFAULT_MAX_STORAGE);
-    local_pricer = memnew(LocalPriceController);
+    local_pricer = new TownLocalPriceController;
     for (const auto& [type, __]: CargoInfo::get_instance()->get_base_prices()) {
-        current_totals[type] = 0;
         current_prices[type] = local_pricer->get_local_price(type);
         cargo_sell_orders[type];
     }
@@ -50,9 +50,8 @@ Town::Town(): Broker(Vector2i(0, 0), 0) {
 
 Town::Town(Vector2i new_location): Broker(new_location, 0) {
     set_max_storage(DEFAULT_MAX_STORAGE);
-    local_pricer = memnew(LocalPriceController);
+    local_pricer = new TownLocalPriceController;
     for (const auto& [type, __]: CargoInfo::get_instance()->get_base_prices()) {
-        current_totals[type] = 0;
         current_prices[type] = local_pricer->get_local_price(type);
         cargo_sell_orders[type];
     }
@@ -70,7 +69,7 @@ Town::~Town() {
 void Town::initialize(Vector2i new_location) {
     Broker::initialize(new_location, 0);
     set_max_storage(DEFAULT_MAX_STORAGE);
-    local_pricer = memnew(LocalPriceController);
+    local_pricer = new(LocalPriceController);
 }
 
 std::vector<float> Town::get_supply() const {
@@ -103,12 +102,6 @@ int Town::get_desired_cargo(int type, float price) const { // BUG/TODO: Kinda ou
 
 int Town::get_desired_cargo_unsafe(int type, float price) const {
     return local_pricer -> get_demand(type);
-}
-
-
-float Town::get_cargo_amount(int type) const {
-    ERR_FAIL_COND_V_EDMSG(!current_totals.count(type), 0, "No cargo of type: " + String::num(type));
-    return current_totals.at(type);
 }
 
 // Production
@@ -356,7 +349,7 @@ void Town::distribute_type_to_broker(int type, Ref<Broker> broker, Ref<RoadDepot
             cargo_to_send.push_back(town_cargo_copy);
             report_sale(type, price, amount);
             desired -= amount;
-            current_totals[type] -= amount;
+            storage[type] -= amount;
             town_cargo->transfer_cargo(amount);
             
             if (town_cargo->amount == 0) {
@@ -458,7 +451,7 @@ void Town::encode_cargo(TownCargo* town_cargo) {
 
     cargo_sell_orders[type].insert(town_cargo);
     town_cargo_tracker[town_cargo->terminal_id][type] = town_cargo;
-    current_totals[type] += amount;
+    storage[type] += amount;
 }
 
 void Town::encode_existing_cargo(TownCargo* existing_town_cargo, const TownCargo* new_town_cargo) {
@@ -467,7 +460,7 @@ void Town::encode_existing_cargo(TownCargo* existing_town_cargo, const TownCargo
     existing_town_cargo->age = 0;
     int additional_amount = new_town_cargo->amount;
 
-    current_totals[type] += additional_amount;
+    storage[type] += additional_amount;
     existing_town_cargo->amount += additional_amount;
 }
 
@@ -501,7 +494,7 @@ std::multiset<TownCargo *, TownCargo::TownCargoPtrCompare>::iterator Town::retur
     TownCargo* cargo = (*cargo_it);
     if ((++(cargo->age)) > 5) {
         int type = cargo->type;
-        current_totals[type] -= cargo->amount;
+        storage[type] -= cargo->amount;
         cargo->return_cargo(cargo_to_return);       //Return cargo to broker
         cargo_it = delete_town_cargo(cargo_it);     //Delete old cargo
     } else {

@@ -1,5 +1,4 @@
 #include "factory_template.hpp"
-#include "factory_local_price_controller.hpp"
 #include "factory_utility/recipe.hpp"
 #include "base_pop.hpp"
 #include "broker_utility/trade_interaction.hpp"
@@ -42,7 +41,7 @@ FactoryTemplate::FactoryTemplate() {}
 FactoryTemplate::FactoryTemplate(Vector2i new_location, int player_owner, Recipe* p_recipe): Broker(new_location, player_owner) {
     recipe = p_recipe;
     if (recipe == nullptr) print_error("Factory created with null recipe at location " + new_location + ".");
-    local_pricer = memnew(FactoryLocalPriceController);
+    local_pricer = new LocalPriceController;
 }
 
 FactoryTemplate::~FactoryTemplate() {
@@ -52,7 +51,7 @@ FactoryTemplate::~FactoryTemplate() {
 void FactoryTemplate::initialize(Vector2i new_location, int player_owner, Recipe* p_recipe) {
     Broker::initialize(new_location, player_owner);
     recipe = p_recipe;
-    local_pricer = memnew(FactoryLocalPriceController);
+    local_pricer = new LocalPriceController;
 }
 
 float FactoryTemplate::get_min_price(int type) const {

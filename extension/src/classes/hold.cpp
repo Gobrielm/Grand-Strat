@@ -63,10 +63,7 @@ float Hold::add_cargo(int type, float amount) {
 
 float Hold::get_cargo_amount(int type) const {
     std::scoped_lock lock(m);
-    if (storage.count(type) == 0) {
-        ERR_PRINT("Storage has no such type: " + String::num_int64(type));
-        return 0; // or return some error value like -1, depending on your logic
-    }
+    ERR_FAIL_COND_V_EDMSG(!storage.count(type), 0, "No cargo of type: " + String::num(type));
     return storage.at(type);
 }
 

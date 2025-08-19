@@ -21,7 +21,7 @@ ConstructionSite::ConstructionSite(): FactoryTemplate() {
 ConstructionSite::~ConstructionSite() {}
 
 ConstructionSite::ConstructionSite(Vector2i new_location, int player_owner): FactoryTemplate(new_location, player_owner, memnew(Recipe)) {
-    local_pricer = memnew(LocalPriceController);
+    local_pricer = new(LocalPriceController);
 }
 
 Ref<ConstructionSite> ConstructionSite::create(Vector2i new_location, int player_owner) {

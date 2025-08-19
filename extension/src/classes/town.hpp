@@ -12,6 +12,7 @@
 #include "town_utility/pop_order.hpp"
 
 class CargoInfo;
+class TownLocalPriceController;
 
 using namespace godot;
 
@@ -26,6 +27,8 @@ private:
 
 protected:
     static void _bind_methods();
+    TownLocalPriceController* local_pricer;
+    
     //TODO: Integrate with new local_pricer, TEMPORARY
     std::unordered_map<int, int> local_demand; // TEMP
     std::unordered_map<int, int> old_local_demand; // TEMP
@@ -33,10 +36,7 @@ protected:
     std::unordered_map<int, std::multiset<TownCargo*, TownCargo::TownCargoPtrCompare>> cargo_sell_orders; // Lowest price first
     std::unordered_map<int, std::unordered_map<int, TownCargo*>> town_cargo_tracker; // Owner id -> type -> TownCargo*
     std::unordered_map<int, float> current_prices; // Keep track of prices from last month
-    std::unordered_map<int, int> current_totals; // Keeps track of current totals of goods
-
     
-
     std::set<TradeInteraction*, TradeInteractionPtrCompare> get_brokers_to_distribute_to(int type) override;
 
     std::multiset<TownCargo *, TownCargo::TownCargoPtrCompare>::iterator delete_town_cargo(std::multiset<TownCargo *, TownCargo::TownCargoPtrCompare>::iterator &sell_order_it);
@@ -69,8 +69,6 @@ public:
     bool is_price_acceptable(int type, float price) const override;
     int get_desired_cargo(int type, float price) const override;
     int get_desired_cargo_unsafe(int type, float price) const override;
-
-    float get_cargo_amount(int type) const override;
 
     // Production
     float get_fulfillment(int type) const;

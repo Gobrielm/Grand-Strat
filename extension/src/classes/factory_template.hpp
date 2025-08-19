@@ -24,6 +24,7 @@ private:
     std::list<int> income_list;
 
 protected:
+    LocalPriceController* local_pricer = nullptr;
     Recipe* recipe = nullptr;
 
     static void _bind_methods();
