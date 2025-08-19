@@ -610,9 +610,15 @@ double Town::get_weighted_average(std::multiset<TownCargo*, TownCargo::TownCargo
 
 float Town::get_diff_between_demand_and_supply(int type) const {
     std::scoped_lock lock(m);
+    if (!old_local_demand.count(type)) {
+        return -local_pricer -> get_supply(type);
+    }
     return old_local_demand.at(type) - local_pricer -> get_supply(type);
 }
 float Town::get_diff_between_demand_and_supply_unsafe(int type) const {
+    if (!old_local_demand.count(type)) {
+        return -local_pricer -> get_supply(type);
+    }
     return old_local_demand.at(type) - local_pricer -> get_supply(type);
 }
 
