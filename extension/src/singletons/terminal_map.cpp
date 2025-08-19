@@ -577,7 +577,7 @@ int TerminalMap::get_grain_demand() const {
     for (const auto &[__, terminal]: terminal_id_to_terminal) {
         Ref<Town> typed = Ref<Town>(terminal);
         if (typed.is_valid()) {
-            double num = double(typed -> get_last_month_demand().get(CargoInfo::get_instance()->get_cargo_type("grain"), 0.0));
+            double num = double(typed->get_local_demand(CargoInfo::get_instance()->get_cargo_type("grain")));
             total_demand += num;
         }
     }

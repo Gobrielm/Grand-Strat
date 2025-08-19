@@ -98,11 +98,11 @@ bool Town::is_price_acceptable(int type, float price) const { // Free Market
 }
 
 int Town::get_desired_cargo(int type, float price) const { // BUG/TODO: Kinda outdated
-    return std::numeric_limits<int>::max();
+    return get_demand(type);
 }
 
 int Town::get_desired_cargo_unsafe(int type, float price) const {
-    return get_desired_cargo(type, price);
+    return local_pricer -> get_demand(type);
 }
 
 
@@ -172,6 +172,7 @@ void Town::sell_to_pop(BasePop* pop) { // Called from Province, do not call loca
             TownCargo* sell_order;
             
             local_pricer -> add_demand(type, desired);
+            local_demand[type] += desired;
 
             while (sell_it != ms.end()) {
                 sell_order = *sell_it;
@@ -195,6 +196,7 @@ void Town::sell_to_pop(BasePop* pop) { // Called from Province, do not call loca
                 }
 
                 int amount = std::min(pop->get_desired(type, price), sell_order->amount);
+                //AMount is negitive at some pt
                 if (amount == 0) {
                     break;
                 }
@@ -203,8 +205,7 @@ void Town::sell_to_pop(BasePop* pop) { // Called from Province, do not call loca
                 pop->buy_good(type, amount, price);
 
                 if (sell_order->amount == 0) {
-                    sell_it = ms.erase(sell_it);
-                    delete_town_cargo(sell_order);
+                    sell_it = delete_town_cargo(sell_it);
                 } else {
                     break;
                 }
@@ -222,9 +223,12 @@ void Town::sell_to_pop(BasePop* pop) { // Called from Province, do not call loca
     }
 }
 
-void Town::delete_town_cargo(TownCargo *sell_order) {
-    town_cargo_tracker[sell_order->terminal_id].erase(sell_order->type);
-    delete sell_order;
+std::multiset<TownCargo *, TownCargo::TownCargoPtrCompare>::iterator Town::delete_town_cargo(std::multiset<TownCargo *, TownCargo::TownCargoPtrCompare>::iterator &sell_order_it) {
+    TownCargo* sell_order = *sell_order_it;
+    town_cargo_tracker[sell_order->terminal_id].erase(sell_order->type); // Erases from tracker map
+    sell_order_it = cargo_sell_orders[sell_order->type].erase(sell_order_it); // Erases from price ordered map
+    delete sell_order; // Deletes from memory
+    return sell_order_it; // Returns shifted pointer
 }
 
 void Town::pay_factory(int amount, float price, Vector2i source) {
@@ -336,15 +340,16 @@ void Town::distribute_type_to_broker(int type, Ref<Broker> broker, Ref<RoadDepot
         float price = buyer_price; // Just use buyer price, why not
         int desired = broker -> get_desired_cargo_unsafe(type, price);
         if (Ref<Town>(broker).is_valid()) {
-            desired = std::max(broker->get_diff_between_demand_and_supply_unsafe(type), 0.0f); // TODO: Doesn't work entirely as intended
+            desired = std::max(broker->get_diff_between_demand_and_supply_unsafe(type) / 30, 0.0f); // TODO: Doesn't work entirely as intended
         }
 
-        local_pricer -> add_demand(type, desired);
+        if (desired > 0) local_pricer -> add_demand(type, desired);
+        
 
         while (desired > 0) {
 
             int amount = std::min(desired, town_cargo->amount);
-            if (!broker->can_afford_unsafe(amount * price)) break; // If cannot afford then break out
+            if (amount <= 0 || !broker->can_afford_unsafe(amount * price)) break; // If cannot afford then break out
             TownCargo* town_cargo_copy = new TownCargo(*town_cargo);
             town_cargo_copy->price = price; // Set price for outgoing cargo
             if (is_depot_valid) 
@@ -356,9 +361,8 @@ void Town::distribute_type_to_broker(int type, Ref<Broker> broker, Ref<RoadDepot
             town_cargo->transfer_cargo(amount);
             
             if (town_cargo->amount == 0) {
-                it = ms.erase(it);
-                delete_town_cargo(town_cargo);
-                if (ms.empty()) {
+                it = delete_town_cargo(it);
+                if (it == ms.end()) {
                     break;
                 }
                 town_cargo = *it;
@@ -412,6 +416,9 @@ std::unordered_map<int, float> Town::get_local_prices_map() {
 }
 
 void Town::buy_cargo(int type, int amount, float price, int p_terminal_id) {
+    if (amount <= 0) {
+        return;
+    }
     TownCargo* new_town_cargo = new TownCargo(type, amount, price, p_terminal_id);
     {
         std::scoped_lock lock(m);
@@ -427,6 +434,9 @@ void Town::buy_cargo(int type, int amount, float price, int p_terminal_id) {
 
 void Town::buy_cargo(const TownCargo* cargo) {
     TownCargo* new_town_cargo = new TownCargo(cargo);
+    if (new_town_cargo->amount <= 0) {
+        return;
+    }
     int p_terminal_id = cargo->terminal_id;
     int type = cargo->type;
     {
@@ -495,24 +505,26 @@ std::multiset<TownCargo *, TownCargo::TownCargoPtrCompare>::iterator Town::retur
     if ((++(cargo->age)) > 5) {
         int type = cargo->type;
         current_totals[type] -= cargo->amount;
-        cargo->return_cargo(cargo_to_return); //Return cargo to broker
-        cargo_it = cargo_sell_orders[type].erase(cargo_it);     //Erase from set, and update iterator
-        delete_town_cargo(cargo);             //Delete old cargo
+        cargo->return_cargo(cargo_to_return);       //Return cargo to broker
+        cargo_it = delete_town_cargo(cargo_it);     //Delete old cargo
     } else {
-        ++cargo_it;                  //Increment if not deleting    
+        cargo_it++;                  //Increment if not deleting    
     }
     return cargo_it;
 }
 
 bool Town::does_cargo_exist(int p_terminal_id, int type) const {
     if (town_cargo_tracker.count(p_terminal_id)) {
-        auto cargo_map = (town_cargo_tracker.at(p_terminal_id));
+        auto& cargo_map = (town_cargo_tracker.at(p_terminal_id));
         return cargo_map.count(type);
     } 
     return false;
 }
 
 void Town::report_sale(int type, float price, float amount) {
+    if (amount == 0) {
+        return;
+    }
     cargo_sold_map[type][round(price * 10)] += amount;
 }
 
@@ -553,22 +565,63 @@ void Town::update_local_prices() {
 void Town::update_local_price(int type) { // Creates a weighted average of cargo sold
     std::scoped_lock lock(m);
     if (cargo_sell_orders[type].size() == 0 && cargo_sold_map[type].size() == 0) return;
-    if (cargo_sold_map[type].size() != 0 && cargo_sell_orders[type].size() == 0) {
-        //TODO: Build a heurisitc on potentially raising price or smth 
+
+    if (cargo_sell_orders[type].size() != 0) { // If there is demand + supply but no sales
+        current_prices[type] = get_weighted_average(cargo_sell_orders[type]); // Take average of sell orders, sellers will lower if no sales, and buyers will come up too
+        ERR_FAIL_COND_MSG(std::isnan(current_prices[type]), "Type: " + CargoInfo::get_instance()->get_cargo_name(type) + " has null price");
         return;
     }
 
+    current_prices[type] = get_weighted_average(cargo_sold_map[type]);
+
+    ERR_FAIL_COND_MSG(std::isnan(current_prices[type]), "Type: " + CargoInfo::get_instance()->get_cargo_name(type) + " has null price!");
+    cargo_sold_map[type].clear();
+}
+
+double Town::get_weighted_average(std::unordered_map<int, int> &m) const {
+    int total_weight = 0;
+    double sum_of_weighted_terms = 0;
+    for (const auto& [ten_price, amount]: m) {
+        float weighted_ave = (ten_price / 10.0) * amount;
+        if (amount <= 0) {
+            print_error(String::num(amount));
+        }
+        total_weight += amount;
+        sum_of_weighted_terms += weighted_ave;
+    }   
+    ERR_FAIL_COND_V_MSG(total_weight == 0, 0.0, "Total Amount sold is 0 yet was not erased!");
+    return sum_of_weighted_terms / total_weight;
+}
+
+double Town::get_weighted_average(std::multiset<TownCargo*, TownCargo::TownCargoPtrCompare> &s) const { // Huge amount of cargo with 0 cargo
     int total_weight = 0;
     float sum_of_weighted_terms = 0;
-    for (const auto& [ten_price, amount]: cargo_sold_map[type]) {
-        float weighted_ave = ten_price / 10.0 * amount;
+    for (const auto& cargo: s) {
+        int amount = cargo->amount;
+        float price = cargo->price;
+        float weighted_ave = price * amount;
         total_weight += amount;
         sum_of_weighted_terms += weighted_ave;
     }
+    ERR_FAIL_COND_V_MSG(total_weight == 0, 0.0, "Total Amount sold is 0 yet was not erased!");
 
-    current_prices[type] = sum_of_weighted_terms / total_weight;
+    return sum_of_weighted_terms / total_weight;
+}
 
-    cargo_sold_map[type].clear();
+float Town::get_diff_between_demand_and_supply(int type) const {
+    std::scoped_lock lock(m);
+    return old_local_demand.at(type) - local_pricer -> get_supply(type);
+}
+float Town::get_diff_between_demand_and_supply_unsafe(int type) const {
+    return old_local_demand.at(type) - local_pricer -> get_supply(type);
+}
+
+int Town::get_local_demand(int type) const {
+    std::scoped_lock lock(m);
+    if (!old_local_demand.count(type)) {
+        return 0;
+    }
+    return old_local_demand.at(type);
 }
 
 // Process Hooks
@@ -583,6 +636,11 @@ void Town::month_tick() {
     {
         std::scoped_lock lock(m);
         local_pricer -> adjust_supply_demand();
+        //TEMP
+        for (int type = 0; type < local_pricer->get_supply().size(); type++) {
+            old_local_demand[type] = local_demand[type];
+            local_demand[type]= 0;
+        }
     }
     age_all_cargo();
 }

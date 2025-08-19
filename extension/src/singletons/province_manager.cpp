@@ -314,7 +314,7 @@ void ProvinceManager::thread_processor() {
 
         if (--jobs_remaining == 0) {
             std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - start_time;
-            print_line("Provinces Month Tick Took " + String::num_scientific(elapsed.count()) + " seconds");
+            // print_line("Provinces Month Tick Took " + String::num_scientific(elapsed.count()) + " seconds");
             jobs_done_cv.notify_one();  // Wake main thread
         }
     }

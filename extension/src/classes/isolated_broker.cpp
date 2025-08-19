@@ -79,12 +79,13 @@ void IsolatedBroker::sell_cargo() {
 void IsolatedBroker::sell_type(Ref<Town> town, int type, int amount) {
     float price = town->get_local_price(type);
     amount = std::min(amount, town->get_desired_cargo(type, price));
-    town->buy_cargo(type, amount, price, get_terminal_id());
-    {
-        std::scoped_lock lock(m);
-        storage[type] -= amount;
+    if (amount > 0) {
+        town->buy_cargo(type, amount, price, get_terminal_id());
+        {
+            std::scoped_lock lock(m);
+            storage[type] -= amount;
+        }
     }
-    
 }
 
 double IsolatedBroker::get_batch_size() const {

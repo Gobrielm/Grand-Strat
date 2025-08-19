@@ -345,7 +345,10 @@ int BasePop::get_desired(int type) const {
 }
 
 int BasePop::get_desired(int type, float price) const {
-    int amount = std::max(std::min(int(wealth / price), int(get_max_storage(type) - internal_storage.at(type))), 0);
+    int amount_can_buy = int(wealth / price);
+    int amount_can_store = std::max(int(get_max_storage(type) - internal_storage.at(type)), 0);
+    int amount = std::min(amount_can_buy, amount_can_store);
+
     if (income == 0.0 && !get_base_needs().count(type)) {
         return 0; // Don't buy if not neccessary and no job
     }
