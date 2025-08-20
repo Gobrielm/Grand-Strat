@@ -31,10 +31,15 @@ struct TownCargo {
     bool operator==(const TownCargo& other) const;
 
     struct TownCargoPtrCompare {
-        bool operator()(const TownCargo* lhs, const TownCargo* rhs) const {
-            if (lhs->price == rhs->price)
-                return lhs < rhs; // fallback to pointer address
-            return lhs->price < rhs->price; // lowest price first
+        bool operator()(const std::weak_ptr<TownCargo>& lhs, const std::weak_ptr<TownCargo>& rhs) const {
+            auto l = lhs.lock();
+            auto r = rhs.lock();
+            if (!l && !r) return false; // equal
+            if (!l) return true;        // expired < valid
+            if (!r) return false;       // valid > expired
+            if (l->price == r->price)
+                return l.get() < r.get(); // fallback to address
+            return l->price < r->price;
         }
     };
 };

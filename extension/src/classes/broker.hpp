@@ -20,6 +20,8 @@ using namespace godot;
 class Broker : public FixedHold {
     GDCLASS(Broker, FixedHold);
     
+    LocalPriceController* get_local_pricer() const;
+
     protected:
     static void _bind_methods();
     std::unordered_map<int, TradeOrder*> trade_orders;
@@ -32,7 +34,6 @@ class Broker : public FixedHold {
     virtual std::set<TradeInteraction*, TradeInteractionPtrCompare> get_brokers_to_distribute_to(int type); // Abstract
     float get_price_average(int type, Ref<Broker> other) const;
     void add_broker_to_sorted_set(int type, std::unordered_set<int> &s, std::set<TradeInteraction*, TradeInteractionPtrCompare> &trade_interactions, TradeInteraction* trade_interaction);
-
     public:
     
     Broker();

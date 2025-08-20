@@ -10,15 +10,15 @@ void IsolatedBroker::_bind_methods() {
 }
 
 IsolatedBroker::IsolatedBroker(): Firm(Vector2i(0, 0), 0) {
+    std::scoped_lock lock(m);
     for (int i = 0; i < CargoInfo::get_instance()->get_number_of_goods(); i++) {
-        std::scoped_lock lock(m);
         storage[i] = 0;
     }
 }
 
 IsolatedBroker::IsolatedBroker(Vector2i p_location, int p_owner): Firm(p_location, p_owner) {
+    std::scoped_lock lock(m);
     for (int i = 0; i < CargoInfo::get_instance()->get_number_of_goods(); i++) {
-        std::scoped_lock lock(m);
         storage[i] = 0;
     }
 }
@@ -31,8 +31,8 @@ void IsolatedBroker::add_pop(BasePop* pop) {
 }
 
 float IsolatedBroker::get_wage() const {
-    float gross_profit = std::min(float(get_theoretical_gross_profit() * 0.9), get_cash());
-    
+    float gross_profit = std::min(float(get_theoretical_gross_profit()), get_cash());
+
     if (!recipe->get_pops_needed_num()) return 0;
     
     return (gross_profit) / recipe->get_pops_needed_num();
@@ -41,11 +41,12 @@ float IsolatedBroker::get_wage() const {
 float IsolatedBroker::get_theoretical_gross_profit() const {
     float available = 0;
     Ref<Town> town = get_local_town();
+    int effective_level = std::max(recipe->get_level(), 1.0);
     for (const auto &[type, amount]: recipe->get_inputs()) {
-        available -= town->get_local_price(type) * amount * std::max(recipe->get_level(), 1.0); // Always assume that the business will pay according to the first level
+        available -= town->get_local_price(type) * amount * effective_level; // Always assume that the business will pay according to the first level
     }
     for (const auto &[type, amount]: recipe->get_outputs()) {
-        available += town->get_local_price(type) * amount * std::max(recipe->get_level(), 1.0);
+        available += town->get_local_price(type) * amount * effective_level;
     }
     available *= 30;
     return available;

@@ -11,10 +11,10 @@ LocalPriceController::LocalPriceController() {
     int type = 0;
     for (const auto &price: base_prices) {
         current_prices[type] = price;
-        supply[type];
-        demand[type];
-        last_month_supply[type];
-        last_month_demand[type];
+        supply.emplace(type, std::map<int, float, std::less<int>>{});
+        demand.emplace(type, std::map<int, float, std::greater<int>>{});
+        last_month_supply.emplace(type, std::map<int, float, std::less<int>>{});
+        last_month_demand.emplace(type, std::map<int, float, std::greater<int>>{});
         type++;
     }
 }
@@ -27,7 +27,6 @@ void LocalPriceController::set_base_prices() {
     for (int i = 0; i < CargoInfo::get_instance() -> get_base_prices().size(); i++) {
         base_prices.push_back(0);
     }
-
     for (const auto &[type, price]: CargoInfo::get_instance() -> get_base_prices()) {
         base_prices[type] = price;
     }
@@ -46,12 +45,12 @@ void LocalPriceController::update_local_price(int type) { // Creates a weighted 
         current_prices[type] = get_weighted_average(supply[type]);
     }   
 
-    ERR_FAIL_COND_MSG(std::isnan(current_prices[type]), "Type: " + CargoInfo::get_instance()->get_cargo_name(type) + " has null price!");
-
     last_month_supply[type] = supply[type];
     supply[type].clear();
     last_month_demand[type] = demand[type];
     demand[type].clear();
+
+    ERR_FAIL_COND_MSG(std::isnan(current_prices[type]), "Type: " + CargoInfo::get_instance()->get_cargo_name(type) + " has null price!");
 }
 
 template <typename Compare>
@@ -69,7 +68,9 @@ double LocalPriceController::get_weighted_average(std::map<int, float, Compare> 
 
 void LocalPriceController::add_demand(int type, float price, float amount) { demand[type][round(price * 10)] += amount; }
 void LocalPriceController::add_supply(int type, float price, float amount) { supply[type][round(price * 10)] += amount; }
-float LocalPriceController::get_demand(int type) const { 
+
+float LocalPriceController::get_demand(int type) const {
+    if (!demand.count(type)) return 0;
     float amount = 0;
     for (const auto& [__, amnt]: demand.at(type)) {
         amount += amnt;
@@ -78,6 +79,7 @@ float LocalPriceController::get_demand(int type) const {
 }
 
 float LocalPriceController::get_supply(int type) const { 
+    if (!supply.count(type)) return 0;
     float amount = 0;
     for (const auto& [__, amnt]: supply.at(type)) {
         amount += amnt;
@@ -86,6 +88,7 @@ float LocalPriceController::get_supply(int type) const {
 }
 
 float LocalPriceController::get_last_month_demand(int type) const { 
+    if (!last_month_demand.count(type)) return 0;
     float amount = 0;
     for (const auto& [__, amnt]: last_month_demand.at(type)) {
         amount += amnt;
@@ -94,6 +97,7 @@ float LocalPriceController::get_last_month_demand(int type) const {
 }
 
 float LocalPriceController::get_last_month_supply(int type) const { 
+    if (!last_month_supply.count(type)) return 0;
     float amount = 0;
     for (const auto& [__, amnt]: last_month_supply.at(type)) {
         amount += amnt;
@@ -101,45 +105,42 @@ float LocalPriceController::get_last_month_supply(int type) const {
     return amount; 
 }
 
-std::vector<float> LocalPriceController::get_demand() const { 
-    std::vector<float> v;
+std::unordered_map<int, float> LocalPriceController::get_demand() const { 
+    std::unordered_map<int, float> toReturn;
     for (const auto& [__, m]: demand) {
-        v.push_back(0);
-        for (const auto& [__, amount]: m) {
-            v.back() += amount;
+        for (const auto& [type, amount]: m) {
+            toReturn[type] += amount;
         }
     }
-    return v; 
+    return toReturn; 
 }
-std::vector<float> LocalPriceController::get_supply() const { 
-    std::vector<float> v;
+std::unordered_map<int, float> LocalPriceController::get_supply() const { 
+    std::unordered_map<int, float> toReturn;
     for (const auto& [__, m]: supply) {
-        v.push_back(0);
-        for (const auto& [__, amount]: m) {
-            v.back() += amount;
+        for (const auto& [type, amount]: m) {
+            toReturn[type] += amount;
         }
     }
-    return v; 
+    return toReturn; 
 }
-std::vector<float> LocalPriceController::get_last_month_demand() const { 
-    std::vector<float> v;
+
+std::unordered_map<int, float> LocalPriceController::get_last_month_demand() const { 
+    std::unordered_map<int, float> toReturn;
     for (const auto& [__, m]: last_month_demand) {
-        v.push_back(0);
-        for (const auto& [__, amount]: m) {
-            v.back() += amount;
+        for (const auto& [type, amount]: m) {
+            toReturn[type] += amount;
         }
     }
-    return v; 
+    return toReturn; 
 }
-std::vector<float> LocalPriceController::get_last_month_supply() const { 
-    std::vector<float> v;
+std::unordered_map<int, float> LocalPriceController::get_last_month_supply() const { 
+    std::unordered_map<int, float> toReturn;
     for (const auto& [__, m]: last_month_supply) {
-        v.push_back(0);
-        for (const auto& [__, amount]: m) {
-            v.back() += amount;
+        for (const auto& [type, amount]: m) {
+            toReturn[type] += amount;
         }
     }
-    return v; 
+    return toReturn; 
 }
 
 Dictionary LocalPriceController::get_last_month_demand_dict() const {
@@ -167,6 +168,7 @@ Dictionary LocalPriceController::get_last_month_supply_dict() const {
 }
 
 float LocalPriceController::get_local_price(int type) const {
+    ERR_FAIL_COND_V_MSG(!current_prices.count(type), 0, "Price is not available for type: " + CargoInfo::get_instance()->get_cargo_name(type));
     return current_prices.at(type);
 }
 
@@ -174,7 +176,11 @@ float LocalPriceController::get_base_price(int type) {
     return base_prices.at(type);
 }
 
-Dictionary LocalPriceController::get_local_prices() {
+std::unordered_map<int, float> LocalPriceController::get_local_prices() const {
+    return current_prices;
+}
+
+Dictionary LocalPriceController::get_local_prices_dict() {
     Dictionary d;
     for (const auto& [type, price]: current_prices) {
         d[type] = price;

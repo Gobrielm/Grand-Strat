@@ -83,27 +83,32 @@ float Province::get_theoretical_supply_of_grain_from_peasants() const {
     int pops_needed = peasant_recipe->get_pops_needed_num();
 
     std::scoped_lock lock(m);
-    return (grain_o * pop_types.at(peasant).size()) / pops_needed;
+    return (grain_o * get_number_of_pops_unsafe(peasant)) / pops_needed;
 }
 
 float Province::get_demand_for_cargo(int type) const {
     float total_demand = 0;
     {
         std::scoped_lock lock(m);
-        total_demand += pop_types.at(rural).size() * BasePop::get_base_need(rural, type); // Rural demand
-        total_demand += pop_types.at(town).size() * BasePop::get_base_need(town, type); // Town demand
-        total_demand += pop_types.at(peasant).size() * BasePop::get_base_need(peasant, type); // Peasant demand
+        total_demand += get_number_of_pops_unsafe(rural) * BasePop::get_base_need(rural, type); // Rural demand
+        total_demand += get_number_of_pops_unsafe(town) * BasePop::get_base_need(town, type); // Town demand
+        total_demand += get_number_of_pops_unsafe(peasant) * BasePop::get_base_need(peasant, type); // Peasant demand
     }
     return total_demand;
 }
 
 std::unordered_map<int, float> Province::get_demand_for_needed_goods() const {
     std::unordered_map<int, float> toReturn;
-    std::unordered_map<PopTypes, size_t> pop_size = {
-        {rural, pop_types.at(rural).size()},
-        {town, pop_types.at(town).size()},
-        {peasant, pop_types.at(peasant).size()}
-    };
+    std::unordered_map<PopTypes, size_t> pop_size;
+    {
+        std::scoped_lock lock(m);
+        pop_size = {
+            {rural, get_number_of_pops_unsafe(rural)},
+            {town, get_number_of_pops_unsafe(town)},
+            {peasant, get_number_of_pops_unsafe(peasant)}
+        };
+    }
+    
     for (const auto& [type, amount]: BasePop::get_base_needs(rural)) {
         toReturn[type] += amount * pop_size[rural];   
     }
@@ -373,6 +378,13 @@ BasePop* Province::get_pop(int pop_id) {
     return pops[pop_id];
 }
 
+int Province::get_number_of_pops_unsafe(PopTypes pop_type) const {
+    if (pop_types.count(pop_type)) {
+        return pop_types.at(pop_type).size();
+    }
+    return 0;
+}
+
 void Province::create_pops() {
     int number_of_peasant_pops = floor(population * 0.9 / BasePop::get_people_per_pop(peasant));
     int number_of_rural_pops = floor(population * 0.05 / BasePop::get_people_per_pop(rural));
@@ -392,10 +404,7 @@ void Province::create_pops() {
     } else {
         create_town_pops(number_of_city_pops, towns);
     }
-
     employ_peasants();
-
-	
 }
 
 void Province::create_peasant_pop(Variant culture, Vector2i p_location) {
@@ -457,7 +466,7 @@ std::vector<int> Province::create_buildings_for_peasants() {
 }
 
 void Province::employ_peasants() {
-    if (get_town_tiles().size() == 0) {
+    if (get_town_tiles().size() == 0 || !pop_types.count(peasant)) {
         return;
     }
 

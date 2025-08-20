@@ -24,7 +24,7 @@ class LocalPriceController {
     float get_difference_from_base_price(int type, std::vector<float> &p_supply, std::vector<float> &p_demand) const;
 
 
-    void update_local_price(int type);
+    virtual void update_local_price(int type);
 
     template <typename Compare>
     double get_weighted_average(std::map<int, float, Compare> &m) const;
@@ -36,7 +36,7 @@ class LocalPriceController {
     static std::vector<float> get_base_prices();
     static void set_base_prices();
 
-    void update_local_prices();
+    virtual void update_local_prices();
 
     void add_demand(int type, float price, float amount); //Demand is only from attempts to buy/sell
     void add_supply(int type, float price, float amount); //Supply is only from bought/created goods
@@ -46,10 +46,10 @@ class LocalPriceController {
     float get_last_month_supply(int type) const;
 
 
-    std::vector<float> get_demand() const;
-    std::vector<float> get_supply() const;
-    std::vector<float> get_last_month_demand() const;
-    std::vector<float> get_last_month_supply() const;
+    std::unordered_map<int, float> get_demand() const;
+    std::unordered_map<int, float> get_supply() const;
+    std::unordered_map<int, float> get_last_month_demand() const;
+    std::unordered_map<int, float> get_last_month_supply() const;
 
     Dictionary get_last_month_demand_dict() const;
     Dictionary get_last_month_supply_dict() const;
@@ -58,6 +58,7 @@ class LocalPriceController {
     float get_local_price(int type) const;
     static float get_base_price(int type);
 
-    Dictionary get_local_prices();
+    std::unordered_map<int, float> get_local_prices() const;
+    Dictionary get_local_prices_dict();
 
 };

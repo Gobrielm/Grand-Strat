@@ -1,6 +1,6 @@
 #pragma once
 
-#include "local_price_controller.hpp"
+#include "../local_price_controller.hpp"
 #include <unordered_map>
 
 using namespace godot;

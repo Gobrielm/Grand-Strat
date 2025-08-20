@@ -118,6 +118,10 @@ void Recipe::upgrade() {
 
 void Recipe::degrade() {
     std::scoped_lock lock(m);
+    if (level == 1) {
+        print_error("Downgrading a building a level 1");
+        return;
+    }
     level--;
     // for (const auto &[type, amount]: outputs) {
     //     outputs[type] = (amount * (double(level) / (level + 1.0)));

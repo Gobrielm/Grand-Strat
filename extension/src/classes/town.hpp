@@ -25,30 +25,12 @@ private:
     std::unordered_set<int> town_pop_ids;
     float INITIAL_CASH = 10000;
 
+    TownLocalPriceController* get_local_pricer() const;
 protected:
     static void _bind_methods();
-    TownLocalPriceController* local_pricer;
     
-    //TODO: Integrate with new local_pricer, TEMPORARY
-    std::unordered_map<int, int> local_demand; // TEMP
-    std::unordered_map<int, int> old_local_demand; // TEMP
-    std::unordered_map<int, std::unordered_map<int, int>> cargo_sold_map; // type -> price * 10 -> amount
-    std::unordered_map<int, std::multiset<TownCargo*, TownCargo::TownCargoPtrCompare>> cargo_sell_orders; // Lowest price first
-    std::unordered_map<int, std::unordered_map<int, TownCargo*>> town_cargo_tracker; // Owner id -> type -> TownCargo*
-    std::unordered_map<int, float> current_prices; // Keep track of prices from last month
     
     std::set<TradeInteraction*, TradeInteractionPtrCompare> get_brokers_to_distribute_to(int type) override;
-
-    std::multiset<TownCargo *, TownCargo::TownCargoPtrCompare>::iterator delete_town_cargo(std::multiset<TownCargo *, TownCargo::TownCargoPtrCompare>::iterator &sell_order_it);
-
-    void encode_cargo(TownCargo* town_cargo);
-    void encode_existing_cargo(TownCargo* existing_town_cargo, const TownCargo* new_town_cargo);
-
-    void update_local_price(int type);
-    double get_weighted_average(std::unordered_map<int, int> &m) const;
-    double get_weighted_average(std::multiset<TownCargo *, TownCargo::TownCargoPtrCompare> &s) const;
-    
-    
 
 public:
     Town();
@@ -59,8 +41,8 @@ public:
 
     virtual void initialize(Vector2i new_location);
 
-    std::vector<float> get_supply() const;
-    std::vector<float> get_demand() const;
+    std::unordered_map<int, float> get_supply() const;
+    std::unordered_map<int, float> get_demand() const;
     
 
     float get_supply(int type) const;
@@ -88,8 +70,6 @@ public:
     void distribute_type(int type) override;
     void distribute_type_to_broker(int type, Ref<Broker> broker, Ref<RoadDepot> road_depot = Ref<RoadDepot>(nullptr)) override;
     std::vector<bool> get_accepts_vector() const override;
-    float get_local_price(int type) const override;
-    float get_local_price_unsafe(int type) const override;
     Dictionary get_local_prices() const override;
     std::unordered_map<int, float> get_local_prices_map();
 
@@ -98,13 +78,8 @@ public:
     void buy_cargo(const TownCargo* cargo) override;
     float add_cargo(int type, float amount) override;
     void age_all_cargo();
-    std::multiset<TownCargo *, TownCargo::TownCargoPtrCompare>::iterator return_cargo(std::multiset<TownCargo *, TownCargo::TownCargoPtrCompare>::iterator cargo_it, std::unordered_map<int, std::unordered_map<int, int>>& cargo_to_return);
-    bool does_cargo_exist(int p_terminal_id, int type) const;
-
-    void report_sale(int type, float price, float amount);
 
     void update_buy_orders();
-    void update_local_prices();
 
     //TEMP INHERIT
     float get_diff_between_demand_and_supply(int type) const override;

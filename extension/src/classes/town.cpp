@@ -42,19 +42,11 @@ void Town::_bind_methods() {
 Town::Town(): Broker(Vector2i(0, 0), 0) {
     set_max_storage(DEFAULT_MAX_STORAGE);
     local_pricer = new TownLocalPriceController;
-    for (const auto& [type, __]: CargoInfo::get_instance()->get_base_prices()) {
-        current_prices[type] = local_pricer->get_local_price(type);
-        cargo_sell_orders[type];
-    }
 }
 
 Town::Town(Vector2i new_location): Broker(new_location, 0) {
     set_max_storage(DEFAULT_MAX_STORAGE);
     local_pricer = new TownLocalPriceController;
-    for (const auto& [type, __]: CargoInfo::get_instance()->get_base_prices()) {
-        current_prices[type] = local_pricer->get_local_price(type);
-        cargo_sell_orders[type];
-    }
 }
 
 Ref<Town> Town::create(Vector2i new_location) {
@@ -69,26 +61,30 @@ Town::~Town() {
 void Town::initialize(Vector2i new_location) {
     Broker::initialize(new_location, 0);
     set_max_storage(DEFAULT_MAX_STORAGE);
-    local_pricer = new(LocalPriceController);
+    local_pricer = new TownLocalPriceController;
 }
 
-std::vector<float> Town::get_supply() const {
-    std::scoped_lock lock(m);
-    return local_pricer -> get_supply();
+TownLocalPriceController* Town::get_local_pricer() const {
+    return static_cast<TownLocalPriceController*>(local_pricer);
 }
 
-std::vector<float> Town::get_demand() const {
+std::unordered_map<int, float> Town::get_supply() const {
     std::scoped_lock lock(m);
-   return local_pricer -> get_demand();
+    return get_local_pricer() -> get_supply();
+}
+
+std::unordered_map<int, float> Town::get_demand() const {
+    std::scoped_lock lock(m);
+   return get_local_pricer() -> get_demand();
 }
 
 float Town::get_supply(int type) const {
     std::scoped_lock lock(m);
-    return local_pricer -> get_supply(type);
+    return get_local_pricer() -> get_supply(type);
 }
 float Town::get_demand(int type) const {
     std::scoped_lock lock(m);
-    return local_pricer -> get_demand(type);
+    return get_local_pricer() -> get_demand(type);
 }
 
 //To Buy
@@ -101,7 +97,7 @@ int Town::get_desired_cargo(int type, float price) const { // BUG/TODO: Kinda ou
 }
 
 int Town::get_desired_cargo_unsafe(int type, float price) const {
-    return local_pricer -> get_demand(type);
+    return get_local_pricer() -> get_demand(type);
 }
 
 // Production
@@ -115,8 +111,8 @@ Dictionary Town::get_fulfillment_dict() const {
 
 float Town::get_fulfillment(int type) const {
     std::scoped_lock lock(m);
-    int supply = local_pricer->get_supply(type);
-    int demand = local_pricer->get_demand(type);
+    int supply = get_local_pricer()->get_supply(type);
+    int demand = get_local_pricer()->get_demand(type);
     if (supply == 0)
 		return 5;
 	return float(demand / supply);
@@ -153,8 +149,7 @@ void Town::sell_to_pop(BasePop* pop) { // Called from Province, do not call loca
     
     {   
         std::scoped_lock lock(m);
-        
-        for (auto& [type, ms] : cargo_sell_orders) {
+        for (auto& [type, ms] : get_local_pricer()->cargo_sell_orders) {
             int desired = pop->get_desired(type);
             float pop_price = pop->get_buy_price(type, get_local_price_unsafe(type));
 
@@ -163,13 +158,13 @@ void Town::sell_to_pop(BasePop* pop) { // Called from Province, do not call loca
             }
             
             auto sell_it = ms.begin();
-            TownCargo* sell_order;
-            
-            local_pricer -> add_demand(type, pop_price, desired); // Only add demand since its not part of survey_broad_market()
-            local_demand[type] += desired;
+            std::shared_ptr<TownCargo> sell_order;
+            get_local_pricer() -> add_demand(type, pop_price, desired); // Only add demand since its not part of survey_broad_market()
+            get_local_pricer() -> add_local_demand(type, desired);
 
             while (sell_it != ms.end()) {
-                sell_order = *sell_it;
+                ERR_FAIL_COND_MSG((*sell_it).expired(), "EXPIRED POINTER FROM TOWN LOCAL PRICER");
+                sell_order = (*sell_it).lock();
 
                 const float seller_price = sell_order->price;
                 const float buyer_price = pop->get_buy_price(type, seller_price);
@@ -194,20 +189,19 @@ void Town::sell_to_pop(BasePop* pop) { // Called from Province, do not call loca
                 if (amount == 0) {
                     break;
                 }
-                report_sale(type, price, amount);
+                get_local_pricer()->report_sale(type, price, amount);
                 sell_order->sell_cargo(amount, price, money_to_pay); // Calls with money_to_pay
                 pop->buy_good(type, amount, price);
 
                 if (sell_order->amount == 0) {
-                    sell_it = delete_town_cargo(sell_it);
+                    sell_it = get_local_pricer()->delete_town_cargo(sell_it);
                 } else {
                     break;
                 }
             }
         }
-    
     }
-
+    
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     for (const auto &[terminal_id, to_pay]: money_to_pay) {
         Ref<Broker> broker = terminal_map->get_terminal_as<Broker>(terminal_id);
@@ -215,14 +209,6 @@ void Town::sell_to_pop(BasePop* pop) { // Called from Province, do not call loca
         
         broker->add_cash(to_pay);
     }
-}
-
-std::multiset<TownCargo *, TownCargo::TownCargoPtrCompare>::iterator Town::delete_town_cargo(std::multiset<TownCargo *, TownCargo::TownCargoPtrCompare>::iterator &sell_order_it) {
-    TownCargo* sell_order = *sell_order_it;
-    town_cargo_tracker[sell_order->terminal_id].erase(sell_order->type); // Erases from tracker map
-    sell_order_it = cargo_sell_orders[sell_order->type].erase(sell_order_it); // Erases from price ordered map
-    delete sell_order; // Deletes from memory
-    return sell_order_it; // Returns shifted pointer
 }
 
 void Town::pay_factory(int amount, float price, Vector2i source) {
@@ -251,10 +237,10 @@ std::set<Ref<FactoryTemplate>, FactoryTemplate::FactoryWageCompare> Town::get_em
 
 //Selling to brokers
 void Town::distribute_cargo() {
-    std::vector<float> supply = get_supply();
-	for (int type = 0; type < supply.size(); type++) {
+    std::unordered_map<int, float> supply = get_supply();
+	for (const auto& [type, __]: supply) {
         survey_broad_market(type);
-        if (cargo_sell_orders[type].empty()) continue;
+        if (get_local_pricer()->cargo_sell_orders[type].empty()) continue;
 		distribute_type(type);
     }
 }
@@ -320,11 +306,12 @@ void Town::distribute_type_to_broker(int type, Ref<Broker> broker, Ref<RoadDepot
         std::scoped_lock lock1(broker->m); // Lock Broker
         std::scoped_lock lock(m); //  Lock self
     
-        auto& ms = cargo_sell_orders[type];
+        auto& ms = get_local_pricer()->cargo_sell_orders[type];
         if (ms.empty()) return;
 
         auto it = ms.begin();
-        TownCargo* town_cargo = *it; // town_cargo comes from a fact/broker selling it, they would seek a higher price
+        ERR_FAIL_COND_MSG((*it).expired(), "EXPIRED POINTER FROM TOWN LOCAL PRICER");
+        std::shared_ptr<TownCargo> town_cargo = (*it).lock(); // town_cargo comes from a fact/broker selling it, they would seek a higher price
 
         float buyer_price = broker->get_local_price_unsafe(type);
         float seller_price = town_cargo->price;
@@ -347,17 +334,17 @@ void Town::distribute_type_to_broker(int type, Ref<Broker> broker, Ref<RoadDepot
             if (is_depot_valid) 
                 town_cargo_copy->add_fee_to_pay(road_depot->get_terminal_id(), fee);
             cargo_to_send.push_back(town_cargo_copy);
-            report_sale(type, price, amount);
+            get_local_pricer()->report_sale(type, price, amount);
             desired -= amount;
             storage[type] -= amount;
             town_cargo->transfer_cargo(amount);
             
             if (town_cargo->amount == 0) {
-                it = delete_town_cargo(it);
+                it = get_local_pricer()->delete_town_cargo(it);
                 if (it == ms.end()) {
                     break;
                 }
-                town_cargo = *it;
+                town_cargo = (*it).lock();
                 seller_price = town_cargo->price;
                 if ((buyer_price / (1 + fee)) > seller_price) break;
             } else {
@@ -383,28 +370,14 @@ std::vector<bool> Town::get_accepts_vector() const {
     return v;
 }
 
-float Town::get_local_price(int type) const {
-    std::scoped_lock lock(m);
-    return current_prices.at(type);
-}
-
-float Town::get_local_price_unsafe(int type) const {
-    return current_prices.at(type);
-}
-
 Dictionary Town::get_local_prices() const {
-    Dictionary d;
-    int size = get_supply().size();
     std::scoped_lock lock(m);
-    for (int type = 0; type < size; type++) {
-        d[type] = get_local_price_unsafe(type);
-    }
-    return d;
+    return get_local_pricer()->get_local_prices_dict(); 
 }
 
 std::unordered_map<int, float> Town::get_local_prices_map() {
     std::scoped_lock lock(m);
-    return current_prices; 
+    return get_local_pricer()->get_local_prices(); 
 }
 
 void Town::buy_cargo(int type, int amount, float price, int p_terminal_id) {
@@ -414,13 +387,8 @@ void Town::buy_cargo(int type, int amount, float price, int p_terminal_id) {
     TownCargo* new_town_cargo = new TownCargo(type, amount, price, p_terminal_id);
     {
         std::scoped_lock lock(m);
-        if (does_cargo_exist(p_terminal_id, type)) {
-            TownCargo* existing_town_cargo = town_cargo_tracker[p_terminal_id][type];
-            encode_existing_cargo(existing_town_cargo, new_town_cargo);
-            delete new_town_cargo;
-        } else {
-            encode_cargo(new_town_cargo);
-        }
+        storage[type] += amount;
+        get_local_pricer()->add_town_cargo(new_town_cargo);
     }
 }
 
@@ -433,35 +401,11 @@ void Town::buy_cargo(const TownCargo* cargo) {
     int type = cargo->type;
     {
         std::scoped_lock lock(m);
-        if (does_cargo_exist(p_terminal_id, type)) {
-            TownCargo* existing_town_cargo = town_cargo_tracker[p_terminal_id][type];
-            encode_existing_cargo(existing_town_cargo, new_town_cargo);
-            delete new_town_cargo;
-        } else {
-            encode_cargo(new_town_cargo);
-        }
+        storage[type] += cargo->amount;
+        get_local_pricer()->add_town_cargo(new_town_cargo);
 
     }
     
-}
-
-void Town::encode_cargo(TownCargo* town_cargo) {
-    int type = town_cargo->type;
-    int amount = town_cargo->amount;
-
-    cargo_sell_orders[type].insert(town_cargo);
-    town_cargo_tracker[town_cargo->terminal_id][type] = town_cargo;
-    storage[type] += amount;
-}
-
-void Town::encode_existing_cargo(TownCargo* existing_town_cargo, const TownCargo* new_town_cargo) {
-    int type = existing_town_cargo->type;
-    existing_town_cargo->price = new_town_cargo->price;
-    existing_town_cargo->age = 0;
-    int additional_amount = new_town_cargo->amount;
-
-    storage[type] += additional_amount;
-    existing_town_cargo->amount += additional_amount;
 }
 
 float Town::add_cargo(int type, float amount) {
@@ -472,171 +416,65 @@ void Town::age_all_cargo() {
     std::unordered_map<int, std::unordered_map<int, int>> cargo_to_return; // Stores money to pay other brokers locally to be done after unlocking
     {
         std::scoped_lock lock(m);
-        for (auto& [__, ms]: cargo_sell_orders) {
-            for (auto it = ms.begin(); it != ms.end();) { // No iterator
-                it = return_cargo(it, cargo_to_return);
-            }
-        }
+        cargo_to_return = get_local_pricer()->age_all_cargo_and_get_cargo_to_return();
     }   
     
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
-    for (const auto& [terminal_id, m]: cargo_to_return) {
+    for (const auto& [terminal_id, map]: cargo_to_return) {
         Ref<FactoryTemplate> factory = terminal_map->get_terminal_as<FactoryTemplate>(terminal_id);
-        if (factory.is_null()) continue;; 
-        for (const auto& [type, amount]: m) {
+        if (factory.is_null()) continue;
+        for (const auto& [type, amount]: map) {
             factory->add_cargo(type, amount);
+            storage[type] -= amount;
         }
-        
     }
-}
-
-std::multiset<TownCargo *, TownCargo::TownCargoPtrCompare>::iterator Town::return_cargo(std::multiset<TownCargo *, TownCargo::TownCargoPtrCompare>::iterator cargo_it, std::unordered_map<int, std::unordered_map<int, int>>& cargo_to_return) {
-    TownCargo* cargo = (*cargo_it);
-    if ((++(cargo->age)) > 5) {
-        int type = cargo->type;
-        storage[type] -= cargo->amount;
-        cargo->return_cargo(cargo_to_return);       //Return cargo to broker
-        cargo_it = delete_town_cargo(cargo_it);     //Delete old cargo
-    } else {
-        cargo_it++;                  //Increment if not deleting    
-    }
-    return cargo_it;
-}
-
-bool Town::does_cargo_exist(int p_terminal_id, int type) const {
-    if (town_cargo_tracker.count(p_terminal_id)) {
-        auto& cargo_map = (town_cargo_tracker.at(p_terminal_id));
-        return cargo_map.count(type);
-    } 
-    return false;
-}
-
-void Town::report_sale(int type, float price, float amount) {
-    if (amount == 0) {
-        return;
-    }
-    cargo_sold_map[type][round(price * 10)] += amount;
 }
 
 //Economy Stats
 
 void Town::update_buy_orders() {
 
-    std::vector<float> v;
+    std::unordered_map<int, float> map;
     {
         std::scoped_lock lock(m);
-        v = local_pricer -> get_last_month_demand();
+        map = get_local_pricer() -> get_last_month_demand();
     }
     
-    for (int type = 0; type < v.size(); type++) {
-        if (v[type] == 0) {
+    for (const auto& [type, amount]: map) {
+        if (amount == 0) {
             remove_order(type);
             remove_accept(type);
         } else {
             float price = get_local_price(type);
-            edit_order(type, v[type], true, price);
+            edit_order(type, amount, true, price);
             add_accept(type);
         }
     }
 }
 
-void Town::update_local_prices() {
-    std::vector<float> v;
-    {
-        std::scoped_lock lock(m);
-        v = local_pricer -> get_last_month_demand();
-    }
-
-    for (int type = 0; type < v.size(); type++) {
-        update_local_price(type);
-    }
-}
-
-void Town::update_local_price(int type) { // Creates a weighted average of cargo sold
-    std::scoped_lock lock(m);
-    if (cargo_sell_orders[type].size() == 0 && cargo_sold_map[type].size() == 0) return;
-
-    if (cargo_sell_orders[type].size() != 0) { // If there is demand + supply but no sales
-        current_prices[type] = get_weighted_average(cargo_sell_orders[type]); // Take average of sell orders, sellers will lower if no sales, and buyers will come up too
-        ERR_FAIL_COND_MSG(std::isnan(current_prices[type]), "Type: " + CargoInfo::get_instance()->get_cargo_name(type) + " has null price");
-        return;
-    }
-
-    current_prices[type] = get_weighted_average(cargo_sold_map[type]);
-
-    ERR_FAIL_COND_MSG(std::isnan(current_prices[type]), "Type: " + CargoInfo::get_instance()->get_cargo_name(type) + " has null price!");
-    cargo_sold_map[type].clear();
-}
-
-double Town::get_weighted_average(std::unordered_map<int, int> &m) const {
-    int total_weight = 0;
-    double sum_of_weighted_terms = 0;
-    for (const auto& [ten_price, amount]: m) {
-        float weighted_ave = (ten_price / 10.0) * amount;
-        if (amount <= 0) {
-            print_error(String::num(amount));
-        }
-        total_weight += amount;
-        sum_of_weighted_terms += weighted_ave;
-    }   
-    ERR_FAIL_COND_V_MSG(total_weight == 0, 0.0, "Total Amount sold is 0 yet was not erased!");
-    return sum_of_weighted_terms / total_weight;
-}
-
-double Town::get_weighted_average(std::multiset<TownCargo*, TownCargo::TownCargoPtrCompare> &s) const { // Huge amount of cargo with 0 cargo
-    int total_weight = 0;
-    float sum_of_weighted_terms = 0;
-    for (const auto& cargo: s) {
-        int amount = cargo->amount;
-        float price = cargo->price;
-        float weighted_ave = price * amount;
-        total_weight += amount;
-        sum_of_weighted_terms += weighted_ave;
-    }
-    ERR_FAIL_COND_V_MSG(total_weight == 0, 0.0, "Total Amount sold is 0 yet was not erased!");
-
-    return sum_of_weighted_terms / total_weight;
-}
-
 float Town::get_diff_between_demand_and_supply(int type) const {
     std::scoped_lock lock(m);
-    if (!old_local_demand.count(type)) {
-        return -local_pricer -> get_supply(type);
-    }
-    return old_local_demand.at(type) - local_pricer -> get_supply(type);
+    return get_local_pricer()->get_diff_between_demand_and_supply(type);
 }
 float Town::get_diff_between_demand_and_supply_unsafe(int type) const {
-    if (!old_local_demand.count(type)) {
-        return -local_pricer -> get_supply(type);
-    }
-    return old_local_demand.at(type) - local_pricer -> get_supply(type);
+    return get_local_pricer()->get_diff_between_demand_and_supply(type);
 }
 
 int Town::get_local_demand(int type) const {
     std::scoped_lock lock(m);
-    if (!old_local_demand.count(type)) {
-        return 0;
-    }
-    return old_local_demand.at(type);
+    return get_local_pricer()->get_local_demand(type);
 }
 
 // Process Hooks
 void Town::day_tick() {
-    distribute_cargo();
+    // distribute_cargo();
 }
 
 void Town::month_tick() {
-
-    update_local_prices();
     update_buy_orders();
     {
         std::scoped_lock lock(m);
-        local_pricer -> update_local_prices();
-        //TEMP
-        for (int type = 0; type < local_pricer->get_supply().size(); type++) {
-            old_local_demand[type] = local_demand[type];
-            local_demand[type]= 0;
-        }
+        get_local_pricer() -> update_local_prices();
     }
-    age_all_cargo();
+    // age_all_cargo();
 }

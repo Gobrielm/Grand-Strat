@@ -40,7 +40,7 @@ Broker::~Broker() {
         memdelete(ptr);
     }
     trade_orders.clear();
-    if (local_pricer) memdelete(local_pricer);
+    if (local_pricer) delete local_pricer;
     for (const auto& tile: connected_brokers) {
         Ref<Broker> broker = TerminalMap::get_instance() -> get_broker(tile);
         if (broker.is_null()) continue;
@@ -50,6 +50,10 @@ Broker::~Broker() {
 
 void Broker::initialize(const Vector2i new_location, const int player_owner, const int p_max_amount) {
     FixedHold::initialize(new_location, player_owner, p_max_amount);
+}
+
+LocalPriceController* Broker::get_local_pricer() const {
+    return local_pricer;
 }
 
 bool Broker::can_afford(float price) const {
@@ -62,7 +66,7 @@ bool Broker::can_afford_unsafe(float price) const {
 
 Dictionary Broker::get_local_prices() const {
     std::scoped_lock lock(m);
-    return local_pricer -> get_local_prices();
+    return local_pricer -> get_local_prices_dict();
 }
 
 float Broker::get_local_price(int type) const {
@@ -188,8 +192,9 @@ void Broker::add_connected_broker(Ref<Broker> broker) {
 }
 
 void Broker::remove_connected_broker(const Ref<Broker> broker) {
+    Vector2i loc = broker->get_location();
     std::scoped_lock lock(m);
-    connected_brokers.erase(broker->get_location());
+    connected_brokers.erase(loc);
 }
 
 Dictionary Broker::get_connected_broker_locations() {

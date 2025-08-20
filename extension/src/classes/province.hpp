@@ -29,6 +29,8 @@ class Province : public Object {
     std::unordered_map<PopTypes, std::unordered_set<int>> pop_types;
     std::unordered_map<int, BasePop*> pops;
 
+    int get_number_of_pops_unsafe(PopTypes pop_type) const;
+
     protected:
     static void _bind_methods();
     BasePop* get_pop(int pop_id);
