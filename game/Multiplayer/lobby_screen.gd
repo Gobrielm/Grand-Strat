@@ -4,6 +4,12 @@ extends Control
 func _on_button_pressed() -> void:
 	lobby.rpc("start_game")
 
+func delete_children() -> void:
+	$Camera2D.queue_free()
+	$ColorRect/Button.queue_free()
+	$ColorRect/PlayerList.queue_free()
+	$ColorRect.queue_free()
+
 func add_player(id: int) -> void:
 	var player_list: ItemList = $ColorRect/PlayerList
 	player_list.add_item(str(id), null, false)

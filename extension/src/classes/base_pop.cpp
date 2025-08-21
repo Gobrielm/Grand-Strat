@@ -237,6 +237,11 @@ float BasePop::get_sol() const {
     return get_income();
 }
 
+void BasePop::add_wealth(double amount) {
+    wealth += amount;
+    income += amount;
+}
+
 bool BasePop::is_starving() const {
     return months_starving != 0;
 }

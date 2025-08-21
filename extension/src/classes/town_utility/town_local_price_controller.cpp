@@ -4,14 +4,7 @@
 using TLPC = TownLocalPriceController;
 using ms_it = std::multiset<std::weak_ptr<TownCargo>, TownCargo::TownCargoPtrCompare>::iterator;
 
-TLPC::TownLocalPriceController(): LocalPriceController() {
-    for (int type = 0; type < base_prices.size(); type++) {
-        cargo_sold_map.emplace(type, std::unordered_map<int, int>{});
-        cargo_sell_orders.emplace(type, std::multiset<std::weak_ptr<TownCargo>, TownCargo::TownCargoPtrCompare>{});
-        last_month_local_demand.emplace(type, 0);
-        local_demand.emplace(type, 0);
-    }
-}
+TLPC::TownLocalPriceController(): LocalPriceController() {}
 
 void TLPC::add_local_demand(int type, int amount) {
     local_demand[type] += amount;
@@ -110,13 +103,12 @@ void TLPC::update_local_price(int type) { // Creates a weighted average of cargo
         current_prices[type] = get_weighted_average(cargo_sell_orders[type]); // Take average of sell orders, sellers will lower if no sales, and buyers will come up too
     }
 
-    // BUG HERE
-    // last_month_supply[type] = (supply[type]);
-    // supply[type].clear();
-    // last_month_demand[type] = (demand[type]);
-    // demand[type].clear();
-    // last_month_local_demand[type] = local_demand[type];
-    // local_demand[type] = 0;
+    last_month_supply[type] = (supply[type]);
+    supply[type].clear();
+    last_month_demand[type] = (demand[type]);
+    demand[type].clear();
+    last_month_local_demand[type] = local_demand[type];
+    local_demand[type] = 0;
 
     ERR_FAIL_COND_MSG(std::isnan(current_prices[type]), "Type: " + CargoInfo::get_instance()->get_cargo_name(type) + " has null price!");
 }
@@ -125,7 +117,7 @@ double TLPC::get_weighted_average(std::multiset<std::weak_ptr<TownCargo>, TownCa
     int total_weight = 0;
     double sum_of_weighted_terms = 0;
     for (const auto& cargo: s) {
-        if (cargo.expired()) print_line("ADSFAKJSF");
+        ERR_FAIL_COND_V_MSG(cargo.expired(), 0.0, "Tried to access previously deleted pointer.");
         std::shared_ptr<TownCargo> ptr = cargo.lock();
         int amount = ptr->amount;
         float price = ptr->price;

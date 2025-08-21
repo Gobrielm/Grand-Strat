@@ -62,7 +62,6 @@ func initialize_game() -> void:
 		TerminalMap.get_instance().assign_cargo_controller(cargo_cntrlr)
 		recipe.create_set_recipes()
 		rail_placer_obj.init_all_rails()
-		$player_camera/CanvasLayer/Desync_Label.visible = true
 		#testing = preload("res://Test/testing.gd").new(self)
 		#start_test()
 	else:

@@ -87,6 +87,7 @@ class BasePop : public Object {
     bool is_wage_acceptable(float p_wage) const;
     float get_expected_income(std::unordered_map<int, float> current_prices) const;
     float get_sol() const;
+    void add_wealth(double amount);
 
     bool is_starving() const;
     bool is_in_mild_starvation() const;

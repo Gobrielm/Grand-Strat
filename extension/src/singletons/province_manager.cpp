@@ -97,10 +97,19 @@ int ProvinceManager::get_population_as_level(int province_id) {
     return get_population(province_id) / 50000;
 }
 
-int ProvinceManager::get_total_population() {
+int ProvinceManager::get_total_population() const {
     int total = 0;
     for (auto &[_, prov] : provinces) {
         total += prov->get_population();
+    }
+    return total;
+}
+
+int ProvinceManager::get_number_of_pops_in_country(int country_id) const {
+    int total = 0;
+    for (const int& province_id: get_country_provinces(country_id)) {
+        Province* province = get_province(province_id);
+        total += province->get_number_of_pops();
     }
     return total;
 }
@@ -240,14 +249,11 @@ Dictionary ProvinceManager::get_countries_provinces(int country_id) const {
 }
 
 std::unordered_set<int> ProvinceManager::get_country_provinces(int country_id) const {
-    std::unordered_set<int> s;
     auto it = country_id_to_province_ids.find(country_id);
     if (it != country_id_to_province_ids.end()) {
-        for (int id : it->second) {
-            s.insert(id);
-        }
+        return it->second;
     }
-    return s;
+    return std::unordered_set<int>();
 }
 
 void ProvinceManager::month_tick() {

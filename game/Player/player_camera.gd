@@ -4,11 +4,12 @@ var last_mouse_position: Vector2
 @onready var coords_label: Label = $CanvasLayer/Coordinate_Label
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
+	$CanvasLayer.hide()
+	$CanvasLayer2.hide()
 	if multiplayer.get_unique_id() == 1:
 		$nation_picker/start_or_ready.text = "Start"
 	else:
 		$nation_picker/start_or_ready.text = "Ready"
-	$CanvasLayer/Desync_Label.visible = false
 
 func _process(_delta: float) -> void:
 	if is_mouse_hovering():
@@ -123,7 +124,9 @@ func _on_roads_button_pressed() -> void:
 
 func _on_start_or_ready_pressed() -> void:
 	Utils.world_map.get_parent().disable_nation_picker()
-	$nation_picker/start_or_ready.visible = false
+	$nation_picker.hide()
+	$CanvasLayer.show()
+	$CanvasLayer2.show()
 
 func _on_music_pressed() -> void:
 	Utils.click_music()

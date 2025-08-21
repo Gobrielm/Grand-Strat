@@ -84,11 +84,11 @@ func sync_clock_pause(pause: bool) -> void:
 
 @rpc("authority", "call_local", "reliable")
 func update_clock_pause(paused: bool) -> void:
+	$pause.set_pressed_no_signal(paused)
 	if paused:
 		$pause.icon = preload("res://Gui/Icons/go.png")
 	else:
 		$pause.icon = preload("res://Gui/Icons/pause.png")
-
 
 func _on_pause_toggled(toggled_on: bool) -> void:
 	update_clock_pause(toggled_on)

@@ -13,10 +13,10 @@ class LocalPriceController {
     
     // All of these are surveyed from other markets and represent a host of buyers' and sellers' prices
 
-    std::unordered_map<int, std::map<int, float, std::greater<int>>> demand; // type -> price * 10 -> amount
-    std::unordered_map<int, std::map<int, float, std::less<int>>> supply; // type -> price * 10 -> amount
-    std::unordered_map<int, std::map<int, float, std::greater<int>>> last_month_demand; // type -> price * 10 -> amount
-    std::unordered_map<int, std::map<int, float, std::less<int>>> last_month_supply; // type -> price * 10 -> amount
+    std::unordered_map<int, std::unordered_map<int, float>> demand; // type -> price * 10 -> amount
+    std::unordered_map<int, std::unordered_map<int, float>> supply; // type -> price * 10 -> amount
+    std::unordered_map<int, std::unordered_map<int, float>> last_month_demand; // type -> price * 10 -> amount
+    std::unordered_map<int, std::unordered_map<int, float>> last_month_supply; // type -> price * 10 -> amount
 
     std::unordered_map<int, float> current_prices; // Keep track of prices from last month
 
@@ -26,8 +26,7 @@ class LocalPriceController {
 
     virtual void update_local_price(int type);
 
-    template <typename Compare>
-    double get_weighted_average(std::map<int, float, Compare> &m) const;
+    double get_weighted_average(std::unordered_map<int, float> &m) const;
 
     public:
 

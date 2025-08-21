@@ -11,10 +11,6 @@ LocalPriceController::LocalPriceController() {
     int type = 0;
     for (const auto &price: base_prices) {
         current_prices[type] = price;
-        supply.emplace(type, std::map<int, float, std::less<int>>{});
-        demand.emplace(type, std::map<int, float, std::greater<int>>{});
-        last_month_supply.emplace(type, std::map<int, float, std::less<int>>{});
-        last_month_demand.emplace(type, std::map<int, float, std::greater<int>>{});
         type++;
     }
 }
@@ -53,8 +49,7 @@ void LocalPriceController::update_local_price(int type) { // Creates a weighted 
     ERR_FAIL_COND_MSG(std::isnan(current_prices[type]), "Type: " + CargoInfo::get_instance()->get_cargo_name(type) + " has null price!");
 }
 
-template <typename Compare>
-double LocalPriceController::get_weighted_average(std::map<int, float, Compare> &m) const {
+double LocalPriceController::get_weighted_average(std::unordered_map<int, float> &m) const {
     float total_weight = 0;
     double sum_of_weighted_terms = 0;
     for (const auto& [ten_price, amount]: m) {
@@ -66,8 +61,14 @@ double LocalPriceController::get_weighted_average(std::map<int, float, Compare> 
     return sum_of_weighted_terms / total_weight;
 }
 
-void LocalPriceController::add_demand(int type, float price, float amount) { demand[type][round(price * 10)] += amount; }
-void LocalPriceController::add_supply(int type, float price, float amount) { supply[type][round(price * 10)] += amount; }
+void LocalPriceController::add_demand(int type, float price, float amount) { 
+    if (amount <= 0) return;
+    demand[type][round(price * 10)] += amount; 
+}
+void LocalPriceController::add_supply(int type, float price, float amount) { 
+    if (amount <= 0) return;
+    supply[type][round(price * 10)] += amount; 
+}
 
 float LocalPriceController::get_demand(int type) const {
     if (!demand.count(type)) return 0;
@@ -126,8 +127,8 @@ std::unordered_map<int, float> LocalPriceController::get_supply() const {
 
 std::unordered_map<int, float> LocalPriceController::get_last_month_demand() const { 
     std::unordered_map<int, float> toReturn;
-    for (const auto& [__, m]: last_month_demand) {
-        for (const auto& [type, amount]: m) {
+    for (const auto& [type, m]: last_month_demand) {
+        for (const auto& [__, amount]: m) {
             toReturn[type] += amount;
         }
     }
@@ -135,8 +136,8 @@ std::unordered_map<int, float> LocalPriceController::get_last_month_demand() con
 }
 std::unordered_map<int, float> LocalPriceController::get_last_month_supply() const { 
     std::unordered_map<int, float> toReturn;
-    for (const auto& [__, m]: last_month_supply) {
-        for (const auto& [type, amount]: m) {
+    for (const auto& [type, m]: last_month_supply) {
+        for (const auto& [__, amount]: m) {
             toReturn[type] += amount;
         }
     }

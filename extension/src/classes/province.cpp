@@ -373,6 +373,17 @@ int Province::get_pop_desired(int pop_id, int type, float price) {
     return pop->get_desired(type, price);
 }
 
+void Province::pay_pops(int num_to_pay, double for_each) {
+    std::unique_lock lock(pops_lock);
+
+    while (num_to_pay > 0) {
+        auto it = pops.begin();
+        std::advance(it, rand() % pops.size());
+        BasePop* pop = (it)->second;
+        pop->add_wealth(num_to_pay);
+    }
+}
+
 BasePop* Province::get_pop(int pop_id) {
     ERR_FAIL_COND_V_EDMSG(!pops.count(pop_id), nullptr, "Pop of id: " + String::num(pop_id) + " not found.");
     return pops[pop_id];

@@ -17,8 +17,8 @@ class ProvinceManager : public RefCounted {
 
     mutable std::shared_mutex province_mutex;
     static Ref<ProvinceManager> singleton_instance;
-    std::unordered_map<int, Province*> provinces;
-    std::unordered_map<Vector2i, int, godot_helpers::Vector2iHasher> tiles_to_province_id;
+    std::unordered_map<int, Province*> provinces; // Province id -> province
+    std::unordered_map<Vector2i, int, godot_helpers::Vector2iHasher> tiles_to_province_id; 
     std::unordered_map<int, std::unordered_set<int>> country_id_to_province_ids;
 
     //Timing
@@ -63,7 +63,8 @@ public:
     int get_province_population(Vector2i tile);
     int get_population(int province_id);
     int get_population_as_level(int province_id);
-    int get_total_population();
+    int get_total_population() const;
+    int get_number_of_pops_in_country(int country_id) const;
     void create_pops();
     using MapType = std::unordered_map<int, Province*>;
     void create_pops_range(MapType::iterator start, MapType::iterator end);

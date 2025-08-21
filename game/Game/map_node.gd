@@ -1,5 +1,7 @@
 extends Node
 
+signal map_creation_finished
+
 @onready var tile_ownership_obj: tile_ownership = $tile_ownership
 @onready var main_map: TileMapLayer = $main_map
 @onready var camera: Camera2D = $main_map/player_camera
@@ -27,6 +29,8 @@ func initialize_game() -> void:
 	main_map.initialize_game()
 	await get_tree().process_frame
 	await get_tree().process_frame
+	cargo_controller.get_instance().backend_pause()
+	clock_singleton.get_instance().sync_clock_pause(true)
 	if unique_id != 1:
 		remove_child(cargo_map)
 		cargo_map.queue_free()
@@ -56,6 +60,7 @@ func initialize_game() -> void:
 		ProvinceManager.get_instance().create_pops()
 		cargo_map.add_industries_to_towns()
 	enable_nation_picker()
+	map_creation_finished.emit()
 
 func _input(event: InputEvent) -> void:
 	if !TerminalMap.is_instance_created():

@@ -90,6 +90,7 @@ class Province : public Object {
     void fire_pop(int pop_id);
     void sell_cargo_to_pop(int pop_id, int type, int amount, float price);
     int get_pop_desired(int pop_id, int type, float price);
+    void pay_pops(int num_to_pay, double for_each);
 
     // Local Pop Stuff
     void create_pops();

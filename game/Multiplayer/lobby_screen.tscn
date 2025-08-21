@@ -33,4 +33,7 @@ offset_right = 611.0
 offset_bottom = 192.0
 text = "Start Game"
 
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(575.5, 324.5)
+
 [connection signal="pressed" from="ColorRect/Button" to="." method="_on_button_pressed"]
