@@ -220,7 +220,23 @@ void TerminalMap::encode_factory(Ref<Factory> factory, int mult) {
     
     create_terminal(factory);
     province->add_terminal(coords); // Adds to province
-    cargo_map->call("call_set_tile_rpc", coords, factory->get_primary_type());
+    cargo_map->call_deferred("call_set_tile_rpc", coords, factory->get_primary_type()); // Will result in lots of memory when used extensively
+}
+
+void TerminalMap::encode_factory_no_calls_to_cargo_map(Ref<Factory> factory, int mult) {
+    for (int i = 1; i < mult; i++) {
+        factory->admin_upgrade();
+    }
+    Ref<ProvinceManager> province_manager = ProvinceManager::get_instance();
+    Vector2i coords = factory->get_location();
+    Province* province = province_manager->get_province(province_manager->get_province_id(coords));
+    if (province == nullptr) {
+        print_error("Province not found with tile : " + coords);
+        return;
+    }
+    
+    create_terminal(factory);
+    province->add_terminal(coords); // Adds to province
 }
 
 void TerminalMap::encode_factory_from_construction_site(Ref<Factory> factory) {

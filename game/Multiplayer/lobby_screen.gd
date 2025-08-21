@@ -1,6 +1,12 @@
 extends Control
 @onready var lobby: Node = get_parent()
 var started: bool = false
+var target_progress: int = 0
+var incrementage: float = 0
+
+func _process(delta: float) -> void:
+	if ($ColorRect/ProgressBar.value < target_progress):
+		$ColorRect/ProgressBar.value += incrementage
 
 func _on_button_pressed() -> void:
 	if (!started):
@@ -14,8 +20,8 @@ func delete_children() -> void:
 		child.queue_free()
 
 func update_progress_bar(amount: float) -> void:
-	print(amount)
-	$ColorRect/ProgressBar.value = amount
+	target_progress = amount
+	incrementage = (target_progress - $ColorRect/ProgressBar.value) / 100.0
 
 func add_player(id: int) -> void:
 	var player_list: ItemList = $ColorRect/PlayerList

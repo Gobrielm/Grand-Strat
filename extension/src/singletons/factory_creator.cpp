@@ -49,17 +49,18 @@ void FactoryCreator::create_primary_industry(int type, Vector2i coords, int play
     }
 }
 
-void FactoryCreator::create_secondary_industry(Recipe* recipe, Vector2i coords, int player_id, int mult) {
+void FactoryCreator::create_primary_industry_no_cargo_map_call(int type, Vector2i coords, int player_id, int mult) {
     if (coords == Vector2i(0, 0)) {
         print_error("Tried to build factory at " + coords);
         return;
     }
+    Recipe* recipe = RecipeInfo::get_instance()->get_primary_recipe_for_type(type);
     if (player_id <= 0) {
         Ref<AiFactory> factory = Ref<AiFactory>(memnew(AiFactory(coords, player_id, recipe)));
-        TerminalMap::get_instance()->encode_factory(factory, mult);
+        TerminalMap::get_instance()->encode_factory_no_calls_to_cargo_map(factory, mult);
     } else {
         Ref<Factory> factory = Ref<Factory>(memnew(Factory(coords, player_id, recipe)));
-        TerminalMap::get_instance()->encode_factory(factory, mult);
+        TerminalMap::get_instance()->encode_factory_no_calls_to_cargo_map(factory, mult);
     }
 }
 

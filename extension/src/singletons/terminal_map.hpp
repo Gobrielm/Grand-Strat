@@ -76,6 +76,7 @@ public:
     void create_isolated_terminal(Ref<Terminal> p_terminal);
     void create_terminal(Ref<Terminal> p_terminal);
     void encode_factory(Ref<Factory> factory, int mult = 1);
+    void encode_factory_no_calls_to_cargo_map(Ref<Factory> factory, int mult = 1); // used when calling this a lot to prevent deferred calls from clogging memory
     void encode_factory_from_construction_site(Ref<Factory> factory);
     void add_connected_brokers(Ref<Broker> p_broker);
     void add_connected_stations(Ref<RoadDepot> road_depot);

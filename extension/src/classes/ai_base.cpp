@@ -1,6 +1,8 @@
 #include "ai_base.hpp"
 #include "../singletons/province_manager.hpp"
 #include "../singletons/terminal_map.hpp"
+#include "../singletons/road_map.hpp"
+#include "../singletons/factory_creator.hpp"
 
 using namespace godot;
 
@@ -32,6 +34,6 @@ bool AiBase::is_tile_owned(Vector2i tile) const {
 }   
 
 void AiBase::place_depot(Vector2i tile) {
-    TileMapLayer* cargo_map = TerminalMap::get_instance() -> get_cargo_map();
-    cargo_map->call("place_road_depot", tile, get_owner_id());
+    RoadMap::get_instance()->place_road_depot(tile);
+	FactoryCreator::get_instance()->create_road_depot(tile, get_owner_id());
 }

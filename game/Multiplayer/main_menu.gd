@@ -17,7 +17,7 @@ func _on_join_game_pressed() -> void:
 
 func parse_valid_ip_address(input: String) -> String:
 	if input.is_empty():
-		#BUG: DO NOT KEEP THIS
+		#TODO: DO NOT KEEP THIS
 		input = "10.100.0.236"
 	var ip_address_blocks: Array = ["0", "0", "0", "0"]
 	var curr_block: int = 0
@@ -45,7 +45,7 @@ func parse_valid_ip_address(input: String) -> String:
 	address[-1] = ""
 	return address
 	
-func randomize_texture_rect() -> void: # Only allows jpg
+func randomize_texture_rect() -> void:
 	var images: Array = []
 	var dir: DirAccess = DirAccess.open("res://external_images")
 	dir.list_dir_begin()

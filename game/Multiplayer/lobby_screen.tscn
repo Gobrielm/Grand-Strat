@@ -1,6 +1,13 @@
-[gd_scene load_steps=2 format=3 uid="uid://dbb2spx1uq6ln"]
+[gd_scene load_steps=4 format=3 uid="uid://dbb2spx1uq6ln"]
 
 [ext_resource type="Script" uid="uid://3umfxkqtipoh" path="res://Multiplayer/lobby_screen.gd" id="1_avp8e"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_avp8e"]
+bg_color = Color(0, 0.733333, 0, 1)
+
+[sub_resource type="Theme" id="Theme_76eev"]
+ProgressBar/colors/font_color = Color(0, 0, 0, 1)
+ProgressBar/styles/fill = SubResource("StyleBoxFlat_avp8e")
 
 [node name="lobby_screen" type="Control"]
 layout_mode = 3
@@ -34,12 +41,12 @@ offset_bottom = 192.0
 text = "Start Game"
 
 [node name="ProgressBar" type="ProgressBar" parent="ColorRect"]
-modulate = Color(0, 1, 0, 1)
 layout_mode = 0
 offset_left = 488.0
 offset_top = 210.0
 offset_right = 735.0
 offset_bottom = 237.0
+theme = SubResource("Theme_76eev")
 
 [node name="Camera2D" type="Camera2D" parent="."]
 position = Vector2(575.5, 324.5)

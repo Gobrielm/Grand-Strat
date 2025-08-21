@@ -29,6 +29,7 @@ float TLPC::get_diff_between_demand_and_supply(int type) const {
 void TLPC::add_town_cargo(TownCargo* new_cargo) {
     int term_id = new_cargo->terminal_id;
     int type = new_cargo->type;
+    add_supply(type, new_cargo->price, new_cargo->amount);
     if (std::shared_ptr<TownCargo> existing_cargo = get_cargo(term_id, type)) {
         existing_cargo->price = new_cargo->price;
         existing_cargo->age = 0;

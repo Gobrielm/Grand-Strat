@@ -29,13 +29,13 @@ func _ready() -> void:
 	set_up()
 	await get_tree().process_frame
 	await get_tree().process_frame
-	#creation_thread = Thread.new()
-	#creation_thread.start(initialize_game)
-	#connect("map_creation_finished", sync_creation_thread)
-	initialize_game()
+	creation_thread = Thread.new()
+	creation_thread.start(initialize_game)
+	#initialize_game()
 
 func sync_creation_thread() -> void:
 	creation_thread.wait_to_finish()
+	map_creation_finished.emit()
 
 func update_map_creation_progress(progress: float) -> void:
 	map_creation_progress.emit(progress)
@@ -49,7 +49,7 @@ func set_up() -> void:
 
 func initialize_game() -> void:
 	#Main map initialization is very basic, do first
-	call_deferred("update_map_creation_progress", 10)
+	call_deferred("update_map_creation_progress", 20)
 	if unique_id != 1:
 		remove_child(cargo_map)
 		cargo_map.queue_free()
@@ -61,24 +61,23 @@ func initialize_game() -> void:
 		tile_ownership_obj.name = "tile_ownership"
 		add_child(tile_ownership_obj)
 	else:
-		call_deferred("update_map_creation_progress", 20)
 		#First provences and population
 		Utils.cargo_values.create_provinces_and_pop()
-		call_deferred("update_map_creation_progress", 30)
+		call_deferred("update_map_creation_progress", 37)
 		#Then countries
 		tile_ownership_obj.create_countries()
-		call_deferred("update_map_creation_progress", 40)
+		call_deferred("update_map_creation_progress", 65)
 		#Then resources and industries that need both of those
 		cargo_map.place_resources(main_map) # Creates resources and towns
-		call_deferred("update_map_creation_progress", 60)
+		call_deferred("update_map_creation_progress", 85)
 		#cargo_map.test()
 		#Then create pops which needs towns
 		ProvinceManager.get_instance().create_pops()
-		call_deferred("update_map_creation_progress", 80)
+		call_deferred("update_map_creation_progress", 95)
 		cargo_map.add_industries_to_towns()
 	enable_nation_picker()
 	call_deferred("update_map_creation_progress", 100)
-	map_creation_finished.emit()
+	call_deferred("sync_creation_thread")
 
 func _input(event: InputEvent) -> void:
 	if !TerminalMap.is_instance_created():

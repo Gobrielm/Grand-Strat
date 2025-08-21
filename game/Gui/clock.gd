@@ -18,6 +18,9 @@ static func get_instance() -> clock_singleton:
 	assert(singleton_instance != null, "Train_Manager has not be created, and has been accessed")
 	return singleton_instance
 
+func _ready() -> void:
+	update_gui.rpc(get_data_in_string(), get_game_speed())
+
 func iterate_day() -> void:
 	day += 1
 	if day > month_lengths[month]:

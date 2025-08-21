@@ -11,6 +11,8 @@ using namespace godot;
 class InitialBuilder : public CompanyAi {
     GDCLASS(InitialBuilder, CompanyAi);
 
+    std::unordered_map<Vector2i, int, godot_helpers::Vector2iHasher> factories_to_place_on_map; // Tile -> type, if type is negitive, place road_depot
+
     bool does_have_money_for_investment() override;
     void connect_road_depot(const Vector2i &depot);
     std::vector<Vector2i> bfs_to_closest(Vector2i start, bool(*f)(Vector2i));

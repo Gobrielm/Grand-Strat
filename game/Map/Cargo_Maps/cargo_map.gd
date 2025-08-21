@@ -24,22 +24,38 @@ func transform_construction_site_to_factory(coords: Vector2i) -> void:
 	add_terminal_to_province(TerminalMap.get_instance().get_terminal(coords))
 
 func place_random_industries() -> void:
+	var town_tiles_to_place: Array[Vector2i] = []
 	for prov: Province in ProvinceManager.get_instance().get_provinces():
-		create_town_in_province(prov)
-		
-func create_town_in_province(prov: Province) -> void:
+		var tile: Variant = create_town_in_province(prov)
+		if tile:
+			town_tiles_to_place.append(tile as Vector2i)
+	call_deferred("place_towns_client_side", town_tiles_to_place)
+	
+	
+func create_town_in_province(prov: Province) -> Variant:
 	var tile: Vector2i = prov.get_random_tile()
 	if tile != Vector2i(0, 0): # Isn;t available
-		create_town(tile, prov.get_province_id())
+		if create_town(tile, prov.get_province_id()):
+			return tile
+	return null
 
-func create_town(coords: Vector2i, prov_id: int) -> void:
+## Returns true if town sucessfully placed
+func create_town(coords: Vector2i, prov_id: int) -> bool:
 	const TOWN_THRESHOLD: int = 100000
 	var province_manager: ProvinceManager = ProvinceManager.get_instance()
 	if province_manager.get_population(prov_id) < TOWN_THRESHOLD:
-		return
+		return false
 	FactoryCreator.get_instance().create_town(coords)
 	Utils.world_map.make_cell_invisible(coords)
-	set_tile.rpc(coords, Vector2i(0, 1))
+	return true
+
+func place_towns_client_side(town_tiles: Array[Vector2i]) -> void:
+	for tile: Vector2i in town_tiles:
+		set_tile.rpc(tile, Vector2i(0, 1))
+
+func place_factories_client_side(fact_tiles: Dictionary) -> void:
+	for tile: Vector2i in fact_tiles:
+		set_tile.rpc(tile, get_atlas_cell(fact_tiles[tile]))
 
 func add_industries_to_towns() -> void:
 	for country_id: int in tile_ownership.get_instance().get_country_ids():

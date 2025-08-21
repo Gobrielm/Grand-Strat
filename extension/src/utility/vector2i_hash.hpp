@@ -1,7 +1,9 @@
 // vector2i_hash.hpp
 #pragma once
 #include <godot_cpp/variant/vector2i.hpp>
+#include <godot_cpp/variant/dictionary.hpp>
 #include <functional>
+#include <unordered_map>
 
 namespace godot_helpers {
     struct Vector2iHasher {
@@ -56,4 +58,13 @@ namespace godot_helpers {
             return weight > other.weight;
         }
     };
+
+    template<typename Key, typename Val, typename Compare>
+    godot::Dictionary convert_map_to_dictionary(std::unordered_map<Key, Val, Compare> m) {
+        godot::Dictionary d;
+        for (const auto& [key, val]: m) {
+            d[key] = val;
+        }
+        return d;
+    }
 }

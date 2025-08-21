@@ -108,8 +108,8 @@ float LocalPriceController::get_last_month_supply(int type) const {
 
 std::unordered_map<int, float> LocalPriceController::get_demand() const { 
     std::unordered_map<int, float> toReturn;
-    for (const auto& [__, m]: demand) {
-        for (const auto& [type, amount]: m) {
+    for (const auto& [type, m]: demand) {
+        for (const auto& [__, amount]: m) {
             toReturn[type] += amount;
         }
     }
@@ -117,8 +117,8 @@ std::unordered_map<int, float> LocalPriceController::get_demand() const {
 }
 std::unordered_map<int, float> LocalPriceController::get_supply() const { 
     std::unordered_map<int, float> toReturn;
-    for (const auto& [__, m]: supply) {
-        for (const auto& [type, amount]: m) {
+    for (const auto& [type, m]: supply) {
+        for (const auto& [__, amount]: m) {
             toReturn[type] += amount;
         }
     }

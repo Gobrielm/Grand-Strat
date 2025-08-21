@@ -47,6 +47,8 @@ void InitialBuilder::build_initital_factories() {
     auto end_time = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = end_time - start_time;
     print_line("Factory Placement took " + String::num_scientific(elapsed.count()) + " seconds");
+    Dictionary d = godot_helpers::convert_map_to_dictionary<Vector2i, int, godot_helpers::Vector2iHasher>(factories_to_place_on_map);
+    cargo_map->call_deferred("place_factories_client_side", d);
 }
 
 void InitialBuilder::build_factory_type(int type, Province* province) {
@@ -63,7 +65,8 @@ void InitialBuilder::build_factory_type(int type, Province* province) {
                 //Need to check if this factory will be cutoff, then check neighboors
                 if (will_any_factory_be_cut_off(tile)) continue;
                 int mult = std::min(rand() % cargo_val, cargo_val);
-                FactoryCreator::get_instance()->create_primary_industry(type, tile, get_owner_id(), mult);
+                FactoryCreator::get_instance()->create_primary_industry_no_cargo_map_call(type, tile, get_owner_id(), mult);
+                factories_to_place_on_map[tile] = type;
 
                 levels_placed += mult;
                 if (levels_placed > num_of_levels_to_place) {
