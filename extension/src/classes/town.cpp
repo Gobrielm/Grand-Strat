@@ -144,11 +144,12 @@ void Town::add_pop(int pop_id) {
     town_pop_ids.insert(pop_id);
 }
 
-void Town::sell_to_pop(BasePop* pop) { // Called from Province, do not call locally
+void Town::sell_to_pop(BasePop* pop, std::shared_mutex& province_pop_lock) { // Called from Province, do not call locally
     std::unordered_map<int, float> money_to_pay; // Queued up money to distribute to owners of cargo sold
     
     {   
-        std::scoped_lock lock(m);
+        std::unique_lock lock1(province_pop_lock); // Outside in
+        std::scoped_lock lock2(m);
         for (auto& [type, ms] : get_local_pricer()->cargo_sell_orders) {
             int desired = pop->get_desired(type);
             float pop_price = pop->get_buy_price(type, get_local_price_unsafe(type));

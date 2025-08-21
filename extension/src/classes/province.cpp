@@ -623,8 +623,8 @@ std::set<Ref<FactoryTemplate>, FactoryTemplate::FactoryWageCompare> Province::ge
     return town_ref->get_employment_sorted_by_wage(town);
 }
 
-Ref<Town> Province::get_closest_town_to_pop(BasePop* pop) const {
-    return TerminalMap::get_instance()->get_town(closest_town_to_tile.at(pop->get_location()));
+Vector2i Province::get_closest_town_tile_to_pop(BasePop* pop) const {
+    return closest_town_to_tile.at(pop->get_location());
 }
 
 void Province::month_tick() {
@@ -666,48 +666,97 @@ void Province::change_pops() {
 void Province::sell_to_pops() {
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     // Get closest town and then use town functions to sell to those pops
-    std::unique_lock lock(pops_lock);
-    
-    CONST_TOWN_POP_LOOP() {
-        BasePop* pop = get_pop(pop_id);
-        pop->month_tick();
-        Ref<Town> town = TerminalMap::get_instance()->get_town(pop->get_location());
-        if (town.is_null()) {
-            if (get_town_tiles().size() != 0) print_error("There are more than 0 towns"); 
-            print_error("Pop is not in province or province has no towns, pop location: " + pop->get_location());
-            continue;
-        }
-        town->sell_to_pop(pop);
+    std::unordered_map<Vector2i, Ref<Town>, godot_helpers::Vector2iHasher> towns;
+    for (const auto& tile: get_town_tiles()) {
+        towns[tile] = TerminalMap::get_instance()->get_town(tile);
     }
 
-    CONST_RURAL_POP_LOOP() {
-        BasePop* pop = get_pop(pop_id);
-        pop->month_tick();
-        if (!closest_town_to_tile.count(pop->get_location())) {
-            // Rural pops may exist in province without town
-            continue;
+    std::vector<BasePop*> pops_to_month_tick;
+    {   
+        std::unique_lock lock(pops_lock);
+        CONST_TOWN_POP_LOOP() {
+            BasePop* pop = get_pop(pop_id);
+            pop->month_tick();
+            pops_to_month_tick.push_back(pop);
         }
-        Ref<Town> town = get_closest_town_to_pop(pop);
+        CONST_RURAL_POP_LOOP() {
+            BasePop* pop = get_pop(pop_id);
+            pop->month_tick();
+            pops_to_month_tick.push_back(pop);
+        }
+        CONST_PEASANT_POP_LOOP() {
+            BasePop* pop = get_pop(pop_id);
+            pop->month_tick();
+            pops_to_month_tick.push_back(pop);
+        }
+    }
+
+    for (auto& pop: pops_to_month_tick) {
+        if (!closest_town_to_tile.count(pop->get_location())) {
+            continue; // Province has no towns
+        }
+        Ref<Town> town = towns[get_closest_town_tile_to_pop(pop)];
         if (town.is_null()) {
             print_error("Towns and terminals are desynced at " + pop->get_location());
             continue;
         }
-        town->sell_to_pop(pop);
+        town->sell_to_pop(pop, pops_lock);
     }
-
-    CONST_PEASANT_POP_LOOP() {
-        BasePop* pop = get_pop(pop_id);
-        pop->month_tick();
-        if (!closest_town_to_tile.count(pop->get_location())) {
-            // Peasant pops may exist in province without town
-            continue;
-        }
-        Ref<Town> town = get_closest_town_to_pop(pop);
-        if (town.is_null()) {
-            print_error("Towns and terminals are desynced at " + pop->get_location());
-            continue;
-        }
-        town->sell_to_pop(pop);
-    }
-
 }
+
+
+// void Province::sell_to_pops() {
+//     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
+//     // Get closest town and then use town functions to sell to those pops
+
+//     std::unordered_map<Vector2i, Ref<Town>, godot_helpers::Vector2iHasher> towns;
+//     for (const auto& tile: get_town_tiles()) {
+//         towns[tile] = TerminalMap::get_instance()->get_town(tile);
+//     }
+
+//     std::unique_lock lock(pops_lock);
+    
+    
+//     CONST_TOWN_POP_LOOP() {
+//         BasePop* pop = get_pop(pop_id);
+//         pop->month_tick();
+//         Ref<Town> town = towns[pop->get_location()];
+//         if (town.is_null()) {
+//             if (get_town_tiles().size() != 0) print_error("There are more than 0 towns"); 
+//             print_error("Pop is not in province or province has no towns, pop location: " + pop->get_location());
+//             continue;
+//         }
+//         town->sell_to_pop(pop);
+//     }
+
+//     CONST_RURAL_POP_LOOP() {
+//         BasePop* pop = get_pop(pop_id);
+//         pop->month_tick();
+//         if (!closest_town_to_tile.count(pop->get_location())) {
+//             // Rural pops may exist in province without town
+//             continue;
+//         }
+//         Ref<Town> town = towns[get_closest_town_tile_to_pop(pop)];
+//         if (town.is_null()) {
+//             print_error("Towns and terminals are desynced at " + pop->get_location());
+//             continue;
+//         }
+//         town->sell_to_pop(pop);
+//     }
+
+//     CONST_PEASANT_POP_LOOP() {
+//         BasePop* pop = get_pop(pop_id);
+//         pop->month_tick();
+//         if (!closest_town_to_tile.count(pop->get_location())) {
+//             // Peasant pops may exist in province without town
+//             continue;
+//         }
+//         Ref<Town> town = towns[get_closest_town_tile_to_pop(pop)];
+//         if (town.is_null()) {
+//             print_error("Towns and terminals are desynced at " + pop->get_location());
+//             continue;
+//         }
+//         town->sell_to_pop(pop);
+//     }
+
+// }

@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <set>
 #include <vector>
+#include <shared_mutex>
 
 #include "broker.hpp"
 #include "factory_template.hpp"
@@ -60,7 +61,7 @@ public:
 
     //Pop stuff
     void add_pop(int pop_id);
-    void sell_to_pop(BasePop* pop);
+    void sell_to_pop(BasePop* pop, std::shared_mutex& province_pop_lock);
     void pay_factory(int amount, float price, Vector2i source);
     int get_total_pops() const;
     std::set<Ref<FactoryTemplate>, FactoryTemplate::FactoryWageCompare> get_employment_sorted_by_wage(PopTypes pop_type) const;
