@@ -76,15 +76,16 @@ func remove_multiplayer_peer() -> void:
 @rpc("call_local", "reliable")
 func start_game() -> void:
 	var map_node: CanvasGroup = load("res://Game/map_node.tscn").instantiate()
-	map_node.visible = false
+	map_node.hide()
 	add_child(map_node)
 	map_node.connect("map_creation_finished", map_creation_finished)
+	map_node.connect("map_creation_progress", player_lobby.update_progress_bar)
 
 func map_creation_finished() -> void:
 	remove_child(player_lobby)
 	player_lobby.delete_children()
 	player_lobby.queue_free()
-	get_node("map_node").visible = true
+	get_node("map_node").show()
 
 # Every peer will call this when they have loaded the game scene.
 @rpc("any_peer", "call_local", "reliable")

@@ -15,6 +15,7 @@ var threads_request_pause: int = 0
 func _init() -> void:
 	assert(singleton_instance == null, "Cannot create multiple instances of singleton!")
 	singleton_instance = self
+	backend_pause()
 
 static func get_instance() -> cargo_controller:
 	assert(singleton_instance != null, "Cargo Controller has not be created, and has been accessed")

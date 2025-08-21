@@ -467,7 +467,7 @@ int Town::get_local_demand(int type) const {
 
 // Process Hooks
 void Town::day_tick() {
-    // distribute_cargo();
+    distribute_cargo();
 }
 
 void Town::month_tick() {
@@ -476,5 +476,5 @@ void Town::month_tick() {
         std::scoped_lock lock(m);
         get_local_pricer() -> update_local_prices();
     }
-    // age_all_cargo();
+    age_all_cargo();
 }

@@ -6,10 +6,14 @@ var last_mouse_position: Vector2
 func _ready() -> void:
 	$CanvasLayer.hide()
 	$CanvasLayer2.hide()
+	$nation_picker.hide()
 	if multiplayer.get_unique_id() == 1:
 		$nation_picker/start_or_ready.text = "Start"
 	else:
 		$nation_picker/start_or_ready.text = "Ready"
+
+func start_nation_picking() -> void:
+	$nation_picker.show()
 
 func _process(_delta: float) -> void:
 	if is_mouse_hovering():

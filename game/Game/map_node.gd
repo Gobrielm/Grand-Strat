@@ -1,6 +1,9 @@
 extends Node
 
 signal map_creation_finished
+signal map_creation_progress
+
+var creation_thread: Thread
 
 @onready var tile_ownership_obj: tile_ownership = $tile_ownership
 @onready var main_map: TileMapLayer = $main_map
@@ -22,15 +25,31 @@ func _ready() -> void:
 	unique_id = multiplayer.get_unique_id()
 	await get_tree().process_frame
 	await get_tree().process_frame
+	main_map.initialize_game()
+	set_up()
+	await get_tree().process_frame
+	await get_tree().process_frame
+	#creation_thread = Thread.new()
+	#creation_thread.start(initialize_game)
+	#connect("map_creation_finished", sync_creation_thread)
 	initialize_game()
+
+func sync_creation_thread() -> void:
+	creation_thread.wait_to_finish()
+
+func update_map_creation_progress(progress: float) -> void:
+	map_creation_progress.emit(progress)
+
+func set_up() -> void:
+	#Singleton Creation
+	train_manager.new()
+	ai_manager.new()
+	TerminalMap.get_instance().assign_cargo_map(cargo_map)
+	cargo_map.cargo_values.create_magnitude_layers()
 
 func initialize_game() -> void:
 	#Main map initialization is very basic, do first
-	main_map.initialize_game()
-	await get_tree().process_frame
-	await get_tree().process_frame
-	cargo_controller.get_instance().backend_pause()
-	clock_singleton.get_instance().sync_clock_pause(true)
+	call_deferred("update_map_creation_progress", 10)
 	if unique_id != 1:
 		remove_child(cargo_map)
 		cargo_map.queue_free()
@@ -42,24 +61,23 @@ func initialize_game() -> void:
 		tile_ownership_obj.name = "tile_ownership"
 		add_child(tile_ownership_obj)
 	else:
-		#Singleton Creation
-		train_manager.new()
-		ai_manager.new()
-		TerminalMap.get_instance().assign_cargo_map(cargo_map)
-		MoneyController.create(multiplayer.get_peers())
-		MoneyController.get_instance().connect("Update_Money_Gui", main_map.update_money_label.rpc_id)
-		main_map.on_singleton_creation()
+		call_deferred("update_map_creation_progress", 20)
 		#First provences and population
 		Utils.cargo_values.create_provinces_and_pop()
+		call_deferred("update_map_creation_progress", 30)
 		#Then countries
 		tile_ownership_obj.create_countries()
+		call_deferred("update_map_creation_progress", 40)
 		#Then resources and industries that need both of those
 		cargo_map.place_resources(main_map) # Creates resources and towns
+		call_deferred("update_map_creation_progress", 60)
 		#cargo_map.test()
 		#Then create pops which needs towns
 		ProvinceManager.get_instance().create_pops()
+		call_deferred("update_map_creation_progress", 80)
 		cargo_map.add_industries_to_towns()
 	enable_nation_picker()
+	call_deferred("update_map_creation_progress", 100)
 	map_creation_finished.emit()
 
 func _input(event: InputEvent) -> void:

@@ -1,14 +1,21 @@
 extends Control
 @onready var lobby: Node = get_parent()
+var started: bool = false
 
 func _on_button_pressed() -> void:
-	lobby.rpc("start_game")
+	if (!started):
+		lobby.rpc("start_game")
+	started = true
 
 func delete_children() -> void:
-	$Camera2D.queue_free()
-	$ColorRect/Button.queue_free()
-	$ColorRect/PlayerList.queue_free()
-	$ColorRect.queue_free()
+	for child: Node in get_children(true):
+		for child2: Node in get_children(true):
+			child2.queue_free()
+		child.queue_free()
+
+func update_progress_bar(amount: float) -> void:
+	print(amount)
+	$ColorRect/ProgressBar.value = amount
 
 func add_player(id: int) -> void:
 	var player_list: ItemList = $ColorRect/PlayerList

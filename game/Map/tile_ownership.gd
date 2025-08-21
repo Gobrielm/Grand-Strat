@@ -40,13 +40,15 @@ func add_tile_to_country(tile: Vector2i, country_id: int) -> void:
 	country_id_to_tiles_owned[country_id].append(tile)
 	tile_to_country_id[tile] = country_id
 	@warning_ignore("integer_division")
-	set_tile.rpc(tile, Vector2i(country_id % 8, country_id / 8))
+	call_deferred("set_cell_rpc", tile, Vector2i(country_id % 8, country_id / 8))
+	#set_tile.rpc(tile, Vector2i(country_id % 8, country_id / 8))
+
+func set_cell_rpc(tile: Vector2i, atlas: Vector2i) -> void:
+	set_tile.rpc(tile, atlas)
 
 @rpc("authority", "call_local", "reliable")
 func set_tile(tile: Vector2i, atlas: Vector2i) -> void:
-	mutex.lock()
 	set_cell(tile, 0, atlas)
-	mutex.unlock()
 
 @rpc("authority", "call_local", "reliable")
 func refresh_tile_ownership(_resource: Dictionary) -> void:

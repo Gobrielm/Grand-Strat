@@ -50,6 +50,8 @@ func _ready() -> void:
 	Utils.assign_world_map(self)
 
 func initialize_game() -> void:
+	clock_singleton.get_instance().sync_clock_pause(true)
+	get_parent().connect("map_creation_finished", camera.start_nation_picking)
 	ProvinceManager.create()
 	map_data.new(self)
 	if unique_id == 1:
@@ -62,6 +64,9 @@ func initialize_game() -> void:
 		TerminalMap.get_instance().assign_cargo_controller(cargo_cntrlr)
 		recipe.create_set_recipes()
 		rail_placer_obj.init_all_rails()
+		MoneyController.create(multiplayer.get_peers())
+		MoneyController.get_instance().connect("Update_Money_Gui", update_money_label.rpc_id)
+		on_singleton_creation()
 		#testing = preload("res://Test/testing.gd").new(self)
 		#start_test()
 	else:

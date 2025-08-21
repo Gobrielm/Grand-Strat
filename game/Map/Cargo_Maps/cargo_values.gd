@@ -6,22 +6,23 @@ const TILES_PER_ROW: int = 8
 const MAX_RESOURCES: Array = [5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, -1, 5000, -1, -1, -1, -1, 5000, 5000, 5000, 5000, 5000, 50000, 1000]
 var magnitude_layers: Array = []
 var mutex: Mutex = Mutex.new()
+var resource_dict: Dictionary[Vector2i, Dictionary] = {} # Dictionary[Vector2i, Dictionary[type(int)]] = int
 
 signal finished_created_map_resources
-
-func _ready() -> void:
-	create_magnitude_layers()
 
 func can_build_type(type: int, coords: Vector2i) -> bool:
 	return get_tile_magnitude(coords, type) > 0
 
 func create_magnitude_layers() -> void:
+	mutex.lock()
 	for child: Node in get_children():
 		if child is TileMapLayer:
 			magnitude_layers.append(child)
+	mutex.unlock()
 
 func get_layer(type: int) -> TileMapLayer:
 	mutex.lock()
+	assert(magnitude_layers.size() > type, "Layers doesnt have type: " + str(type))
 	var layer: TileMapLayer = magnitude_layers[type]
 	mutex.unlock()
 	assert(layer != null and layer.name == ("Layer" + str(type) + get_good_name_uppercase(type)))
@@ -70,15 +71,12 @@ func close_all_layers() -> void:
 		get_layer(i).visible = false
 
 func get_tile_magnitude(coords: Vector2i, type: int) -> int:
+	var val: int = 0
 	mutex.lock()
-	var layer: TileMapLayer = get_layer(type)
+	if (resource_dict.has(coords) and resource_dict[coords].has(type)):
+		val = resource_dict[coords][type]
 	mutex.unlock()
-	assert(layer != null)
-	var toReturn: int = 0
-	var atlas: Vector2i = layer.get_cell_atlas_coords(coords)
-	if atlas != Vector2i(-1, -1):
-		toReturn = atlas.y * TILES_PER_ROW + atlas.x
-	return toReturn
+	return val
 
 func get_atlas_for_magnitude(num: int) -> Vector2i:
 	@warning_ignore("integer_division")
@@ -105,6 +103,7 @@ func place_resources(_map: TileMapLayer) -> void:
 	assert(resource_array != null or resource_array.is_empty(), "Resources generated improperly")
 	
 	for i: int in get_child_count():
+		call_deferred("autoplace_resource_client", resource_array[i], i, MAX_RESOURCES[i])
 		autoplace_resource(resource_array[i], i, MAX_RESOURCES[i])
 	finished_created_map_resources.emit()
 
@@ -112,7 +111,7 @@ func create_provinces_and_pop() -> void:
 	create_territories()
 	place_population()
 
-func autoplace_resource(tiles: Dictionary, type: int, max_resouces: int) -> void:
+func autoplace_resource_client(tiles: Dictionary, type: int, max_resources: int) -> void:
 	var array: Array = tiles.keys()
 	array.shuffle()
 	var count: int = 0
@@ -122,7 +121,23 @@ func autoplace_resource(tiles: Dictionary, type: int, max_resouces: int) -> void
 		set_resource_locally(type, cell, get_atlas_for_magnitude(mag))
 		set_resource_rpc(type, cell, get_atlas_for_magnitude(mag))
 		count += mag
-		if count > max_resouces and max_resouces != -1:
+		if count > max_resources and max_resources != -1:
+			return
+
+func autoplace_resource(tiles: Dictionary, type: int, max_resources: int) -> void:
+	var array: Array = tiles.keys()
+	array.shuffle()
+	var count: int = 0
+	for cell: Vector2i in array:
+		
+		var mag: int = randi() % 4 + tiles[cell]
+		mutex.lock()
+		if (!resource_dict.has(cell)):
+			resource_dict[cell] = {}
+		resource_dict[cell][type] = mag
+		mutex.unlock()
+		count += mag
+		if count > max_resources and max_resources != -1:
 			return
 
 func place_population() -> void:

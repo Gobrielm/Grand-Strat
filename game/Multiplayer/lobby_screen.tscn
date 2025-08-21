@@ -33,6 +33,14 @@ offset_right = 611.0
 offset_bottom = 192.0
 text = "Start Game"
 
+[node name="ProgressBar" type="ProgressBar" parent="ColorRect"]
+modulate = Color(0, 1, 0, 1)
+layout_mode = 0
+offset_left = 488.0
+offset_top = 210.0
+offset_right = 735.0
+offset_bottom = 237.0
+
 [node name="Camera2D" type="Camera2D" parent="."]
 position = Vector2(575.5, 324.5)
 
