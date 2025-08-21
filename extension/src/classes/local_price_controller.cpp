@@ -65,7 +65,7 @@ void LocalPriceController::add_demand(int type, float price, float amount) {
     if (amount <= 0) return;
     demand[type][round(price * 10)] += amount; 
 }
-void LocalPriceController::add_supply(int type, float price, float amount) { 
+void LocalPriceController::add_supply(int type, float price, float amount) { // Somehow becomes undf
     if (amount <= 0) return;
     supply[type][round(price * 10)] += amount; 
 }

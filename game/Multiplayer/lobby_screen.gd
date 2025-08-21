@@ -1,10 +1,10 @@
 extends Control
 @onready var lobby: Node = get_parent()
 var started: bool = false
-var target_progress: int = 0
+var target_progress: float = 0
 var incrementage: float = 0
 
-func _process(delta: float) -> void:
+func _process(_delta: float) -> void:
 	if ($ColorRect/ProgressBar.value < target_progress):
 		$ColorRect/ProgressBar.value += incrementage
 

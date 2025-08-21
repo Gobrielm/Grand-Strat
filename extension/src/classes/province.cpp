@@ -375,12 +375,16 @@ int Province::get_pop_desired(int pop_id, int type, float price) {
 
 void Province::pay_pops(int num_to_pay, double for_each) {
     std::unique_lock lock(pops_lock);
-
-    while (num_to_pay > 0) {
-        auto it = pops.begin();
-        std::advance(it, rand() % pops.size());
-        BasePop* pop = (it)->second;
-        pop->add_wealth(num_to_pay);
+    auto it = pops.begin();
+    int total = pops.size();
+    while (num_to_pay > 0 && it != pops.end()) {
+        if (total % num_to_pay == 0) {
+            BasePop* pop = (it)->second;
+            pop->add_wealth(num_to_pay);
+            num_to_pay--;
+        }
+        total--;
+        it++;
     }
 }
 

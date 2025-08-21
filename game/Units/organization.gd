@@ -43,7 +43,7 @@ func use_supplies() -> void:
 		current_supply.remove_cargo(type, supply_needed[type])
 
 #Return amount added
-func add_cargo(type: int, amount: int) -> int:
+func add_cargo(type: int, amount: float) -> int:
 	print("Resupplied")
 	return current_supply.add_cargo(type, amount)
 

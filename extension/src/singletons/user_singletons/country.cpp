@@ -28,18 +28,20 @@ void Country::pay_random_pops(int total_number_to_pay, float total_money_to_pay)
     for (const int& province_id: prov_manager->get_country_provinces(country_id)) {
         Province* province = prov_manager->get_province(province_id);
         int pops = province->get_number_of_pops();
-        int number_to_pay = pops * total_number_to_pay / total_pops; // Int div
+        int number_to_pay = std::max(pops * total_number_to_pay / total_pops, 1); // Int div
         
         province->pay_pops(number_to_pay, for_each);
 
         total_pops -= pops;
         total_number_to_pay -= number_to_pay;
+        if (total_number_to_pay < 0) {
+            break;
+        }
     }
 }
 
 void Country::month_tick() {
     if (player_id != -1) {
-        MoneyController::get_instance()->add_money_to_player(player_id, minting);
         pay_random_pops(1000, minting);
     }
 }
