@@ -91,10 +91,12 @@ bool FactoryTemplate::does_accept(int type) const {
 }
 
 std::unordered_map<int, float> FactoryTemplate::get_outputs() const {
+    std::scoped_lock lock(m);
     return recipe->get_outputs();
 }
 
 std::unordered_map<int, float> FactoryTemplate::get_inputs() const {
+    std::scoped_lock lock(m);
     return recipe->get_inputs();
 }
 
@@ -106,11 +108,11 @@ void FactoryTemplate::create_recipe() {
 
 double FactoryTemplate::get_batch_size() const {
     std::scoped_lock lock(m);
-    double batch_size = get_level();
-    for (auto& [type, amount]: get_inputs()) {
+    double batch_size = recipe->get_level();
+    for (auto& [type, amount]: recipe->get_inputs()) {
         batch_size = std::min(storage.at(type) / double(amount), batch_size);
     }
-    for (auto& [type, amount]: get_outputs()) {
+    for (auto& [type, amount]: recipe->get_outputs()) {
         batch_size = std::min((double(get_max_storage()) - storage.at(type)) / amount, batch_size);
     }
     return batch_size;
@@ -150,7 +152,8 @@ String FactoryTemplate::get_recipe_as_string() const {
 }
 
 int FactoryTemplate::get_primary_type() const {
-    if (recipe->get_outputs().size() == 0) {
+
+    if (get_outputs().size() == 0) {
         return -1;
     } else {
         return (*get_outputs().begin()).first;
@@ -165,10 +168,12 @@ void FactoryTemplate::distribute_cargo() {
 }
 
 double FactoryTemplate::get_level() const {
+    std::scoped_lock lock(m);
     return recipe->get_level();
 }
 
 int FactoryTemplate::get_level_without_employment() const {
+    std::scoped_lock lock(m);
     return recipe->get_level_without_employment();
 }
 
@@ -188,12 +193,17 @@ void FactoryTemplate::upgrade() {
     int cost = get_cost_for_upgrade();
     if (get_cash() >= cost && can_factory_upgrade()) {
         remove_cash(cost);
-        recipe->upgrade();
+        {
+            std::scoped_lock lock(m);
+            recipe->upgrade();
+        }
+        
     }
 }
 
 void FactoryTemplate::admin_upgrade() {
     if (can_factory_upgrade()) {
+        std::scoped_lock lock(m);
         recipe->upgrade();
     }
     
@@ -233,7 +243,9 @@ float FactoryTemplate::get_last_month_income() const {
 }
 
 bool FactoryTemplate::is_hiring(PopTypes pop_type) const {
-    return recipe->is_pop_type_needed(pop_type) && get_theoretical_gross_profit() > 0; // TODO: Check requirements
+    std::scoped_lock lock(m);
+
+    return recipe->is_pop_type_needed(pop_type) && get_theoretical_gross_profit_unsafe() > 0; // TODO: Check requirements
 }
 
 bool FactoryTemplate::is_firing() const {
@@ -244,11 +256,20 @@ bool FactoryTemplate::is_firing() const {
 }
 
 float FactoryTemplate::get_wage() const {
-    float gross_profit = std::min(float(get_theoretical_gross_profit()), get_cash());
+    std::scoped_lock lock(m);
+    float gross_profit = std::min(float(get_theoretical_gross_profit_unsafe()), get_cash_unsafe());
+    int pops_needed_num = recipe->get_pops_needed_num();
+    if (!pops_needed_num) return 0;
     
-    if (!recipe->get_pops_needed_num()) return 0;
+    return (gross_profit) / pops_needed_num;
+}
+
+float FactoryTemplate::get_wage_unsafe() const {
+    float gross_profit = std::min(float(get_theoretical_gross_profit_unsafe()), get_cash_unsafe());
+    int pops_needed_num = recipe->get_pops_needed_num();
+    if (!pops_needed_num) return 0;
     
-    return (gross_profit) / recipe->get_pops_needed_num();
+    return (gross_profit) / pops_needed_num;
 }
 
 float FactoryTemplate::get_theoretical_gross_profit() const {
@@ -259,6 +280,19 @@ float FactoryTemplate::get_theoretical_gross_profit() const {
     }
     for (const auto &[type, amount]: get_outputs()) {
         available += get_local_price(type) * amount * std::max(get_level(), 1.0);
+    }
+    available *= 30;
+    return available;
+}
+
+float FactoryTemplate::get_theoretical_gross_profit_unsafe() const {
+    float available = 0;
+    
+    for (const auto &[type, amount]: recipe->get_inputs()) {
+        available -= get_local_price_unsafe(type) * amount * std::max(recipe->get_level(), 1.0); // Always assume that the business will pay according to the first level, so hiring wont bug out
+    }
+    for (const auto &[type, amount]: recipe->get_outputs()) {
+        available += get_local_price_unsafe(type) * amount * std::max(recipe->get_level(), 1.0);
     }
     available *= 30;
     return available;
@@ -277,18 +311,38 @@ float FactoryTemplate::get_real_gross_profit(int months_to_average) const {
     return total / i;
 }
 
-void FactoryTemplate::employ_pop(BasePop* pop) {
-    if (is_hiring(pop->get_type())) {
-        recipe->add_pop(pop);
-        pop->employ(terminal_id, get_wage());
-        pop->set_location(get_location());
+void FactoryTemplate::employ_pop(BasePop* pop, std::shared_mutex &pop_lock) {
+    PopTypes pop_type;
+    {
+        std::scoped_lock lock(pop_lock);
+        pop_type = pop->get_type();
+    }
+    if (is_hiring(pop_type)) {
+        float wage;
+        {
+            std::scoped_lock lock(m);
+            recipe->add_pop(pop);
+            wage = get_wage_unsafe();
+        }
+        {
+            std::scoped_lock lock(pop_lock);
+            pop->employ(terminal_id, wage);
+            pop->set_location(get_location());
+        }
+        
     }
 }
 
 void FactoryTemplate::pay_employees() {
     Ref<ProvinceManager> province_manager = ProvinceManager::get_instance();
     float wage = get_wage();
-    for (const auto& [pop_id, __] : recipe->get_employee_ids()) {
+    std::unordered_map<int, PopTypes> employees;
+    {
+        std::scoped_lock lock(m);
+        employees = recipe->get_employee_ids();
+    }
+
+    for (const auto& [pop_id, __] : employees) {
         Province* province = province_manager->get_province(province_manager->get_province_id(get_location()));
         province->pay_pop(pop_id, transfer_cash(wage));
     }
@@ -296,7 +350,11 @@ void FactoryTemplate::pay_employees() {
 
 void FactoryTemplate::fire_employees() {
     Ref<ProvinceManager> province_manager = ProvinceManager::get_instance();
-    std::vector<int> pops_to_fire = recipe->fire_employees_and_get_vector();
+    std::vector<int> pops_to_fire;
+    {
+        std::scoped_lock lock(m);
+        pops_to_fire = recipe->fire_employees_and_get_vector();
+    }
     for (const auto& pop_id : pops_to_fire) {
         Province* province = province_manager->get_province(province_manager->get_province_id(get_location()));
         province->fire_pop(pop_id);

@@ -308,7 +308,6 @@ Ref<Factory> TerminalMap::create_primary_factory(const Vector2i &p_location, int
 
 //Checkers
 int TerminalMap::get_cargo_value_of_tile(const Vector2i &coords, int type) const {
-    std::scoped_lock lock(m);
     return int(cargo_values->call("get_tile_magnitude", coords, type)) * 10;
 }
 
@@ -576,54 +575,83 @@ float TerminalMap::get_average_cash_of_factory() const {
 float TerminalMap::get_average_factory_level() const {
     double ave = 0;
     int count = 0;
-    std::shared_lock lock(cargo_map_mutex);
-    for (const auto &[__, terminal]: terminal_id_to_terminal) {
-        Ref<Factory> typed = Ref<Factory>(terminal);
-        if (typed.is_valid()) {
-            ave += typed -> get_level();
-            count++;
+    std::vector<Ref<Factory>> factories_to_add;
+    {
+        std::shared_lock lock(cargo_map_mutex);
+        for (const auto &[__, terminal]: terminal_id_to_terminal) {
+            Ref<Factory> typed = Ref<Factory>(terminal);
+            if (typed.is_valid()) {
+                factories_to_add.push_back(typed);
+            }
         }
+    }
+    for (const auto &terminal: factories_to_add) {
+        ave += terminal -> get_level();
+        count++;
     }
     return ave / count;
 }
 
 int TerminalMap::get_grain_demand() const {
     double total_demand = 0;
-    std::shared_lock lock(cargo_map_mutex);
-    for (const auto &[__, terminal]: terminal_id_to_terminal) {
-        Ref<Town> typed = Ref<Town>(terminal);
-        if (typed.is_valid()) {
-            double num = double(typed->get_local_demand(CargoInfo::get_instance()->get_cargo_type("grain")));
-            total_demand += num;
+
+    std::vector<Ref<Town>> factories_to_add;
+    {
+        std::shared_lock lock(cargo_map_mutex);
+        for (const auto &[__, terminal]: terminal_id_to_terminal) {
+            Ref<Town> typed = Ref<Town>(terminal);
+            if (typed.is_valid()) {
+                factories_to_add.push_back(typed);
+            }
         }
+    }
+
+    for (const auto &town: factories_to_add) {
+        double num = double(town->get_local_demand(CargoInfo::get_instance()->get_cargo_type("grain")));
+        total_demand += num;
     }
     return round(total_demand);
 }
 
 
 int TerminalMap::get_grain_supply() const {
-    float total_supply = 0;
-    std::shared_lock lock(cargo_map_mutex);
-    for (const auto &[__, terminal]: terminal_id_to_terminal) {
-        Ref<Town> typed = Ref<Town>(terminal);
-        if (typed.is_valid()) {
-            total_supply += float(typed -> get_last_month_supply().get(CargoInfo::get_instance()->get_cargo_type("grain"), 0.0f));
+    double total_demand = 0;
+
+    std::vector<Ref<Town>> factories_to_add;
+    {
+        std::shared_lock lock(cargo_map_mutex);
+        for (const auto &[__, terminal]: terminal_id_to_terminal) {
+            Ref<Town> typed = Ref<Town>(terminal);
+            if (typed.is_valid()) {
+                factories_to_add.push_back(typed);
+            }
         }
     }
-    return round(total_supply);
+
+    for (const auto &town: factories_to_add) {
+        double num = double(town->get_last_month_supply().get(CargoInfo::get_instance()->get_cargo_type("grain"), 0.0));
+        total_demand += num;
+    }
+    return round(total_demand);
 }
 
 template <typename T>
 float TerminalMap::get_average_cash_of_terminal() const {
     double ave = 0;
     int count = 0;
-    std::shared_lock lock(cargo_map_mutex);
-    for (const auto &[__, terminal]: terminal_id_to_terminal) {
-        Ref<T> typed = Ref<T>(terminal);
-        if (typed.is_valid()) {
-            ave += typed -> get_cash();
-            count++;
+    std::vector<Ref<T>> factories_to_add;
+    {
+        std::shared_lock lock(cargo_map_mutex);
+        for (const auto &[__, terminal]: terminal_id_to_terminal) {
+            Ref<T> typed = Ref<T>(terminal);
+            if (typed.is_valid()) {
+                factories_to_add.push_back(typed);
+            }
         }
+    }
+    for (const auto &terminal: factories_to_add) {
+        ave += terminal -> get_cash();
+        count++;
     }
     return ave / count;
 }

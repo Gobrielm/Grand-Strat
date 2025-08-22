@@ -337,7 +337,7 @@ bool BasePop::is_want_met(int type) const {
     return (internal_storage.at(type) >= (get_base_need(type) + get_base_want(type)));
 }
 
-int BasePop::get_desired(int type) const {
+unsigned int BasePop::get_desired(int type) const {
     if (!internal_storage.count(type)) {
         return 0;
     }

@@ -24,7 +24,6 @@ Recipe::Recipe(const Recipe& other) {
 
 Dictionary Recipe::get_inputs_dict() const {
     Dictionary d;
-    std::scoped_lock lock(m);
     for (const auto &[type, amount]: inputs) {
         d[type] = amount;
     }
@@ -33,7 +32,6 @@ Dictionary Recipe::get_inputs_dict() const {
 
 Dictionary Recipe::get_outputs_dict() const {
     Dictionary d;
-    std::scoped_lock lock(m);
     for (const auto &[type, amount]: outputs) {
         d[type] = amount;
     }
@@ -45,24 +43,20 @@ bool Recipe::is_pop_type_needed(PopTypes pop_type) const {
 }
 
 bool Recipe::does_need_pop_type(PopTypes pop_type) const {
-    std::scoped_lock lock(m);
     return pops_needed.count(pop_type) && pops_needed.at(pop_type) != employees.at(pop_type).size();
 }
 
 void Recipe::add_pop(BasePop* pop) {
-    std::scoped_lock lock(m);
     employees[pop->get_type()].push_back(pop->get_pop_id());
 }
 
 void Recipe::remove_pop(int pop_id, PopTypes pop_type) {
-    std::scoped_lock lock(m);
     auto &vec = employees[pop_type];
     vec.erase(std::remove(vec.begin(), vec.end(), pop_id), vec.end());
 }
 
 int Recipe::get_employement() const {
     int total = 0;
-    std::scoped_lock lock(m);
     for (const auto [__, pop_vector]: employees) {
         total += pop_vector.size();
     }
@@ -71,7 +65,6 @@ int Recipe::get_employement() const {
 
 int Recipe::get_pops_needed_num() const {
     int total = 0;
-    std::scoped_lock lock(m);
     for (const auto [__, amount]: pops_needed) {
         total += amount;
     }
@@ -103,32 +96,18 @@ std::vector<int> Recipe::fire_employees_and_get_vector() {
 }
 
 void Recipe::upgrade() {
-    std::scoped_lock lock(m);
     level++;
-    // for (const auto &[type, amount]: outputs) {
-    //     outputs[type] = amount * (double(level) / (level - 1.0));
-    // }
-    // for (const auto &[type, amount]: inputs) {
-    //     inputs[type] = amount * (double(level) / (level - 1.0));
-    // }
     for (const auto &[type, amount]: pops_needed) {
         pops_needed[type] = std::round(amount * (double(level) / (level - 1.0)));
     }
 }
 
 void Recipe::degrade() {
-    std::scoped_lock lock(m);
     if (level == 1) {
         print_error("Downgrading a building a level 1");
         return;
     }
     level--;
-    // for (const auto &[type, amount]: outputs) {
-    //     outputs[type] = (amount * (double(level) / (level + 1.0)));
-    // }
-    // for (const auto &[type, amount]: inputs) {
-    //     inputs[type] = (amount * (double(level) / (level + 1.0)));
-    // }
     for (const auto &[type, amount]: pops_needed) {
         pops_needed[type] = std::round(amount * (double(level) / (level + 1.0)));
     }
@@ -143,49 +122,40 @@ double Recipe::get_level() const {
 }
 
 int Recipe::get_level_without_employment() const {
-    std::scoped_lock lock(m);
     return level;
 }
 
 bool Recipe::has_recipe() const {
-    std::scoped_lock lock(m);
     return inputs.size() == 0 && outputs.size() == 0;
 }
 
 bool Recipe::does_create(int type) const {
-    std::scoped_lock lock(m);
     return outputs.count(type);
 }
 bool Recipe::is_primary() const {
-    std::scoped_lock lock(m);
     return inputs.size() == 0;
 }
 
 void Recipe::clear() {
-    std::scoped_lock lock(m);
     inputs.clear();
     outputs.clear();
     pops_needed.clear();
 }
 
 std::unordered_map<int, float> Recipe::get_inputs() const {
-    std::scoped_lock lock(m);
     return inputs;
 }
 
 std::unordered_map<int, float> Recipe::get_outputs() const {
-    std::scoped_lock lock(m);
     return outputs;
 }
 
 std::unordered_map<PopTypes, int> Recipe::get_pops_needed() const {
-    std::scoped_lock lock(m);
     return pops_needed;
 }
 
 std::unordered_map<int, PopTypes> Recipe::get_employee_ids() const {
     std::unordered_map<int, PopTypes> map;
-    std::scoped_lock lock(m);
     for (const auto &[pop_type, pop_vect]: employees) {
         for (const auto &pop: pop_vect) {
             map[pop] = pop_type;
@@ -195,16 +165,13 @@ std::unordered_map<int, PopTypes> Recipe::get_employee_ids() const {
 }
 
 void Recipe::set_inputs(const std::unordered_map<int, float> new_inputs) {
-    std::scoped_lock lock(m);
     inputs = new_inputs;
 }
 
 void Recipe::set_outputs(const std::unordered_map<int, float> new_outputs) {
-    std::scoped_lock lock(m);
     outputs = new_outputs;
 }
 
 void Recipe::set_pops_needed(const std::unordered_map<PopTypes, int> new_pops_needed) {
-    std::scoped_lock lock(m);
     pops_needed = new_pops_needed;
 }

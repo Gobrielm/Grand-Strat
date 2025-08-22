@@ -30,6 +30,10 @@ class IsolatedBroker : public Firm {
     IsolatedBroker();
     IsolatedBroker(Vector2i p_location, int p_owner);
 
+    std::unordered_map<int, float> get_outputs() const;
+    std::unordered_map<int, float> get_inputs() const;
+    float get_level() const;
+
     void add_pop(BasePop* pop);
     float get_wage() const;
     float get_theoretical_gross_profit() const;

@@ -532,21 +532,40 @@ void Province::find_employment_for_rural_pops() {
         return;
     }
 
+    std::vector<BasePop*> pops_to_find_employement;
     {
-        Ref<FactoryTemplate> work = *it;
         std::unique_lock lock(pops_lock);
-        for (const auto &pop_id: pop_types[rural]) {
+        CONST_RURAL_POP_LOOP() {
             BasePop* pop = get_pop(pop_id);
-            if (pop -> is_seeking_employment()) {
-                while (!work->is_hiring(rural)) {
-                    it++;
-                    if (it == s.end()) return;
-                    work = *it;
-                }
+            pops_to_find_employement.push_back(pop);
+        }
+    }
 
-                if (pop->is_wage_acceptable(work->get_wage())) {
-                    work->employ_pop(pop);
-                }
+    Ref<FactoryTemplate> work = *it;
+    for (auto &pop: pops_to_find_employement) {
+
+        bool status = false;
+        {
+            std::unique_lock lock(pops_lock);
+            status = pop -> is_seeking_employment();
+        }
+
+        if (status) {
+            while (!work->is_hiring(rural)) {
+                it++;
+                if (it == s.end()) return;
+                work = *it;
+            }
+
+            float wage = work->get_wage();
+            bool is_acceptable = false;
+            {
+                std::unique_lock lock(pops_lock);
+                is_acceptable = pop->is_wage_acceptable(wage);
+            }
+
+            if (is_acceptable) {
+                work->employ_pop(pop, pops_lock);
             }
         }
     }
@@ -567,12 +586,33 @@ void Province::find_employment_for_town_pops() {
     }
     if (towns_with_employement.size() == 0) return;
     Ref<FactoryTemplate> work;
-    std::unique_lock lock(pops_lock);
+
     
-    for (const auto &pop_id: pop_types[town]) {
-        BasePop* pop = get_pop(pop_id);
-        if (pop -> is_seeking_employment()) {
-            Vector2i pop_location = pop->get_location();
+    std::vector<BasePop*> pops_to_find_employement;
+    {
+        std::unique_lock lock(pops_lock);
+        CONST_TOWN_POP_LOOP() {
+            BasePop* pop = get_pop(pop_id);
+            pops_to_find_employement.push_back(pop);
+        }
+    }
+    
+    
+    for (auto &pop: pops_to_find_employement) {
+
+        bool status = false;
+        {
+            std::unique_lock lock(pops_lock);
+            status = pop -> is_seeking_employment();
+        }
+
+        if (status) {
+            Vector2i pop_location;
+            {
+                std::unique_lock lock(pops_lock);
+                pop_location = pop->get_location();
+            }
+
             if (!m.count(pop_location)) {
                 ERR_FAIL_MSG("Town Pop not located in town or province doesn't have town at " + pop_location);
             }
@@ -595,9 +635,15 @@ void Province::find_employment_for_town_pops() {
             }
             if (!towns_with_employement.count(pop_location)) continue;
 
-            if (pop->is_wage_acceptable(work->get_wage())) {
-                print_line("Employed");
-                work->employ_pop(pop);
+            float wage = work->get_wage();
+            bool is_acceptable = false;
+            {
+                std::unique_lock lock(pops_lock);
+                is_acceptable = pop->is_wage_acceptable(wage);
+            }
+
+            if (is_acceptable) {
+                work->employ_pop(pop, pops_lock);
             }
         }
     }
@@ -691,6 +737,8 @@ void Province::sell_to_pops() {
         }
     }
 
+    std::unordered_map<int, float> money_to_pay;
+
     for (auto& pop: pops_to_month_tick) {
         if (!closest_town_to_tile.count(pop->get_location())) {
             continue; // Province has no towns
@@ -700,63 +748,14 @@ void Province::sell_to_pops() {
             print_error("Towns and terminals are desynced at " + pop->get_location());
             continue;
         }
-        town->sell_to_pop(pop, pops_lock);
+        std::scoped_lock lock(pops_lock, town->m);
+        town->sell_to_pop_unsafe(pop, money_to_pay);
+    }
+
+    for (const auto &[terminal_id, to_pay]: money_to_pay) {
+        Ref<Broker> broker = terminal_map->get_terminal_as<Broker>(terminal_id);
+        if (broker.is_null()) continue;
+    
+        broker->add_cash(to_pay);
     }
 }
-
-
-// void Province::sell_to_pops() {
-//     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
-//     // Get closest town and then use town functions to sell to those pops
-
-//     std::unordered_map<Vector2i, Ref<Town>, godot_helpers::Vector2iHasher> towns;
-//     for (const auto& tile: get_town_tiles()) {
-//         towns[tile] = TerminalMap::get_instance()->get_town(tile);
-//     }
-
-//     std::unique_lock lock(pops_lock);
-    
-    
-//     CONST_TOWN_POP_LOOP() {
-//         BasePop* pop = get_pop(pop_id);
-//         pop->month_tick();
-//         Ref<Town> town = towns[pop->get_location()];
-//         if (town.is_null()) {
-//             if (get_town_tiles().size() != 0) print_error("There are more than 0 towns"); 
-//             print_error("Pop is not in province or province has no towns, pop location: " + pop->get_location());
-//             continue;
-//         }
-//         town->sell_to_pop(pop);
-//     }
-
-//     CONST_RURAL_POP_LOOP() {
-//         BasePop* pop = get_pop(pop_id);
-//         pop->month_tick();
-//         if (!closest_town_to_tile.count(pop->get_location())) {
-//             // Rural pops may exist in province without town
-//             continue;
-//         }
-//         Ref<Town> town = towns[get_closest_town_tile_to_pop(pop)];
-//         if (town.is_null()) {
-//             print_error("Towns and terminals are desynced at " + pop->get_location());
-//             continue;
-//         }
-//         town->sell_to_pop(pop);
-//     }
-
-//     CONST_PEASANT_POP_LOOP() {
-//         BasePop* pop = get_pop(pop_id);
-//         pop->month_tick();
-//         if (!closest_town_to_tile.count(pop->get_location())) {
-//             // Peasant pops may exist in province without town
-//             continue;
-//         }
-//         Ref<Town> town = towns[get_closest_town_tile_to_pop(pop)];
-//         if (town.is_null()) {
-//             print_error("Towns and terminals are desynced at " + pop->get_location());
-//             continue;
-//         }
-//         town->sell_to_pop(pop);
-//     }
-
-// }

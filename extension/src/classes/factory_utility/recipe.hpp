@@ -12,7 +12,6 @@ class Recipe {
     std::unordered_map<int, float> inputs;
     std::unordered_map<int, float> outputs;
     std::unordered_map<PopTypes, int> pops_needed;
-    mutable std::mutex m;
 
     protected:
     bool does_need_pop_type(PopTypes pop_type) const;

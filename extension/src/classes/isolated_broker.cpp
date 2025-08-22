@@ -24,28 +24,53 @@ IsolatedBroker::IsolatedBroker(Vector2i p_location, int p_owner): Firm(p_locatio
 }
 
 void IsolatedBroker::add_pop(BasePop* pop) {
-    recipe->add_pop(pop);
+    {
+        std::scoped_lock lock(m);
+        recipe->add_pop(pop);
+    }
+    
     pop->employ(terminal_id, get_wage());
     pop->set_location(get_location());
     consider_upgrade();
 }
 
+std::unordered_map<int, float> IsolatedBroker::get_outputs() const {
+    std::scoped_lock lock(m);
+    return recipe->get_outputs();
+}
+
+std::unordered_map<int, float> IsolatedBroker::get_inputs() const {
+    std::scoped_lock lock(m);
+    return recipe->get_inputs();
+}
+
+float IsolatedBroker::get_level() const {
+    std::scoped_lock lock(m);
+    return recipe->get_level();
+}
+
 float IsolatedBroker::get_wage() const {
     float gross_profit = std::min(float(get_theoretical_gross_profit()), get_cash());
 
-    if (!recipe->get_pops_needed_num()) return 0;
+    int pops_needed = 0;
+    {
+        std::scoped_lock lock(m);
+        pops_needed = recipe->get_pops_needed_num();
+    }
+
+    if (!pops_needed) return 0;
     
-    return (gross_profit) / recipe->get_pops_needed_num();
+    return (gross_profit) / pops_needed;
 }
 
 float IsolatedBroker::get_theoretical_gross_profit() const {
     float available = 0;
     Ref<Town> town = get_local_town();
-    int effective_level = std::max(recipe->get_level(), 1.0);
-    for (const auto &[type, amount]: recipe->get_inputs()) {
+    int effective_level = std::max(get_level(), 1.0f);
+    for (const auto &[type, amount]: get_inputs()) {
         available -= town->get_local_price(type) * amount * effective_level; // Always assume that the business will pay according to the first level
     }
-    for (const auto &[type, amount]: recipe->get_outputs()) {
+    for (const auto &[type, amount]: get_outputs()) {
         available += town->get_local_price(type) * amount * effective_level;
     }
     available *= 30;
@@ -55,7 +80,12 @@ float IsolatedBroker::get_theoretical_gross_profit() const {
 void IsolatedBroker::pay_employees() {
     Ref<ProvinceManager> province_manager = ProvinceManager::get_instance();
     float wage = get_wage();
-    for (const auto& [pop_id, __] : recipe->get_employee_ids()) {
+    std::unordered_map<int, PopTypes> employees;
+    {
+        std::scoped_lock lock(m);
+        employees = recipe->get_employee_ids();
+    }
+    for (const auto& [pop_id, __] : employees) {
         Province* province = province_manager->get_province(province_manager->get_province_id(get_location()));
         province->pay_pop(pop_id, transfer_cash(wage));
     }
@@ -71,7 +101,7 @@ Ref<Town> IsolatedBroker::get_local_town() const {
 
 void IsolatedBroker::sell_cargo() {
     Ref<Town> town = TerminalMap::get_instance()->get_terminal_as<Town>(local_town);
-    for (const auto& [type, __]: recipe->get_outputs()) {
+    for (const auto& [type, __]: get_outputs()) {
         sell_type(town, type, storage[type]);
     }
     
@@ -120,12 +150,14 @@ void IsolatedBroker::month_tick() {
 }
 
 void IsolatedBroker::consider_upgrade() {
+    std::scoped_lock lock(m);
     if (recipe->get_employment_rate() > 0.8) {
         recipe->upgrade();
     }
 }
 
 void IsolatedBroker::consider_degrade() {
+    std::scoped_lock lock(m);
     if (recipe->get_employment_rate() < 0.5) {
         recipe->upgrade();
     }
