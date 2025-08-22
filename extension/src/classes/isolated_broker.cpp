@@ -4,19 +4,20 @@
 #include "../singletons/cargo_info.hpp"
 #include "../singletons/terminal_map.hpp"
 #include "../singletons/province_manager.hpp"
+#include "../singletons/data_collector.hpp"
 
 void IsolatedBroker::_bind_methods() {
 
 }
 
-IsolatedBroker::IsolatedBroker(): Firm(Vector2i(0, 0), 0) {
+IsolatedBroker::IsolatedBroker(): Firm(Vector2i(0, 0), 0), local_town(Vector2i(0, 0)) {
     std::scoped_lock lock(m);
     for (int i = 0; i < CargoInfo::get_instance()->get_number_of_goods(); i++) {
         storage[i] = 0;
     }
 }
 
-IsolatedBroker::IsolatedBroker(Vector2i p_location, int p_owner): Firm(p_location, p_owner) {
+IsolatedBroker::IsolatedBroker(Vector2i p_location, int p_owner): Firm(p_location, p_owner), local_town(Vector2i(0, 0)) {
     std::scoped_lock lock(m);
     for (int i = 0; i < CargoInfo::get_instance()->get_number_of_goods(); i++) {
         storage[i] = 0;
@@ -66,6 +67,7 @@ float IsolatedBroker::get_wage() const {
 float IsolatedBroker::get_theoretical_gross_profit() const {
     float available = 0;
     Ref<Town> town = get_local_town();
+    if (town.is_null()) return 0;
     int effective_level = std::max(get_level(), 1.0f);
     for (const auto &[type, amount]: get_inputs()) {
         available -= town->get_local_price(type) * amount * effective_level; // Always assume that the business will pay according to the first level
@@ -88,7 +90,22 @@ void IsolatedBroker::pay_employees() {
     for (const auto& [pop_id, __] : employees) {
         Province* province = province_manager->get_province(province_manager->get_province_id(get_location()));
         province->pay_pop(pop_id, transfer_cash(wage));
+        give_cargo_grain(province, pop_id);
     }
+}
+
+void IsolatedBroker::give_cargo_grain(Province* province, int pop_id) {
+    bool enough_grain = false;
+    int grain_type = CargoInfo::get_instance()->get_cargo_type("grain");
+    int amount_to_give = BasePop::get_base_need(peasant, grain_type);
+    {
+        std::scoped_lock lock(m);
+        if (storage[grain_type] >= amount_to_give) {
+            enough_grain = true;
+            storage[grain_type] -= amount_to_give;
+        }
+    }
+    if (enough_grain) province->give_pop_cargo(pop_id, grain_type, amount_to_give);
 }
 
 void IsolatedBroker::set_local_town(Vector2i p_town) {
@@ -96,6 +113,7 @@ void IsolatedBroker::set_local_town(Vector2i p_town) {
 }
 
 Ref<Town> IsolatedBroker::get_local_town() const {
+    if (local_town == Vector2i(0, 0)) return Ref<Town>(nullptr);
     return TerminalMap::get_instance()->get_town(local_town);
 }
 
@@ -137,6 +155,7 @@ void IsolatedBroker::create_recipe() {
     std::scoped_lock lock(m);
     for (const auto& [type, amount]: recipe->get_outputs()) {
         storage[type] += amount * batch_size;
+        DataCollector::get_instance()->add_supply(type, amount * batch_size);
     }
     for (const auto& [type, amount]: recipe->get_inputs()) {
         storage[type] -= amount * batch_size;
@@ -145,8 +164,8 @@ void IsolatedBroker::create_recipe() {
 
 void IsolatedBroker::month_tick() {
     create_recipe();
-    sell_cargo();
     pay_employees();
+    if (local_town != Vector2i(0, 0)) sell_cargo();
 }
 
 void IsolatedBroker::consider_upgrade() {

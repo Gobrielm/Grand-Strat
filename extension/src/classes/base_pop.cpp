@@ -349,16 +349,17 @@ unsigned int BasePop::get_desired(int type) const {
 	return amount;
 }
 
-int BasePop::get_desired(int type, float price) const {
+unsigned int BasePop::get_desired(int type, float price) const {
+    ERR_FAIL_COND_V_MSG(price < 0, 0, "Price is below 0.");
     int amount_can_buy = int(wealth / price);
-    int amount_can_store = std::max(int(get_max_storage(type) - internal_storage.at(type)), 0);
+    int amount_can_store = int(get_max_storage(type) - internal_storage.at(type));
     int amount = std::min(amount_can_buy, amount_can_store);
 
     if (income == 0.0 && !get_base_needs().count(type)) {
         return 0; // Don't buy if not neccessary and no job
     }
 	
-	return amount;
+	return std::max(amount, 0);
 }
 
 void BasePop::buy_good(int type, int amount, float price) {
@@ -372,7 +373,12 @@ void BasePop::buy_good(int type, int amount, float price) {
     internal_storage[type] += amount;
 	if (wealth < 0) { //TODO, uh-oh
         ERR_FAIL_MSG("Not enough money to buy good as pop");
+        wealth = 0;
     }
+}
+
+void BasePop::add_cargo(int type, int amount) {
+    internal_storage[type] += amount;
 }
 
 int BasePop::get_max_storage(int type) const {

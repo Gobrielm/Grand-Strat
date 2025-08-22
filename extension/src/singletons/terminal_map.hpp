@@ -167,8 +167,8 @@ public:
     float get_average_cash_of_road_depot() const;
     float get_average_cash_of_factory() const;
     float get_average_factory_level() const;
-    int get_grain_demand() const;
-    int get_grain_supply() const;
+    unsigned long get_grain_demand() const;
+    unsigned long get_grain_supply() const;
 
     template <typename T>
     float get_average_cash_of_terminal() const;

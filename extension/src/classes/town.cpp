@@ -144,125 +144,83 @@ void Town::add_pop(int pop_id) {
     town_pop_ids.insert(pop_id);
 }
 
-void Town::sell_to_pop_unsafe(BasePop* pop, std::unordered_map<int, float>& money_to_pay) { // Called from Province, do not call locally
-    
-    for (auto& [type, ms] : get_local_pricer()->cargo_sell_orders) {
-        unsigned int desired = pop->get_desired(type);
-        if (desired == 0) {
-            continue;
-        }
-        float pop_price = pop->get_buy_price(type, get_local_price_unsafe(type));
-        
-        auto sell_it = ms.begin();
-        std::shared_ptr<TownCargo> sell_order;
-        get_local_pricer() -> add_demand(type, pop_price, desired); // Only add demand since its not part of survey_broad_market()
-        get_local_pricer() -> add_local_demand(type, desired);
+void Town::sell_to_pop(BasePop* pop, std::shared_mutex &pops_lock) { // Called from Province, do not call locally
+    Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
+    std::unordered_map<int, float> money_to_pay;
+    std::vector<std::unique_ptr<TownCargo>> demand_to_relay; // Town Cargo just used to express price, amount, and type for convience
+    {
+        std::scoped_lock lock(m, pops_lock);
 
-        while (sell_it != ms.end()) {
-            ERR_FAIL_COND_MSG((*sell_it).expired(), "EXPIRED POINTER FROM TOWN LOCAL PRICER");
-            sell_order = (*sell_it).lock();
-
-            const float seller_price = sell_order->price;
-            const float buyer_price = pop->get_buy_price(type, seller_price);
-
-            if (std::isnan(seller_price)) {
-                ERR_FAIL_MSG("seller price is nan");
+        for (auto& [type, ms] : get_local_pricer()->cargo_sell_orders) {
+            unsigned int desired = pop->get_desired(type);
+            if (desired == 0) {
+                continue;
             }
-            if (std::isnan(buyer_price)) {
-                ERR_FAIL_MSG("buyer_price is nan");
-            }
-            float price = (buyer_price + seller_price) / 2; // Price average
+            float pop_price = pop->get_buy_price(type, get_local_price_unsafe(type));
+            
+            auto sell_it = ms.begin();
+            std::shared_ptr<TownCargo> sell_order;
 
-            if (((price / buyer_price) - 1) > PopOrder::MAX_DIFF) { // Too high for buyer no deal
-                break;
-            }
-            if ((1 - (price / seller_price)) > PopOrder::MAX_DIFF) { // Too low for seller no deal
-                break;
-            }
+            get_local_pricer() -> add_demand(type, pop_price, desired); // Only add demand since its not part of survey_broad_market()
+            get_local_pricer() -> add_local_demand(type, desired);
 
-            int amount = std::min(pop->get_desired(type, price), sell_order->amount);
-            if (amount == 0) {
-                break;
-            }
-            get_local_pricer()->report_sale(type, price, amount);
-            sell_order->sell_cargo(amount, price, money_to_pay); // Calls with money_to_pay
-            pop->buy_good(type, amount, price);
+            while (sell_it != ms.end()) {
+                ERR_FAIL_COND_MSG((*sell_it).expired(), "EXPIRED POINTER FROM TOWN LOCAL PRICER");
+                sell_order = (*sell_it).lock();
 
-            if (sell_order->amount == 0) {
-                sell_it = get_local_pricer()->delete_town_cargo(sell_it);
-            } else {
-                break;
+                demand_to_relay.push_back(std::unique_ptr<TownCargo>(new TownCargo(type, desired, pop_price, sell_order->terminal_id)));
+
+                const float seller_price = sell_order->price;
+                const float buyer_price = pop->get_buy_price(type, seller_price);
+
+                if (std::isnan(seller_price)) {
+                    ERR_FAIL_MSG("seller price is nan");
+                }
+                if (std::isnan(buyer_price)) {
+                    ERR_FAIL_MSG("buyer_price is nan");
+                }
+                float price = (buyer_price + seller_price) / 2.0f; // Price average
+
+                if (((price / buyer_price) - 1) > PopOrder::MAX_DIFF) { // Too high for buyer no deal
+                    break;
+                }
+                if ((1 - (price / seller_price)) > PopOrder::MAX_DIFF) { // Too low for seller no deal
+                    break;
+                }
+
+                unsigned int amount = std::min(pop->get_desired(type, price), sell_order->amount);
+                if (amount == 0) {
+                    break;
+                }
+                get_local_pricer()->report_sale(type, price, amount);
+                sell_order->sell_cargo(amount, price, money_to_pay); // Calls with money_to_pay
+                pop->buy_good(type, amount, price);
+
+                if (sell_order->amount == 0) {
+                    sell_it = get_local_pricer()->delete_town_cargo(sell_it);
+                } else {
+                    break;
+                }
             }
         }
     }
+
+    for (const auto &[terminal_id, to_pay]: money_to_pay) {
+        Ref<Broker> broker = terminal_map->get_terminal_as<Broker>(terminal_id);
+        if (broker.is_null()) continue;
+    
+        broker->add_cash(to_pay);
+    }
+
+    return;
+
+    for (const auto &demand_cargo: demand_to_relay) {
+        Ref<Broker> broker = terminal_map->get_terminal_as<Broker>(demand_cargo->terminal_id);
+        if (broker.is_null()) continue;
+    
+        broker->add_surveyed_demand(demand_cargo->type, demand_cargo->price, demand_cargo->amount);
+    }
 }
-
-// void Town::sell_to_pop(BasePop* pop, std::shared_mutex& province_pop_lock) { // Called from Province, do not call locally
-//     std::unordered_map<int, float> money_to_pay; // Queued up money to distribute to owners of cargo sold
-    
-//     {   
-//         std::scoped_lock lock1(province_pop_lock, m); // Outside in
-//         for (auto& [type, ms] : get_local_pricer()->cargo_sell_orders) {
-//             int desired = pop->get_desired(type);
-//             float pop_price = pop->get_buy_price(type, get_local_price_unsafe(type));
-
-//             if (desired == 0) {
-//                 continue;
-//             }
-            
-//             auto sell_it = ms.begin();
-//             std::shared_ptr<TownCargo> sell_order;
-//             get_local_pricer() -> add_demand(type, pop_price, desired); // Only add demand since its not part of survey_broad_market()
-//             get_local_pricer() -> add_local_demand(type, desired);
-
-//             while (sell_it != ms.end()) {
-//                 ERR_FAIL_COND_MSG((*sell_it).expired(), "EXPIRED POINTER FROM TOWN LOCAL PRICER");
-//                 sell_order = (*sell_it).lock();
-
-//                 const float seller_price = sell_order->price;
-//                 const float buyer_price = pop->get_buy_price(type, seller_price);
-
-//                 if (std::isnan(seller_price)) {
-//                     ERR_FAIL_MSG("seller price is nan");
-//                 }
-//                 if (std::isnan(buyer_price)) {
-//                     ERR_FAIL_MSG("buyer_price is nan");
-//                 }
-//                 float price = (buyer_price + seller_price) / 2; // Price average
-
-//                 if (((price / buyer_price) - 1) > PopOrder::MAX_DIFF) { // Too high for buyer no deal
-//                     break;
-//                 }
-//                 if ((1 - (price / seller_price)) > PopOrder::MAX_DIFF) { // Too low for seller no deal
-//                     break;
-//                 }
-
-//                 int amount = std::min(pop->get_desired(type, price), sell_order->amount);
-//                 //AMount is negitive at some pt
-//                 if (amount == 0) {
-//                     break;
-//                 }
-//                 get_local_pricer()->report_sale(type, price, amount);
-//                 sell_order->sell_cargo(amount, price, money_to_pay); // Calls with money_to_pay
-//                 pop->buy_good(type, amount, price);
-
-//                 if (sell_order->amount == 0) {
-//                     sell_it = get_local_pricer()->delete_town_cargo(sell_it);
-//                 } else {
-//                     break;
-//                 }
-//             }
-//         }
-//     }
-    
-//     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
-//     for (const auto &[terminal_id, to_pay]: money_to_pay) {
-//         Ref<Broker> broker = terminal_map->get_terminal_as<Broker>(terminal_id);
-//         if (broker.is_null()) continue;
-        
-//         broker->add_cash(to_pay);
-//     }
-// }
 
 void Town::pay_factory(int amount, float price, Vector2i source) {
     Ref<FactoryTemplate> factory = TerminalMap::get_instance()->get_terminal_as<FactoryTemplate>(source);
@@ -348,6 +306,7 @@ std::set<TradeInteraction*, TradeInteractionPtrCompare> Town::get_brokers_to_dis
 
 void Town::distribute_type_to_broker(int type, Ref<Broker> broker, Ref<RoadDepot> road_depot) {
     std::vector<TownCargo*> cargo_to_send; // Queued up Town Cargo to sell to brokers
+    std::vector<std::unique_ptr<TownCargo>> demand_to_relay; // Town Cargo just used to express price, amount, and type for convience
     bool is_depot_valid = road_depot.is_valid();
     float fee = 0.0;
     if (is_depot_valid) {
@@ -356,7 +315,7 @@ void Town::distribute_type_to_broker(int type, Ref<Broker> broker, Ref<RoadDepot
     }
 
     {
-        std::scoped_lock lock1(broker->m, m); // Lock Broker
+        std::scoped_lock lock1(broker->m, m); // Lock Broker and self
     
         auto& ms = get_local_pricer()->cargo_sell_orders[type];
         if (ms.empty()) return;
@@ -368,14 +327,15 @@ void Town::distribute_type_to_broker(int type, Ref<Broker> broker, Ref<RoadDepot
         float buyer_price = broker->get_local_price_unsafe(type);
         float seller_price = town_cargo->price;
 
-        if ((buyer_price / (1 + fee)) > seller_price) return; // If seller wants more than buyer is willing to pay taking into account fee, then simply don't sell
-
-        float price = buyer_price; // Just use buyer price, why not
-        int desired = broker -> get_desired_cargo_unsafe(type, price);
+        float price = (buyer_price + seller_price) / 2.0f; // Price average
+        unsigned int desired = broker -> get_desired_cargo_unsafe(type, price);
         if (Ref<Town>(broker).is_valid()) {
-            desired = std::max(broker->get_diff_between_demand_and_supply_unsafe(type) / 30, 0.0f); // TODO: Doesn't work entirely as intended
+            desired = std::max(broker->get_demand_at_price_unsafe(type, price) / 30, 0.0f);
         }
         
+        demand_to_relay.push_back(std::make_unique<TownCargo>(type, desired, buyer_price, town_cargo->terminal_id));
+
+        if ((buyer_price / (1 + fee)) > seller_price) return; // If seller wants more than buyer is willing to pay taking into account fee, then simply don't sell
 
         while (desired > 0) {
 
@@ -409,6 +369,14 @@ void Town::distribute_type_to_broker(int type, Ref<Broker> broker, Ref<RoadDepot
 
         broker->buy_cargo(cargo); // Broker does work around paying fees and owner
         delete cargo;
+    }
+    auto terminal_map = TerminalMap::get_instance();
+
+    for (const auto &demand_cargo: demand_to_relay) {
+        Ref<Broker> broker = terminal_map->get_terminal_as<Broker>(demand_cargo->terminal_id);
+        if (broker.is_null()) continue;
+    
+        broker->add_surveyed_demand(demand_cargo->type, demand_cargo->price, demand_cargo->amount);
     }
 }
 
@@ -474,9 +442,8 @@ void Town::age_all_cargo() {
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     for (const auto& [terminal_id, map]: cargo_to_return) {
         Ref<FactoryTemplate> factory = terminal_map->get_terminal_as<FactoryTemplate>(terminal_id);
-        if (factory.is_null()) continue;
         for (const auto& [type, amount]: map) {
-            factory->add_cargo(type, amount);
+            if (!factory.is_null()) factory->add_cargo(type, amount);
             storage[type] -= amount;
         }
     }
@@ -512,9 +479,18 @@ float Town::get_diff_between_demand_and_supply_unsafe(int type) const {
     return get_local_pricer()->get_diff_between_demand_and_supply(type);
 }
 
+float Town::get_demand_at_price_unsafe(int type, float price) const {
+    return get_local_pricer()->get_demand_at_price(type, price);
+}
+
 int Town::get_local_demand(int type) const {
     std::scoped_lock lock(m);
     return get_local_pricer()->get_local_demand(type);
+}
+
+std::unordered_map<int, float> Town::get_demand_at_different_prices(int type) const {
+    std::scoped_lock lock(m);
+    return get_local_pricer() -> get_demand_at_different_prices(type);
 }
 
 // Process Hooks

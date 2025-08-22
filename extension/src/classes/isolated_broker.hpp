@@ -15,6 +15,7 @@ using namespace godot;
 
 class Town;
 class Recipe;
+class Province;
 
 class IsolatedBroker : public Firm {
     GDCLASS(IsolatedBroker, Firm);
@@ -25,6 +26,7 @@ class IsolatedBroker : public Firm {
     static void _bind_methods();
     Recipe* recipe = nullptr;
     std::unordered_map<int, int> storage;
+    void give_cargo_grain(Province* province, int pop_id);
 
     public:
     IsolatedBroker();

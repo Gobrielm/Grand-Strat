@@ -592,8 +592,8 @@ float TerminalMap::get_average_factory_level() const {
     return ave / count;
 }
 
-int TerminalMap::get_grain_demand() const {
-    double total_demand = 0;
+unsigned long TerminalMap::get_grain_demand() const {
+    unsigned long total_demand = 0;
 
     std::vector<Ref<Town>> factories_to_add;
     {
@@ -607,14 +607,14 @@ int TerminalMap::get_grain_demand() const {
     }
 
     for (const auto &town: factories_to_add) {
-        double num = double(town->get_local_demand(CargoInfo::get_instance()->get_cargo_type("grain")));
+        int num = (town->get_local_demand(CargoInfo::get_instance()->get_cargo_type("grain")));
         total_demand += num;
     }
     return round(total_demand);
 }
 
 
-int TerminalMap::get_grain_supply() const {
+unsigned long TerminalMap::get_grain_supply() const {
     double total_demand = 0;
 
     std::vector<Ref<Town>> factories_to_add;
@@ -629,7 +629,10 @@ int TerminalMap::get_grain_supply() const {
     }
 
     for (const auto &town: factories_to_add) {
-        double num = double(town->get_last_month_supply().get(CargoInfo::get_instance()->get_cargo_type("grain"), 0.0));
+        double num = double(town->get_cargo_amount(CargoInfo::get_instance()->get_cargo_type("grain")));
+        if (std::isnan(num)) {
+            print_line("AA");
+        }
         total_demand += num;
     }
     return round(total_demand);

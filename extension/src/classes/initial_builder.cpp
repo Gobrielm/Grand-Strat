@@ -48,6 +48,7 @@ void InitialBuilder::build_initital_factories() {
     std::chrono::duration<double> elapsed = end_time - start_time;
     print_line("Factory Placement took " + String::num_scientific(elapsed.count()) + " seconds");
     Dictionary d = godot_helpers::convert_map_to_dictionary<Vector2i, int, godot_helpers::Vector2iHasher>(factories_to_place_on_map);
+    factories_to_place_on_map.clear();
     cargo_map->call_deferred("place_factories_client_side", d);
 }
 

@@ -218,6 +218,17 @@ float ProvinceManager::get_unemployment_rate() const {
     return float(unemployed) / total_pops;
 }
 
+float ProvinceManager::get_real_unemployment_rate() const {
+    int total_pops = 0;
+    int unemployed = 0;
+    std::shared_lock lock(province_mutex);
+    for (const auto& [__, province]: provinces) {
+        total_pops += province->get_number_of_pops();
+        unemployed += province->get_number_of_actual_unemployed_pops();
+    }
+    return float(unemployed) / total_pops;
+}
+
 int ProvinceManager::get_number_of_peasants() const {
     int total_pops = 0;
     std::shared_lock lock(province_mutex);

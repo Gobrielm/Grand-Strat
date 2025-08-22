@@ -96,6 +96,7 @@ class Broker : public FixedHold {
     // Returns demand - supply
     virtual float get_diff_between_demand_and_supply(int type) const; // TEMP VIRTUAL
     virtual float get_diff_between_demand_and_supply_unsafe(int type) const;
+    virtual float get_demand_at_price_unsafe(int type, float price) const;
 
     Dictionary get_last_month_supply() const;
     Dictionary get_last_month_demand() const;

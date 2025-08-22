@@ -1,7 +1,8 @@
 #pragma once
 
 #include <godot_cpp/variant/vector2i.hpp>
-#include <godot_cpp/classes/weak_ref.hpp>
+#include <unordered_map>
+#include <memory>
 
 using namespace godot;
 
@@ -10,13 +11,13 @@ struct TownCargo {
     TownCargo(const TownCargo* other);
     TownCargo(int p_type, int p_amount, float p_price, int p_terminal_id);
     int type;
-    int amount;
+    unsigned int amount;
     int age = 0;
     float price;
     int terminal_id;
 
     std::unordered_map<int, float> fees_to_pay; // Fees are dealt with by the buyer at the very end
-
+    void remove_cargo(int p_amount);
     void sell_cargo(int p_amount);
     void sell_cargo(int p_amount, float p_price);
     void sell_cargo(int p_amount, float p_price, std::unordered_map<int, float>& to_pay);

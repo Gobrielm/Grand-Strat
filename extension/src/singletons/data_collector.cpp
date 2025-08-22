@@ -19,7 +19,10 @@ void DataCollector::_notification(int what) {
     }
 }
 
-DataCollector::DataCollector(): is_collecting_data(true) {}
+DataCollector::DataCollector(): is_collecting_data(true) {
+    grain_supply.push_back(0);
+    grain_demand.push_back(0);
+}
 DataCollector::~DataCollector() {}
 
 void DataCollector::create() {
@@ -41,11 +44,12 @@ void DataCollector::month_tick() {
         factory_data_points.push_back(terminal_map -> get_average_cash_of_factory());
         pops_data_points.push_back(province_manager -> get_average_cash_of_pops());
         factory_ave_level.push_back(terminal_map -> get_average_factory_level());
-        grain_demand.push_back(terminal_map -> get_grain_demand());
-        grain_supply.push_back(terminal_map -> get_grain_supply());
         starving_pops.push_back(province_manager->get_number_of_starving_pops());
+        grain_supply.push_back(0);
+        grain_demand.push_back(0);
         broke_pops.push_back(province_manager -> get_number_of_broke_pops());
         unemployement_rate.push_back(province_manager->get_unemployment_rate());
+        real_unemployement_rate.push_back(province_manager->get_real_unemployment_rate());
         number_of_peasants.push_back(province_manager->get_number_of_peasants());
         write_data_to_file();
     }
@@ -106,10 +110,27 @@ void DataCollector::write_data_to_file() {
         file << x;
         file << ",";
     }
+    file << "\nReal Unemployment Rate,\n";
+    for (float x: real_unemployement_rate) {
+        file << x;
+        file << ",";
+    }
     file << "\nNumber Of Peasants,\n";
     for (int x: number_of_peasants) {
         file << x;
         file << ",";
     }
     file.close();
+}
+
+void DataCollector::add_demand(int type, float amount) {
+    std::scoped_lock lock(m);
+    if (type == 10)
+        grain_demand.back() += amount;
+}
+
+void DataCollector::add_supply(int type, float amount) {
+    std::scoped_lock lock(m);
+    if (type == 10)
+        grain_supply.back() += amount;
 }

@@ -118,7 +118,7 @@ double Recipe::get_level() const {
 	if (employment == 0) {
         return 0;
     }
-	return get_level_without_employment() * employment / get_pops_needed_num();
+	return get_level_without_employment() * double(employment) / get_pops_needed_num();
 }
 
 int Recipe::get_level_without_employment() const {

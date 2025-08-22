@@ -81,6 +81,7 @@ class Province : public Object {
     int get_number_of_broke_pops() const;
     int get_number_of_starving_pops() const;
     int get_number_of_unemployed_pops() const;
+    int get_number_of_actual_unemployed_pops() const;
     int get_number_of_peasants() const;
     int get_number_of_city_pops() const;
 
@@ -89,6 +90,7 @@ class Province : public Object {
     void pay_pop(int pop_id, float wage);
     void fire_pop(int pop_id);
     void sell_cargo_to_pop(int pop_id, int type, int amount, float price);
+    void give_pop_cargo(int pop_id, int type, int amount);
     int get_pop_desired(int pop_id, int type, float price);
     void pay_pops(int num_to_pay, double for_each);
 
@@ -96,8 +98,8 @@ class Province : public Object {
     void create_pops();
     void create_peasant_pop(Variant culture, Vector2i p_location);
     void create_rural_pop(Variant culture, Vector2i p_location);
-    int create_town_pop(Variant culture, Vector2i p_location);
     void create_town_pops(int amount, const std::vector<Vector2i>& towns);
+    int create_town_pop(Variant culture, Vector2i p_location);
     std::vector<int> create_buildings_for_peasants();
     void employ_peasants();
     int count_pops() const;

@@ -1,5 +1,6 @@
 #include "town_local_price_controller.hpp"
 #include "../../singletons/cargo_info.hpp"
+#include "../../singletons/data_collector.hpp"
 
 using TLPC = TownLocalPriceController;
 using ms_it = std::multiset<std::weak_ptr<TownCargo>, TownCargo::TownCargoPtrCompare>::iterator;
@@ -24,6 +25,26 @@ float TLPC::get_diff_between_demand_and_supply(int type) const {
         return -get_supply(type);
     }
     return last_month_local_demand.at(type) - get_supply(type);
+}
+
+float TLPC::get_demand_at_price(int type, float price) const {
+    if (!cargo_sell_orders.count(type)) return 0;
+    float total = 0;
+    for (const auto& weak_cargo: cargo_sell_orders.at(type)) {
+        auto cargo = weak_cargo.lock();
+        // If there is demand for a higher price or same then consider demand
+        float o_price = cargo->price;
+        if (o_price >= price) {
+            total += cargo->amount;
+        }
+    }
+    return total;
+}
+
+std::unordered_map<int, float> TLPC::get_demand_at_different_prices(int type) const {
+    std::unordered_map<int, float> a;
+    ERR_FAIL_COND_V_MSG(!last_month_demand.count(type), a, "AAAAA");
+    return last_month_demand.at(type);
 }
 
 void TLPC::add_town_cargo(TownCargo* new_cargo) {
@@ -109,6 +130,7 @@ void TLPC::update_local_price(int type) { // Creates a weighted average of cargo
     last_month_demand[type] = (demand[type]);
     demand[type].clear();
     last_month_local_demand[type] = local_demand[type];
+    DataCollector::get_instance()->add_demand(type, local_demand[type]);
     local_demand[type] = 0;
 
     ERR_FAIL_COND_MSG(std::isnan(current_prices[type]), "Type: " + CargoInfo::get_instance()->get_cargo_name(type) + " has null price!");

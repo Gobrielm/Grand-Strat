@@ -28,6 +28,11 @@ bool TownCargo::operator==(const TownCargo& other) const {
     return this == &other; // identity comparison
 }
 
+void TownCargo::remove_cargo(int p_amount) {
+    amount -= p_amount;
+    ERR_FAIL_COND_MSG(amount < 0, "Amount in town cargo became negitive.");
+}
+
 void TownCargo::sell_cargo(int p_amount) {
     sell_cargo(p_amount, price);
 }
@@ -38,7 +43,7 @@ void TownCargo::sell_cargo(int p_amount, float p_price) {
     float total_price = p_amount * p_price;
     pay_fees(total_price);
     factory->add_cash(total_price);
-    amount -= p_amount;
+    remove_cargo(p_amount);
 }
 
 void TownCargo::sell_cargo(int p_amount, float p_price, std::unordered_map<int, float>& to_pay) {
@@ -49,7 +54,7 @@ void TownCargo::sell_cargo(int p_amount, float p_price, std::unordered_map<int, 
         total_price -= fee_price;
     }
     to_pay[terminal_id] += total_price;
-    amount -= p_amount;
+    remove_cargo(p_amount);
 }
 
 void TownCargo::pay_fees(float &total_price) {

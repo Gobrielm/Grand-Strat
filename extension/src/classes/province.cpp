@@ -333,6 +333,17 @@ int Province::get_number_of_unemployed_pops() const {
     return total;
 }
 
+int Province::get_number_of_actual_unemployed_pops() const {
+    int total = 0;
+    std::shared_lock lock(pops_lock);
+    CONST_POP_LOOP() {
+        if (pop->is_unemployed()) {
+            total++;
+        }
+    }
+    return total;
+}
+
 int Province::get_number_of_peasants() const {
     std::shared_lock lock(pops_lock);
     if (pop_types.count(peasant)) {
@@ -365,6 +376,12 @@ void Province::sell_cargo_to_pop(int pop_id, int type, int amount, float price) 
     std::unique_lock lock(pops_lock);
     BasePop* pop = get_pop(pop_id);
     pop->buy_good(type, amount, price);
+}
+
+void Province::give_pop_cargo(int pop_id, int type, int amount) {
+    std::unique_lock lock(pops_lock);
+    BasePop* pop = get_pop(pop_id);
+    pop->add_cargo(type, amount);
 }
 
 int Province::get_pop_desired(int pop_id, int type, float price) {
@@ -402,8 +419,8 @@ int Province::get_number_of_pops_unsafe(PopTypes pop_type) const {
 
 void Province::create_pops() {
     int number_of_peasant_pops = floor(population * 0.9 / BasePop::get_people_per_pop(peasant));
-    int number_of_rural_pops = floor(population * 0.05 / BasePop::get_people_per_pop(rural));
-	int number_of_city_pops = floor(population * 0.05 / BasePop::get_people_per_pop(town));
+    int number_of_rural_pops = floor(population * 0.08 / BasePop::get_people_per_pop(rural));
+	int number_of_city_pops = floor(population * 0.02 / BasePop::get_people_per_pop(town));
     for (int i = 0; i < number_of_peasant_pops; i++) {
         create_peasant_pop(0, tiles[rand() % tiles.size()]);
     }
@@ -440,6 +457,25 @@ void Province::create_rural_pop(Variant culture, Vector2i p_location) {
     }
 }
 
+void Province::create_town_pops(int amount, const std::vector<Vector2i>& towns) {
+    int index = 0;
+    auto terminal_map = TerminalMap::get_instance();
+    std::vector<Ref<Town>> town_refs;
+    for (const Vector2i &tile: towns) {
+        town_refs.push_back(terminal_map->get_town(towns[index]));
+    }
+
+	for (int i = 0; i < amount; i++) {
+        Ref<Town> town = town_refs[index];
+        if (town.is_valid()) {
+            int pop_id = create_town_pop(0, town -> get_location());
+            town -> add_pop(pop_id);
+        }
+        
+        index = (index + 1) % towns.size();
+    }
+}
+
 int Province::create_town_pop(Variant culture, Vector2i p_location) {
     BasePop* pop = BasePop::create_town_pop(province_id, p_location, culture);
     {
@@ -450,20 +486,6 @@ int Province::create_town_pop(Variant culture, Vector2i p_location) {
     return pop->get_pop_id();
 }
 
-void Province::create_town_pops(int amount, const std::vector<Vector2i>& towns) {
-    int index = 0;
-	for (int i = 0; i < amount; i++) {
-        Ref<Town> town = TerminalMap::get_instance() -> get_town(towns[index]);
-        
-        if (town.is_valid()) {
-            int pop_id = create_town_pop(0, town -> get_location());
-            town -> add_pop(pop_id);
-        }
-        
-        index = (index + 1) % towns.size();
-    }
-}
-
 std::vector<int> Province::create_buildings_for_peasants() {
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     std::vector<int> subsistence_farm_ids;
@@ -471,7 +493,8 @@ std::vector<int> Province::create_buildings_for_peasants() {
         int temp = terminal_map->get_cargo_value_of_tile(tile, 10);
         if (temp > 0) {
             Ref<SubsistenceFarm> farm = Ref<SubsistenceFarm>(memnew(SubsistenceFarm(tile, 0)));
-            farm->set_local_town(closest_town_to_tile[tile]);
+            if (closest_town_to_tile.count(tile))
+                farm->set_local_town(closest_town_to_tile[tile]);
             
             terminal_map->create_isolated_terminal(farm);
             subsistence_farm_ids.push_back(farm->get_terminal_id());
@@ -481,7 +504,7 @@ std::vector<int> Province::create_buildings_for_peasants() {
 }
 
 void Province::employ_peasants() {
-    if (get_town_tiles().size() == 0 || !pop_types.count(peasant)) {
+    if (!pop_types.count(peasant)) {
         return;
     }
 
@@ -492,15 +515,20 @@ void Province::employ_peasants() {
         // print_error("No possible peasant buildings");
         return;
     }
-    int i = 0;
-    for (const auto& pop_id: pop_types[peasant]) {
-        BasePop* pop = get_pop(pop_id);
-        Ref<SubsistenceFarm> farm = terminal_map->get_terminal_as<SubsistenceFarm>(farms[i]);
-        pop->set_location(farm->get_location());
-        farm->add_pop(pop);
+    
+    {
+        int i = 0;
+        std::unique_lock lock(pops_lock);
+        CONST_PEASANT_POP_LOOP() {
+            BasePop* pop = get_pop(pop_id);
+            Ref<SubsistenceFarm> farm = terminal_map->get_terminal_as<SubsistenceFarm>(farms[i]);
+            pop->set_location(farm->get_location());
+            farm->add_pop(pop);
 
-        i = (i + 1) % farms.size();
+            i = (i + 1) % farms.size();
+        }
     }
+    
 }
 
 std::vector<Vector2i> Province::get_town_tiles() const {
@@ -537,7 +565,8 @@ void Province::find_employment_for_rural_pops() {
         std::unique_lock lock(pops_lock);
         CONST_RURAL_POP_LOOP() {
             BasePop* pop = get_pop(pop_id);
-            pops_to_find_employement.push_back(pop);
+            if (pop -> is_seeking_employment()) 
+                pops_to_find_employement.push_back(pop);
         }
     }
 
@@ -593,7 +622,8 @@ void Province::find_employment_for_town_pops() {
         std::unique_lock lock(pops_lock);
         CONST_TOWN_POP_LOOP() {
             BasePop* pop = get_pop(pop_id);
-            pops_to_find_employement.push_back(pop);
+            if (pop -> is_seeking_employment())
+                pops_to_find_employement.push_back(pop);
         }
     }
     
@@ -643,6 +673,7 @@ void Province::find_employment_for_town_pops() {
             }
 
             if (is_acceptable) {
+                print_line("Employeed in town");
                 work->employ_pop(pop, pops_lock);
             }
         }
@@ -737,8 +768,6 @@ void Province::sell_to_pops() {
         }
     }
 
-    std::unordered_map<int, float> money_to_pay;
-
     for (auto& pop: pops_to_month_tick) {
         if (!closest_town_to_tile.count(pop->get_location())) {
             continue; // Province has no towns
@@ -748,14 +777,6 @@ void Province::sell_to_pops() {
             print_error("Towns and terminals are desynced at " + pop->get_location());
             continue;
         }
-        std::scoped_lock lock(pops_lock, town->m);
-        town->sell_to_pop_unsafe(pop, money_to_pay);
-    }
-
-    for (const auto &[terminal_id, to_pay]: money_to_pay) {
-        Ref<Broker> broker = terminal_map->get_terminal_as<Broker>(terminal_id);
-        if (broker.is_null()) continue;
-    
-        broker->add_cash(to_pay);
+        town->sell_to_pop(pop, pops_lock);
     }
 }

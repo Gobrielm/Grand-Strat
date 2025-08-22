@@ -99,8 +99,9 @@ class BasePop : public Object {
     float get_buy_price(int type, float current_price) const;
 
     unsigned int get_desired(int type) const;
-    int get_desired(int type, float price) const;
+    unsigned int get_desired(int type, float price) const;
     void buy_good(int type, int amount, float price);
+    void add_cargo(int type, int amount);
     int get_max_storage(int type) const;
     int get_education_level() const;
     float get_wealth() const;

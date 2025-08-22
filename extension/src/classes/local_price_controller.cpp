@@ -168,6 +168,19 @@ Dictionary LocalPriceController::get_last_month_supply_dict() const {
     return d;
 }
 
+float LocalPriceController::get_demand_at_price(int type, float price) const {
+    if (!last_month_demand.count(type)) return 0;
+    float total = 0;
+    for (const auto& [ten_price, amount]: last_month_demand.at(type)) {
+        // If there is demand for a higher price or same then consider demand
+        float o_price = ten_price;
+        if (o_price >= price) {
+            total += amount;
+        }
+    }
+    return total;
+}
+
 float LocalPriceController::get_local_price(int type) const {
     ERR_FAIL_COND_V_MSG(!current_prices.count(type), 0, "Price is not available for type: " + CargoInfo::get_instance()->get_cargo_name(type));
     return current_prices.at(type);

@@ -53,6 +53,7 @@ class LocalPriceController {
     Dictionary get_last_month_demand_dict() const;
     Dictionary get_last_month_supply_dict() const;
 
+    virtual float get_demand_at_price(int type, float price) const;
 
     float get_local_price(int type) const;
     static float get_base_price(int type);

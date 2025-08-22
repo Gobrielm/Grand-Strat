@@ -54,8 +54,14 @@ func place_towns_client_side(town_tiles: Array[Vector2i]) -> void:
 		set_tile.rpc(tile, Vector2i(0, 1))
 
 func place_factories_client_side(fact_tiles: Dictionary) -> void:
+	mutex.lock()
+	
 	for tile: Vector2i in fact_tiles:
-		set_tile.rpc(tile, get_atlas_cell(fact_tiles[tile]))
+		var atlas: Vector2i = get_atlas_cell(fact_tiles[tile])
+		set_cell(tile, 0, atlas)
+		Utils.world_map.make_cell_invisible(tile)
+	
+	mutex.unlock()
 
 func add_industries_to_towns() -> void:
 	for country_id: int in tile_ownership.get_instance().get_country_ids():

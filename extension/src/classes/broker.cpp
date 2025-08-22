@@ -2,6 +2,7 @@
 #include "road_depot.hpp"
 #include "../singletons/terminal_map.hpp"
 #include "town_utility/town_cargo.hpp"
+#include "town.hpp"
 #include "broker_utility/trade_interaction.hpp"
 #include "broker_utility/trade_interaction_compare.hpp"
 #include <algorithm>
@@ -299,13 +300,14 @@ void Broker::distribute_type_to_broker(int type, Ref<Broker> otherBroker, Ref<Ro
     }
 }
 
-void Broker::survey_broad_market(int type) {
+void Broker::survey_broad_market(int type) { // Doesn't include towns since they add demand seperately
     std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> s;
+    auto terminal_map = TerminalMap::get_instance();
     s.insert(get_location());
     
     for (const auto& tile : connected_brokers) {
         Ref<Broker> broker = TerminalMap::get_instance() -> get_broker(tile);
-        if (broker.is_null()) continue;
+        if (broker.is_null() && !(terminal_map -> is_town(tile))) continue;
         s.insert(tile);
         survey_broker_market(type, broker);
     }
@@ -316,8 +318,9 @@ void Broker::survey_broad_market(int type) {
         
         std::vector<Ref<Broker>> other_brokers = road_depot->get_available_brokers(type);
         for (const auto &broker: other_brokers) {
-            if (!s.count(broker->get_location())) {
-                s.insert(broker->get_location());
+            Vector2i cell = broker->get_location();
+            if (!s.count(cell) && !(terminal_map -> is_town(cell))) {
+                s.insert(cell);
                 survey_broker_market(type, broker);
             }
         }
@@ -325,12 +328,21 @@ void Broker::survey_broad_market(int type) {
 }
 
 void Broker::survey_broker_market(int type, Ref<Broker> broker) {
-    if (broker->does_accept(type)) {
+    if (!broker->does_accept(type)) return;
+        
+    if (Ref<Town>(broker).is_null()) {
         float local_price = get_local_price(type);
         float o_local_price = broker->get_local_price(type);
         add_surveyed_demand(type, o_local_price, broker->get_desired_cargo(type, o_local_price));
         broker->add_surveyed_supply(type, local_price, get_desired_cargo(type, local_price));
+    } else {
+        auto town = Ref<Town>(broker);
+        auto demand_map = town->get_demand_at_different_prices(type);
+        for (const auto& [ten_price, amount]: demand_map) {
+            add_surveyed_demand(type, ten_price / 10.0f, amount);
+        }
     }
+
 }
 
 float Broker::get_diff_between_demand_and_supply(int type) const {
@@ -358,6 +370,10 @@ void Broker::add_surveyed_supply_unsafe(int type, float price, float amount) {
 
 float Broker::get_diff_between_demand_and_supply_unsafe(int type) const {
     return local_pricer->get_demand(type) - local_pricer->get_supply(type);
+}
+
+float Broker::get_demand_at_price_unsafe(int type, float price) const {
+    return local_pricer->get_demand_at_price(type, price);
 }
 
 Dictionary Broker::get_last_month_supply() const {

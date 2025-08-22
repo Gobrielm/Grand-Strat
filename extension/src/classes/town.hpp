@@ -61,7 +61,7 @@ public:
 
     //Pop stuff
     void add_pop(int pop_id);
-    void sell_to_pop_unsafe(BasePop* pop, std::unordered_map<int, float>& money_to_pay);
+    void sell_to_pop(BasePop* pop, std::shared_mutex &pops_lock);
     // void sell_to_pop(BasePop* pop, std::shared_mutex& province_pop_lock);
     void pay_factory(int amount, float price, Vector2i source);
     int get_total_pops() const;
@@ -86,7 +86,10 @@ public:
     //TEMP INHERIT
     float get_diff_between_demand_and_supply(int type) const override;
     float get_diff_between_demand_and_supply_unsafe(int type) const override;
+    float get_demand_at_price_unsafe(int type, float price) const override;
     int get_local_demand(int type) const; // TEMP BUT MAYBE NOT
+
+    std::unordered_map<int, float> get_demand_at_different_prices(int type) const;
 
     // Process Hooks
     void day_tick();

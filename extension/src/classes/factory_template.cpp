@@ -5,6 +5,7 @@
 #include "../singletons/cargo_info.hpp"
 #include "../singletons/terminal_map.hpp"
 #include "../singletons/province_manager.hpp"
+#include "../singletons/data_collector.hpp"
 #include <godot_cpp/core/class_db.hpp>
 #include <algorithm>
 
@@ -127,6 +128,7 @@ void FactoryTemplate::remove_inputs(double batch_size) {
 void FactoryTemplate::add_outputs(double batch_size) {
     for (auto& [type, amount]: get_outputs()) {
         add_cargo_ignore_accepts(type, amount * batch_size);
+        DataCollector::get_instance()->add_supply(type, amount * batch_size);
     }
 }
 
