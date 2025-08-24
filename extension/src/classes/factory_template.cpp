@@ -191,7 +191,7 @@ int FactoryTemplate::get_cost_for_upgrade() {
     return COST_FOR_UPGRADE;
 }
 
-void FactoryTemplate::upgrade() {
+void FactoryTemplate::upgrade() { // TODO: Upgrade deletes money, bad, need to buy goods instead
     int cost = get_cost_for_upgrade();
     if (get_cash() >= cost && can_factory_upgrade()) {
         remove_cash(cost);

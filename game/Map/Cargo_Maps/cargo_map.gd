@@ -126,6 +126,9 @@ func get_atlas_cell(primary_type: int = -1) -> Vector2i:
 
 func create_construction_site(_player_id: int, coords: Vector2i) -> void:
 	FactoryCreator.get_instance().create_construction_site(coords, _player_id)
+	place_construction_site_tile(coords)
+
+func place_construction_site_tile(coords: Vector2i) -> void:
 	set_tile.rpc(coords, Vector2i(3, 1))
 
 func get_available_primary_recipes(coords: Vector2i) -> Array:

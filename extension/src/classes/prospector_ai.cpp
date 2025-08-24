@@ -7,6 +7,9 @@
 #include "../singletons/road_map.hpp"
 #include "../singletons/money_controller.hpp"
 #include "../singletons/province_manager.hpp"
+#include "../singletons/factory_creator.hpp"
+#include "../singletons/recipe_info.hpp"
+
 
 void ProspectorAi::_bind_methods() {
     ClassDB::bind_static_method(get_class_static(), D_METHOD("create", "p_country_id", "p_owner_id", "p_cargo_type"), &ProspectorAi::create);
@@ -22,15 +25,30 @@ ProspectorAi::ProspectorAi(): CompanyAi() {}
 ProspectorAi::ProspectorAi(int p_country_id, int p_owner_id, int p_cargo_type): CompanyAi(p_country_id, p_owner_id), cargo_type(p_cargo_type) {}
 
 void ProspectorAi::month_tick() {
+    record_cash();
+    pay_employees();
     if (does_have_money_for_investment()) {
-        Vector2i* town_tile = find_town_for_investment();
-        if (town_tile == nullptr) return; 
-        Vector2i* tile_to_build_in = find_tile_for_new_building(*town_tile);
-        if (tile_to_build_in == nullptr) return;
-        build_factory(*tile_to_build_in, *town_tile);
-        memdelete(tile_to_build_in);
-        memdelete(town_tile);
+        Ref<Vector2i> town_tile = find_town_for_investment();
+        if (town_tile.is_valid())
+            build_building(**town_tile);
     }
+}
+
+void ProspectorAi::record_cash() {
+    if (past_cash.size() == MONTHS_OF_CASH_DATA)
+        past_cash.pop_back();
+    past_cash.push_front(get_cash());
+}
+
+float ProspectorAi::get_cash() const {
+    return MoneyController::get_instance()->get_money(get_owner_id());
+}
+
+void ProspectorAi::pay_employees() { // TODO: Need way to get pop from id, without knowing province, most likely pop manager
+    float to_pay_each = ((past_cash.back() - get_cash()) / past_cash.size()) * 0.9; // Profit over last n months averaged
+    // for (int pop_id: employees) {
+        
+    // }
 }
 
 bool ProspectorAi::does_have_money_for_investment() {
@@ -38,9 +56,9 @@ bool ProspectorAi::does_have_money_for_investment() {
     return cash > FactoryTemplate::get_cost_for_upgrade() * 3.5;
 }
 
-Vector2i* ProspectorAi::find_town_for_investment() {
-    float max_mult = 0;
-    Vector2i best_coords;
+Ref<Vector2i> ProspectorAi::find_town_for_investment() {
+    float highest_price = 0;
+    Ref<Vector2i> best_coords;
     Ref<ProvinceManager> province_manager = ProvinceManager::get_instance();
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     std::unordered_set<int> prov_ids = province_manager->get_country_provinces(get_country_id());
@@ -52,21 +70,26 @@ Vector2i* ProspectorAi::find_town_for_investment() {
             Ref<Town> town = terminal_map->get_town(tile);
             if (does_have_building_in_area_already(tile)) continue;
 
-            float price_mult = town->get_local_price(cargo_type) / LocalPriceController::get_base_price(cargo_type);
-            if (price_mult > max_mult) {
+            float price = town->get_local_price(cargo_type);
+            if (price > highest_price) {
                 best_coords = tile;
-                max_mult = price_mult;
+                highest_price = price;
             }
             
         }
     }
-    if (max_mult < 1) {
-        return nullptr;
-    }
-    return memnew(Vector2i(best_coords));
+    if (highest_price <= 0) return nullptr;
+    //TODO: Potentially check if price will be profitable
+    return best_coords;
 }
 
-bool ProspectorAi::does_have_building_in_area_already(const Vector2i &center) { // Will count non-maxed factories and construction sites
+void ProspectorAi::build_building(const Vector2i& town_tile) {
+    Ref<Vector2i> tile_to_build_in = find_tile_for_new_building(town_tile);
+    if (tile_to_build_in.is_null()) return;
+    build_factory(**tile_to_build_in, town_tile);
+}
+
+bool ProspectorAi::does_have_building_in_area_already(const Vector2i& center) { // Will count non-maxed factories and construction sites
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     TileMapLayer* main_map = terminal_map -> get_main_map();
     const int MAX_TILES_OUT = 4;
@@ -104,9 +127,9 @@ bool ProspectorAi::does_have_building_in_area_already(const Vector2i &center) { 
     return false;
 }
 
-Vector2i* ProspectorAi::find_tile_for_new_building(const Vector2i &town_tile) {
+Ref<Vector2i> ProspectorAi::find_tile_for_new_building(const Vector2i& town_tile) {
     float best_weight = -1;
-    Vector2i best_tile;
+    Ref<Vector2i> best_tile = Ref<Vector2i>(nullptr);
 
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     TileMapLayer* main_map = terminal_map -> get_main_map();
@@ -133,18 +156,15 @@ Vector2i* ProspectorAi::find_tile_for_new_building(const Vector2i &town_tile) {
             float dist = tile.distance_to(town_tile);
             float score = get_build_score_for_factory(tile) + (30 / dist);
             if (score > best_weight) {
-                best_tile = tile;
+                best_tile = Ref<Vector2i>(tile);
                 best_weight = score;
             }
         }
     }
-    if (best_weight > 0) {
-        return memnew(Vector2i(best_tile));
-    }
-    return nullptr;
+    return best_tile;
 }
 
-float ProspectorAi::get_build_score_for_factory(const Vector2i &tile) const {
+float ProspectorAi::get_build_score_for_factory(const Vector2i& tile) const {
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     TileMapLayer* main_map = terminal_map -> get_main_map();
     float score = terminal_map->get_cargo_value_of_tile(tile, cargo_type);
@@ -162,18 +182,17 @@ float ProspectorAi::get_build_score_for_factory(const Vector2i &tile) const {
     return score;
 }
 
-void ProspectorAi::build_factory(const Vector2i &factory_tile, const Vector2i &town_tile) {
-    cargo_map->call("create_construction_site", get_owner_id(), factory_tile);
-    Array a;
-    a.push_back(Dictionary());
-    Dictionary d;
-    d[cargo_type] = 1;
-    a.push_back(d);
-    TerminalMap::get_instance() -> set_construction_site_recipe(factory_tile, a);
+void ProspectorAi::build_factory(const Vector2i& factory_tile, const Vector2i& town_tile) {
+    int terminal_id = FactoryCreator::get_instance()->create_construction_site(factory_tile, get_owner_id());
+    exisiting_buildings.push_back(terminal_id);
+    Recipe* recipe = RecipeInfo::get_instance()->get_primary_recipe_for_type(cargo_type);
+    if (recipe == nullptr) return;
+    auto construction_site = TerminalMap::get_instance()->get_terminal_as<ConstructionSite>(terminal_id);
+    construction_site -> set_recipe(recipe);
     connect_factory(factory_tile, town_tile);
 }
 
-void ProspectorAi::connect_factory(const Vector2i &factory_tile, const Vector2i &town_tile) {
+void ProspectorAi::connect_factory(const Vector2i& factory_tile, const Vector2i& town_tile) {
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     TileMapLayer* main_map = terminal_map -> get_main_map();
 
@@ -199,7 +218,7 @@ void ProspectorAi::connect_factory(const Vector2i &factory_tile, const Vector2i 
     memdelete(fact_depot);
 }
 
-Vector2i* ProspectorAi::get_best_depot_tile_of_town(const Vector2i &town_tile, const Vector2i &target) { //Will either get the closest depot, or build the closest
+Vector2i* ProspectorAi::get_best_depot_tile_of_town(const Vector2i& town_tile, const Vector2i& target) { //Will either get the closest depot, or build the closest
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     TileMapLayer* main_map = terminal_map -> get_main_map();
     //Placing or finding depot for town
@@ -235,7 +254,7 @@ Vector2i* ProspectorAi::get_best_depot_tile_of_town(const Vector2i &town_tile, c
     return memnew(Vector2i(best_tile)); //Will return (0, 0) if no depot possible
 }
 
-Vector2i* ProspectorAi::get_best_depot_tile_of_factory(const Vector2i &factory_tile, const Vector2i &target) {
+Vector2i* ProspectorAi::get_best_depot_tile_of_factory(const Vector2i& factory_tile, const Vector2i& target) {
     TileMapLayer* main_map = TerminalMap::get_instance()->get_main_map();
     float best_weight = -1;
     Vector2i best_tile;
@@ -267,7 +286,7 @@ Vector2i* ProspectorAi::get_best_depot_tile_of_factory(const Vector2i &factory_t
     return memnew(Vector2i(best_tile));
 }
 
-float ProspectorAi::get_build_score_for_depot(const Vector2i &tile, const Vector2i &target) const {
+float ProspectorAi::get_build_score_for_depot(const Vector2i& tile, const Vector2i& target) const {
     TileMapLayer* main_map = TerminalMap::get_instance()->get_main_map();
     float weight = 0;
     Array cells = main_map -> get_surrounding_cells(tile);

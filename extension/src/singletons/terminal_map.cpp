@@ -75,7 +75,7 @@ void TerminalMap::_bind_methods() {
     ClassDB::bind_method(D_METHOD("get_factory", "coords"), &TerminalMap::get_factory);
 
     // Action doers
-    ClassDB::bind_method(D_METHOD("set_construction_site_recipe", "coords", "selected_recipe"), &TerminalMap::set_construction_site_recipe);
+    ClassDB::bind_method(D_METHOD("set_construction_site_recipe", "coords", "selected_recipe"), &TerminalMap::set_construction_site_recipe_godot);
     ClassDB::bind_method(D_METHOD("destroy_recipe", "coords"), &TerminalMap::destroy_recipe);
     ClassDB::bind_method(D_METHOD("transform_construction_site_to_factory", "coords"), &TerminalMap::transform_construction_site_to_factory);
     ClassDB::bind_method(D_METHOD("edit_order_station", "coords", "type", "amount", "buy", "max_price"), &TerminalMap::edit_order_station);
@@ -243,6 +243,26 @@ void TerminalMap::encode_factory_from_construction_site(Ref<Factory> factory) {
     Vector2i coords = factory->get_location();
     create_terminal(factory);
     cargo_map->call("call_set_tile_rpc", coords, factory->get_primary_type());
+}
+
+void TerminalMap::encode_road_depot(Ref<RoadDepot> road_depot) {
+    Ref<ProvinceManager> province_manager = ProvinceManager::get_instance();
+    Vector2i coords = road_depot->get_location();
+    Province* province = province_manager->get_province(province_manager->get_province_id(coords));
+    
+    create_terminal(road_depot);
+    province->add_terminal(coords);
+    RoadMap::get_instance()->place_road_depot(coords);
+}
+
+void TerminalMap::encode_construction_site(Ref<ConstructionSite> construction_site) {
+    Ref<ProvinceManager> province_manager = ProvinceManager::get_instance();
+    Vector2i coords = construction_site->get_location();
+    Province* province = province_manager->get_province(province_manager->get_province_id(coords));
+    
+    create_terminal(construction_site);
+    province->add_terminal(coords);
+    cargo_map->call_deferred("place_construction_site_tile", coords);
 }
 
 void TerminalMap::add_connected_brokers(Ref<Broker> p_broker) {
@@ -510,7 +530,13 @@ Ref<Factory> TerminalMap::get_factory(const Vector2i &coords) {
 }
 
 //Action doers
-void TerminalMap::set_construction_site_recipe(const Vector2i &coords, const Array &selected_recipe) {
+void TerminalMap::set_construction_site_recipe(const Vector2i &coords, Recipe* selected_recipe) {
+    if (is_owned_recipeless_construction_site(coords)) {
+        get_terminal_as<ConstructionSite>(coords) -> set_recipe(selected_recipe);
+    }
+}
+
+void TerminalMap::set_construction_site_recipe_godot(const Vector2i &coords, const Array &selected_recipe) {
     if (is_owned_recipeless_construction_site(coords)) {
         get_terminal_as<ConstructionSite>(coords) -> set_recipe(RecipeInfo::get_instance()->get_recipe(selected_recipe[0], selected_recipe[1]));
     }

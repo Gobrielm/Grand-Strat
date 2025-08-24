@@ -78,6 +78,8 @@ public:
     void encode_factory(Ref<Factory> factory, int mult = 1);
     void encode_factory_no_calls_to_cargo_map(Ref<Factory> factory, int mult = 1); // used when calling this a lot to prevent deferred calls from clogging memory
     void encode_factory_from_construction_site(Ref<Factory> factory);
+    void encode_road_depot(Ref<RoadDepot> road_depot);
+    void encode_construction_site(Ref<ConstructionSite> construction_site);
     void add_connected_brokers(Ref<Broker> p_broker);
     void add_connected_stations(Ref<RoadDepot> road_depot);
     void find_stations(Ref<Broker> broker);
@@ -156,7 +158,8 @@ public:
     }
    
     //Action doers
-    void set_construction_site_recipe(const Vector2i &coords, const Array &selected_recipe);
+    void set_construction_site_recipe(const Vector2i &coords, Recipe* selected_recipe);
+    void set_construction_site_recipe_godot(const Vector2i &coords, const Array &selected_recipe);
     void destroy_recipe(const Vector2i &coords);
     void transform_construction_site_to_factory(const Vector2i &coords);
     void edit_order_station(const Vector2i &coords, int type, int amount, bool buy, float max_price);

@@ -22,9 +22,9 @@ public:
     static void create();
     static FactoryCreator* get_instance();
 
-    void create_primary_industry(int type, Vector2i coords, int player_id, int mult = 1);
-    void create_primary_industry_no_cargo_map_call(int type, Vector2i coords, int player_id, int mult = 1);
-    void create_road_depot(Vector2i coords, int player_id);
-    void create_construction_site(Vector2i coords, int player_id);
+    int create_primary_industry(int type, Vector2i coords, int player_id, int mult = 1);
+    int create_primary_industry_no_cargo_map_call(int type, Vector2i coords, int player_id, int mult = 1);
+    int create_road_depot(Vector2i coords, int player_id);
+    int create_construction_site(Vector2i coords, int player_id);
     void create_town(Vector2i coords);
 };
