@@ -154,6 +154,10 @@ Vector2i BasePop::get_location() const {
     return location;
 }
 
+void BasePop::set_type(PopTypes p_pop_type) {
+    pop_type = p_pop_type;
+}
+
 PopTypes BasePop::get_type() const {
     return pop_type;
 }

@@ -37,7 +37,7 @@ FactoryCreator* FactoryCreator::get_instance() {
 int FactoryCreator::create_primary_industry(int type, Vector2i coords, int player_id, int mult) {
     if (coords == Vector2i(0, 0)) {
         print_error("Tried to build factory at " + coords);
-        return;
+        return -1;
     }
     int term_id;
     Recipe* recipe = RecipeInfo::get_instance()->get_primary_recipe_for_type(type);
@@ -56,7 +56,7 @@ int FactoryCreator::create_primary_industry(int type, Vector2i coords, int playe
 int FactoryCreator::create_primary_industry_no_cargo_map_call(int type, Vector2i coords, int player_id, int mult) {
     if (coords == Vector2i(0, 0)) {
         print_error("Tried to build factory at " + coords);
-        return;
+        return -1;
     }
     int term_id;
     Recipe* recipe = RecipeInfo::get_instance()->get_primary_recipe_for_type(type);

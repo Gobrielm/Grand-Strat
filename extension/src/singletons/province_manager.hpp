@@ -73,7 +73,9 @@ public:
     Array get_provinces() const;
     bool is_tile_a_province(Vector2i tile) const;
     int get_province_id(Vector2i tile) const;
+    Province* get_province_godot(int province_id) const;
     Province* get_province(int province_id) const;
+    Province* get_province(const Vector2i& tile) const;
 
     //Economy stats
     float get_average_cash_of_pops() const;
@@ -87,6 +89,7 @@ public:
     void add_province_to_country(Province* prov, int country_id);
     Dictionary get_countries_provinces(int country_id) const;
     std::unordered_set<int> get_country_provinces(int country_id) const;
+    std::unordered_set<int> get_country_ids() const;
 
     void month_tick();
     void thread_processor();

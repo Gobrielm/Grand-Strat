@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <deque>
+#include <memory>
 #include <godot_cpp/classes/tile_map_layer.hpp>
 
 class RoadMap;
@@ -26,9 +27,9 @@ class ProspectorAi : public CompanyAi {
     void pay_employees();
     bool does_have_money_for_investment() override;
     void build_building(const Vector2i& town_tile);
-    Ref<Vector2i> find_town_for_investment();
+    std::shared_ptr<Vector2i> find_town_for_investment();
     bool does_have_building_in_area_already(const Vector2i& center);
-    Ref<Vector2i> find_tile_for_new_building(const Vector2i& town_tile);
+    std::shared_ptr<Vector2i> find_tile_for_new_building(const Vector2i& town_tile);
     float get_build_score_for_factory(const Vector2i& tile) const;
     
     void build_factory(const Vector2i& factory_tile, const Vector2i& town_tile);

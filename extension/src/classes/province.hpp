@@ -109,6 +109,7 @@ class Province : public Object {
     std::set<Ref<FactoryTemplate>, FactoryTemplate::FactoryWageCompare> get_rural_employment_sorted_by_wage() const;
     std::set<Ref<FactoryTemplate>, FactoryTemplate::FactoryWageCompare> get_town_employment_sorted_by_wage(Vector2i town_location) const;
     Vector2i get_closest_town_tile_to_pop(BasePop* pop) const;
+    Vector2i get_closest_town_tile_to_pop(const Vector2i& pop_location) const;
     void month_tick();
     void change_pops();
     void sell_to_pops();

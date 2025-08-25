@@ -70,6 +70,7 @@ class BasePop : public Object {
     Vector2i get_location() const;
 
     //Types
+    void set_type(PopTypes p_pop_type);
     PopTypes get_type() const;
     static float get_base_need(PopTypes pop_type, int type);
     static float get_base_want(PopTypes pop_type, int type);

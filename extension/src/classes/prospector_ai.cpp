@@ -28,9 +28,9 @@ void ProspectorAi::month_tick() {
     record_cash();
     pay_employees();
     if (does_have_money_for_investment()) {
-        Ref<Vector2i> town_tile = find_town_for_investment();
-        if (town_tile.is_valid())
-            build_building(**town_tile);
+        std::shared_ptr<Vector2i> town_tile = find_town_for_investment();
+        if (town_tile != nullptr)
+            build_building(*town_tile);
     }
 }
 
@@ -56,9 +56,9 @@ bool ProspectorAi::does_have_money_for_investment() {
     return cash > FactoryTemplate::get_cost_for_upgrade() * 3.5;
 }
 
-Ref<Vector2i> ProspectorAi::find_town_for_investment() {
+std::shared_ptr<Vector2i> ProspectorAi::find_town_for_investment() {
     float highest_price = 0;
-    Ref<Vector2i> best_coords;
+    std::shared_ptr<Vector2i> best_coords;
     Ref<ProvinceManager> province_manager = ProvinceManager::get_instance();
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     std::unordered_set<int> prov_ids = province_manager->get_country_provinces(get_country_id());
@@ -72,7 +72,7 @@ Ref<Vector2i> ProspectorAi::find_town_for_investment() {
 
             float price = town->get_local_price(cargo_type);
             if (price > highest_price) {
-                best_coords = tile;
+                best_coords = std::make_shared<Vector2i>(tile);
                 highest_price = price;
             }
             
@@ -84,9 +84,9 @@ Ref<Vector2i> ProspectorAi::find_town_for_investment() {
 }
 
 void ProspectorAi::build_building(const Vector2i& town_tile) {
-    Ref<Vector2i> tile_to_build_in = find_tile_for_new_building(town_tile);
-    if (tile_to_build_in.is_null()) return;
-    build_factory(**tile_to_build_in, town_tile);
+    auto tile_to_build_in = find_tile_for_new_building(town_tile);
+    if (tile_to_build_in == nullptr) return;
+    build_factory(*tile_to_build_in, town_tile);
 }
 
 bool ProspectorAi::does_have_building_in_area_already(const Vector2i& center) { // Will count non-maxed factories and construction sites
@@ -127,9 +127,9 @@ bool ProspectorAi::does_have_building_in_area_already(const Vector2i& center) { 
     return false;
 }
 
-Ref<Vector2i> ProspectorAi::find_tile_for_new_building(const Vector2i& town_tile) {
+std::shared_ptr<Vector2i> ProspectorAi::find_tile_for_new_building(const Vector2i& town_tile) {
     float best_weight = -1;
-    Ref<Vector2i> best_tile = Ref<Vector2i>(nullptr);
+    std::shared_ptr<Vector2i> best_tile = nullptr;
 
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     TileMapLayer* main_map = terminal_map -> get_main_map();
@@ -156,7 +156,7 @@ Ref<Vector2i> ProspectorAi::find_tile_for_new_building(const Vector2i& town_tile
             float dist = tile.distance_to(town_tile);
             float score = get_build_score_for_factory(tile) + (30 / dist);
             if (score > best_weight) {
-                best_tile = Ref<Vector2i>(tile);
+                best_tile = std::make_shared<Vector2i>(tile);
                 best_weight = score;
             }
         }

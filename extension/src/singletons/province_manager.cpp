@@ -41,7 +41,7 @@ void ProvinceManager::_bind_methods() {
     ClassDB::bind_method(D_METHOD("get_provinces"), &ProvinceManager::get_provinces);
     ClassDB::bind_method(D_METHOD("is_tile_a_province", "tile"), &ProvinceManager::is_tile_a_province);
     ClassDB::bind_method(D_METHOD("get_province_id", "tile"), &ProvinceManager::get_province_id);
-    ClassDB::bind_method(D_METHOD("get_province", "province_id"), &ProvinceManager::get_province);
+    ClassDB::bind_method(D_METHOD("get_province", "province_id"), &ProvinceManager::get_province_godot);
 
     // Country to province mapping
     ClassDB::bind_method(D_METHOD("add_province_to_country", "province", "country_id"), &ProvinceManager::add_province_to_country);
@@ -171,8 +171,23 @@ int ProvinceManager::get_province_id(Vector2i tile) const {
     return it->second;
 }
 
+Province* ProvinceManager::get_province_godot(int id) const {
+    std::shared_lock lock(province_mutex);
+    auto it = provinces.find(id);
+    ERR_FAIL_COND_V_MSG(it == provinces.end(), nullptr, "Province of id " + String::num_int64(id) + " is not a valid province id.");
+    return it->second;
+}
+
 Province* ProvinceManager::get_province(int id) const {
     std::shared_lock lock(province_mutex);
+    auto it = provinces.find(id);
+    ERR_FAIL_COND_V_MSG(it == provinces.end(), nullptr, "Province of id " + String::num_int64(id) + " is not a valid province id.");
+    return it->second;
+}
+
+Province* ProvinceManager::get_province(const Vector2i& tile) const {
+    std::shared_lock lock(province_mutex);
+    int id = get_province_id(tile);
     auto it = provinces.find(id);
     ERR_FAIL_COND_V_MSG(it == provinces.end(), nullptr, "Province of id " + String::num_int64(id) + " is not a valid province id.");
     return it->second;
@@ -265,6 +280,14 @@ std::unordered_set<int> ProvinceManager::get_country_provinces(int country_id) c
         return it->second;
     }
     return std::unordered_set<int>();
+}
+
+std::unordered_set<int> ProvinceManager::get_country_ids() const {
+    std::unordered_set<int> s;
+    for (const auto& [id, __]: country_id_to_province_ids) {
+        s.insert(id);
+    }
+    return s;
 }
 
 void ProvinceManager::month_tick() {
