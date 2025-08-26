@@ -9,7 +9,10 @@ RecipeInfo::RecipeInfo() {
 }
 
 void RecipeInfo::create() {
-    singleton_instance = (new(RecipeInfo));
+    if (singleton_instance == nullptr) {
+        singleton_instance = (new(RecipeInfo));
+    }
+    
 }
 
 RecipeInfo* RecipeInfo::get_instance() {

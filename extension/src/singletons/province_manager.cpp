@@ -8,10 +8,11 @@ using namespace godot;
 Ref<ProvinceManager> ProvinceManager::singleton_instance = nullptr;
 
 ProvinceManager::ProvinceManager() {
-    for (int i = 0; i < 6; i++) {
-        worker_threads.push_back(std::thread(&ProvinceManager::thread_processor, this));
-    }
-    month_tick_checker = std::thread(&ProvinceManager::month_tick_check, this);
+    // Provinces do not need to be iterated over
+    // for (int i = 0; i < 6; i++) {
+    //     worker_threads.push_back(std::thread(&ProvinceManager::thread_processor, this));
+    // }
+    // month_tick_checker = std::thread(&ProvinceManager::month_tick_check, this);
 }
 
 ProvinceManager::~ProvinceManager() {
@@ -193,66 +194,6 @@ Province* ProvinceManager::get_province(const Vector2i& tile) const {
     return it->second;
 }
 
-float ProvinceManager::get_average_cash_of_pops() const {
-    double total_wealth = 0;
-    long total_pops = 0;
-    std::shared_lock lock(province_mutex);
-    for (const auto& [__, province]: provinces) {
-        total_wealth += province->get_total_wealth_of_pops();
-        total_pops += province->get_number_of_pops();
-    }
-    return total_wealth / total_pops;
-}
-
-int ProvinceManager::get_number_of_broke_pops() const {
-    int total_pops = 0;
-    std::shared_lock lock(province_mutex);
-    for (const auto& [__, province]: provinces) {
-        total_pops += province->get_number_of_broke_pops();
-    }
-    return total_pops;
-}
-
-int ProvinceManager::get_number_of_starving_pops() const {
-    int total_pops = 0;
-    std::shared_lock lock(province_mutex);
-    for (const auto& [__, province]: provinces) {
-        total_pops += province->get_number_of_starving_pops();
-    }
-    return total_pops;
-}
-
-float ProvinceManager::get_unemployment_rate() const {
-    int total_pops = 0;
-    int unemployed = 0;
-    std::shared_lock lock(province_mutex);
-    for (const auto& [__, province]: provinces) {
-        total_pops += province->get_number_of_pops();
-        unemployed += province->get_number_of_unemployed_pops();
-    }
-    return float(unemployed) / total_pops;
-}
-
-float ProvinceManager::get_real_unemployment_rate() const {
-    int total_pops = 0;
-    int unemployed = 0;
-    std::shared_lock lock(province_mutex);
-    for (const auto& [__, province]: provinces) {
-        total_pops += province->get_number_of_pops();
-        unemployed += province->get_number_of_actual_unemployed_pops();
-    }
-    return float(unemployed) / total_pops;
-}
-
-int ProvinceManager::get_number_of_peasants() const {
-    int total_pops = 0;
-    std::shared_lock lock(province_mutex);
-    for (const auto& [__, province]: provinces) {
-        total_pops += province->get_number_of_peasants();
-    }
-    return total_pops;
-}
-
 void ProvinceManager::add_province_to_country(Province* prov, int country_id) {
     std::unique_lock lock(province_mutex);
     int old_id = prov->get_country_id();
@@ -291,11 +232,11 @@ std::unordered_set<int> ProvinceManager::get_country_ids() const {
 }
 
 void ProvinceManager::month_tick() {
-    {
-        std::scoped_lock lock(month_tick_checker_mutex);
-        month_tick_flag = true;
-    }
-    month_tick_checker_cv.notify_one();
+    // {
+    //     std::scoped_lock lock(month_tick_checker_mutex);
+    //     month_tick_flag = true;
+    // }
+    // month_tick_checker_cv.notify_one();
 }
 
 void ProvinceManager::month_tick_check() {
@@ -350,7 +291,7 @@ void ProvinceManager::thread_processor() {
             to_process = provinces_to_process.back();
             provinces_to_process.pop_back();
         }
-        to_process->month_tick();
+        // to_process->month_tick();
 
         if (--jobs_remaining == 0) {
             std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - start_time;

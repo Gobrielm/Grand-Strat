@@ -26,16 +26,10 @@ class Province : public Object {
     std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> terminal_tiles; //Doesn't 'own' Terminals yet
     std::unordered_map<Vector2i, Vector2i, godot_helpers::Vector2iHasher> closest_town_to_tile;
 
-    std::unordered_map<PopTypes, std::unordered_set<int>> pop_types;
-    std::unordered_map<int, BasePop*> pops;
-
-    int get_number_of_pops_unsafe(PopTypes pop_type) const;
+    std::unordered_set<int> pops;
 
     protected:
     static void _bind_methods();
-    BasePop* get_pop(int pop_id);
-    
-    
 
     public:
     //Godot Facing
@@ -76,23 +70,7 @@ class Province : public Object {
     // === Pops ===
     // Info Stuff
     int get_number_of_pops() const;
-    double get_total_wealth_of_pops() const;
-    float get_needs_met_of_pops() const;
-    int get_number_of_broke_pops() const;
-    int get_number_of_starving_pops() const;
-    int get_number_of_unemployed_pops() const;
-    int get_number_of_actual_unemployed_pops() const;
-    int get_number_of_peasants() const;
-    int get_number_of_city_pops() const;
-
-
-    // Global pop functions
-    void pay_pop(int pop_id, float wage);
-    void fire_pop(int pop_id);
-    void sell_cargo_to_pop(int pop_id, int type, int amount, float price);
-    void give_pop_cargo(int pop_id, int type, int amount);
-    int get_pop_desired(int pop_id, int type, float price);
-    void pay_pops(int num_to_pay, double for_each);
+    std::unordered_map<PopTypes, size_t> get_pop_type_statistics() const;
 
     // Local Pop Stuff
     void create_pops();
@@ -103,17 +81,6 @@ class Province : public Object {
     std::vector<int> create_buildings_for_peasants();
     void employ_peasants();
     int count_pops() const;
-    void find_employment_for_pops();
-    void find_employment_for_rural_pops();
-    void find_employment_for_town_pops();
-    std::set<Ref<FactoryTemplate>, FactoryTemplate::FactoryWageCompare> get_rural_employment_sorted_by_wage() const;
-    std::set<Ref<FactoryTemplate>, FactoryTemplate::FactoryWageCompare> get_town_employment_sorted_by_wage(Vector2i town_location) const;
-    Vector2i get_closest_town_tile_to_pop(BasePop* pop) const;
     Vector2i get_closest_town_tile_to_pop(const Vector2i& pop_location) const;
-    void month_tick();
-    void change_pops();
-    void sell_to_pops();
-    
-
     
 };

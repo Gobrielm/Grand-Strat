@@ -8,6 +8,8 @@ void CountryManager::_bind_methods() {
     ClassDB::bind_method(D_METHOD("month_tick"), &CountryManager::month_tick);
 }
 
+Ref<CountryManager> CountryManager::singleton_instance = nullptr;
+
 CountryManager::CountryManager() {
 }
 
@@ -49,5 +51,3 @@ void CountryManager::month_tick() {
         country->month_tick();
     }
 }
-
-Ref<CountryManager> CountryManager::singleton_instance = nullptr;

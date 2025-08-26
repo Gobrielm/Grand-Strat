@@ -3,7 +3,7 @@
 #include "factory_utility/recipe.hpp"
 #include "../singletons/cargo_info.hpp"
 #include "../singletons/terminal_map.hpp"
-#include "../singletons/province_manager.hpp"
+#include "../singletons/pop_manager.hpp"
 #include "../singletons/data_collector.hpp"
 
 void IsolatedBroker::_bind_methods() {
@@ -80,7 +80,7 @@ float IsolatedBroker::get_theoretical_gross_profit() const {
 }
 
 void IsolatedBroker::pay_employees() {
-    Ref<ProvinceManager> province_manager = ProvinceManager::get_instance();
+    auto pop_manager = PopManager::get_instance();
     float wage = get_wage();
     std::unordered_map<int, PopTypes> employees;
     {
@@ -88,13 +88,12 @@ void IsolatedBroker::pay_employees() {
         employees = recipe->get_employee_ids();
     }
     for (const auto& [pop_id, __] : employees) {
-        Province* province = province_manager->get_province(province_manager->get_province_id(get_location()));
-        province->pay_pop(pop_id, transfer_cash(wage));
-        give_cargo_grain(province, pop_id);
+        pop_manager->pay_pop(pop_id, transfer_cash(wage));
+        give_cargo_grain(pop_id);
     }
 }
 
-void IsolatedBroker::give_cargo_grain(Province* province, int pop_id) {
+void IsolatedBroker::give_cargo_grain(int pop_id) {
     bool enough_grain = false;
     int grain_type = CargoInfo::get_instance()->get_cargo_type("grain");
     int amount_to_give = BasePop::get_base_need(peasant, grain_type);
@@ -105,7 +104,7 @@ void IsolatedBroker::give_cargo_grain(Province* province, int pop_id) {
             storage[grain_type] -= amount_to_give;
         }
     }
-    if (enough_grain) province->give_pop_cargo(pop_id, grain_type, amount_to_give);
+    if (enough_grain) PopManager::get_instance()->give_pop_cargo(pop_id, grain_type, amount_to_give);
 }
 
 void IsolatedBroker::set_local_town(Vector2i p_town) {

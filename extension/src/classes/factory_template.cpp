@@ -4,7 +4,7 @@
 #include "broker_utility/trade_interaction.hpp"
 #include "../singletons/cargo_info.hpp"
 #include "../singletons/terminal_map.hpp"
-#include "../singletons/province_manager.hpp"
+#include "../singletons/pop_manager.hpp"
 #include "../singletons/data_collector.hpp"
 #include <godot_cpp/core/class_db.hpp>
 #include <algorithm>
@@ -336,7 +336,7 @@ void FactoryTemplate::employ_pop(BasePop* pop, std::shared_mutex &pop_lock) {
 }
 
 void FactoryTemplate::pay_employees() {
-    Ref<ProvinceManager> province_manager = ProvinceManager::get_instance();
+    auto pop_manager = PopManager::get_instance();
     float wage = get_wage();
     std::unordered_map<int, PopTypes> employees;
     {
@@ -345,21 +345,19 @@ void FactoryTemplate::pay_employees() {
     }
 
     for (const auto& [pop_id, __] : employees) {
-        Province* province = province_manager->get_province(province_manager->get_province_id(get_location()));
-        province->pay_pop(pop_id, transfer_cash(wage));
+        pop_manager->pay_pop(pop_id, transfer_cash(wage));
     }
 }
 
 void FactoryTemplate::fire_employees() {
-    Ref<ProvinceManager> province_manager = ProvinceManager::get_instance();
+    auto pop_manager = PopManager::get_instance();
     std::vector<int> pops_to_fire;
     {
         std::scoped_lock lock(m);
         pops_to_fire = recipe->fire_employees_and_get_vector();
     }
     for (const auto& pop_id : pops_to_fire) {
-        Province* province = province_manager->get_province(province_manager->get_province_id(get_location()));
-        province->fire_pop(pop_id);
+        pop_manager->fire_pop(pop_id);
     }
 }
 

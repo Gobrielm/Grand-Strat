@@ -47,6 +47,7 @@ public:
     int amount_of_primary_goods = 0;
     
     CargoInfo();
+    ~CargoInfo();
     static void initialize_singleton();
     
     static Ref<CargoInfo> get_instance();
