@@ -46,6 +46,7 @@ class ThreadPool {
                 month_tick_checker_cv.wait(lock, [this] { return stop || month_tick_flag; } );
                 month_tick_flag = false;
             }
+            if (stop) break;
             TerminalMap::get_instance()->pause_time(); // Pause time while dealing with last months work
             {   
                 std::unique_lock<std::mutex> lock(jobs_done_mutex);
@@ -53,6 +54,7 @@ class ThreadPool {
                     return jobs_remaining == 0; 
                 });
             }
+            if (stop) break;
             TerminalMap::get_instance()->unpause_time();
             month_tick_helper();
         }
@@ -107,6 +109,17 @@ class ThreadPool {
         stop = true;
         month_tick_checker_cv.notify_all();
         condition.notify_all();
+        jobs_done_cv.notify_all();
+
+        for (auto &t : worker_threads) {
+            if (t.joinable()) {
+                t.join();
+            }
+        }
+
+        if (month_tick_checker.joinable()) {
+            month_tick_checker.join();
+        }
     }
 
     void month_tick() {

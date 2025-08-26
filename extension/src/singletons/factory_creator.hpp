@@ -1,13 +1,13 @@
 #pragma once
 
-#include <godot_cpp/classes/node.hpp>
+#include <godot_cpp/classes/object.hpp>
 
 using namespace godot;
 
 class Recipe;
 
-class FactoryCreator : public Node {
-    GDCLASS(FactoryCreator, Node);
+class FactoryCreator : public Object {
+    GDCLASS(FactoryCreator, Object);
 
 private:
     static FactoryCreator* singleton_instance;
@@ -20,6 +20,7 @@ public:
     ~FactoryCreator();
     
     static void create();
+    static void cleanup();
     static FactoryCreator* get_instance();
 
     int create_primary_industry(int type, Vector2i coords, int player_id, int mult = 1);

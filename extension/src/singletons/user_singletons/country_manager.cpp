@@ -8,18 +8,24 @@ void CountryManager::_bind_methods() {
     ClassDB::bind_method(D_METHOD("month_tick"), &CountryManager::month_tick);
 }
 
-Ref<CountryManager> CountryManager::singleton_instance = nullptr;
+Ref<CountryManager> CountryManager::singleton_instance = Ref<CountryManager>(nullptr);
 
 CountryManager::CountryManager() {
 }
 
 void CountryManager::create() {
-    ERR_FAIL_COND_MSG(singleton_instance != nullptr, "Country Manager has already been created yet.");
+    ERR_FAIL_COND_MSG(singleton_instance.is_valid(), "Country Manager has already been created yet.");
     singleton_instance = Ref<CountryManager>(memnew(CountryManager));
 }
 
+void CountryManager::cleanup() {
+    if (singleton_instance.is_valid()) {
+        singleton_instance.unref();
+    }
+}
+
 Ref<CountryManager> CountryManager::get_instance() {
-    ERR_FAIL_COND_V_MSG(singleton_instance == nullptr, nullptr, "Country Manager has not been created yet.");
+    ERR_FAIL_COND_V_MSG(singleton_instance.is_null(), nullptr, "Country Manager has not been created yet.");
     return singleton_instance;
 }
 

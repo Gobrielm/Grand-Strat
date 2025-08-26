@@ -16,3 +16,11 @@ void StaticRegistry::initialize() {
     BasePop::create_base_needs();
     BasePop::create_base_wants();
 }
+
+void StaticRegistry::uninitialize() {
+    CargoInfo::cleanup();
+    RecipeInfo::cleanup();
+    FactoryCreator::cleanup();
+    CountryManager::cleanup();
+    PopManager::cleanup();
+}

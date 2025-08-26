@@ -29,6 +29,14 @@ void FactoryCreator::create() {
         singleton_instance = (memnew(FactoryCreator));
     }
 }
+
+void FactoryCreator::cleanup() {
+    if (singleton_instance != nullptr) {
+        memdelete (singleton_instance);
+        singleton_instance = nullptr;
+    }
+}
+
 FactoryCreator* FactoryCreator::get_instance() {
     ERR_FAIL_COND_V_MSG(singleton_instance == nullptr, nullptr, "Factory Creator not instanced");
     return singleton_instance;

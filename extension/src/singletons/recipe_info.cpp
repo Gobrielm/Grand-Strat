@@ -8,6 +8,10 @@ RecipeInfo::RecipeInfo() {
     add_recipes();
 }
 
+RecipeInfo::~RecipeInfo() {
+    
+}
+
 void RecipeInfo::create() {
     if (singleton_instance == nullptr) {
         singleton_instance = (new(RecipeInfo));
@@ -15,7 +19,15 @@ void RecipeInfo::create() {
     
 }
 
+void RecipeInfo::cleanup() {
+    if (singleton_instance != nullptr) {
+        delete singleton_instance;
+        singleton_instance = nullptr;
+    }
+}
+
 RecipeInfo* RecipeInfo::get_instance() {
+    ERR_FAIL_COND_V_MSG(singleton_instance == nullptr, nullptr, "RecipeInfo not created but accessed.");
     return singleton_instance;
 }
 

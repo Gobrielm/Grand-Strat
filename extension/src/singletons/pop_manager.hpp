@@ -19,6 +19,7 @@ class PopManager {
     std::shared_mutex* get_lock(int pop_id);
     std::shared_lock<std::shared_mutex> lock_pop_read(int pop_id) const;
     std::unique_lock<std::shared_mutex> lock_pop_write(int pop_id) const;
+    std::unordered_map<int, BasePop*> get_pops_copy() const;
     BasePop* get_pop(int pop_id) const;
     int get_pop_country_id(BasePop* pop) const;
     void month_tick(BasePop* pop);
@@ -27,19 +28,22 @@ class PopManager {
     void find_employment_for_pop(BasePop* pop);
 
     // Find Employement functions
-    std::unordered_map<int, std::set<Ref<FactoryTemplate>, FactoryTemplate::FactoryWageCompare>> rural_employment_options; // Country id -> set of available factories
-    std::unordered_map<int, std::set<Ref<FactoryTemplate>, FactoryTemplate::FactoryWageCompare>> town_employment_options; // Country id -> set of available factories
+    std::unordered_map<PopTypes, std::unordered_map<int, std::set<Ref<FactoryTemplate>, FactoryTemplate::FactoryWageCompare>>> employment_options; // PopType -> Country id -> set of available factories
 
     void find_employment_for_rural_pop(BasePop* pop);
     void find_employment_for_town_pop(BasePop* pop);
-    void employment_finder_helper(BasePop* pop, std::set<godot::Ref<FactoryTemplate>, FactoryTemplate::FactoryWageCompare> &employment_options);
+    void employment_finder_helper(BasePop* pop, PopTypes pop_type);
+    void refresh_employment_sorted_by_wage();
     void refresh_rural_employment_sorted_by_wage();
     void refresh_rural_employment_sorted_by_wage_helper(int country_id, const Vector2i& tile);
     void refresh_town_employment_sorted_by_wage();
     void refresh_town_employment_sorted_by_wage_helper(int country_id, const Vector2i& tile);
+    Ref<FactoryTemplate> get_first_employment_option(PopTypes pop_type, int country_id) const;
+    void remove_first_employment_option(PopTypes pop_type, int country_id, const Ref<FactoryTemplate>& double_check);
 
     public:
     static void create();
+    static void cleanup();
     PopManager();
     ~PopManager();
     static std::shared_ptr<PopManager> get_instance();

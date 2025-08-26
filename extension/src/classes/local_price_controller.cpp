@@ -20,13 +20,14 @@ std::vector<float> LocalPriceController::get_base_prices() {
 }
 
 void LocalPriceController::set_base_prices() {
-    base_prices.clear();
+    base_prices = {};
     for (int i = 0; i < CargoInfo::get_instance() -> get_base_prices().size(); i++) {
         base_prices.push_back(0);
     }
     for (const auto &[type, price]: CargoInfo::get_instance() -> get_base_prices()) {
         base_prices[type] = price;
     }
+
 }
 
 void LocalPriceController::update_local_prices() {

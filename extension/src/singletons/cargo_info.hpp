@@ -49,10 +49,11 @@ public:
     CargoInfo();
     ~CargoInfo();
     static void initialize_singleton();
+    static void cleanup();
     
     static Ref<CargoInfo> get_instance();
 
-    const std::unordered_map<int, float> get_base_prices();
+    std::unordered_map<int, float> get_base_prices() const;
     String get_cargo_name(int type) const;
     int get_cargo_type(String cargo_name) const;
     void create_amount_of_primary_goods();

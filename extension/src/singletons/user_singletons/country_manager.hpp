@@ -25,6 +25,7 @@ public:
     CountryManager();
     
     static void create();
+    static void cleanup();
     static Ref<CountryManager> get_instance();
 
     void create_country(int country_id);

@@ -18,8 +18,10 @@ protected:
     std::vector<Recipe*> recipes;
 public:
     RecipeInfo();
+    ~RecipeInfo();
     
     static void create();
+    static void cleanup();
     static RecipeInfo* get_instance();
     void add_recipes();
     void create_recipe(std::vector<std::unordered_map<std::string, float>> v, std::unordered_map<PopTypes, int> p);

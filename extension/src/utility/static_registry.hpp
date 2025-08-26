@@ -5,5 +5,6 @@
 class StaticRegistry {
 public:
     static void initialize();
+    static void uninitialize();
 };
 

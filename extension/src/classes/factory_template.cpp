@@ -316,7 +316,7 @@ float FactoryTemplate::get_real_gross_profit(int months_to_average) const {
 void FactoryTemplate::employ_pop(BasePop* pop, std::shared_mutex &pop_lock) {
     PopTypes pop_type;
     {
-        std::scoped_lock lock(pop_lock);
+        std::shared_lock lock(pop_lock);
         pop_type = pop->get_type();
     }
     if (is_hiring(pop_type)) {

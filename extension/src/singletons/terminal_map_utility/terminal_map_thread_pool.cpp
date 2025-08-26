@@ -15,6 +15,25 @@ TerminalMapThreadPool::TerminalMapThreadPool() {
 
 TerminalMapThreadPool::~TerminalMapThreadPool() {
     stop = true;
+    day_tick_checker_cv.notify_all();
+    month_tick_checker_cv.notify_all();
+    new_day_work.notify_all();
+    new_month_work.notify_all();
+    day_jobs_cv.notify_all();
+    month_jobs_cv.notify_all();
+    
+    if (day_tick_checker.joinable()) day_tick_checker.join();
+    if (month_tick_checker.joinable()) month_tick_checker.join();
+    for (auto &t : day_worker_threads) {
+        if (t.joinable()) {
+            t.join();
+        }
+    }
+    for (auto &t : month_worker_threads) {
+        if (t.joinable()) {
+            t.join();
+        }
+    }
 }
 
 //Public calls

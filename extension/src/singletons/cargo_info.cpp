@@ -3,7 +3,7 @@
 
 using namespace godot;
 
-Ref<CargoInfo> CargoInfo::singleton_instance = nullptr;
+Ref<CargoInfo> CargoInfo::singleton_instance = Ref<CargoInfo>(nullptr);
 
 void CargoInfo::_bind_methods() {
     ClassDB::bind_static_method(CargoInfo::get_class_static(), D_METHOD("get_instance"), &CargoInfo::get_instance);
@@ -25,21 +25,27 @@ CargoInfo::CargoInfo() {
     create_amount_of_primary_goods();
 }
 
-CargoInfo::~CargoInfo() {}
+CargoInfo::~CargoInfo() {
+}
 
 void CargoInfo::initialize_singleton() {
-    if (singleton_instance == nullptr) {
+    if (singleton_instance.is_null()) {
         singleton_instance.instantiate();
     }   
-    
+}
+
+void CargoInfo::cleanup() {
+    if (singleton_instance.is_valid()) {
+        singleton_instance.unref();
+    }
 }
 
 Ref<CargoInfo> CargoInfo::get_instance() {
-    ERR_FAIL_COND_V_MSG(singleton_instance == nullptr, nullptr, "CargoInfo has not been created but is being accessed.");
+    ERR_FAIL_COND_V_MSG(singleton_instance.is_null(), Ref<CargoInfo>(nullptr), "CargoInfo has not been created but is being accessed.");
     return singleton_instance;
 }
 
-const std::unordered_map<int, float> CargoInfo::get_base_prices() {
+std::unordered_map<int, float> CargoInfo::get_base_prices() const {
     std::unordered_map<int, float> toReturn = {};
     for (const auto &[cargo_name, price]: base_prices) {
         toReturn[get_cargo_type(cargo_name.c_str())] = price;
