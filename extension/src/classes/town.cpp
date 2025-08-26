@@ -212,8 +212,6 @@ void Town::sell_to_pop(BasePop* pop, std::shared_mutex &pops_lock) { // Called f
         broker->add_cash(to_pay);
     }
 
-    return;
-
     for (const auto &demand_cargo: demand_to_relay) {
         Ref<Broker> broker = terminal_map->get_terminal_as<Broker>(demand_cargo->terminal_id);
         if (broker.is_null()) continue;

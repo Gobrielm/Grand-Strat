@@ -82,5 +82,6 @@ class Province : public Object {
     void employ_peasants();
     int count_pops() const;
     Vector2i get_closest_town_tile_to_pop(const Vector2i& pop_location) const;
+    bool has_closest_town_tile_to_pop(const Vector2i& pop_location) const;
     
 };

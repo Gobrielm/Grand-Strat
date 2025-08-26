@@ -16,7 +16,7 @@ void PopManager::cleanup() {
 }
 
 PopManager::PopManager() {
-    thread_pool = new ThreadPool<BasePop*>(6, [this]() { thread_month_tick_loader(); });
+    thread_pool = new ThreadPool<BasePop*>(10, [this]() { thread_month_tick_loader(); });
     thread_pool->set_work_function([this](BasePop* pop) {
         month_tick(pop); // use PopManager’s pipeline
     });
@@ -41,7 +41,7 @@ void PopManager::thread_month_tick_loader() {
     refresh_employment_sorted_by_wage();
     {
         std::scoped_lock sp_pops_lock(m);
-        for (const auto [id, pop]: pops) {
+        for (const auto& [id, pop]: pops) {
             thread_pool->add_work(pop);
         }
     }
@@ -52,12 +52,12 @@ void PopManager::month_tick() {
     thread_pool->month_tick();
 }
 
-void PopManager::month_tick(BasePop* pop) { // TODO: Crashes here
+void PopManager::month_tick(BasePop* pop) { // Randomly crashes and/or deadlocks and high CPU utilization
     {
         auto lock = lock_pop_write(pop->get_pop_id());
         pop->month_tick();
     }
-    // sell_to_pop(pop);
+    sell_to_pop(pop);
     change_pop(pop);
     find_employment_for_pop(pop);
 }
@@ -72,12 +72,11 @@ void PopManager::sell_to_pop(BasePop* pop) {
         location = pop->get_location();
     } 
     auto province = province_manager->get_province(location);
-    if (province -> get_town_tiles().size() == 0) return; // No Towns, ie no place to buy from
+    if (!province -> has_closest_town_tile_to_pop(location)) return; // No Towns, ie no place to buy from
     Vector2i town_tile = province->get_closest_town_tile_to_pop(location);
 
     Ref<Town> town = terminal_map->get_town(town_tile);
     if (town.is_null()) {
-        print_error("Towns and terminals are desynced at " + pop->get_location());
         return;
     }
     town->sell_to_pop(pop, *get_lock(pop->get_pop_id()));
@@ -210,8 +209,8 @@ void PopManager::remove_first_employment_option(PopTypes pop_type, int country_i
     std::scoped_lock lock(m);
     if (employment_options.count(pop_type) && employment_options.at(pop_type).count(country_id)) {
         auto first = employment_options.at(pop_type).at(country_id).begin();
-        if (*first == double_check)
-        employment_options[pop_type][country_id].erase(first);
+        if ((*first).ptr() == double_check.ptr())
+            employment_options[pop_type][country_id].erase(first);
     }
 }
 
@@ -240,7 +239,11 @@ BasePop* PopManager::get_pop(int pop_id) const {
 }
 
 int PopManager::get_pop_country_id(BasePop* pop) const {
-    Vector2i location = pop->get_location();
+    Vector2i location;
+    {
+        auto lock = lock_pop_read(pop->get_pop_id());
+        location = pop->get_location();
+    } 
     return ProvinceManager::get_instance()->get_province(location)->get_country_id();
 }
 

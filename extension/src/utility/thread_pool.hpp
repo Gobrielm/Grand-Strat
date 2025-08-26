@@ -18,7 +18,7 @@
 template <typename T>
 class ThreadPool {
     // T is a pointer, smart or dumb
-
+    static constexpr int BATCH_SIZE = 1000;
     std::thread month_tick_checker; //used to check if next day is ready without blocking
     std::mutex month_tick_checker_mutex;
     bool month_tick_flag = false;
@@ -72,8 +72,7 @@ class ThreadPool {
 
     void thread_processor() {
         while (!stop) {
-            T to_process = nullptr;
-
+            std::vector<T> batch_to_process;
             {
                 std::unique_lock<std::mutex> lock(work_to_process_mutex);
                 condition.wait(lock, [this]() {
@@ -85,12 +84,18 @@ class ThreadPool {
                 }
 
                 // Get one province to process
-                to_process = work_to_process.back();
-                work_to_process.pop_back();
+                for (int i = 0; i < std::min(size_t(BATCH_SIZE), batch_to_process.size()); i++) {
+                    batch_to_process.push_back(work_to_process.back());
+                    work_to_process.pop_back();
+                }
             }
-            work_function(to_process);
+            int size_processed = batch_to_process.size();
+            for (T to_process: batch_to_process) {
+                work_function(to_process);
+            }
+            jobs_remaining -= size_processed;
 
-            if (--jobs_remaining == 0) {
+            if (jobs_remaining == 0) {
                 jobs_done_cv.notify_one();  // Wake main thread
             }
         }

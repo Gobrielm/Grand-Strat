@@ -420,3 +420,7 @@ Vector2i Province::get_closest_town_tile_to_pop(const Vector2i& pop_location) co
     ERR_FAIL_COND_V_MSG(!closest_town_to_tile.count(pop_location), Vector2i(0, 0), "Pop doesn't have available town.");
     return closest_town_to_tile.at(pop_location);
 }
+
+bool Province::has_closest_town_tile_to_pop(const Vector2i& pop_location) const {
+    return closest_town_to_tile.count(pop_location);
+}
