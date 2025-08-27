@@ -13,9 +13,6 @@ class ConstructionSite : public FactoryTemplate {
 
 private:
 
-    std::unordered_map<int, int> construction_materials;
-    std::unordered_map<int, int> max_amounts;
-
 protected:
     static void _bind_methods();
 
@@ -35,17 +32,12 @@ public:
     bool has_recipe() const;
 
     //Materials
-    void create_construction_materials();
-    void create_construction_material(int type, int amount);
-    Dictionary get_construction_materials() const;
-    bool is_finished_constructing() const;
-    int get_max_storage() const override;
-    int get_max_storage(int type) const;
+    float get_max_storage() const override;
+    float get_max_storage(int type) const override;
+    float get_max_storage_unsafe(int type) const override;
 
     //Overrides
     bool is_price_acceptable(int type, float pricePer) const override;
-    int get_desired_cargo(int type, float pricePer) const override;
-    int get_desired_cargo_unsafe(int type, float pricePer) const override;
     int get_desired_cargo_from_train(int type, float pricePer) const;
 
     // Process Hooks

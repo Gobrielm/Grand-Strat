@@ -12,6 +12,7 @@
 
 
 class PopManagerThreadPool {
+    std::chrono::time_point<std::chrono::high_resolution_clock> start_time;
     static constexpr int BATCH_SIZE = 4096;
     std::thread month_tick_checker; //used to check if next day is ready without blocking
     std::mutex month_tick_checker_mutex;
@@ -53,6 +54,7 @@ class PopManagerThreadPool {
             }
             TerminalMap::get_instance()->unpause_time();
             if (stop) break;
+            start_time = std::chrono::high_resolution_clock::now();
             month_tick_helper();
         }
     }
@@ -93,6 +95,10 @@ class PopManagerThreadPool {
             jobs_remaining -= size_processed;
 
             if (jobs_remaining == 0) {
+                std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - start_time;
+                if (elapsed.count() > 15) {
+                    print_line("Pop Manager Month Tick took " + String::num_scientific(elapsed.count()) + " seconds");
+                }
                 jobs_done_cv.notify_one();  // Wake main thread
             }
         }

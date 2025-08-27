@@ -56,14 +56,12 @@ void AiFactory::consider_upgrade() {
 }
 
 void AiFactory::consider_upgrade_primary() {
-    int pops_needed_num = 0;
     {
         std::scoped_lock lock(m);
-        pops_needed_num = recipe->get_pops_needed_num();
+        if (recipe->get_employment_rate() != 1) return;
     }
-    float gross_prof = get_theoretical_gross_profit() - (get_wage() * pops_needed_num);
-    
-	if (gross_prof > 0 && get_cost_for_upgrade() * CASH_NEEDED_MULTIPLIER < get_cash()) {
+    float gross_prof = get_real_gross_profit(12);
+	if (gross_prof > 0 && CASH_NEEDED < get_cash() && !is_constructing()) {
         upgrade();
     }
 }

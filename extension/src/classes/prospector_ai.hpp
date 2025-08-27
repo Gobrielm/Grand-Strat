@@ -18,12 +18,13 @@ class ProspectorAi : public CompanyAi {
     GDCLASS(ProspectorAi, CompanyAi);
     std::unordered_set<int> employees; // Pop ids
     std::vector<int> exisiting_buildings; // terminal_ids
-    static int constexpr MONTHS_OF_CASH_DATA = 4;
+    static int constexpr MONTHS_OF_CASH_DATA = 12;
     std::deque<float> past_cash;
     int cargo_type; //Cargo the Company produces
 
     void record_cash();
     float get_cash() const;
+    float get_real_gross_profit(int months_to_average) const;
     void pay_employees();
     bool does_have_money_for_investment() override;
     void build_building(const Vector2i& town_tile);

@@ -38,7 +38,7 @@ std::shared_ptr<PopManager> PopManager::get_instance() {
     return singleton_instance;
 }
 
-int PopManager::thread_month_tick_loader() {
+int PopManager::thread_month_tick_loader() { // TESTING WITHOUT EMPLOYMENT TO SEE IF PROBLEM
     refresh_employment_sorted_by_wage();
     {
         std::scoped_lock sp_pops_lock(m);
@@ -52,9 +52,10 @@ int PopManager::thread_month_tick_loader() {
 void PopManager::month_tick() {
     thread_pool->month_tick();
 }
-
+// If full month tick takes a while, all pop group ticks take a while
 void PopManager::month_tick(std::vector<BasePop*>& pop_group) { // Assumes all pops are part of same mutex block
-    int mutex_lock_num = pop_group.front()->get_pop_id() % NUMBER_OF_POP_LOCKS;
+    auto start_time = std::chrono::high_resolution_clock::now();
+    int mutex_lock_num = get_pop_mutex_number(pop_group.front()->get_pop_id());
     {
         auto lock = lock_pop_write(mutex_lock_num);
         for (auto &pop: pop_group) {
@@ -62,35 +63,52 @@ void PopManager::month_tick(std::vector<BasePop*>& pop_group) { // Assumes all p
             change_pop_unsafe(pop);
         }
     }
+    auto time1 = std::chrono::high_resolution_clock::now();
     
     sell_to_pops(pop_group);
+    auto time2 = std::chrono::high_resolution_clock::now();
     find_employment_for_pops(pop_group);
+    auto time3 = std::chrono::high_resolution_clock::now();
+
+    String x;
+    std::chrono::duration<double> elapsed1 = time1 - start_time;
+    std::chrono::duration<double> elapsed2 = time2 - time1;
+    std::chrono::duration<double> elapsed3 = time3 - time2;
+    if (elapsed1 > elapsed2 && elapsed1 > elapsed3) {
+        x = "Month Tick";
+    } else if (elapsed2 > elapsed1 && elapsed2 > elapsed3) {
+        x = "Sell To Pops";
+    } else {
+        x = "Employment";
+    }
+
+    std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - start_time;
+    if (elapsed.count() > 0.5) {
+        print_line("Pop group " + x + " tick took " + String::num_scientific(elapsed.count()) + " seconds");
+    }
 }
 
 
 void PopManager::sell_to_pops(std::vector<BasePop*>& pop_group) {
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     std::unordered_map<Vector2i, Vector2i, godot_helpers::Vector2iHasher> location_to_nearest_town;
-    create_pop_id_to_towns(pop_group, location_to_nearest_town);
+    create_pop_location_to_towns(pop_group, location_to_nearest_town);
     // Get closest town and then use town functions to sell to those pops
     
     for (auto& pop: pop_group) {
-
         Ref<Town> town = terminal_map->get_town(location_to_nearest_town[pop->get_location()]);
         if (town.is_null()) {
-            continue;;
+            continue;
         }
         town->sell_to_pop(pop, *get_lock(pop->get_pop_id()));
     }
 }
 
-void PopManager::create_pop_id_to_towns(std::vector<BasePop*>& pop_group, std::unordered_map<Vector2i, Vector2i, godot_helpers::Vector2iHasher>& location_to_nearest_town) const { 
-    int mutex_lock_num = pop_group.front()->get_pop_id() % NUMBER_OF_POP_LOCKS; 
+void PopManager::create_pop_location_to_towns(std::vector<BasePop*>& pop_group, std::unordered_map<Vector2i, Vector2i, godot_helpers::Vector2iHasher>& location_to_nearest_town) const { 
     auto province_manager = ProvinceManager::get_instance(); // Get closest town and then use town functions to sell to those pops 
     { 
-        auto lock = lock_pop_read(mutex_lock_num); 
         for (auto& pop: pop_group) { 
-            Vector2i location = pop->get_location();
+            Vector2i location = pop->get_location(); // Not locking since its not that important for current info
             if (location_to_nearest_town.count(location)) continue;
             auto province = province_manager->get_province(location);
             if (!province -> has_closest_town_tile_to_pop(location)) continue; // No Towns, ie no place to buy from
@@ -109,13 +127,14 @@ void PopManager::change_pop_unsafe(BasePop * pop) {
 }
 
 void PopManager::find_employment_for_pops(std::vector<BasePop*>& pop_group) {
-    int mutex_lock_num = pop_group.front()->get_pop_id() % NUMBER_OF_POP_LOCKS;
+    int mutex_lock_num = get_pop_mutex_number(pop_group.front()->get_pop_id());
 
     for (auto& pop: pop_group) {
         PopTypes pop_type = none;
         {
             auto lock = lock_pop_read(mutex_lock_num);
             pop_type = pop->get_type(); // Don't lock since factory will double check if wrong
+            if (!pop->is_seeking_employment()) continue;
         }
 
         if (pop_type == rural) {
@@ -248,17 +267,20 @@ void PopManager::remove_first_employment_option(PopTypes pop_type, int country_i
     }
 }
 
+int PopManager::get_pop_mutex_number(int pop_id) const {
+    return pop_id % NUMBER_OF_POP_LOCKS;
+}
 
-std::shared_mutex* PopManager::get_lock(int pop_id) {
-    return (pop_locks.at(pop_id % NUMBER_OF_POP_LOCKS));
+std::shared_mutex* PopManager::get_lock(int pop_id) const {
+    return (pop_locks.at(get_pop_mutex_number(pop_id)));
 }
 
 std::shared_lock<std::shared_mutex> PopManager::lock_pop_read(int pop_id) const {
-    return std::shared_lock(*pop_locks[pop_id % NUMBER_OF_POP_LOCKS]);
+    return std::shared_lock(*pop_locks[get_pop_mutex_number(pop_id)]);
 }
 
 std::unique_lock<std::shared_mutex> PopManager::lock_pop_write(int pop_id) const {
-    return std::unique_lock(*pop_locks[pop_id % NUMBER_OF_POP_LOCKS]);
+    return std::unique_lock(*pop_locks[get_pop_mutex_number(pop_id)]);
 }
 
 BasePop* PopManager::get_pop(int pop_id) const {

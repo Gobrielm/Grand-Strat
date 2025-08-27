@@ -166,7 +166,8 @@ void TerminalMapThreadPool::month_thread_processor() {
 
         if (--month_jobs == 0) {
             std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - start_time;
-            // print_line("Terminal Map Month Tick Took " + String::num_scientific(elapsed.count()) + " seconds");
+            if (elapsed.count() > 15)
+                print_line("Terminal Map Month Tick Took " + String::num_scientific(elapsed.count()) + " seconds");
             month_jobs_cv.notify_one();  // Wake main thread
         }
     }

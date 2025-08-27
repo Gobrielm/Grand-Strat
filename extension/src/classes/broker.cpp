@@ -80,14 +80,8 @@ float Broker::get_local_price_unsafe(int type) const {
 }
 
 int Broker::get_desired_cargo(int type, float pricePer) const {
-    if (trade_orders.count(type)) {
-        TradeOrder* order = trade_orders.at(type);
-        if (order->is_buy_order() && is_price_acceptable(type, pricePer)) {
-            int canGet = std::min(int(get_max_storage() - get_cargo_amount(type)), get_amount_can_buy(pricePer));
-            return std::min(order->get_amount(), canGet);
-        }
-    }
-    return 0;
+    std::scoped_lock lock(m);
+    return get_desired_cargo_unsafe(type, pricePer);
 }
 
 int Broker::get_desired_cargo_unsafe(int type, float pricePer) const {
@@ -107,13 +101,20 @@ bool Broker::is_price_acceptable(int type, float pricePer) const {
 }
 
 void Broker::buy_cargo(int type, int amount, float price, int p_terminal_id) {
-    Ref<Broker> broker = TerminalMap::get_instance()->get_terminal_as<Broker>(p_terminal_id);
+    Ref<Firm> firm = TerminalMap::get_instance()->get_terminal_as<Firm>(p_terminal_id);
     int total = std::round(amount * price);
     add_cargo_ignore_accepts(type, amount);
     remove_cash(total);
-    
-    broker->add_cash(total);
-    broker->report_change_in_cash(total);
+
+    if (firm.is_valid()) {
+        firm->add_cash(total);
+        Ref<Broker> broker = Ref<Broker>(firm);
+        if (broker.is_valid()) {
+            broker->report_change_in_cash(total);
+        }
+    } else {
+        print_error("Broker recieved cargo from null broker");
+    }
 
     report_change_in_cash(-total);
 }
@@ -125,10 +126,6 @@ void Broker::buy_cargo(const TownCargo* cargo) {
 
 int Broker::sell_cargo(int type, int amount) {
     return transfer_cargo(type, amount);
-}
-
-float Broker::add_cargo_ignore_accepts(int type, float amount) { //Make sure 
-    return FixedHold::add_cargo_ignore_accepts(type, amount);
 }
 
 void Broker::report_change_in_cash(float amount) {

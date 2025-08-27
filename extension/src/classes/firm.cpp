@@ -30,6 +30,10 @@ int Firm::get_amount_can_buy(const float amount_per) const {
     return floor(get_cash() / amount_per);
 }
 
+int Firm::get_amount_can_buy_unsafe(const float amount_per) const {
+    return amount_per > 0 ? 1000000 : floor(get_cash_unsafe() / amount_per);
+}
+
 void Firm::add_cash(float amount) {
     if (get_player_owner() == 0) {
         std::scoped_lock lock(m);

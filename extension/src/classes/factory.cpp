@@ -1,10 +1,8 @@
 #include "factory.hpp"
 
 void Factory::_bind_methods() {
-
     ClassDB::bind_method(D_METHOD("day_tick"), &Factory::day_tick);
     ClassDB::bind_method(D_METHOD("month_tick"), &Factory::month_tick);
-
 }
 
 

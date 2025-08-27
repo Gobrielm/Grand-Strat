@@ -67,60 +67,25 @@ void ConstructionSite::destroy_recipe() {
 }
 
 //Materials
-void ConstructionSite::create_construction_materials() {
-    Ref<CargoInfo> cargo_info = CargoInfo::get_instance();
-    create_construction_material(cargo_info->get_cargo_type("wood"), 1000);
-}
 
-void ConstructionSite::create_construction_material(int type, int amount) {
-    add_accept(type);
-    std::scoped_lock lock(m);
-	max_amounts[type] = amount;
-	construction_materials[type] = amount;
-}
-
-Dictionary ConstructionSite::get_construction_materials() const {
-    Dictionary d;
-    std::scoped_lock lock(m);
-    for (const auto& [key, val]: construction_materials) {
-        d[key] = val;
-    }
-    return d;
-}
-
-bool ConstructionSite::is_finished_constructing() const {
-    for (const auto& [type, val]: construction_materials) {
-		if (get_cargo_amount(type) < val) {
-            return false;
-        }
-    }
-    return true;
-}
-
-int ConstructionSite::get_max_storage() const {
+float ConstructionSite::get_max_storage() const {
     print_error("USE TYPE IN MAX STORAGE");
     return 0;
 }
 
-int ConstructionSite::get_max_storage(int type) const {
+float ConstructionSite::get_max_storage(int type) const {
     std::scoped_lock lock(m);
-    return max_amounts.at(type);
+    return get_max_storage_unsafe(type);
+}
+
+float ConstructionSite::get_max_storage_unsafe(int type) const {
+    std::scoped_lock lock(m);
+    return max_amounts_of_construction_materials.count(type) ? max_amounts_of_construction_materials.at(type): 0;
 }
 
 //Is buying
 bool ConstructionSite::is_price_acceptable(int type, float pricePer) const {
-    return get_local_price(type) * (MAX_TRADE_MARGIN) >= pricePer;
-}
-//To buy
-int ConstructionSite::get_desired_cargo(int type, float pricePer) const {
-    return get_desired_cargo_from_train(type, pricePer);
-}
-
-int ConstructionSite::get_desired_cargo_unsafe(int type, float price) const {
-    if (accepts.count(type)) {
-        return std::min(int(max_amount - storage.at(type)), int(get_cash_unsafe() / price));
-    }
-    return 0;
+    return true; // Always buy as construction site
 }
 
 int ConstructionSite::get_desired_cargo_from_train(int type, float pricePer) const {

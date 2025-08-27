@@ -17,14 +17,15 @@ class PopManager {
     PopManagerThreadPool* thread_pool = nullptr;
 
     int thread_month_tick_loader();
-    std::shared_mutex* get_lock(int pop_id);
+    int get_pop_mutex_number(int pop_id) const;
+    std::shared_mutex* get_lock(int pop_id) const;
     std::shared_lock<std::shared_mutex> lock_pop_read(int pop_id) const;
     std::unique_lock<std::shared_mutex> lock_pop_write(int pop_id) const;
     BasePop* get_pop(int pop_id) const;
     int get_pop_country_id(BasePop* pop) const;
     void month_tick(std::vector<BasePop*>& pop_group);
     void sell_to_pops(std::vector<BasePop*>& pop_group);
-    void create_pop_id_to_towns(std::vector<BasePop*>& pop_group, std::unordered_map<Vector2i, Vector2i, godot_helpers::Vector2iHasher>& location_to_nearest_town) const;
+    void create_pop_location_to_towns(std::vector<BasePop*>& pop_group, std::unordered_map<Vector2i, Vector2i, godot_helpers::Vector2iHasher>& location_to_nearest_town) const;
     void change_pop_unsafe(BasePop* pop);
     void find_employment_for_pops(std::vector<BasePop*>& pop_group);
 

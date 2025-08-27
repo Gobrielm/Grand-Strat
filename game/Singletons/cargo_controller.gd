@@ -71,7 +71,6 @@ var start: float = 0.0
 func _on_month_tick_timeout() -> void:
 	CountryManager.get_instance().month_tick()
 	DataCollector.get_instance().month_tick()
-	ProvinceManager.get_instance().month_tick()
 	RoadMap.get_instance().month_tick()
 	TerminalMap.get_instance()._on_month_tick_timeout()
 	Utils.unit_map._on_month_tick_timeout()

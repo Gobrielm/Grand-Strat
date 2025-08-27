@@ -55,6 +55,74 @@ void FactoryTemplate::initialize(Vector2i new_location, int player_owner, Recipe
     local_pricer = new LocalPriceController;
 }
 
+void FactoryTemplate::create_construction_materials() {
+    Ref<CargoInfo> cargo_info = CargoInfo::get_instance();
+    create_construction_material(cargo_info->get_cargo_type("wood"), 100);
+}
+
+void FactoryTemplate::create_construction_material(int type, int amount) {
+    add_accept(type);
+    std::scoped_lock lock(m);
+	max_amounts_of_construction_materials[type] = amount;
+	construction_materials[type] = 0;
+}
+
+Dictionary FactoryTemplate::get_construction_materials() const {
+    Dictionary d;
+    std::scoped_lock lock(m);
+    for (const auto& [key, val]: construction_materials) {
+        d[key] = val;
+    }
+    return d;
+}
+
+bool FactoryTemplate::is_needed_for_construction(int type) const {
+    std::scoped_lock lock(m);
+    return is_needed_for_construction_unsafe(type);
+}
+
+bool FactoryTemplate::is_needed_for_construction_unsafe(int type) const {
+    if (max_amounts_of_construction_materials.count(type)) {
+        return max_amounts_of_construction_materials.at(type) == construction_materials.at(type);
+    }
+    return false;
+}
+
+int FactoryTemplate::get_amount_of_type_needed_for_construction_unsafe(int type) const {
+    if (max_amounts_of_construction_materials.count(type)) {
+        return max_amounts_of_construction_materials.at(type) - construction_materials.at(type);
+    }
+    return 0;
+}
+
+bool FactoryTemplate::is_finished_constructing() const {
+    std::scoped_lock lock(m);
+    if (construction_materials.size() == 0) return false; // If not constructing than not finished to avoid upgrading
+    for (const auto& [type, val]: construction_materials) {
+		if (max_amounts_of_construction_materials.at(type) != val) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool FactoryTemplate::is_constructing() const {
+    std::scoped_lock lock(m);
+    return !max_amounts_of_construction_materials.empty();
+}
+
+float FactoryTemplate::add_cargo_ignore_accepts(int type, float amount) { //Make sure
+    float amount_needed_for_construction = 0;
+    if (is_needed_for_construction(type)) {
+        std::scoped_lock lock(m);
+        amount_needed_for_construction = std::min(amount, max_amounts_of_construction_materials.at(type) - construction_materials.at(type));
+        construction_materials[type] += amount_needed_for_construction;
+    }
+        
+    float amount_stored = FixedHold::add_cargo_ignore_accepts(type, amount - amount_needed_for_construction);
+    return amount_stored + amount_needed_for_construction;
+}
+
 float FactoryTemplate::get_min_price(int type) const {
     ERR_FAIL_COND_V(get_inputs().size() != 0, 0.0);
     float available = 0;
@@ -88,7 +156,27 @@ bool FactoryTemplate::does_create(int type) const {
 }
 
 bool FactoryTemplate::does_accept(int type) const {
-    return get_inputs().count(type);
+    std::scoped_lock lock(m);
+    return does_accept_unsafe(type);
+}
+
+bool FactoryTemplate::does_accept_unsafe(int type) const {
+    return recipe->get_inputs().count(type) || is_needed_for_construction_unsafe(type);
+}
+
+int FactoryTemplate::get_desired_cargo(int type, float price_per) const {
+    std::scoped_lock lock(m);
+    return get_desired_cargo_unsafe(type, price_per);
+}
+
+int FactoryTemplate::get_desired_cargo_unsafe(int type, float price_per) const {
+    if (does_accept_unsafe(type)) {
+        int canGet = std::min(int(get_max_storage_unsafe(type) - get_cargo_amount_unsafe(type)), get_amount_can_buy_unsafe(price_per));
+        int wanted_for_recipe = recipe->get_inputs().count(type) ? recipe->get_inputs().at(type): 0;
+        int wanted_for_construction = get_amount_of_type_needed_for_construction_unsafe(type);
+        return std::min((wanted_for_construction + wanted_for_recipe), canGet);
+    }
+    return 0;
 }
 
 std::unordered_map<int, float> FactoryTemplate::get_outputs() const {
@@ -187,19 +275,9 @@ bool FactoryTemplate::is_max_level() const {
     return false;
 }
 
-int FactoryTemplate::get_cost_for_upgrade() {
-    return COST_FOR_UPGRADE;
-}
-
-void FactoryTemplate::upgrade() { // TODO: Upgrade deletes money, bad, need to buy goods instead
-    int cost = get_cost_for_upgrade();
-    if (get_cash() >= cost && can_factory_upgrade()) {
-        remove_cash(cost);
-        {
-            std::scoped_lock lock(m);
-            recipe->upgrade();
-        }
-        
+void FactoryTemplate::upgrade() {
+    if (can_factory_upgrade()) {
+        create_construction_materials();
     }
 }
 
@@ -208,11 +286,18 @@ void FactoryTemplate::admin_upgrade() {
         std::scoped_lock lock(m);
         recipe->upgrade();
     }
-    
+}
+
+void FactoryTemplate::finish_upgrade() {
+    print_line("Finished Upgrade.");
+    std::scoped_lock lock(m);
+    max_amounts_of_construction_materials.clear();
+    construction_materials.clear();
+    recipe->upgrade();
 }
 
 bool FactoryTemplate::can_factory_upgrade() const {
-    if (is_primary_factory()) {
+    if (is_primary_factory() && !is_constructing()) {
         return TerminalMap::get_instance()->get_cargo_value_of_tile(get_location(), get_primary_type_production()) > get_level_without_employment();
     }
     return true;
@@ -368,8 +453,10 @@ void FactoryTemplate::month_tick() {
     if (is_firing()) {
         fire_employees();
     }
+    if (is_finished_constructing()) {
+        finish_upgrade();
+    }
 }
 
 
-const int FactoryTemplate::COST_FOR_UPGRADE = 1000;
 const int FactoryTemplate::DEFAULT_BATCH_SIZE = 1;

@@ -313,7 +313,7 @@ void Town::distribute_type_to_broker(int type, Ref<Broker> broker, Ref<RoadDepot
     }
 
     {
-        std::scoped_lock lock1(broker->m, m); // Lock Broker and self
+        std::scoped_lock lock(broker->m, m); // Lock Broker and self
     
         auto& ms = get_local_pricer()->cargo_sell_orders[type];
         if (ms.empty()) return;
@@ -332,11 +332,9 @@ void Town::distribute_type_to_broker(int type, Ref<Broker> broker, Ref<RoadDepot
         }
         
         demand_to_relay.push_back(std::make_unique<TownCargo>(type, desired, buyer_price, town_cargo->terminal_id));
-
         if ((buyer_price / (1 + fee)) > seller_price) return; // If seller wants more than buyer is willing to pay taking into account fee, then simply don't sell
 
         while (desired > 0) {
-
             int amount = std::min(desired, town_cargo->amount);
             if (amount <= 0 || !broker->can_afford_unsafe(amount * price)) break; // If cannot afford then break out
             TownCargo* town_cargo_copy = new TownCargo(*town_cargo);
@@ -344,6 +342,7 @@ void Town::distribute_type_to_broker(int type, Ref<Broker> broker, Ref<RoadDepot
             if (is_depot_valid) 
                 town_cargo_copy->add_fee_to_pay(road_depot->get_terminal_id(), fee);
             cargo_to_send.push_back(town_cargo_copy);
+            
             get_local_pricer()->report_sale(type, price, amount);
             desired -= amount;
             storage[type] -= amount;
@@ -369,7 +368,6 @@ void Town::distribute_type_to_broker(int type, Ref<Broker> broker, Ref<RoadDepot
         delete cargo;
     }
     auto terminal_map = TerminalMap::get_instance();
-
     for (const auto &demand_cargo: demand_to_relay) {
         Ref<Broker> broker = terminal_map->get_terminal_as<Broker>(demand_cargo->terminal_id);
         if (broker.is_null()) continue;
@@ -459,11 +457,11 @@ void Town::update_buy_orders() {
     
     for (const auto& [type, amount]: map) {
         if (amount == 0) {
-            remove_order(type);
+            // remove_order(type);
             remove_accept(type);
         } else {
             float price = get_local_price(type);
-            edit_order(type, amount, true, price);
+            // edit_order(type, amount, true, price);
             add_accept(type);
         }
     }

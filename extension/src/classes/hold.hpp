@@ -27,6 +27,7 @@ public:
 
     virtual float add_cargo(int type, float amount);
     float get_cargo_amount(int type) const;
+    float get_cargo_amount_unsafe(int type) const;
     int get_cargo_amount_outside(int type) const;
     virtual void remove_cargo(int type, float amount);
     virtual float transfer_cargo(int type, float amount);
@@ -39,7 +40,9 @@ public:
     bool is_full() const;
     bool is_empty() const;
 
-    virtual int get_max_storage() const;
+    virtual float get_max_storage() const;
+    virtual float get_max_storage(int type) const;
+    virtual float get_max_storage_unsafe(int type) const;
     void change_max_storage(int p_amount);
     void set_max_storage(int p_amount);
     bool does_accept(int type) const;

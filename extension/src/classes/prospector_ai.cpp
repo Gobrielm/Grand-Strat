@@ -9,6 +9,7 @@
 #include "../singletons/province_manager.hpp"
 #include "../singletons/factory_creator.hpp"
 #include "../singletons/recipe_info.hpp"
+#include "../singletons/pop_manager.hpp"
 
 
 void ProspectorAi::_bind_methods() {
@@ -44,16 +45,29 @@ float ProspectorAi::get_cash() const {
     return MoneyController::get_instance()->get_money(get_owner_id());
 }
 
-void ProspectorAi::pay_employees() { // TODO: Need way to get pop from id, without knowing province, most likely pop manager
+float ProspectorAi::get_real_gross_profit(int months_to_average) const {
+    ERR_FAIL_COND_V_EDMSG(months_to_average <= 0, 0, "Cannot average over a 0 or negitive amount of months");
+    float total = 0;
+    int i = 1;
+    for (auto it = past_cash.begin(); it != past_cash.end(); it++) {
+        total += (*it);
+        if (++i > months_to_average) {
+            break;
+        }       
+    }
+    return total / i;
+}
+
+void ProspectorAi::pay_employees() {
     float to_pay_each = ((past_cash.back() - get_cash()) / past_cash.size()) * 0.9; // Profit over last n months averaged
-    // for (int pop_id: employees) {
-        
-    // }
+    for (int pop_id: employees) {
+        PopManager::get_instance()->pay_pop(pop_id, to_pay_each);
+    }
 }
 
 bool ProspectorAi::does_have_money_for_investment() {
-    float cash = MoneyController::get_instance()->get_money(get_owner_id());
-    return cash > FactoryTemplate::get_cost_for_upgrade() * 3.5;
+    float profit = get_real_gross_profit(4);
+    return profit > 0;
 }
 
 std::shared_ptr<Vector2i> ProspectorAi::find_town_for_investment() {

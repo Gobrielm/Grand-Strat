@@ -27,6 +27,10 @@ private:
 protected:
     Recipe* recipe = nullptr;
 
+    // For upgrading and creation
+    std::unordered_map<int, float> construction_materials;
+    std::unordered_map<int, float> max_amounts_of_construction_materials;
+
     static void _bind_methods();
 
     bool can_factory_upgrade() const;
@@ -41,14 +45,27 @@ public:
 
     virtual void initialize(Vector2i new_location, int player_owner, Recipe* recipe);
 
-    // Trade
+    //Construction
+    void create_construction_materials();
+    void create_construction_material(int type, int amount);
+    Dictionary get_construction_materials() const;
+    bool is_needed_for_construction(int type) const;
+    bool is_needed_for_construction_unsafe(int type) const;
+    int get_amount_of_type_needed_for_construction_unsafe(int type) const;
+    bool is_finished_constructing() const;
+    bool is_constructing() const;
 
+    // Trade
+    float add_cargo_ignore_accepts(int type, float amount) override;
     // Used for min price to sell
     float get_min_price(int type) const; 
     // Used for max price to buy
     float get_max_price(int type) const; 
     bool does_create(int type) const;
     bool does_accept(int type) const override;
+    bool does_accept_unsafe(int type) const;
+    int get_desired_cargo(int type, float price_per) const override;
+    int get_desired_cargo_unsafe(int type, float price_per) const override;
 
     // Production
     std::unordered_map<int, float> get_outputs() const;
@@ -67,9 +84,9 @@ public:
     double get_level() const;
     int get_level_without_employment() const;
     bool is_max_level() const;
-    static int get_cost_for_upgrade();
     void upgrade();
     void admin_upgrade();
+    void finish_upgrade();
     void update_income_array();
     float get_last_month_income() const;
 

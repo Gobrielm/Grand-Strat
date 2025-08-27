@@ -175,7 +175,7 @@ float LocalPriceController::get_demand_at_price(int type, float price) const {
     float total = 0;
     for (const auto& [ten_price, amount]: last_month_demand.at(type)) {
         // If there is demand for a higher price or same then consider demand
-        float o_price = ten_price;
+        float o_price = ten_price / 10.0;
         if (o_price >= price) {
             total += amount;
         }

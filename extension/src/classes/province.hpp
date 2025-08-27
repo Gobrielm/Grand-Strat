@@ -17,7 +17,7 @@ using namespace godot;
 class Province : public Object {
     GDCLASS(Province, Object);
 
-    mutable std::mutex m;
+    mutable std::shared_mutex m;
     mutable std::shared_mutex pops_lock;
     int province_id;
     int country_id = -1;

@@ -58,7 +58,7 @@ void Province::add_tile(Vector2i coords) {
 }
 
 int Province::get_population() const {
-    std::scoped_lock lock(m);
+    std::shared_lock lock(m);
     return population;
 }
 
@@ -67,7 +67,7 @@ float Province::get_theoretical_supply_of_grain_from_peasants() const {
     float grain_o = (peasant_recipe->get_outputs().begin())->second;
     int pops_needed = peasant_recipe->get_pops_needed_num();
     auto stats = get_pop_type_statistics();
-    std::scoped_lock lock(m);
+    std::shared_lock lock(m);
     return (grain_o * stats[peasant]) / pops_needed;
 }
 
@@ -75,7 +75,7 @@ float Province::get_demand_for_cargo(int type) const {
     auto stats = get_pop_type_statistics();
     float total_demand = 0;
     {
-        std::scoped_lock lock(m);
+        std::shared_lock lock(m);
         total_demand += stats[rural] * BasePop::get_base_need(rural, type); // Rural demand
         total_demand += stats[town] * BasePop::get_base_need(town, type); // Town demand
         total_demand += stats[peasant] * BasePop::get_base_need(peasant, type); // Peasant demand
@@ -117,7 +117,7 @@ int Province::get_province_id() const {
 }
 
 int Province::get_country_id() const {
-    std::scoped_lock lock(m);
+    std::shared_lock lock(m);
     return country_id;
 }
 
@@ -128,7 +128,7 @@ void Province::set_country_id(int p_country_id) {
 
 Array Province::get_tiles() const {
     Array a;
-    std::scoped_lock lock(m);
+    std::shared_lock lock(m);
     for (Vector2i tile: tiles) {
         a.append(tile);
     }
@@ -136,7 +136,7 @@ Array Province::get_tiles() const {
 }
 
 const std::vector<Vector2i> Province::get_tiles_vector() const {
-    std::scoped_lock lock(m);
+    std::shared_lock lock(m);
     return tiles;
 }
 
@@ -145,7 +145,7 @@ std::vector<Vector2i> Province::get_town_centered_tiles() const { //Assumes one 
     std::vector<Vector2i> v;
     Vector2i town_tile;
     {
-        std::scoped_lock lock(m);
+        std::shared_lock lock(m);
         for (Vector2i tile: terminal_tiles) {
             if (terminal_map->is_town(tile)) {
                 town_tile = tile;
@@ -217,7 +217,7 @@ void Province::remove_terminal(Vector2i tile) { //BUG: Never gets called when de
 }
 Array Province::get_terminal_tiles() const {
     Array a;
-    std::scoped_lock lock(m);
+    std::shared_lock lock(m);
     for (const auto tile: terminal_tiles) {
         a.push_back(tile);
     }
@@ -402,7 +402,7 @@ void Province::employ_peasants() {
 
 std::vector<Vector2i> Province::get_town_tiles() const {
     std::vector<Vector2i> toReturn;
-    std::scoped_lock lock(m);
+    std::shared_lock lock(m);
     for (const auto &tile: terminal_tiles) {
         if (TerminalMap::get_instance() -> is_town(tile)) {
             toReturn.push_back(tile);
@@ -417,10 +417,12 @@ int Province::count_pops() const {
 }
 
 Vector2i Province::get_closest_town_tile_to_pop(const Vector2i& pop_location) const {
+    std::shared_lock lock(m);
     ERR_FAIL_COND_V_MSG(!closest_town_to_tile.count(pop_location), Vector2i(0, 0), "Pop doesn't have available town.");
     return closest_town_to_tile.at(pop_location);
 }
 
 bool Province::has_closest_town_tile_to_pop(const Vector2i& pop_location) const {
+    std::shared_lock lock(m);
     return closest_town_to_tile.count(pop_location);
 }

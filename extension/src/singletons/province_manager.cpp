@@ -8,17 +8,9 @@ using namespace godot;
 Ref<ProvinceManager> ProvinceManager::singleton_instance = nullptr;
 
 ProvinceManager::ProvinceManager() {
-    // Provinces do not need to be iterated over
-    // for (int i = 0; i < 6; i++) {
-    //     worker_threads.push_back(std::thread(&ProvinceManager::thread_processor, this));
-    // }
-    // month_tick_checker = std::thread(&ProvinceManager::month_tick_check, this);
 }
 
 ProvinceManager::~ProvinceManager() {
-    stop = true;
-    month_tick_checker_cv.notify_all();
-    condition.notify_all();
 }
 
 void ProvinceManager::_bind_methods() {
@@ -47,8 +39,6 @@ void ProvinceManager::_bind_methods() {
     // Country to province mapping
     ClassDB::bind_method(D_METHOD("add_province_to_country", "province", "country_id"), &ProvinceManager::add_province_to_country);
     ClassDB::bind_method(D_METHOD("get_countries_provinces", "country_id"), &ProvinceManager::get_countries_provinces);
-
-    ClassDB::bind_method(D_METHOD("month_tick"), &ProvinceManager::month_tick);
 }
 
 void ProvinceManager::create() {
@@ -81,13 +71,11 @@ void ProvinceManager::add_many_tiles_to_province(int province_id, const Array &t
 }
 
 void ProvinceManager::add_population_to_province(Vector2i tile, int pop) {
-    int id = get_province_id(tile);
-    get_province(id)->add_population(pop);
+    get_province(tile)->add_population(pop);
 }
 
 int ProvinceManager::get_province_population(Vector2i tile) {
-    int id = get_province_id(tile);
-    return get_province(id)->get_population();
+    return get_province(tile)->get_population();
 }
 
 int ProvinceManager::get_population(int province_id) {
@@ -172,6 +160,14 @@ int ProvinceManager::get_province_id(Vector2i tile) const {
     return it->second;
 }
 
+int ProvinceManager::get_province_id_unsafe(Vector2i tile) const {
+    std::shared_lock lock(province_mutex);
+    auto it = tiles_to_province_id.find(tile);
+
+    ERR_FAIL_COND_V_MSG(it == tiles_to_province_id.end(), -1, "Tried to find province with tile: " + tile + " which does not exist");
+    return it->second;
+}
+
 Province* ProvinceManager::get_province_godot(int id) const {
     std::shared_lock lock(province_mutex);
     auto it = provinces.find(id);
@@ -188,7 +184,7 @@ Province* ProvinceManager::get_province(int id) const {
 
 Province* ProvinceManager::get_province(const Vector2i& tile) const {
     std::shared_lock lock(province_mutex);
-    int id = get_province_id(tile);
+    int id = get_province_id_unsafe(tile);
     auto it = provinces.find(id);
     ERR_FAIL_COND_V_MSG(it == provinces.end(), nullptr, "Province of id " + String::num_int64(id) + " is not a valid province id.");
     return it->second;
@@ -229,74 +225,4 @@ std::unordered_set<int> ProvinceManager::get_country_ids() const {
         s.insert(id);
     }
     return s;
-}
-
-void ProvinceManager::month_tick() {
-    // {
-    //     std::scoped_lock lock(month_tick_checker_mutex);
-    //     month_tick_flag = true;
-    // }
-    // month_tick_checker_cv.notify_one();
-}
-
-void ProvinceManager::month_tick_check() {
-    while (!stop) {
-        {
-            std::unique_lock<std::mutex> lock(month_tick_checker_mutex); // Waits for month tick
-            month_tick_checker_cv.wait(lock, [this] { return stop || month_tick_flag; } );
-            month_tick_flag = false;
-        }
-        TerminalMap::get_instance()->pause_time(); // Pause time while dealing with last months work
-        {   
-            std::unique_lock<std::mutex> lock(jobs_done_mutex);
-            jobs_done_cv.wait(lock, [this] { // Sleeps and waits for jobs to be done 
-                return jobs_remaining == 0; 
-            });
-        }
-        TerminalMap::get_instance()->unpause_time();
-        start_time = std::chrono::high_resolution_clock::now();
-        month_tick_helper();
-    }
-}
-
-void ProvinceManager::month_tick_helper() {
-    {
-        std::unique_lock lock1(provinces_to_process_mutex);
-        std::shared_lock lock(province_mutex); // Lock for provinces
-        for (const auto &[__, province]: provinces) {
-            provinces_to_process.push_back(province);
-        }
-        
-    }
-    jobs_remaining  = provinces_to_process.size();
-    
-    condition.notify_all();
-}   
-
-void ProvinceManager::thread_processor() {
-    while (!stop) {
-        Province* to_process = nullptr;
-
-        {
-            std::unique_lock<std::mutex> lock(provinces_to_process_mutex);
-            condition.wait(lock, [this]() {
-                return !provinces_to_process.empty() || stop;
-            });
-
-            if (stop && provinces_to_process.empty()) {
-                return; // Exit thread
-            }
-
-            // Get one province to process
-            to_process = provinces_to_process.back();
-            provinces_to_process.pop_back();
-        }
-        // to_process->month_tick();
-
-        if (--jobs_remaining == 0) {
-            std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - start_time;
-            // print_line("Provinces Month Tick Took " + String::num_scientific(elapsed.count()) + " seconds");
-            jobs_done_cv.notify_one();  // Wake main thread
-        }
-    }
 }

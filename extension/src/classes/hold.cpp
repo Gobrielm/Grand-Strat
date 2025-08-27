@@ -17,7 +17,6 @@ void Hold::_bind_methods() {
     ClassDB::bind_method(D_METHOD("get_current_hold_total"), &Hold::get_current_hold_total);
     ClassDB::bind_method(D_METHOD("is_full"), &Hold::is_full);
     ClassDB::bind_method(D_METHOD("is_empty"), &Hold::is_empty);
-    ClassDB::bind_method(D_METHOD("get_max_storage"), &Hold::get_max_storage);
     ClassDB::bind_method(D_METHOD("change_max_storage", "amount"), &Hold::change_max_storage);
     ClassDB::bind_method(D_METHOD("set_max_storage", "amount"), &Hold::set_max_storage);
     ClassDB::bind_method(D_METHOD("does_accept", "type"), &Hold::does_accept);
@@ -65,6 +64,10 @@ float Hold::get_cargo_amount(int type) const {
     std::scoped_lock lock(m);
     ERR_FAIL_COND_V_EDMSG(!storage.count(type), 0, "No cargo of type: " + String::num(type));
     return storage.at(type);
+}
+
+float Hold::get_cargo_amount_unsafe(int type) const {
+    return storage.count(type) ? storage.at(type): 0;
 }
 
 int Hold::get_cargo_amount_outside(int type) const {
@@ -133,7 +136,15 @@ bool Hold::is_empty() const {
     return get_current_hold_total() == 0;
 }
 
-int Hold::get_max_storage() const {
+float Hold::get_max_storage() const {
+    return max_amount;
+}
+
+float Hold::get_max_storage(int type) const {
+    return get_max_storage_unsafe(type); // TODO: No lock but its fine prolly
+}
+
+float Hold::get_max_storage_unsafe(int type) const {
     return max_amount;
 }
 

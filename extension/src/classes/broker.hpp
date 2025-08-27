@@ -59,7 +59,6 @@ class Broker : public FixedHold {
 
     int sell_cargo(int type, int amount);
     float add_cargo(int type, float amount) override;
-    float add_cargo_ignore_accepts(int type, float amount) override;
     void report_change_in_cash(float amount);
 
     virtual void place_order(int type, int amount, bool buy, float maxPrice);

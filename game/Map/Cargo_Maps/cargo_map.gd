@@ -3,7 +3,6 @@ extends TileMapLayer
 @onready var cargo_values: Node = $cargo_values
 
 var mutex: Mutex = Mutex.new()
-var ais: Array[CompanyAi]
 
 func _ready() -> void:
 	Utils.assign_cargo_map(self)
@@ -65,14 +64,8 @@ func place_factories_client_side(fact_tiles: Dictionary) -> void:
 
 func add_industries_to_towns() -> void:
 	for country_id: int in tile_ownership.get_instance().get_country_ids():
-		var ai: ProspectorAi = ProspectorAi.create(country_id, 1, CargoInfo.get_instance().get_cargo_type("grain"))
-		ais.push_back(ai)
 		var other: InitialBuilder = InitialBuilder.create(country_id)
 		other.build_initital_factories()
-
-func ai_cycle() -> void:
-	for ai: ProspectorAi in ais:
-		ai.month_tick()
 
 func place_random_road_depot(middle: Vector2i) -> Vector2i:
 	var tiles: Array = Utils.world_map.thread_get_surrounding_cells(middle)

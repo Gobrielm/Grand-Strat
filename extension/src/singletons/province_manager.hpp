@@ -21,27 +21,6 @@ class ProvinceManager : public RefCounted {
     std::unordered_map<Vector2i, int, godot_helpers::Vector2iHasher> tiles_to_province_id; 
     std::unordered_map<int, std::unordered_set<int>> country_id_to_province_ids;
 
-    //Timing
-    std::chrono::time_point<std::chrono::high_resolution_clock> start_time;
-
-
-    std::thread month_tick_checker; //used to check if next day is ready without blocking
-    std::mutex month_tick_checker_mutex;
-    bool month_tick_flag = false;
-    std::condition_variable month_tick_checker_cv;
-
-    void month_tick_check();
-
-    void month_tick_helper();
-    std::vector<std::thread> worker_threads;
-    mutable std::mutex provinces_to_process_mutex;
-    std::vector<Province*> provinces_to_process;
-    std::condition_variable condition;
-    std::atomic<bool> stop = false;
-
-    std::atomic<int> jobs_remaining = 0;
-    std::condition_variable jobs_done_cv;
-    std::mutex jobs_done_mutex;
     
 
 protected:
@@ -73,6 +52,7 @@ public:
     Array get_provinces() const;
     bool is_tile_a_province(Vector2i tile) const;
     int get_province_id(Vector2i tile) const;
+    int get_province_id_unsafe(Vector2i tile) const;
     Province* get_province_godot(int province_id) const;
     Province* get_province(int province_id) const;
     Province* get_province(const Vector2i& tile) const;
@@ -83,6 +63,4 @@ public:
     std::unordered_set<int> get_country_provinces(int country_id) const;
     std::unordered_set<int> get_country_ids() const;
 
-    void month_tick();
-    void thread_processor();
 };
