@@ -271,7 +271,7 @@ std::unordered_map<PopTypes, size_t> Province::get_pop_type_statistics() const {
     
     for (const auto& id: pops_copy) {
         auto pop = pop_manager->get_pop(id);
-        auto lock2 = pop_manager->lock_pop_read(id);
+        auto lock = pop_manager->lock_pop_read(id);
         stats[pop->get_type()]++;
     }
     return stats;
@@ -388,7 +388,7 @@ void Province::employ_peasants() {
 
         for (const auto& pop_id: pops_copy) {
             auto pop = pop_manager->get_pop(pop_id);
-            auto lock2 = pop_manager->lock_pop_write(pop_id);
+            auto lock = pop_manager->lock_pop_write(pop_id);
             if (pop->get_type() != peasant) continue;
             Ref<SubsistenceFarm> farm = terminal_map->get_terminal_as<SubsistenceFarm>(farms[i]);
             pop->set_location(farm->get_location());

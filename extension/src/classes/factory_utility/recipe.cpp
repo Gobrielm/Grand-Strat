@@ -50,6 +50,10 @@ void Recipe::add_pop(BasePop* pop) {
     employees[pop->get_type()].push_back(pop->get_pop_id());
 }
 
+void Recipe::add_pop(PopTypes pop_type, int pop_id) {
+    employees[pop_type].push_back(pop_id);
+}
+
 void Recipe::remove_pop(int pop_id, PopTypes pop_type) {
     auto &vec = employees[pop_type];
     vec.erase(std::remove(vec.begin(), vec.end(), pop_id), vec.end());

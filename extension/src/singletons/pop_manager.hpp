@@ -10,8 +10,9 @@ class PopManager {
     friend class Province;
     static std::shared_ptr<PopManager> singleton_instance;
     mutable std::shared_mutex m; // Deals with datastructures
+    mutable std::shared_mutex employment_mutex; // Deals with employment_options mutex
     std::unordered_map<int, BasePop*> pops;
-    static int constexpr NUMBER_OF_POP_LOCKS = 500;
+    static int constexpr NUMBER_OF_POP_LOCKS = 4096;
     mutable std::vector<std::shared_mutex*> pop_locks; // Deals with individual pops
     ThreadPool<BasePop*>* thread_pool = nullptr;
 
@@ -19,25 +20,25 @@ class PopManager {
     std::shared_mutex* get_lock(int pop_id);
     std::shared_lock<std::shared_mutex> lock_pop_read(int pop_id) const;
     std::unique_lock<std::shared_mutex> lock_pop_write(int pop_id) const;
-    std::unordered_map<int, BasePop*> get_pops_copy() const;
     BasePop* get_pop(int pop_id) const;
     int get_pop_country_id(BasePop* pop) const;
     void month_tick(BasePop* pop);
     void sell_to_pop(BasePop* pop);
-    void change_pop(BasePop* pop);
+    void change_pop_unsafe(BasePop* pop);
     void find_employment_for_pop(BasePop* pop);
 
     // Find Employement functions
-    std::unordered_map<PopTypes, std::unordered_map<int, std::set<Ref<FactoryTemplate>, FactoryTemplate::FactoryWageCompare>>> employment_options; // PopType -> Country id -> set of available factories
+    using employ_type = std::unordered_map<PopTypes, std::unordered_map<int, std::set<godot::Ref<FactoryTemplate>, FactoryTemplate::FactoryWageCompare>>>;
+    employ_type employment_options; // PopType -> Country id -> set of available factories
 
     void find_employment_for_rural_pop(BasePop* pop);
     void find_employment_for_town_pop(BasePop* pop);
     void employment_finder_helper(BasePop* pop, PopTypes pop_type);
     void refresh_employment_sorted_by_wage();
     void refresh_rural_employment_sorted_by_wage();
-    void refresh_rural_employment_sorted_by_wage_helper(int country_id, const Vector2i& tile);
     void refresh_town_employment_sorted_by_wage();
-    void refresh_town_employment_sorted_by_wage_helper(int country_id, const Vector2i& tile);
+    void refresh_town_employment_sorted_by_wage_helper(int country_id, const Vector2i& tile, employ_type& local_employment_options);
+    void add_local_employment_options(employ_type& local_employment_options);
     Ref<FactoryTemplate> get_first_employment_option(PopTypes pop_type, int country_id) const;
     void remove_first_employment_option(PopTypes pop_type, int country_id, const Ref<FactoryTemplate>& double_check);
 

@@ -18,7 +18,7 @@
 template <typename T>
 class ThreadPool {
     // T is a pointer, smart or dumb
-    static constexpr int BATCH_SIZE = 1000;
+    static constexpr int BATCH_SIZE = 500;
     std::thread month_tick_checker; //used to check if next day is ready without blocking
     std::mutex month_tick_checker_mutex;
     bool month_tick_flag = false;
@@ -84,7 +84,7 @@ class ThreadPool {
                 }
 
                 // Get one province to process
-                for (int i = 0; i < std::min(size_t(BATCH_SIZE), batch_to_process.size()); i++) {
+                for (int i = 0; i < std::min(size_t(BATCH_SIZE), work_to_process.size()); i++) {
                     batch_to_process.push_back(work_to_process.back());
                     work_to_process.pop_back();
                 }

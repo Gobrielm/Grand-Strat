@@ -81,7 +81,7 @@ public:
     float get_theoretical_gross_profit() const;
     float get_theoretical_gross_profit_unsafe() const;
     float get_real_gross_profit(int months_to_average) const; // 1-indexed
-    void employ_pop(BasePop* pop, std::shared_mutex &pop_lock);
+    void employ_pop(BasePop* pop, std::shared_mutex &pop_lock, PopTypes pop_type);
     void pay_employees();
     void fire_employees();
 
