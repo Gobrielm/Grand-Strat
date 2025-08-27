@@ -62,10 +62,11 @@ func day_tick() -> void:
 	TerminalMap.get_instance()._on_day_tick_timeout()
 	clock.iterate_day()
 	if clock.is_next_month():
+		print(str((Time.get_ticks_msec() - start) / 1000) + " seconds have passed for one whole month.")
+		start = Time.get_ticks_msec()
 		_on_month_tick_timeout()
 
 var start: float = 0.0
-var end: float = 0.0
 
 func _on_month_tick_timeout() -> void:
 	CountryManager.get_instance().month_tick()

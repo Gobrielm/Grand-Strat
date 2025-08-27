@@ -321,6 +321,7 @@ void FactoryTemplate::employ_pop(BasePop* pop, std::shared_mutex &pop_lock, PopT
             recipe->add_pop(pop_type, pop->get_pop_id());
             wage = get_wage_unsafe();
         }
+        
         {
             std::scoped_lock lock(pop_lock);
             pop->employ(terminal_id, wage);

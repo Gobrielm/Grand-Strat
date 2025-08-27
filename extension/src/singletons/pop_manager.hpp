@@ -3,7 +3,7 @@
 #include <memory>
 #include <unordered_map>
 #include "../classes/base_pop.hpp"
-#include "../utility/thread_pool.hpp"
+#include "pop_manager_utility/pop_manager_thread_pool.hpp"
 #include "../classes/factory_template.hpp"
 
 class PopManager {
@@ -14,18 +14,19 @@ class PopManager {
     std::unordered_map<int, BasePop*> pops;
     static int constexpr NUMBER_OF_POP_LOCKS = 4096;
     mutable std::vector<std::shared_mutex*> pop_locks; // Deals with individual pops
-    ThreadPool<BasePop*>* thread_pool = nullptr;
+    PopManagerThreadPool* thread_pool = nullptr;
 
-    void thread_month_tick_loader();
+    int thread_month_tick_loader();
     std::shared_mutex* get_lock(int pop_id);
     std::shared_lock<std::shared_mutex> lock_pop_read(int pop_id) const;
     std::unique_lock<std::shared_mutex> lock_pop_write(int pop_id) const;
     BasePop* get_pop(int pop_id) const;
     int get_pop_country_id(BasePop* pop) const;
-    void month_tick(BasePop* pop);
-    void sell_to_pop(BasePop* pop);
+    void month_tick(std::vector<BasePop*>& pop_group);
+    void sell_to_pops(std::vector<BasePop*>& pop_group);
+    void create_pop_id_to_towns(std::vector<BasePop*>& pop_group, std::unordered_map<Vector2i, Vector2i, godot_helpers::Vector2iHasher>& location_to_nearest_town) const;
     void change_pop_unsafe(BasePop* pop);
-    void find_employment_for_pop(BasePop* pop);
+    void find_employment_for_pops(std::vector<BasePop*>& pop_group);
 
     // Find Employement functions
     using employ_type = std::unordered_map<PopTypes, std::unordered_map<int, std::set<godot::Ref<FactoryTemplate>, FactoryTemplate::FactoryWageCompare>>>;

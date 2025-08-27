@@ -16,9 +16,10 @@ void PopManager::cleanup() {
 }
 
 PopManager::PopManager() {
-    thread_pool = new ThreadPool<BasePop*>(16, [this]() { thread_month_tick_loader(); });
-    thread_pool->set_work_function([this](BasePop* pop) {
-        month_tick(pop); // use PopManager’s pipeline
+    thread_pool = new PopManagerThreadPool(8, [this]() { return thread_month_tick_loader(); });
+
+    thread_pool->set_work_function([this] (std::vector<BasePop*>& pops) {
+        month_tick(pops); // use PopManager’s pipeline
     });
     for (int i = 0; i < NUMBER_OF_POP_LOCKS; i++) {
         pop_locks.push_back(new std::shared_mutex);  // constructs a new shared_mutex directly in the vector
@@ -37,49 +38,66 @@ std::shared_ptr<PopManager> PopManager::get_instance() {
     return singleton_instance;
 }
 
-void PopManager::thread_month_tick_loader() {
+int PopManager::thread_month_tick_loader() {
     refresh_employment_sorted_by_wage();
     {
         std::scoped_lock sp_pops_lock(m);
         for (const auto& [id, pop]: pops) {
-            thread_pool->add_work(pop);
+            thread_pool->add_work(pop, pop->get_pop_id() % NUMBER_OF_POP_LOCKS);
         }
     }
+    return pops.size();
 }
 
 void PopManager::month_tick() {
     thread_pool->month_tick();
 }
 
-void PopManager::month_tick(BasePop* pop) {
+void PopManager::month_tick(std::vector<BasePop*>& pop_group) { // Assumes all pops are part of same mutex block
+    int mutex_lock_num = pop_group.front()->get_pop_id() % NUMBER_OF_POP_LOCKS;
     {
-        auto lock = lock_pop_write(pop->get_pop_id());
-        pop->month_tick();
-        change_pop_unsafe(pop);
+        auto lock = lock_pop_write(mutex_lock_num);
+        for (auto &pop: pop_group) {
+            pop->month_tick();
+            change_pop_unsafe(pop);
+        }
     }
-    sell_to_pop(pop);
-    find_employment_for_pop(pop);
+    
+    sell_to_pops(pop_group);
+    find_employment_for_pops(pop_group);
 }
 
 
-void PopManager::sell_to_pop(BasePop* pop) {
+void PopManager::sell_to_pops(std::vector<BasePop*>& pop_group) {
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
-    auto province_manager = ProvinceManager::get_instance();
+    std::unordered_map<Vector2i, Vector2i, godot_helpers::Vector2iHasher> location_to_nearest_town;
+    create_pop_id_to_towns(pop_group, location_to_nearest_town);
     // Get closest town and then use town functions to sell to those pops
-    Vector2i location;
-    {
-        auto lock = lock_pop_read(pop->get_pop_id());
-        location = pop->get_location();
-    } 
-    auto province = province_manager->get_province(location);
-    if (!province -> has_closest_town_tile_to_pop(location)) return; // No Towns, ie no place to buy from
-    Vector2i town_tile = province->get_closest_town_tile_to_pop(location);
+    
+    for (auto& pop: pop_group) {
 
-    Ref<Town> town = terminal_map->get_town(town_tile);
-    if (town.is_null()) {
-        return;
+        Ref<Town> town = terminal_map->get_town(location_to_nearest_town[pop->get_location()]);
+        if (town.is_null()) {
+            continue;;
+        }
+        town->sell_to_pop(pop, *get_lock(pop->get_pop_id()));
     }
-    town->sell_to_pop(pop, *get_lock(pop->get_pop_id()));
+}
+
+void PopManager::create_pop_id_to_towns(std::vector<BasePop*>& pop_group, std::unordered_map<Vector2i, Vector2i, godot_helpers::Vector2iHasher>& location_to_nearest_town) const { 
+    int mutex_lock_num = pop_group.front()->get_pop_id() % NUMBER_OF_POP_LOCKS; 
+    auto province_manager = ProvinceManager::get_instance(); // Get closest town and then use town functions to sell to those pops 
+    { 
+        auto lock = lock_pop_read(mutex_lock_num); 
+        for (auto& pop: pop_group) { 
+            Vector2i location = pop->get_location();
+            if (location_to_nearest_town.count(location)) continue;
+            auto province = province_manager->get_province(location);
+            if (!province -> has_closest_town_tile_to_pop(location)) continue; // No Towns, ie no place to buy from
+            Vector2i town_tile = province->get_closest_town_tile_to_pop(location); 
+            location_to_nearest_town[location] = town_tile;
+        }
+    }
 }
 
 void PopManager::change_pop_unsafe(BasePop * pop) {
@@ -90,16 +108,21 @@ void PopManager::change_pop_unsafe(BasePop * pop) {
     }
 }
 
-void PopManager::find_employment_for_pop(BasePop* pop) { // No locking
-    auto pop_type = none;
-    {   
-        auto lock = lock_pop_read(pop->get_pop_id());
-        pop_type = pop->get_type();
-    }
-    if (pop_type == rural) {
-        find_employment_for_rural_pop(pop);
-    } else if (pop_type == town) {
-        find_employment_for_town_pop(pop);
+void PopManager::find_employment_for_pops(std::vector<BasePop*>& pop_group) {
+    int mutex_lock_num = pop_group.front()->get_pop_id() % NUMBER_OF_POP_LOCKS;
+
+    for (auto& pop: pop_group) {
+        PopTypes pop_type = none;
+        {
+            auto lock = lock_pop_read(mutex_lock_num);
+            pop_type = pop->get_type(); // Don't lock since factory will double check if wrong
+        }
+
+        if (pop_type == rural) {
+            find_employment_for_rural_pop(pop);
+        } else if (pop_type == town) {
+            find_employment_for_town_pop(pop);
+        }
     }
 }
 
