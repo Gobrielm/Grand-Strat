@@ -106,16 +106,25 @@ public:
     virtual void day_tick();
     virtual void month_tick();
 
-
-    struct FactoryWageCompare {
-        bool operator()(const Ref<FactoryTemplate>& a, const Ref<FactoryTemplate>& b) const {
-            float a_wage = a->get_wage();
-            float b_wage = a->get_wage();
-            if (a_wage == b_wage) {
-                return &a > &b;
-            }
-            return a_wage > b_wage; // highest wage first
+    struct FactoryWageWrapper {
+        Ref<FactoryTemplate> internal_fact;
+        float wage;
+        FactoryWageWrapper(Ref<FactoryTemplate> fact = nullptr) {
+            internal_fact = fact;
+            wage = internal_fact->get_wage();
         }
+
+        struct FactoryWageCompare {
+            bool operator()(const FactoryWageWrapper& a, const FactoryWageWrapper& b) const {
+                float a_wage = a.wage;
+                float b_wage = a.wage;
+                if (a_wage == b_wage) {
+                    return &a > &b;
+                }
+                return a_wage > b_wage; // highest wage first
+            }
+        };
+
     };
 
 };

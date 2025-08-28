@@ -231,8 +231,8 @@ int Town::get_total_pops() const {
     return town_pop_ids.size();
 }
 
-std::set<Ref<FactoryTemplate>, FactoryTemplate::FactoryWageCompare> Town::get_employment_sorted_by_wage(PopTypes pop_type) const {
-    std::set<Ref<FactoryTemplate>, FactoryTemplate::FactoryWageCompare> s;
+std::set<FactoryTemplate::FactoryWageWrapper, FactoryTemplate::FactoryWageWrapper::FactoryWageCompare> Town::get_employment_sorted_by_wage(PopTypes pop_type) const {
+    std::set<FactoryTemplate::FactoryWageWrapper, FactoryTemplate::FactoryWageWrapper::FactoryWageCompare> s;
 
     std::scoped_lock lock(internal_factories_mutex);
     for (const auto &[__, fact_vector]: internal_factories) {

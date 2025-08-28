@@ -42,18 +42,19 @@ void DataCollector::month_tick() {
     Ref<ProvinceManager> province_manager = ProvinceManager::get_instance();
     auto pop_manager = PopManager::get_instance();
     if (is_collecting_data) {
+        auto pops_data = (pop_manager->get_pop_statistics());
+
         road_depot_data_points.push_back(terminal_map -> get_average_cash_of_road_depot());
         factory_data_points.push_back(terminal_map -> get_average_cash_of_factory());
-        pops_data_points.push_back(pop_manager -> get_average_cash_of_pops());
+        pops_data_points.push_back((*pops_data)[AveragePopWealth]);
         factory_ave_level.push_back(terminal_map -> get_average_factory_level());
-        starving_pops.push_back(pop_manager->get_number_of_starving_pops());
+        starving_pops.push_back((*pops_data)[NumOfStarvingPops]);
         grain_supply.push_back(0);
         grain_demand.push_back(0);
-        broke_pops.push_back(pop_manager-> get_number_of_broke_pops());
-        unemployement_rate.push_back(pop_manager->get_unemployment_rate());
-        real_unemployement_rate.push_back(pop_manager->get_real_unemployment_rate());
-        auto pop_type_stats = pop_manager->get_pop_type_statistics();
-        number_of_peasants.push_back(pop_type_stats[peasant]);
+        broke_pops.push_back((*pops_data)[NumOfBrokePops]);
+        unemployement_rate.push_back((*pops_data)[UnemploymentRate]);
+        real_unemployement_rate.push_back((*pops_data)[RealUnemploymentRate]);
+        number_of_peasants.push_back((*pops_data)[NumOfPeasants]);
         write_data_to_file();
     }
 

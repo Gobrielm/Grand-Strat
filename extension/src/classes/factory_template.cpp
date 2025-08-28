@@ -344,10 +344,9 @@ bool FactoryTemplate::is_firing() const {
 
 float FactoryTemplate::get_wage() const {
     std::scoped_lock lock(m);
-    float gross_profit = std::min(float(get_theoretical_gross_profit_unsafe()), get_cash_unsafe());
     int pops_needed_num = recipe->get_pops_needed_num();
-    if (!pops_needed_num) return 0;
-    
+    if (pops_needed_num == 0) return 0;
+    float gross_profit = std::min(float(get_theoretical_gross_profit_unsafe()), get_cash_unsafe());
     return (gross_profit) / pops_needed_num;
 }
 

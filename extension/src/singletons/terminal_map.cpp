@@ -554,14 +554,11 @@ void TerminalMap::transform_construction_site_to_factory(const Vector2i &coords)
     if (is_owned_construction_site(coords)) {
         Ref<ConstructionSite> old_site = get_terminal_as<ConstructionSite>(coords);
         Ref<Factory> factory = create_factory(coords, old_site->get_player_owner(), old_site->get_recipe()[0], old_site->get_recipe()[1]);
-
         {
             std::unique_lock lock(cargo_map_mutex);
             terminal_id_to_terminal.erase(old_site->get_terminal_id());
             cargo_map_terminals.erase(old_site->get_location());
         }
-        
-
         encode_factory_from_construction_site(factory);
 
     }
@@ -603,19 +600,15 @@ float TerminalMap::get_average_cash_of_factory() const {
 float TerminalMap::get_average_factory_level() const {
     double ave = 0;
     int count = 0;
-    std::vector<Ref<Factory>> factories_to_add;
     {
         std::shared_lock lock(cargo_map_mutex);
         for (const auto &[__, terminal]: terminal_id_to_terminal) {
             Ref<Factory> typed = Ref<Factory>(terminal);
             if (typed.is_valid()) {
-                factories_to_add.push_back(typed);
+                ave += typed -> get_level();
+                count++;
             }
         }
-    }
-    for (const auto &terminal: factories_to_add) {
-        ave += terminal -> get_level();
-        count++;
     }
     return ave / count;
 }
@@ -623,20 +616,15 @@ float TerminalMap::get_average_factory_level() const {
 unsigned long TerminalMap::get_grain_demand() const {
     unsigned long total_demand = 0;
 
-    std::vector<Ref<Town>> factories_to_add;
     {
         std::shared_lock lock(cargo_map_mutex);
         for (const auto &[__, terminal]: terminal_id_to_terminal) {
             Ref<Town> typed = Ref<Town>(terminal);
             if (typed.is_valid()) {
-                factories_to_add.push_back(typed);
+                int num = (typed->get_local_demand(CargoInfo::get_instance()->get_cargo_type("grain")));
+                total_demand += num;
             }
         }
-    }
-
-    for (const auto &town: factories_to_add) {
-        int num = (town->get_local_demand(CargoInfo::get_instance()->get_cargo_type("grain")));
-        total_demand += num;
     }
     return round(total_demand);
 }
@@ -645,23 +633,15 @@ unsigned long TerminalMap::get_grain_demand() const {
 unsigned long TerminalMap::get_grain_supply() const {
     double total_demand = 0;
 
-    std::vector<Ref<Town>> factories_to_add;
     {
         std::shared_lock lock(cargo_map_mutex);
         for (const auto &[__, terminal]: terminal_id_to_terminal) {
             Ref<Town> typed = Ref<Town>(terminal);
             if (typed.is_valid()) {
-                factories_to_add.push_back(typed);
+                double num = double(typed->get_cargo_amount(CargoInfo::get_instance()->get_cargo_type("grain")));
+                total_demand += num;
             }
         }
-    }
-
-    for (const auto &town: factories_to_add) {
-        double num = double(town->get_cargo_amount(CargoInfo::get_instance()->get_cargo_type("grain")));
-        if (std::isnan(num)) {
-            print_line("AA");
-        }
-        total_demand += num;
     }
     return round(total_demand);
 }
@@ -670,19 +650,15 @@ template <typename T>
 float TerminalMap::get_average_cash_of_terminal() const {
     double ave = 0;
     int count = 0;
-    std::vector<Ref<T>> factories_to_add;
     {
         std::shared_lock lock(cargo_map_mutex);
         for (const auto &[__, terminal]: terminal_id_to_terminal) {
             Ref<T> typed = Ref<T>(terminal);
             if (typed.is_valid()) {
-                factories_to_add.push_back(typed);
+                ave += typed -> get_cash();
+                count++;
             }
         }
-    }
-    for (const auto &terminal: factories_to_add) {
-        ave += terminal -> get_cash();
-        count++;
     }
     return ave / count;
 }

@@ -65,7 +65,7 @@ public:
     // void sell_to_pop(BasePop* pop, std::shared_mutex& province_pop_lock);
     void pay_factory(int amount, float price, Vector2i source);
     int get_total_pops() const;
-    std::set<Ref<FactoryTemplate>, FactoryTemplate::FactoryWageCompare> get_employment_sorted_by_wage(PopTypes pop_type) const;
+    std::set<FactoryTemplate::FactoryWageWrapper, FactoryTemplate::FactoryWageWrapper::FactoryWageCompare> get_employment_sorted_by_wage(PopTypes pop_type) const;
 
     //Selling to brokers
     void distribute_cargo() override;

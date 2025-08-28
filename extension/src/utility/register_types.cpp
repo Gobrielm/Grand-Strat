@@ -5,7 +5,6 @@
 #include <godot_cpp/godot.hpp>
 
 #include "static_registry.hpp"
-#include "../classes/base_pop.hpp"
 #include "../classes/province.hpp"
 #include "../classes/trade_order.hpp"
 #include "../classes/terminal.hpp"
@@ -48,7 +47,6 @@ void initialize_gdextension_types(ModuleInitializationLevel p_level)
 
 	//--verbose in godot for more details
 	GDREGISTER_CLASS(MoneyController);
-	GDREGISTER_CLASS(BasePop);
 	GDREGISTER_CLASS(Province);
 	GDREGISTER_CLASS(TradeOrder);
 	GDREGISTER_CLASS(Terminal);

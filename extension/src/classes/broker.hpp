@@ -83,6 +83,7 @@ class Broker : public FixedHold {
     
     virtual void distribute_type_to_broker(int type, Ref<Broker> otherBroker, Ref<RoadDepot> road_depot = nullptr);
 
+    void add_monthly_demand_across_broad_market();
     void survey_broad_market(int type);
     void survey_broker_market(int type, Ref<Broker> broker);
 

@@ -5,23 +5,6 @@
 #include <sstream>
 #include <fstream>
 
-void BasePop::_bind_methods() {
-    ClassDB::bind_method(D_METHOD("get_pop_id"), &BasePop::get_pop_id);
-    ClassDB::bind_method(D_METHOD("get_home_prov_id"), &BasePop::get_home_prov_id);
-    ClassDB::bind_method(D_METHOD("is_seeking_employment"), &BasePop::is_seeking_employment);
-    ClassDB::bind_method(D_METHOD("pay_wage", "wage"), &BasePop::pay_wage);
-    ClassDB::bind_method(D_METHOD("employ", "wage"), &BasePop::employ);
-    ClassDB::bind_method(D_METHOD("fire"), &BasePop::fire);
-    ClassDB::bind_method(D_METHOD("get_income"), &BasePop::get_income);
-    ClassDB::bind_method(D_METHOD("get_sol"), &BasePop::get_sol);
-    ClassDB::bind_method(D_METHOD("buy_good", "type", "price"), &BasePop::buy_good);
-    ClassDB::bind_method(D_METHOD("get_education_level"), &BasePop::get_education_level);
-    ClassDB::bind_method(D_METHOD("get_wealth"), &BasePop::get_wealth);
-    ClassDB::bind_method(D_METHOD("transfer_wealth"), &BasePop::transfer_wealth);
-    ClassDB::bind_method(D_METHOD("get_culture"), &BasePop::get_culture);
-
-}
-
 std::atomic<int> BasePop::total_pops = 0;
 
 std::unordered_map<PopTypes, int> BasePop::PEOPLE_PER_POP = {

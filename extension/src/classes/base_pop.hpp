@@ -17,8 +17,7 @@ enum PopTypes {
 
 class FactoryTemplate;
 
-class BasePop : public Object {
-    GDCLASS(BasePop, Object);
+class BasePop {
     static std::unordered_map<PopTypes, int> PEOPLE_PER_POP;
     static std::unordered_map<PopTypes, int> INITIAL_WEALTH;
     static std::atomic<int> total_pops;
@@ -42,7 +41,6 @@ class BasePop : public Object {
     std::unordered_map<int, float> internal_storage;
     
     protected:
-    static void _bind_methods();
     String _to_string() const;
     float get_buy_price_for_needed_good(int type, float current_price) const;
     float get_buy_price_for_wanted_good(int type, float current_price) const;

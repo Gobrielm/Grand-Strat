@@ -298,14 +298,14 @@ void Broker::distribute_type_to_broker(int type, Ref<Broker> otherBroker, Ref<Ro
 }
 
 void Broker::survey_broad_market(int type) { // Doesn't include towns since they add demand seperately
-    std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> s;
+    std::unordered_set<int> survey_terms;
     auto terminal_map = TerminalMap::get_instance();
-    s.insert(get_location());
+    survey_terms.insert(get_terminal_id());
     
     for (const auto& tile : connected_brokers) {
         Ref<Broker> broker = TerminalMap::get_instance() -> get_broker(tile);
         if (broker.is_null() && !(terminal_map -> is_town(tile))) continue;
-        s.insert(tile);
+        survey_terms.insert(broker->get_terminal_id());
         survey_broker_market(type, broker);
     }
 
@@ -316,8 +316,9 @@ void Broker::survey_broad_market(int type) { // Doesn't include towns since they
         std::vector<Ref<Broker>> other_brokers = road_depot->get_available_brokers(type);
         for (const auto &broker: other_brokers) {
             Vector2i cell = broker->get_location();
-            if (!s.count(cell) && !(terminal_map -> is_town(cell))) {
-                s.insert(cell);
+            int term_id = broker->get_terminal_id();
+            if (!survey_terms.count(term_id) && !(terminal_map -> is_town(cell))) {
+                survey_terms.insert(term_id);
                 survey_broker_market(type, broker);
             }
         }
