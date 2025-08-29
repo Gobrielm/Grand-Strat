@@ -96,7 +96,7 @@ TerminalMap::TerminalMap() {
 
 TerminalMap::~TerminalMap() {
     //Clean up old threads
-    cargo_map_terminals.clear();
+    terminal_id_to_terminal.clear();
     delete thread_pool;
 }
 

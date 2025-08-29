@@ -7,6 +7,7 @@
 #include "local_price_controller.hpp"
 #include "../utility/vector2i_hash.hpp"
 #include "broker_utility/trade_interaction_compare.hpp"
+#include <godot_cpp/classes/weak_ref.hpp>
 #include <unordered_map>
 #include <set>
 #include <unordered_set>
@@ -31,9 +32,9 @@ class Broker : public FixedHold {
     LocalPriceController* local_pricer = nullptr;
     const float MAX_TRADE_MARGIN = 1.05f;
 
-    virtual std::set<TradeInteraction*, TradeInteractionPtrCompare> get_brokers_to_distribute_to(int type); // Abstract
+    virtual std::set<TradeInteraction, TradeInteractionPtrCompare> get_brokers_to_distribute_to(int type); // Abstract
     float get_price_average(int type, Ref<Broker> other) const;
-    void add_broker_to_sorted_set(int type, std::unordered_set<int> &s, std::set<TradeInteraction*, TradeInteractionPtrCompare> &trade_interactions, TradeInteraction* trade_interaction);
+    void add_broker_to_sorted_set(int type, std::unordered_set<int> &s, std::set<TradeInteraction, TradeInteractionPtrCompare> &trade_interactions, const TradeInteraction& trade_interaction);
     public:
     
     Broker();
@@ -83,17 +84,27 @@ class Broker : public FixedHold {
     
     virtual void distribute_type_to_broker(int type, Ref<Broker> otherBroker, Ref<RoadDepot> road_depot = nullptr);
 
-    void add_monthly_demand_across_broad_market();
-    void survey_broad_market(int type);
-    void survey_broker_market(int type, Ref<Broker> broker);
+    virtual void add_monthly_demand_across_broad_market();
+    void survey_broker_market(int type, int broker_id);
+
+    std::unordered_set<int> get_broker_ids_in_local_market() const;
+    std::unordered_set<int> get_broker_ids_in_broad_market() const;
 
     void add_surveyed_demand(int type, float price, float amount);
     void add_surveyed_supply(int type, float price, float amount);
 
+    void add_surveyed_demand(int type, std::unordered_map<int, float> ten_price_map);
+    void add_surveyed_supply(int type, std::unordered_map<int, float> ten_price_map);
+
     void add_surveyed_demand_unsafe(int type, float price, float amount);
     void add_surveyed_supply_unsafe(int type, float price, float amount);
 
+    void add_surveyed_demand_unsafe(int type, std::unordered_map<int, float> ten_price_map);
+    void add_surveyed_supply_unsafe(int type, std::unordered_map<int, float> ten_price_map);
+
     // Returns demand - supply
+    std::unordered_map<int, float> get_last_month_demand_ten_price_map(int type) const;
+    std::unordered_map<int, float> get_last_month_supply_ten_price_map(int type) const;
     virtual float get_diff_between_demand_and_supply(int type) const; // TEMP VIRTUAL
     virtual float get_diff_between_demand_and_supply_unsafe(int type) const;
     virtual float get_demand_at_price_unsafe(int type, float price) const;

@@ -250,9 +250,17 @@ int FactoryTemplate::get_primary_type() const {
     }
 }
 
+void FactoryTemplate::add_monthly_demand_across_broad_market() {
+    auto broker_ids = get_broker_ids_in_broad_market();
+    for (const auto& [type, __]: get_outputs()) {
+        for (const auto& id: broker_ids) {
+            survey_broker_market(type, id);
+        }
+    }
+}
+
 void FactoryTemplate::distribute_cargo() {
     for (const auto& [type, __]: get_outputs()) {
-        survey_broad_market(type);
         distribute_type(type);
     }
 }
@@ -329,10 +337,14 @@ float FactoryTemplate::get_last_month_income() const {
     return income_list.front();
 }
 
+bool FactoryTemplate::is_hiring() const {
+    return get_theoretical_gross_profit_unsafe() > 0;
+}
+
 bool FactoryTemplate::is_hiring(PopTypes pop_type) const {
     std::scoped_lock lock(m);
 
-    return recipe->is_pop_type_needed(pop_type) && get_theoretical_gross_profit_unsafe() > 0; // TODO: Check requirements
+    return recipe->is_pop_type_needed(pop_type) && is_hiring_tracker; // TODO: Check requirements
 }
 
 bool FactoryTemplate::is_firing() const {
@@ -447,8 +459,14 @@ void FactoryTemplate::day_tick() {
 }
 
 void FactoryTemplate::month_tick() {
+    add_monthly_demand_across_broad_market();
     update_income_array();
     pay_employees();
+    if (is_hiring()) {
+        is_hiring_tracker = true;
+    } else {
+        is_hiring_tracker = false;
+    }
     if (is_firing()) {
         fire_employees();
     }

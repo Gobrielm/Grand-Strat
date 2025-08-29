@@ -6,6 +6,7 @@
 class TownLocalPriceController: public LocalPriceController {
 
     protected:
+    int size = 0;
     std::unordered_map <int, int> local_demand;
     std::unordered_map <int, int> last_month_local_demand;
 
@@ -28,8 +29,8 @@ class TownLocalPriceController: public LocalPriceController {
     void report_sale(int type, float price, float amount);
     float get_local_demand(int type) const;
     float get_diff_between_demand_and_supply(int type) const;
-    float get_demand_at_price(int type, float price) const override;
-    std::unordered_map<int, float> get_demand_at_different_prices(int type) const; // Returns with ten_price -> amount
+    // float get_demand_at_price(int type, float price) const override;
+    // float get_supply_at_price(int type, float price) const override;
 
     void add_town_cargo(TownCargo* new_cargo);
     // Takes storage and takes from it, and returns a map of cargo to return

@@ -27,25 +27,35 @@ float TLPC::get_diff_between_demand_and_supply(int type) const {
     return last_month_local_demand.at(type) - get_supply(type);
 }
 
-float TLPC::get_demand_at_price(int type, float price) const {
-    if (!cargo_sell_orders.count(type)) return 0;
-    float total = 0;
-    for (const auto& weak_cargo: cargo_sell_orders.at(type)) {
-        auto cargo = weak_cargo.lock();
-        // If there is demand for a higher price or same then consider demand
-        float o_price = cargo->price;
-        if (o_price >= price) {
-            total += cargo->amount;
-        }
-    }
-    return total;
-}
+//TODO: These are probably not be used correctly
 
-std::unordered_map<int, float> TLPC::get_demand_at_different_prices(int type) const {
-    std::unordered_map<int, float> a;
-    ERR_FAIL_COND_V_MSG(!last_month_demand.count(type), a, "AAAAA");
-    return last_month_demand.at(type);
-}
+// float TLPC::get_demand_at_price(int type, float price) const {
+//     if (!cargo_sell_orders.count(type)) return 0;
+//     float total = 0;
+//     for (const auto& weak_cargo: cargo_sell_orders.at(type)) {
+//         auto cargo = weak_cargo.lock();
+//         // If there is demand for a higher price or same then consider demand
+//         float o_price = cargo->price;
+//         if (o_price >= price) {
+//             total += cargo->amount;
+//         }
+//     }
+//     return total;
+// }
+
+// float TLPC::get_supply_at_price(int type, float price) const {
+//     if (!cargo_sell_orders.count(type)) return 0;
+//     float total = 0;
+//     for (const auto& weak_cargo: cargo_sell_orders.at(type)) {
+//         auto cargo = weak_cargo.lock();
+//         // If there is demand for a higher price or same then consider demand
+//         float o_price = cargo->price;
+//         if (o_price >= price) {
+//             total += cargo->amount;
+//         }
+//     }
+//     return total;
+// }
 
 void TLPC::add_town_cargo(TownCargo* new_cargo) {
     int term_id = new_cargo->terminal_id;
@@ -60,7 +70,12 @@ void TLPC::add_town_cargo(TownCargo* new_cargo) {
         std::shared_ptr<TownCargo> ptr = std::shared_ptr<TownCargo>(new_cargo);
         cargo_sell_orders[type].insert(ptr);
         town_cargo_tracker[term_id][type] = ptr;
+        size++;
+        if (size > 1000) {
+            print_line(String::num(size));
+        }
     }
+    
 }
 
 std::shared_ptr<TownCargo> TLPC::get_cargo(int term_id, int type) const {
@@ -104,7 +119,7 @@ ms_it TLPC::delete_town_cargo(ms_it sell_order_it) {
     town_cargo_tracker[term_id].erase(sell_order->type); // Erases from tracker map
     if (town_cargo_tracker[term_id].size() == 0) 
         town_cargo_tracker.erase(term_id); // Erase map for terminal id
-    
+    size--;
     sell_order_it = cargo_sell_orders[sell_order->type].erase(sell_order_it); // Erases from price ordered map
     return sell_order_it; // Returns shifted pointer
 }

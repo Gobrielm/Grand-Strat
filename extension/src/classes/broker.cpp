@@ -227,35 +227,34 @@ void Broker::distribute_cargo() {
 
 void Broker::distribute_type(int type) {
     if (int(get_cargo_amount(type)) == 0) return;
-    std::set<TradeInteraction*, TradeInteractionPtrCompare> brokers_to_sell_to = get_brokers_to_distribute_to(type); // Sorted by highest price
+    std::set<TradeInteraction, TradeInteractionPtrCompare> brokers_to_sell_to = get_brokers_to_distribute_to(type); // Sorted by highest price
 
     int current_amount = get_cargo_amount(type);
     for (auto it = brokers_to_sell_to.begin(); it != brokers_to_sell_to.end(); it++) {
-        TradeInteraction* top = *it;
+        const TradeInteraction& top = (*it);
         if (current_amount > 0) {
-            distribute_type_to_broker(type, top->main_buyer, top->middleman);
+            distribute_type_to_broker(type, top.main_buyer, top.middleman);
         }
-        delete top;
         current_amount = get_cargo_amount(type);
     }
     
 }
 
-std::set<TradeInteraction*, TradeInteractionPtrCompare> Broker::get_brokers_to_distribute_to(int type) {
-    std::set<TradeInteraction*, TradeInteractionPtrCompare> brokers_to_sell_to; // Sorted by highest price
+std::set<TradeInteraction, TradeInteractionPtrCompare> Broker::get_brokers_to_distribute_to(int type) {
+    std::set<TradeInteraction, TradeInteractionPtrCompare> brokers_to_sell_to; // Sorted by highest price
     std::unordered_set<int> s; // Broker locations already looked at
     s.insert(terminal_id);
 
     for (const auto& tile : connected_brokers) {
         Ref<Broker> broker = TerminalMap::get_instance() -> get_broker(tile);
         if (broker.is_null()) continue;
-        add_broker_to_sorted_set(type, s, brokers_to_sell_to, new TradeInteraction(get_price_average(type, broker), broker));
+        add_broker_to_sorted_set(type, s, brokers_to_sell_to, TradeInteraction(get_price_average(type, broker), broker));
     }
     for (const auto& tile: connected_stations) {
         Ref<RoadDepot> road_depot = TerminalMap::get_instance() -> get_terminal_as<RoadDepot>(tile);
         if (road_depot.is_null()) continue;
         for (auto& broker: road_depot->get_available_brokers(type)) {
-            add_broker_to_sorted_set(type, s, brokers_to_sell_to, new TradeInteraction(get_price_average(type, broker), broker));
+            add_broker_to_sorted_set(type, s, brokers_to_sell_to, TradeInteraction(get_price_average(type, broker), broker));
         }
     }
     return brokers_to_sell_to;
@@ -265,13 +264,12 @@ float Broker::get_price_average(int type, Ref<Broker> other) const {
     return (get_local_price(type) + other->get_local_price(type)) / 2.0;
 }
 
-void Broker::add_broker_to_sorted_set(int type, std::unordered_set<int> &s, std::set<TradeInteraction*, TradeInteractionPtrCompare> &trade_interactions, TradeInteraction* trade_interaction) {
-    Ref<Broker> broker = trade_interaction->main_buyer;
-    if (!s.count(broker->get_terminal_id()) && broker->get_desired_cargo(type, trade_interaction->price) > 0) {
+void Broker::add_broker_to_sorted_set(int type, std::unordered_set<int> &s, std::set<TradeInteraction, TradeInteractionPtrCompare> &trade_interactions, const TradeInteraction& trade_interaction) {
+    Ref<Broker> broker = trade_interaction.main_buyer;
+    
+    if (!s.count(broker->get_terminal_id()) && broker->is_price_acceptable(type, trade_interaction.price)) {
         trade_interactions.insert(trade_interaction);
         s.insert(broker->get_terminal_id());
-    } else {
-        delete trade_interaction;
     }
 }
 
@@ -297,50 +295,57 @@ void Broker::distribute_type_to_broker(int type, Ref<Broker> otherBroker, Ref<Ro
     }
 }
 
-void Broker::survey_broad_market(int type) { // Doesn't include towns since they add demand seperately
-    std::unordered_set<int> survey_terms;
+std::unordered_set<int> Broker::get_broker_ids_in_local_market() const {
     auto terminal_map = TerminalMap::get_instance();
-    survey_terms.insert(get_terminal_id());
-    
+    std::unordered_set<int> broker_ids;
     for (const auto& tile : connected_brokers) {
-        Ref<Broker> broker = TerminalMap::get_instance() -> get_broker(tile);
-        if (broker.is_null() && !(terminal_map -> is_town(tile))) continue;
-        survey_terms.insert(broker->get_terminal_id());
-        survey_broker_market(type, broker);
+        Ref<Broker> broker = terminal_map -> get_broker(tile);
+        if (broker.is_null() && broker->get_terminal_id() != get_terminal_id()) continue;
+        broker_ids.insert(broker->get_terminal_id());
     }
+
+    return broker_ids;
+}
+
+void Broker::add_monthly_demand_across_broad_market() {
+    ERR_FAIL_MSG("DEAFULT IMPLEMENTATION");
+}
+
+void Broker::survey_broker_market(int type, int broker_id) { // Runs every month
+    Ref<Broker> broker = TerminalMap::get_instance()->get_terminal_as<Broker>(broker_id);
+    if (broker.is_null() || !broker->does_accept(type)) return;
+
+    add_surveyed_demand(type, broker->get_last_month_demand_ten_price_map(type));
+    broker->add_surveyed_supply(type, get_last_month_supply_ten_price_map(type));
+}
+
+std::unordered_set<int> Broker::get_broker_ids_in_broad_market() const {
+    auto terminal_map = TerminalMap::get_instance();
+    std::unordered_set<int> broker_ids = get_broker_ids_in_local_market();
 
     for (const auto& tile: connected_stations) {
         Ref<RoadDepot> road_depot = TerminalMap::get_instance() -> get_terminal_as<RoadDepot>(tile);
         if (road_depot.is_null()) continue;
         
-        std::vector<Ref<Broker>> other_brokers = road_depot->get_available_brokers(type);
-        for (const auto &broker: other_brokers) {
-            Vector2i cell = broker->get_location();
-            int term_id = broker->get_terminal_id();
-            if (!survey_terms.count(term_id) && !(terminal_map -> is_town(cell))) {
-                survey_terms.insert(term_id);
-                survey_broker_market(type, broker);
+        auto other_ids = road_depot->get_broker_ids_in_broad_market();
+        for (const auto &term_id: other_ids) {
+            if (term_id != get_terminal_id()) {
+                broker_ids.insert(term_id);
             }
         }
     }
+
+    return broker_ids;
 }
 
-void Broker::survey_broker_market(int type, Ref<Broker> broker) {
-    if (!broker->does_accept(type)) return;
-        
-    if (Ref<Town>(broker).is_null()) {
-        float local_price = get_local_price(type);
-        float o_local_price = broker->get_local_price(type);
-        add_surveyed_demand(type, o_local_price, broker->get_desired_cargo(type, o_local_price));
-        broker->add_surveyed_supply(type, local_price, get_desired_cargo(type, local_price));
-    } else {
-        auto town = Ref<Town>(broker);
-        auto demand_map = town->get_demand_at_different_prices(type);
-        for (const auto& [ten_price, amount]: demand_map) {
-            add_surveyed_demand(type, ten_price / 10.0f, amount);
-        }
-    }
+std::unordered_map<int, float> Broker::get_last_month_demand_ten_price_map(int type) const {
+    std::scoped_lock lock(m);
+    return local_pricer->get_last_month_demand_ten_price_map(type);
+}
 
+std::unordered_map<int, float> Broker::get_last_month_supply_ten_price_map(int type) const {
+    std::scoped_lock lock(m);
+    return local_pricer->get_last_month_supply_ten_price_map(type);
 }
 
 float Broker::get_diff_between_demand_and_supply(int type) const {
@@ -358,12 +363,34 @@ void Broker::add_surveyed_supply(int type, float price, float amount) {
     local_pricer->add_supply(type, price, amount);
 }
 
+void Broker::add_surveyed_demand(int type, std::unordered_map<int, float> ten_price_map) {
+    std::scoped_lock lock(m);
+    add_surveyed_demand_unsafe(type, ten_price_map);
+}
+
+void Broker::add_surveyed_supply(int type, std::unordered_map<int, float> ten_price_map) {
+    std::scoped_lock lock(m);
+    add_surveyed_supply_unsafe(type, ten_price_map);
+}
+
 void Broker::add_surveyed_demand_unsafe(int type, float price, float amount) {
     local_pricer->add_demand(type, price, amount);
 }
 
 void Broker::add_surveyed_supply_unsafe(int type, float price, float amount) {
     local_pricer->add_supply(type, price, amount);
+}
+
+void Broker::add_surveyed_demand_unsafe(int type, std::unordered_map<int, float> ten_price_map) {
+    for (const auto& [ten_price, amount]: ten_price_map) {
+        add_surveyed_demand_unsafe(type, ten_price / 10.0, amount);
+    }
+}
+
+void Broker::add_surveyed_supply_unsafe(int type, std::unordered_map<int, float> ten_price_map) {
+    for (const auto& [ten_price, amount]: ten_price_map) {
+        add_surveyed_supply_unsafe(type, ten_price / 10.0, amount);
+    }
 }
 
 float Broker::get_diff_between_demand_and_supply_unsafe(int type) const {

@@ -20,6 +20,7 @@ private:
     static const int COST_FOR_UPGRADE;
     static const int DEFAULT_BATCH_SIZE;
 
+    bool is_hiring_tracker = true; // Chosen each month to avoid needless calculations
     float change_in_cash = 0.0;
 
     std::list<int> income_list;
@@ -78,6 +79,7 @@ public:
     int get_primary_type() const;
 
     // Selling
+    void add_monthly_demand_across_broad_market() override;
     void distribute_cargo();
 
     // Level & Upgrades
@@ -91,6 +93,7 @@ public:
     float get_last_month_income() const;
 
     // Employment
+    bool is_hiring() const;
     bool is_hiring(PopTypes pop_type) const;
     bool is_firing() const;
     float get_wage() const;
@@ -111,7 +114,11 @@ public:
         float wage;
         FactoryWageWrapper(Ref<FactoryTemplate> fact = nullptr) {
             internal_fact = fact;
-            wage = internal_fact->get_wage();
+            if (internal_fact != nullptr) {
+                wage = internal_fact->get_wage();
+            } else {
+                wage = 0;
+            }
         }
 
         struct FactoryWageCompare {

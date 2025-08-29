@@ -117,7 +117,7 @@ void TerminalMapThreadPool::month_tick_helper() {
     for (const auto &terminal: terminal_map->get_terminals_for_month_tick()) {
         month_tick_work.push_back(terminal);
     }
-    month_jobs  = month_tick_work.size();
+    month_jobs = month_tick_work.size();
     new_month_work.notify_all();
 }
 
@@ -162,7 +162,12 @@ void TerminalMapThreadPool::month_thread_processor() {
             to_process = month_tick_work.back();
             month_tick_work.pop_back();
         }
+        auto start_time = std::chrono::high_resolution_clock::now();
         to_process->call("month_tick");
+        std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - start_time;
+        if (elapsed.count() > 0.5) {
+            print_line("Terminal Map " + to_process->get_class() + " tick took " + String::num_scientific(elapsed.count()) + " seconds");
+        }
 
         if (--month_jobs == 0) {
             std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - start_time;

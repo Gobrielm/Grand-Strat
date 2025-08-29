@@ -103,7 +103,7 @@ int Town::get_desired_cargo_unsafe(int type, float price) const {
 // Production
 Dictionary Town::get_fulfillment_dict() const {
     Dictionary d;
-    for (int type = 0; type < get_supply().size(); type++) {
+    for (int type = 0; type < CargoInfo::get_instance()->get_number_of_goods(); type++) {
         d[type] = get_fulfillment(type);
     }
     return d;
@@ -245,38 +245,45 @@ std::set<FactoryTemplate::FactoryWageWrapper, FactoryTemplate::FactoryWageWrappe
 }
 
 //Selling to brokers
+void Town::add_monthly_demand_across_broad_market() {
+    auto broker_ids = get_broker_ids_in_local_market();
+    for (int type = 0; type < CargoInfo::get_instance()->get_number_of_goods(); type++) {
+        for (const auto& id: broker_ids) {
+            survey_broker_market(type, id);
+        }
+    }
+}
+
 void Town::distribute_cargo() {
     std::unordered_map<int, float> supply = get_supply();
 	for (const auto& [type, __]: supply) {
-        survey_broad_market(type);
         if (get_local_pricer()->cargo_sell_orders[type].empty()) continue;
 		distribute_type(type);
     }
 }
 
 void Town::distribute_type(int type) {
-    std::set<TradeInteraction*, TradeInteractionPtrCompare> brokers_to_sell_to = get_brokers_to_distribute_to(type); // Sorted by highest price
+    std::set<TradeInteraction, TradeInteractionPtrCompare> brokers_to_sell_to = get_brokers_to_distribute_to(type); // Sorted by highest price
 
     int current_amount = get_cargo_amount(type);
     for (auto it = brokers_to_sell_to.begin(); it != brokers_to_sell_to.end(); it++) {
-        TradeInteraction* top = *it;
+        const TradeInteraction& top = (*it);
         if (current_amount > 0) {
-            distribute_type_to_broker(type, top->main_buyer, top->middleman);
+            distribute_type_to_broker(type, top.main_buyer, top.middleman);
         }
-        delete top;
         current_amount = get_cargo_amount(type);
     }
 }
 
-std::set<TradeInteraction*, TradeInteractionPtrCompare> Town::get_brokers_to_distribute_to(int type) {
-    std::set<TradeInteraction*, TradeInteractionPtrCompare> brokers_to_sell_to; // Sorted by highest price
+std::set<TradeInteraction, TradeInteractionPtrCompare> Town::get_brokers_to_distribute_to(int type) {
+    std::set<TradeInteraction, TradeInteractionPtrCompare> brokers_to_sell_to; // Sorted by highest price
     std::unordered_set<int> s; // Broker locations already looked at
     //Distribute to local factories
     {
         std::scoped_lock lock(internal_factories_mutex);
         for (const auto& [__, fact_vector]: internal_factories) {
             for (Ref<FactoryTemplate> fact: fact_vector) {
-                add_broker_to_sorted_set(type, s, brokers_to_sell_to, new TradeInteraction(get_price_average(type, fact), fact));
+                add_broker_to_sorted_set(type, s, brokers_to_sell_to, TradeInteraction(get_price_average(type, fact), fact));
             }
         }
     }
@@ -287,7 +294,7 @@ std::set<TradeInteraction*, TradeInteractionPtrCompare> Town::get_brokers_to_dis
 	for (const auto tile: connected_brokers) {
         Ref<Broker> broker = TerminalMap::get_instance() -> get_broker(tile);
         if (broker.is_null()) continue;
-        add_broker_to_sorted_set(type, s, brokers_to_sell_to, new TradeInteraction(get_price_average(type, broker), broker));
+        add_broker_to_sorted_set(type, s, brokers_to_sell_to, TradeInteraction(get_price_average(type, broker), broker));
     }
 
     // Distribute using stations to other brokers
@@ -296,7 +303,7 @@ std::set<TradeInteraction*, TradeInteractionPtrCompare> Town::get_brokers_to_dis
         if (road_depot.is_null()) continue;
         std::vector<Ref<Broker>> other_brokers = road_depot->get_available_brokers(type);
         for (auto& broker: other_brokers) {
-            add_broker_to_sorted_set(type, s, brokers_to_sell_to, new TradeInteraction(get_price_average(type, broker), broker, road_depot));
+            add_broker_to_sorted_set(type, s, brokers_to_sell_to, TradeInteraction(get_price_average(type, broker), broker, road_depot));
         }
     }
     return brokers_to_sell_to;
@@ -363,7 +370,6 @@ void Town::distribute_type_to_broker(int type, Ref<Broker> broker, Ref<RoadDepot
     }
     // No locks at this point
     for (TownCargo* cargo: cargo_to_send) {
-
         broker->buy_cargo(cargo); // Broker does work around paying fees and owner
         delete cargo;
     }
@@ -378,7 +384,7 @@ void Town::distribute_type_to_broker(int type, Ref<Broker> broker, Ref<RoadDepot
 
 std::vector<bool> Town::get_accepts_vector() const {
     std::vector<bool> v;
-    int size = get_supply().size();
+    int size = CargoInfo::get_instance()->get_number_of_goods();
     v.resize(size);
     for (int type = 0; type < size; type++) {
         v[type] = does_accept(type);
@@ -457,11 +463,8 @@ void Town::update_buy_orders() {
     
     for (const auto& [type, amount]: map) {
         if (amount == 0) {
-            // remove_order(type);
             remove_accept(type);
         } else {
-            float price = get_local_price(type);
-            // edit_order(type, amount, true, price);
             add_accept(type);
         }
     }
@@ -484,11 +487,6 @@ int Town::get_local_demand(int type) const {
     return get_local_pricer()->get_local_demand(type);
 }
 
-std::unordered_map<int, float> Town::get_demand_at_different_prices(int type) const {
-    std::scoped_lock lock(m);
-    return get_local_pricer() -> get_demand_at_different_prices(type);
-}
-
 // Process Hooks
 void Town::day_tick() {
     distribute_cargo();
@@ -496,6 +494,7 @@ void Town::day_tick() {
 
 void Town::month_tick() {
     update_buy_orders();
+    add_monthly_demand_across_broad_market();
     {
         std::scoped_lock lock(m);
         get_local_pricer() -> update_local_prices();

@@ -36,8 +36,6 @@ class BasePop {
     int months_without_job = 0;
 
     PopTypes pop_type;
-
-
     std::unordered_map<int, float> internal_storage;
     
     protected:
@@ -119,5 +117,8 @@ class BasePop {
 
     BasePop();
     BasePop(int p_home_prov_id, Vector2i p_location, Variant p_culture, PopTypes p_pop_type);
+    BasePop& operator=(const BasePop& from) = delete;
+    BasePop(const BasePop& other) = delete;
+    BasePop(BasePop&&) noexcept = default;
     ~BasePop();
 };

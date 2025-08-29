@@ -146,6 +146,16 @@ std::unordered_map<int, float> LocalPriceController::get_last_month_supply() con
     return toReturn; 
 }
 
+std::unordered_map<int, float> LocalPriceController::get_last_month_demand_ten_price_map(int type) const {
+    if (!last_month_demand.count(type)) return std::unordered_map<int, float>();
+    return last_month_demand.at(type);
+}   
+
+std::unordered_map<int, float> LocalPriceController::get_last_month_supply_ten_price_map(int type) const {
+    if (!last_month_supply.count(type)) return std::unordered_map<int, float>();
+    return last_month_supply.at(type);
+}
+
 Dictionary LocalPriceController::get_last_month_demand_dict() const {
     Dictionary d;
     for (const auto& [type, m]: last_month_demand) {
@@ -177,6 +187,19 @@ float LocalPriceController::get_demand_at_price(int type, float price) const {
         // If there is demand for a higher price or same then consider demand
         float o_price = ten_price / 10.0;
         if (o_price >= price) {
+            total += amount;
+        }
+    }
+    return total;
+}
+
+float LocalPriceController::get_supply_at_price(int type, float price) const {
+    if (!last_month_supply.count(type)) return 0;
+    float total = 0;
+    for (const auto& [ten_price, amount]: last_month_supply.at(type)) {
+        // If there is supply for a lower price or same then consider demand
+        float o_price = ten_price / 10.0;
+        if (o_price <= price) {
             total += amount;
         }
     }

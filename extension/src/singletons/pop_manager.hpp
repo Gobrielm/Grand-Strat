@@ -42,15 +42,13 @@ class PopManager {
     using employ_type = std::unordered_map<PopTypes, std::unordered_map<int, std::set<FactoryTemplate::FactoryWageWrapper, FactoryTemplate::FactoryWageWrapper::FactoryWageCompare>>>;
     employ_type employment_options; // PopType -> Country id -> set of available factories
 
-    void find_employment_for_rural_pop(BasePop* pop);
-    void find_employment_for_town_pop(BasePop* pop);
     void employment_finder_helper(BasePop* pop, PopTypes pop_type);
     void refresh_employment_sorted_by_wage();
     void refresh_rural_employment_sorted_by_wage();
     void refresh_town_employment_sorted_by_wage();
     void refresh_town_employment_sorted_by_wage_helper(int country_id, const Vector2i& tile, employ_type& local_employment_options);
     void add_local_employment_options(employ_type& local_employment_options);
-    Ref<FactoryTemplate> get_first_employment_option(PopTypes pop_type, int country_id) const;
+    FactoryTemplate::FactoryWageWrapper get_first_employment_option(PopTypes pop_type, int country_id) const;
     void remove_first_employment_option(PopTypes pop_type, int country_id, const Ref<FactoryTemplate>& double_check);
 
     public:

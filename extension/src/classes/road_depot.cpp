@@ -50,6 +50,33 @@ void RoadDepot::remove_connected_road_depot(const Vector2i road_depot_tile) {
 }
 
 
+std::unordered_set<int> RoadDepot::get_broker_ids_in_broad_market() {
+    Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
+    std::unordered_set<int> toReturn = get_broker_ids_in_local_market();
+    for (const auto &tile: other_road_depots) {
+        Ref<RoadDepot> road_depot = terminal_map->get_terminal_as<RoadDepot>(tile);
+        if (road_depot.is_valid()) {
+            for (int id: road_depot->get_broker_ids_in_local_market()) {
+                toReturn.insert(id);
+            }
+        }
+    }
+
+    return toReturn;
+}
+
+std::unordered_set<int> RoadDepot::get_broker_ids_in_local_market() const {
+    auto terminal_map = TerminalMap::get_instance();
+    std::unordered_set<int> broker_ids;
+    for (const auto& tile : connected_brokers) {
+        Ref<Broker> broker = terminal_map -> get_broker(tile);
+        if (broker.is_null()) continue;
+        broker_ids.insert(broker->get_terminal_id());
+    }
+
+    return broker_ids;
+}
+
 std::vector<Ref<Broker>> RoadDepot::get_available_brokers(int type) {
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     std::vector<Ref<Broker>> toReturn = get_available_local_brokers(type);

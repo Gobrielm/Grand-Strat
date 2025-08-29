@@ -42,6 +42,9 @@ public:
     void add_connected_road_depot(const Vector2i road_depot_tile);
     void remove_connected_road_depot(const Vector2i road_depot_tile);
 
+    std::unordered_set<int> get_broker_ids_in_broad_market();
+    std::unordered_set<int> get_broker_ids_in_local_market() const;
+    
     std::vector<Ref<Broker>> get_available_brokers(int type);
     std::vector<Ref<Broker>> get_available_local_brokers(int type);
 

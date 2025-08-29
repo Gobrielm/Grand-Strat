@@ -133,45 +133,32 @@ void PopManager::find_employment_for_pops(std::vector<BasePop*>& pop_group) {
             pop_type = pop->get_type(); // Don't lock since factory will double check if wrong
             if (!pop->is_seeking_employment()) continue;
         }
-
-        if (pop_type == rural) {
-            find_employment_for_rural_pop(pop);
-        } else if (pop_type == town) {
-            find_employment_for_town_pop(pop);
-        }
+        employment_finder_helper(pop, pop_type);
     }
 }
 
 // Currently Pops can move and work anywhere in their country with no penalities
 // Also, simple sorting happens by wage, and doesn't consider 
 
-void PopManager::find_employment_for_rural_pop(BasePop* pop) { 
-    employment_finder_helper(pop, rural);
-}
-
-void PopManager::find_employment_for_town_pop(BasePop* pop) {
-    employment_finder_helper(pop, town);
-}
 
 void PopManager::employment_finder_helper(BasePop* pop, PopTypes pop_type) {
     int country_id = get_pop_country_id(pop);
-    Ref<FactoryTemplate> work = get_first_employment_option(pop_type, country_id);
-    if (work == nullptr) return;
-    while (work != nullptr) {
-        if (!work->is_hiring(pop_type)) { 
-            remove_first_employment_option(pop_type, country_id, work); // Erase from set if not hiring assuming the set only has one pop type allowed
+    auto work = get_first_employment_option(pop_type, country_id);
+    if (work.internal_fact == nullptr) return;
+    while (work.internal_fact != nullptr) {
+        if (!work.internal_fact->is_hiring(pop_type)) { 
+            remove_first_employment_option(pop_type, country_id, work.internal_fact); // Erase from set if not hiring assuming the set only has one pop type allowed
             work = get_first_employment_option(pop_type, country_id); 
             continue;
         }
-        float wage = work->get_wage();
         bool is_acceptable = false;
         {
             auto lock = lock_pop_read(pop->get_pop_id());
-            is_acceptable = pop->is_wage_acceptable(wage);
+            is_acceptable = pop->is_wage_acceptable(work.wage);
         }
 
         if (is_acceptable) {
-            work->employ_pop(pop, *get_lock(pop->get_pop_id()), pop_type);
+            work.internal_fact->employ_pop(pop, *get_lock(pop->get_pop_id()), pop_type);
         }
         break; // Break if found job or not
     }
@@ -244,13 +231,13 @@ void PopManager::add_local_employment_options(employ_type& local_employment_opti
     }
 }
 
-Ref<FactoryTemplate> PopManager::get_first_employment_option(PopTypes pop_type, int country_id) const {
+FactoryTemplate::FactoryWageWrapper PopManager::get_first_employment_option(PopTypes pop_type, int country_id) const {
     std::shared_lock lock(employment_mutex);
     auto itType = employment_options.find(pop_type);
-    if (itType == employment_options.end()) return nullptr;
+    if (itType == employment_options.end()) return FactoryTemplate::FactoryWageWrapper();
     auto itCountry = itType->second.find(country_id);
-    if (itCountry == itType->second.end() || itCountry->second.empty()) return nullptr;
-    return itCountry->second.begin()->internal_fact;
+    if (itCountry == itType->second.end() || itCountry->second.empty()) return FactoryTemplate::FactoryWageWrapper();
+    return *(itCountry->second.begin());
 }
 
 void PopManager::remove_first_employment_option(PopTypes pop_type, int country_id, const Ref<FactoryTemplate>& double_check) {
@@ -306,11 +293,12 @@ void PopManager::set_pop_location(int pop_id, const Vector2i& location) {
 int PopManager::create_pop(Variant culture, const Vector2i& p_location, PopTypes p_pop_type) {
     int home_prov_id = ProvinceManager::get_instance()->get_province_id(p_location);
     auto pop = BasePop(home_prov_id, p_location, culture, p_pop_type);
+    int id = pop.get_pop_id();
     {
         std::unique_lock lock(m);
-        pops.emplace(pop.get_pop_id(), std::move(pop));
+        pops.emplace(id, std::move(pop));
     }
-    return pop.get_pop_id();
+    return id;
 }
 
 void PopManager::pay_pop(int pop_id, float wage) {
@@ -344,7 +332,7 @@ void PopManager::pay_pops(int num_to_pay, double for_each) { // Isn't random
     int total = pops.size();
     while (num_to_pay > 0 && it != pops.end()) {
         if (total % num_to_pay == 0) {
-            BasePop pop = std::move((it)->second);
+            BasePop& pop = (it)->second;
             auto lock = lock_pop_write(it->first);
             pop.add_wealth(for_each);
             num_to_pay--;

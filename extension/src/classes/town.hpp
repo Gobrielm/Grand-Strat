@@ -31,7 +31,7 @@ protected:
     static void _bind_methods();
     
     
-    std::set<TradeInteraction*, TradeInteractionPtrCompare> get_brokers_to_distribute_to(int type) override;
+    std::set<TradeInteraction, TradeInteractionPtrCompare> get_brokers_to_distribute_to(int type) override;
 
 public:
     Town();
@@ -68,6 +68,7 @@ public:
     std::set<FactoryTemplate::FactoryWageWrapper, FactoryTemplate::FactoryWageWrapper::FactoryWageCompare> get_employment_sorted_by_wage(PopTypes pop_type) const;
 
     //Selling to brokers
+    void add_monthly_demand_across_broad_market() override;
     void distribute_cargo() override;
     void distribute_type(int type) override;
     void distribute_type_to_broker(int type, Ref<Broker> broker, Ref<RoadDepot> road_depot = Ref<RoadDepot>(nullptr)) override;
@@ -88,8 +89,6 @@ public:
     float get_diff_between_demand_and_supply_unsafe(int type) const override;
     float get_demand_at_price_unsafe(int type, float price) const override;
     int get_local_demand(int type) const; // TEMP BUT MAYBE NOT
-
-    std::unordered_map<int, float> get_demand_at_different_prices(int type) const;
 
     // Process Hooks
     void day_tick();

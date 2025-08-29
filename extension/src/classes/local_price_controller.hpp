@@ -50,10 +50,14 @@ class LocalPriceController {
     std::unordered_map<int, float> get_last_month_demand() const;
     std::unordered_map<int, float> get_last_month_supply() const;
 
+    std::unordered_map<int, float> get_last_month_demand_ten_price_map(int type) const;
+    std::unordered_map<int, float> get_last_month_supply_ten_price_map(int type) const;
+
     Dictionary get_last_month_demand_dict() const;
     Dictionary get_last_month_supply_dict() const;
 
     virtual float get_demand_at_price(int type, float price) const;
+    virtual float get_supply_at_price(int type, float price) const;
 
     float get_local_price(int type) const;
     static float get_base_price(int type);
