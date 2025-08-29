@@ -43,6 +43,8 @@ class PopManager {
     employ_type employment_options; // PopType -> Country id -> set of available factories
 
     void employment_finder_helper(BasePop* pop, PopTypes pop_type);
+    /// @return Returns whether the pop is employed or not
+    bool employment_for_potential_investor(BasePop* pop, int country_id); 
     void refresh_employment_sorted_by_wage();
     void refresh_rural_employment_sorted_by_wage();
     void refresh_town_employment_sorted_by_wage();

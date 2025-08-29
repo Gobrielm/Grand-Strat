@@ -49,6 +49,7 @@ public:
 
     ProspectorAi();
     ProspectorAi(int p_country_id, int p_owner_id, int p_cargo_type);
+    void employ_pop(int pop_id);
 
     void month_tick() override;
 };

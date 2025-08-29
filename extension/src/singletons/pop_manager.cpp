@@ -3,6 +3,7 @@
 #include "province_manager.hpp"
 #include "../classes/province.hpp"
 #include "../classes/town.hpp"
+#include "../classes/prospector_ai.hpp"
 
 std::shared_ptr<PopManager> PopManager::singleton_instance = nullptr;
 
@@ -143,6 +144,12 @@ void PopManager::find_employment_for_pops(std::vector<BasePop*>& pop_group) {
 
 void PopManager::employment_finder_helper(BasePop* pop, PopTypes pop_type) {
     int country_id = get_pop_country_id(pop);
+    if (pop_type == town && pop->get_wealth() > 5000) {
+        bool was_sucessful = employment_for_potential_investor(pop, country_id);
+        if (was_sucessful) return;
+    }
+
+    
     auto work = get_first_employment_option(pop_type, country_id);
     if (work.internal_fact == nullptr) return;
     while (work.internal_fact != nullptr) {
@@ -162,6 +169,13 @@ void PopManager::employment_finder_helper(BasePop* pop, PopTypes pop_type) {
         }
         break; // Break if found job or not
     }
+}
+
+bool PopManager::employment_for_potential_investor(BasePop* pop, int country_id) {
+    int type = 10; // TODO: get most lucrious type
+    auto ai = ProspectorAi(country_id, -1241251, type);
+    ai.employ_pop(pop->get_pop_id());
+    //TODO: Store ai somewhere
 }
 
 void PopManager::refresh_employment_sorted_by_wage() {

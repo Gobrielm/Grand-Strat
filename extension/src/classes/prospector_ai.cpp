@@ -65,6 +65,10 @@ void ProspectorAi::pay_employees() {
     }
 }
 
+void ProspectorAi::employ_pop(int pop_id) {
+    employees.insert(pop_id);
+}
+
 bool ProspectorAi::does_have_money_for_investment() {
     float profit = get_real_gross_profit(4);
     return profit > 0;
