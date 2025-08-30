@@ -8,6 +8,7 @@
 #include <thread>
 #include <condition_variable>
 #include <functional>
+#include "../singletons/terminal_map.hpp"
 
 /*
     Thread Pool works by running month tick on every given pointer, or any other work function

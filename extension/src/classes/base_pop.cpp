@@ -211,7 +211,7 @@ bool BasePop::is_wage_acceptable(float p_wage) const {
     return p_wage > income;
 }
 
-float BasePop::get_expected_income(std::unordered_map<int, float> current_prices) const { // TODO: For now only care about grain
+float BasePop::get_expected_income(std::unordered_map<int, float> current_prices) const {
     float exp_income = 0;
     for (const auto& [type, amount]: get_base_needs()) {
         exp_income += current_prices.at(type) * amount;

@@ -3,6 +3,7 @@
 #include "recipe_info.hpp"
 #include "province_manager.hpp"
 #include "pop_manager.hpp"
+#include "ai_manager.hpp"
 #include "../classes/terminal.hpp"
 #include "../classes/station.hpp"
 #include "../classes/broker.hpp"
@@ -124,6 +125,7 @@ void TerminalMap::_on_day_tick_timeout() {
 
 void TerminalMap::_on_month_tick_timeout() {
     PopManager::get_instance()->month_tick();
+    AiManager::get_instance()->month_tick();
     thread_pool->month_tick();
 }
 

@@ -30,11 +30,13 @@ class PopManager {
     std::shared_mutex* get_lock(int pop_id) const;
     std::shared_lock<std::shared_mutex> lock_pop_read(int pop_id) const;
     std::unique_lock<std::shared_mutex> lock_pop_write(int pop_id) const;
+    const BasePop* get_pop(int pop_id) const;
     BasePop* get_pop(int pop_id);
     int get_pop_country_id(BasePop* pop) const;
     void month_tick(std::vector<BasePop*>& pop_group);
     void sell_to_pops(std::vector<BasePop*>& pop_group);
     void create_pop_location_to_towns(std::vector<BasePop*>& pop_group, std::unordered_map<Vector2i, Vector2i, godot_helpers::Vector2iHasher>& location_to_nearest_town) const;
+    Vector2i get_town_tile(const BasePop* pop) const;
     void change_pop_unsafe(BasePop* pop);
     void find_employment_for_pops(std::vector<BasePop*>& pop_group);
 
@@ -71,6 +73,7 @@ class PopManager {
     void give_pop_cargo(int pop_id, int type, int amount);
     int get_pop_desired(int pop_id, int type, float price);
     void pay_pops(int num_to_pay, double for_each);
+    float get_expected_wage(int pop_id) const;
 
     //Economy stats
     

@@ -16,8 +16,6 @@ using namespace godot;
 
 class ProspectorAi : public CompanyAi {
     GDCLASS(ProspectorAi, CompanyAi);
-    std::unordered_set<int> employees; // Pop ids
-    std::vector<int> exisiting_buildings; // terminal_ids
     static int constexpr MONTHS_OF_CASH_DATA = 12;
     std::deque<float> past_cash;
     int cargo_type; //Cargo the Company produces
@@ -49,8 +47,9 @@ public:
 
     ProspectorAi();
     ProspectorAi(int p_country_id, int p_owner_id, int p_cargo_type);
-    void employ_pop(int pop_id);
 
     void month_tick() override;
+
+    virtual float get_wage() const;
 };
 

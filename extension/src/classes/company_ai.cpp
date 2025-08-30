@@ -17,6 +17,10 @@ void CompanyAi::month_tick() {
     print_error("Did not implement month tick");
 }
 
+void CompanyAi::employ_pop(int pop_id) {
+    employees.insert(pop_id);
+}
+
 bool CompanyAi::does_have_money_for_investment() {
     print_error("Did not implement does have money");
     return false;
@@ -57,4 +61,8 @@ int CompanyAi::get_cargo_value_of_tile(const Vector2i &tile, int type) const {
 
 int CompanyAi::get_cargo_value_of_tile(const Vector2i &tile, String cargo_name) const {
     return get_cargo_value_of_tile(tile, CargoInfo::get_instance()->get_cargo_type(cargo_name));
+}
+
+float CompanyAi::get_wage() const {
+    return 0;
 }

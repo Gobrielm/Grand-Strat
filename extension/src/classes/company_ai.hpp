@@ -2,6 +2,7 @@
 
 #include "ai_base.hpp"
 #include <unordered_map>
+#include <unordered_set>
 #include <godot_cpp/classes/tile_map_layer.hpp>
 
 class RoadMap;
@@ -17,6 +18,8 @@ class CompanyAi : public AiBase {
 protected:
     static void _bind_methods();
 
+    std::unordered_set<int> employees;
+    std::vector<int> exisiting_buildings; // terminal_ids
     virtual bool does_have_money_for_investment();
 
     //Utilities
@@ -34,6 +37,9 @@ public:
     CompanyAi();
     CompanyAi(int p_country_id, int p_owner_id);
 
+    void employ_pop(int pop_id);
+
     virtual void month_tick();
+    virtual float get_wage() const;
 };
 

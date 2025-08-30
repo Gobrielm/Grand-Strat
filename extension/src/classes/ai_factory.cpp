@@ -48,5 +48,5 @@ void AiFactory::AiFactory::day_tick() {
 
 void AiFactory::month_tick() {
     Factory::month_tick();
-    // consider_upgrade();
+    consider_upgrade();
 }

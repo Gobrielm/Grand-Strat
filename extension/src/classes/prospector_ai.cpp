@@ -59,14 +59,22 @@ float ProspectorAi::get_real_gross_profit(int months_to_average) const {
 }
 
 void ProspectorAi::pay_employees() {
-    float to_pay_each = ((past_cash.back() - get_cash()) / past_cash.size()) * 0.9; // Profit over last n months averaged
+    float to_pay_each = get_wage(); // Profit over last n months averaged
     for (int pop_id: employees) {
         PopManager::get_instance()->pay_pop(pop_id, to_pay_each);
     }
 }
 
-void ProspectorAi::employ_pop(int pop_id) {
-    employees.insert(pop_id);
+
+float ProspectorAi::get_wage() const {
+    float income_wage = ((past_cash.back() - get_cash()) / past_cash.size()) * 0.9; // Profit over last n months averaged
+    float total_wage_wanted = 0.0;
+    for (const auto& id: employees) {
+        float exp_wage = PopManager::get_instance()->get_expected_wage(id);
+        total_wage_wanted += exp_wage;
+    }
+    float ave_exp_wage = total_wage_wanted /= employees.size();
+    return std::max(income_wage, ave_exp_wage);
 }
 
 bool ProspectorAi::does_have_money_for_investment() {

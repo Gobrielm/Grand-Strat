@@ -9,7 +9,7 @@ class FactoryTemplate;
 class AiBase : public Object {
     GDCLASS(AiBase, Object);
     int country_id;
-    int owner_id;
+    const int owner_id;
     Vector2i stored_tile;
 
 

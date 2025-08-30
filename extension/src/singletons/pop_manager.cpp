@@ -4,6 +4,7 @@
 #include "../classes/province.hpp"
 #include "../classes/town.hpp"
 #include "../classes/prospector_ai.hpp"
+#include "ai_manager.hpp"
 
 std::shared_ptr<PopManager> PopManager::singleton_instance = nullptr;
 
@@ -55,6 +56,7 @@ void PopManager::month_tick(std::vector<BasePop*>& pop_group) { // Assumes all p
     auto start_time = std::chrono::high_resolution_clock::now();
     int mutex_lock_num = get_pop_mutex_number(pop_group.front()->get_pop_id());
     {
+        // If Pops are never fired or payed, then they will have an inflated wage
         auto lock = lock_pop_write(mutex_lock_num);
         for (auto &pop: pop_group) {
             pop->month_tick();
@@ -115,6 +117,13 @@ void PopManager::create_pop_location_to_towns(std::vector<BasePop*>& pop_group, 
         }
     }
 }
+Vector2i PopManager::get_town_tile(const BasePop* pop) const {
+    auto province_manager = ProvinceManager::get_instance(); // Get closest town and then use town functions to sell to those pops 
+    Vector2i location = pop->get_location(); // Not locking since its not that important for current info
+    auto province = province_manager->get_province(location);
+    Vector2i town_tile = province->get_closest_town_tile_to_pop(location); 
+    return town_tile;
+}
 
 void PopManager::change_pop_unsafe(BasePop * pop) {
     if (pop->will_degrade()) {
@@ -173,9 +182,8 @@ void PopManager::employment_finder_helper(BasePop* pop, PopTypes pop_type) {
 
 bool PopManager::employment_for_potential_investor(BasePop* pop, int country_id) {
     int type = 10; // TODO: get most lucrious type
-    auto ai = ProspectorAi(country_id, -1241251, type);
-    ai.employ_pop(pop->get_pop_id());
-    //TODO: Store ai somewhere
+    auto ai_id = AiManager::get_instance()->create_prospector_ai(country_id, type, pop);
+    return true; // Always succeeds, never fails
 }
 
 void PopManager::refresh_employment_sorted_by_wage() {
@@ -280,6 +288,15 @@ std::unique_lock<std::shared_mutex> PopManager::lock_pop_write(int pop_id) const
     return std::unique_lock(*pop_locks[get_pop_mutex_number(pop_id)]);
 }
 
+const BasePop* PopManager::get_pop(int pop_id) const {
+    std::shared_lock lock(m);
+    auto it = pops.find(pop_id);
+    if (it == pops.end()) {
+        ERR_FAIL_V_MSG(nullptr, "Pop accessed at invalid id.");
+    }
+    return &(it->second);
+}
+
 BasePop* PopManager::get_pop(int pop_id) {
     std::shared_lock lock(m);
     auto it = pops.find(pop_id);
@@ -345,7 +362,7 @@ void PopManager::pay_pops(int num_to_pay, double for_each) { // Isn't random
     auto it = pops.begin();
     int total = pops.size();
     while (num_to_pay > 0 && it != pops.end()) {
-        if (total % num_to_pay == 0) {
+        if ((rand() % (total / num_to_pay)) == 0) {
             BasePop& pop = (it)->second;
             auto lock = lock_pop_write(it->first);
             pop.add_wealth(for_each);
@@ -354,6 +371,15 @@ void PopManager::pay_pops(int num_to_pay, double for_each) { // Isn't random
         total--;
         it++;
     }
+}
+
+float PopManager::get_expected_wage(int pop_id) const {
+    ERR_FAIL_COND_V_MSG(!pops.count(pop_id), 0.0, "Pop of id: " + String::num(pop_id) + " does not exist");
+    auto pop = get_pop(pop_id);
+    auto lock = lock_pop_read(pop_id);
+    auto town = TerminalMap::get_instance()->get_town(get_town_tile(pop));
+    if (town.is_null()) return 0.0;
+    return pops.at(pop_id).get_expected_income(town->get_local_prices_map());
 }
 
 //Economy stats
