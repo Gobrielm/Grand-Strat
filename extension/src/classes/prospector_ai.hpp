@@ -25,17 +25,17 @@ class ProspectorAi : public CompanyAi {
     float get_real_gross_profit(int months_to_average) const;
     void pay_employees();
     bool does_have_money_for_investment() override;
-    void build_building(const Vector2i& town_tile);
     std::shared_ptr<Vector2i> find_town_for_investment();
     bool does_have_building_in_area_already(const Vector2i& center);
+    void build_building(const Vector2i& town_tile);
     std::shared_ptr<Vector2i> find_tile_for_new_building(const Vector2i& town_tile);
     float get_build_score_for_factory(const Vector2i& tile) const;
     
     void build_factory(const Vector2i& factory_tile, const Vector2i& town_tile);
     void connect_factory(const Vector2i& factory_tile, const Vector2i& town_tile);
-    Vector2i* get_best_depot_tile_of_town(const Vector2i& town_tile, const Vector2i& target);
+    std::shared_ptr<Vector2i> get_best_depot_tile_of_town(const Vector2i& town_tile, const Vector2i& target);
     
-    Vector2i* get_best_depot_tile_of_factory(const Vector2i& factory_tile, const Vector2i& target);
+    std::shared_ptr<Vector2i> get_best_depot_tile_of_factory(const Vector2i& factory_tile, const Vector2i& target);
     float get_build_score_for_depot(const Vector2i& tile, const Vector2i& target) const;
 
 protected:

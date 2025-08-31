@@ -9,6 +9,7 @@
 #include "../singletons/province_manager.hpp"
 #include "../singletons/factory_creator.hpp"
 #include "../singletons/recipe_info.hpp"
+#include "../singletons/cargo_info.hpp"
 #include "../singletons/pop_manager.hpp"
 
 
@@ -103,7 +104,7 @@ bool ProspectorAi::does_have_money_for_investment() {
 
 std::shared_ptr<Vector2i> ProspectorAi::find_town_for_investment() {
     float highest_price = 0;
-    std::shared_ptr<Vector2i> best_coords;
+    std::shared_ptr<Vector2i> best_coords = nullptr;
     Ref<ProvinceManager> province_manager = ProvinceManager::get_instance();
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     std::unordered_set<int> prov_ids = province_manager->get_country_provinces(get_country_id());
@@ -128,20 +129,14 @@ std::shared_ptr<Vector2i> ProspectorAi::find_town_for_investment() {
     return best_coords;
 }
 
-void ProspectorAi::build_building(const Vector2i& town_tile) {
-    auto tile_to_build_in = find_tile_for_new_building(town_tile);
-    if (tile_to_build_in == nullptr) return;
-    build_factory(*tile_to_build_in, town_tile);
-}
-
 bool ProspectorAi::does_have_building_in_area_already(const Vector2i& center) { // Will count non-maxed factories and construction sites
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     TileMapLayer* main_map = terminal_map -> get_main_map();
     const int MAX_TILES_OUT = 4;
     std::queue<Vector2i> q;
-    std::unordered_map<Vector2i, int, godot_helpers::Vector2iHasher> m;
+    std::unordered_map<Vector2i, int, godot_helpers::Vector2iHasher> tile_dist_map;
     q.push(center);
-    m[center] = 0;
+    tile_dist_map[center] = 0;
     Vector2i curr;
     while (q.size() != 0) {
         curr = q.front();
@@ -150,11 +145,11 @@ bool ProspectorAi::does_have_building_in_area_already(const Vector2i& center) { 
         Array tiles = main_map->get_surrounding_cells(curr);
         for (int i = 0; i < tiles.size(); i++) {
             Vector2i tile = tiles[i];
-            if (!terminal_map -> is_tile_traversable(tile, true) || !is_tile_owned(tile) || m.count(tile)) continue;
-            if (m[curr] > MAX_TILES_OUT) continue;
+            if (!terminal_map -> is_tile_traversable(tile, true) || !is_tile_owned(tile) || tile_dist_map.count(tile)) continue;
+            if (tile_dist_map[curr] > MAX_TILES_OUT) continue;
 
             q.push(tile);
-            m[tile] = m[curr] + 1;
+            tile_dist_map[tile] = tile_dist_map[curr] + 1;
 
             Ref<FactoryTemplate> factory = terminal_map -> get_terminal_as<FactoryTemplate>(tile);
             if (factory.is_valid() && factory->get_player_owner() == get_owner_id() && factory->get_outputs().count(cargo_type)) {
@@ -172,6 +167,12 @@ bool ProspectorAi::does_have_building_in_area_already(const Vector2i& center) { 
     return false;
 }
 
+void ProspectorAi::build_building(const Vector2i& town_tile) {
+    auto tile_to_build_in = find_tile_for_new_building(town_tile);
+    if (tile_to_build_in == nullptr) return;
+    build_factory(*tile_to_build_in, town_tile);
+}
+
 std::shared_ptr<Vector2i> ProspectorAi::find_tile_for_new_building(const Vector2i& town_tile) {
     float best_weight = -1;
     std::shared_ptr<Vector2i> best_tile = nullptr;
@@ -180,9 +181,9 @@ std::shared_ptr<Vector2i> ProspectorAi::find_tile_for_new_building(const Vector2
     TileMapLayer* main_map = terminal_map -> get_main_map();
     const int MAX_TILES_OUT = 10;
     std::queue<Vector2i> q;
-    std::unordered_map<Vector2i, int, godot_helpers::Vector2iHasher> m;
+    std::unordered_map<Vector2i, int, godot_helpers::Vector2iHasher> tile_dist_map;
     q.push(town_tile);
-    m[town_tile] = 0;
+    tile_dist_map[town_tile] = 0;
     Vector2i curr;
     while (q.size() != 0) {
         curr = q.front();
@@ -191,12 +192,12 @@ std::shared_ptr<Vector2i> ProspectorAi::find_tile_for_new_building(const Vector2
         Array tiles = main_map->get_surrounding_cells(curr);
         for (int i = 0; i < tiles.size(); i++) {
             Vector2i tile = tiles[i];
-            if (!terminal_map -> is_tile_traversable(tile, true) || !is_tile_owned(tile) || m.count(tile)) continue;
-            if (m[curr] > MAX_TILES_OUT) continue;
+            if (!terminal_map -> is_tile_traversable(tile, true) || !is_tile_owned(tile) || tile_dist_map.count(tile)) continue;
+            if (tile_dist_map[curr] > MAX_TILES_OUT) continue;
 
             q.push(tile);
-            m[tile] = m[curr] + 1;
-            if (!terminal_map -> is_tile_available(tile)) continue; //Tile Taken already
+            tile_dist_map[tile] = tile_dist_map[curr] + 1;
+            if (!terminal_map -> is_tile_available(tile) || !is_factory_placement_valid(tile)) continue; //Tile Taken already
 
             float dist = tile.distance_to(town_tile);
             float score = get_build_score_for_factory(tile) + (30 / dist);
@@ -210,7 +211,7 @@ std::shared_ptr<Vector2i> ProspectorAi::find_tile_for_new_building(const Vector2
 }
 
 float ProspectorAi::get_build_score_for_factory(const Vector2i& tile) const {
-    Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
+    auto terminal_map = TerminalMap::get_instance();
     TileMapLayer* main_map = terminal_map -> get_main_map();
     float score = terminal_map->get_cargo_value_of_tile(tile, cargo_type);
     if (score == 0.0) return score; 
@@ -231,7 +232,7 @@ void ProspectorAi::build_factory(const Vector2i& factory_tile, const Vector2i& t
     int terminal_id = FactoryCreator::get_instance()->create_construction_site(factory_tile, get_owner_id());
     add_building(terminal_id);
     Recipe* recipe = RecipeInfo::get_instance()->get_primary_recipe_for_type(cargo_type);
-    if (recipe == nullptr) return;
+    ERR_FAIL_COND_MSG(recipe == nullptr, "Recipe is null for type: " + CargoInfo::get_instance()->get_cargo_name(cargo_type));
     auto construction_site = TerminalMap::get_instance()->get_terminal_as<ConstructionSite>(terminal_id);
     construction_site -> set_recipe(recipe);
     connect_factory(factory_tile, town_tile);
@@ -241,29 +242,26 @@ void ProspectorAi::connect_factory(const Vector2i& factory_tile, const Vector2i&
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     TileMapLayer* main_map = terminal_map -> get_main_map();
 
-    //IF depot exists for factory, no need to connect
-    Array tiles = main_map->get_surrounding_cells(factory_tile);
-    for (int i = 0; i < tiles.size(); i++) {
-        Vector2i tile = tiles[i];
-        if (tile == town_tile) return; //Already adjacent, no need to connect
-        if (terminal_map->is_road_depot(tile)) return; //Potentially check if it actually connects to town
-    }
-    Vector2i* town_depot = get_best_depot_tile_of_town(town_tile, factory_tile);
+    //IF depot exists for factory, or adj to town, no need to connect
+    bool result = is_tile_adjacent(factory_tile, [town_tile] (const Vector2i& tile) { 
+        return tile == town_tile || TerminalMap::get_instance()->is_road_depot(tile); 
+    });
+    if (result) return;
+
+    auto town_depot = get_best_depot_tile_of_town(town_tile, factory_tile);
     if (!town_depot) {
         return;
     }
 
-    Vector2i* fact_depot = get_best_depot_tile_of_factory(factory_tile, town_tile);
+    auto fact_depot = get_best_depot_tile_of_factory(factory_tile, town_tile);
     if (!fact_depot) {
         return;
     }
 
     RoadMap::get_instance() -> bfs_and_connect(*town_depot, *fact_depot);
-    memdelete(town_depot);
-    memdelete(fact_depot);
 }
 
-Vector2i* ProspectorAi::get_best_depot_tile_of_town(const Vector2i& town_tile, const Vector2i& target) { //Will either get the closest depot, or build the closest
+std::shared_ptr<Vector2i> ProspectorAi::get_best_depot_tile_of_town(const Vector2i& town_tile, const Vector2i& target) { //Will either get the closest depot, or build the closest
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     TileMapLayer* main_map = terminal_map -> get_main_map();
     //Placing or finding depot for town
@@ -273,11 +271,13 @@ Vector2i* ProspectorAi::get_best_depot_tile_of_town(const Vector2i& town_tile, c
     Array tiles = main_map->get_surrounding_cells(town_tile);
     for (int i = 0; i < tiles.size(); i++) {
         Vector2i tile = tiles[i];
+        if (!is_tile_owned(tile)) continue;
+
+        if (!terminal_map->is_tile_available(tile) && !terminal_map->is_road_depot(tile)) continue; // If blocked, by non road depot, cant
+
+
         float dist = tile.distance_to(target);
         if (dist < closest || closest == -1) {
-            if (!terminal_map->is_tile_available(tile) && !terminal_map->is_road_depot(tile)) {
-                continue; // Tile taken and isn't taken by road depot
-            }
             if (!town_has_station) { //No station yet
                 closest = dist;
                 best_tile = tile;
@@ -296,10 +296,10 @@ Vector2i* ProspectorAi::get_best_depot_tile_of_town(const Vector2i& town_tile, c
         print_error("No possible depots from town");
         return nullptr;
     }
-    return memnew(Vector2i(best_tile)); //Will return (0, 0) if no depot possible
+    return std::make_shared<Vector2i>(best_tile); //Will return (0, 0) if no depot possible
 }
 
-Vector2i* ProspectorAi::get_best_depot_tile_of_factory(const Vector2i& factory_tile, const Vector2i& target) {
+std::shared_ptr<Vector2i> ProspectorAi::get_best_depot_tile_of_factory(const Vector2i& factory_tile, const Vector2i& target) {
     TileMapLayer* main_map = TerminalMap::get_instance()->get_main_map();
     float best_weight = -1;
     Vector2i best_tile;
@@ -328,7 +328,7 @@ Vector2i* ProspectorAi::get_best_depot_tile_of_factory(const Vector2i& factory_t
     //Check to see if bfs is needed
     if (is_tile_adjacent(best_tile, target)) return nullptr; //Depot is adj to town, no bfs needed
     
-    return memnew(Vector2i(best_tile));
+    return std::make_shared<Vector2i>(best_tile);
 }
 
 float ProspectorAi::get_build_score_for_depot(const Vector2i& tile, const Vector2i& target) const {

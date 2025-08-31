@@ -64,7 +64,7 @@ void InitialBuilder::build_factory_type(int type, Province* province) {
 
             if (cargo_val != 0 && rand() % 3 == 0) {
                 //Need to check if this factory will be cutoff, then check neighboors
-                if (will_any_factory_be_cut_off(tile)) continue;
+                if (!is_factory_placement_valid(tile)) continue;
                 int mult = std::min(rand() % cargo_val, cargo_val);
                 FactoryCreator::get_instance()->create_primary_industry_no_cargo_map_call(type, tile, get_owner_id(), mult);
                 factories_to_place_on_map[tile] = type;
@@ -99,34 +99,6 @@ int InitialBuilder::get_levels_to_build_helper(int type, int demand) const {
     float ouput_quant = recipe->get_outputs()[type];
     int levels_to_build = round((demand) / (ouput_quant * 30));
     return levels_to_build;
-}
-
-bool InitialBuilder::will_any_factory_be_cut_off(const Vector2i &fact_to_place) const {
-    Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
-    Array tiles = terminal_map->get_main_map()->get_surrounding_cells(fact_to_place);
-    int available_tiles = 0; //Cehcks to see if fact to place can place
-    for (int i = 0; i < tiles.size(); i++) {
-        Vector2i tile = tiles[i];
-        Ref<Broker> broker = terminal_map->get_broker(tile);
-        if (broker.is_valid() && will_factory_by_cut_off(tile)) return true; // Checks factories that will be blocked
-        if (terminal_map->is_tile_available(tile)) {
-            available_tiles++;
-        }
-    }
-    return available_tiles == 0;
-}
-
-bool InitialBuilder::will_factory_by_cut_off(const Vector2i &factory_tile) const { // Assuming one free tile will be taken
-    Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
-    Array tiles = terminal_map->get_main_map()->get_surrounding_cells(factory_tile);
-    int free_tiles = 0;
-    for (int i = 0; i < tiles.size(); i++) {
-        Vector2i tile = tiles[i];
-        if (terminal_map->is_tile_available(tile)) {
-            free_tiles++;
-        }
-    }
-    return free_tiles <= 1;
 }
 
 void InitialBuilder::build_t2_factory_in_towns(Province* province) {

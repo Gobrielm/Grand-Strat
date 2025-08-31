@@ -3,6 +3,7 @@
 #include "ai_base.hpp"
 #include <unordered_map>
 #include <unordered_set>
+#include <functional>
 #include <godot_cpp/classes/tile_map_layer.hpp>
 
 class RoadMap;
@@ -31,11 +32,14 @@ protected:
     TileMapLayer* cargo_map;
     //Utility Functions
     bool is_tile_adjacent(const Vector2i &tile, const Vector2i &target) const;
-    bool is_tile_adjacent(const Vector2i &tile, bool(*f)(const Vector2i&)) const;
+    bool is_tile_adjacent(const Vector2i &tile, const std::function<bool(const Vector2i&)>& f) const;
     bool is_tile_adjacent_to_depot(const Vector2i &tile) const;
     Vector2i get_random_adjacent_tile(const Vector2i &center) const;
     int get_cargo_value_of_tile(const Vector2i &tile, int type) const;
     int get_cargo_value_of_tile(const Vector2i &tile, String cargo_name) const;
+
+    bool is_factory_placement_valid(const Vector2i &fact_to_place) const;
+    bool will_factory_by_cut_off(const Vector2i &factory_tile) const;
 
 public:
     CompanyAi();

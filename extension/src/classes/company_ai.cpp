@@ -53,7 +53,7 @@ bool CompanyAi::is_tile_adjacent(const Vector2i &tile, const Vector2i &target) c
     return false;
 }
 
-bool CompanyAi::is_tile_adjacent(const Vector2i &tile, bool(*f)(const Vector2i&)) const {
+bool CompanyAi::is_tile_adjacent(const Vector2i &tile, const std::function<bool(const Vector2i&)>& f) const {
     Array cells = TerminalMap::get_instance()->get_main_map() -> get_surrounding_cells(tile);
     for (int i = 0; i < cells.size(); i++) {
         Vector2i cell = cells[i];
@@ -79,6 +79,34 @@ int CompanyAi::get_cargo_value_of_tile(const Vector2i &tile, int type) const {
 
 int CompanyAi::get_cargo_value_of_tile(const Vector2i &tile, String cargo_name) const {
     return get_cargo_value_of_tile(tile, CargoInfo::get_instance()->get_cargo_type(cargo_name));
+}
+
+bool CompanyAi::is_factory_placement_valid(const Vector2i &fact_to_place) const {
+    Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
+    Array tiles = terminal_map->get_main_map()->get_surrounding_cells(fact_to_place);
+    int available_tiles = 0; //Checks to see if fact to place can place
+    for (int i = 0; i < tiles.size(); i++) {
+        Vector2i tile = tiles[i];
+        Ref<Broker> broker = terminal_map->get_broker(tile);
+        if (broker.is_valid() && will_factory_by_cut_off(tile)) return false; // Checks factories that will be blocked
+        if (terminal_map->is_tile_available(tile)) {
+            available_tiles++;
+        }
+    }
+    return available_tiles > 0;
+}
+
+bool CompanyAi::will_factory_by_cut_off(const Vector2i &factory_tile) const {
+    Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
+    Array tiles = terminal_map->get_main_map()->get_surrounding_cells(factory_tile);
+    int free_tiles = 0;
+    for (int i = 0; i < tiles.size(); i++) {
+        Vector2i tile = tiles[i];
+        if (terminal_map->is_tile_available(tile)) {
+            free_tiles++;
+        }
+    }
+    return free_tiles <= 1;
 }
 
 float CompanyAi::get_wage() const {

@@ -19,8 +19,6 @@ class InitialBuilder : public CompanyAi {
     void build_factory_type(int type, Province* province);
     int get_levels_to_build(int type, Province* province) const;
     int get_levels_to_build_helper(int type, int demand) const;
-    bool will_any_factory_be_cut_off(const Vector2i &fact_to_place) const;
-    bool will_factory_by_cut_off(const Vector2i &factory_tile) const;
     void build_t2_factory_in_towns(Province* province);
     void build_t2_factory_in_town(Ref<Town> town, int output_type);
     void build_and_connect_depots();
