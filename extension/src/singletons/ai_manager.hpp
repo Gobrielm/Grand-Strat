@@ -29,7 +29,9 @@ public:
     static std::shared_ptr<AiManager> get_instance();
 
     /// @return Returns with the owner id of the ai
-    int create_prospector_ai(int p_country_id, int type, BasePop* pop = nullptr);
+    int create_prospector_ai(int p_country_id, int type);
+    /// @return Returns with the owner id of the ai that needs investment, 0 if no ai exists
+    int get_prospector_ai_that_needs_investment(int p_country_id, int type) const;
     void employ_pop(int owner_ai_id, int pop_id);
 
     void month_tick();

@@ -65,7 +65,7 @@ func initialize_game() -> void:
 		recipe.create_set_recipes()
 		rail_placer_obj.init_all_rails()
 		MoneyController.create(multiplayer.get_peers())
-		MoneyController.get_instance().connect("Update_Money_Gui", update_money_label.rpc_id)
+		MoneyController.get_instance().connect("Update_Money_Gui", update_money_label_of_player)
 		on_singleton_creation()
 		#testing = preload("res://Test/testing.gd").new(self)
 		#start_test()
@@ -495,6 +495,14 @@ func get_cash_of_firm(coords: Vector2i) -> int:
 
 func get_money(id: int) -> float:
 	return MoneyController.get_instance().get_money(id)
+
+@rpc("authority", "unreliable", "call_local")
+func update_money_label_of_player(player_id: int, amount: int) -> void:
+	call_deferred("update_money_label_of_player_helper", player_id, amount)
+
+@rpc("authority", "unreliable", "call_local")
+func update_money_label_of_player_helper(player_id: int, amount: int) -> void:
+	update_money_label.rpc_id(player_id, amount)
 
 @rpc("authority", "unreliable", "call_local")
 func update_money_label(amount: int) -> void:

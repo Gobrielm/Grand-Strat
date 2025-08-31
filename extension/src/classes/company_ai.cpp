@@ -4,6 +4,7 @@
 #include "../singletons/money_controller.hpp"
 #include "../singletons/province_manager.hpp"
 #include "../singletons/cargo_info.hpp"
+#include "../singletons/factory_creator.hpp"
 
 void CompanyAi::_bind_methods() {}
 
@@ -18,12 +19,29 @@ void CompanyAi::month_tick() {
 }
 
 void CompanyAi::employ_pop(int pop_id) {
+    std::scoped_lock lock(m);
     employees.insert(pop_id);
+}
+
+std::unordered_set<int> CompanyAi::get_employees() const {
+    std::scoped_lock lock(m);
+    return employees;
+}
+
+void CompanyAi::add_building(int terminal_id) {
+    std::scoped_lock lock(m);
+    exisiting_buildings.push_back(terminal_id);
 }
 
 bool CompanyAi::does_have_money_for_investment() {
     print_error("Did not implement does have money");
     return false;
+}
+
+void CompanyAi::place_depot(const Vector2i& tile) {
+    RoadMap::get_instance()->place_road_depot(tile);
+	int id = FactoryCreator::get_instance()->create_road_depot(tile, get_owner_id());
+    add_building(id);
 }
 
 bool CompanyAi::is_tile_adjacent(const Vector2i &tile, const Vector2i &target) const {

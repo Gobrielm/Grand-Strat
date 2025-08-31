@@ -229,6 +229,10 @@ void BasePop::add_wealth(double amount) {
     income += amount;
 }
 
+void BasePop::add_wealth_no_change_to_income(double amount) {
+    wealth += amount;
+}
+
 bool BasePop::is_starving() const {
     return months_starving != 0;
 }

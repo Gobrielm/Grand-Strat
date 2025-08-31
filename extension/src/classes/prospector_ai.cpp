@@ -22,7 +22,7 @@ ProspectorAi* ProspectorAi::create(int p_country_id, int p_owner_id, int p_cargo
     return memnew(ProspectorAi(p_country_id, p_owner_id, p_cargo_type));
 }
 
-ProspectorAi::ProspectorAi(): CompanyAi() {}
+ProspectorAi::ProspectorAi(): CompanyAi(), cargo_type(-1) {}
 ProspectorAi::ProspectorAi(int p_country_id, int p_owner_id, int p_cargo_type): CompanyAi(p_country_id, p_owner_id), cargo_type(p_cargo_type) {}
 
 void ProspectorAi::month_tick() {
@@ -36,9 +36,13 @@ void ProspectorAi::month_tick() {
 }
 
 void ProspectorAi::record_cash() {
-    if (past_cash.size() == MONTHS_OF_CASH_DATA)
-        past_cash.pop_back();
-    past_cash.push_front(get_cash());
+    float cash = get_cash();
+    {
+        std::scoped_lock lock(m);
+        if (past_cash.size() == MONTHS_OF_CASH_DATA)
+            past_cash.pop_back();
+        past_cash.push_front(cash);
+    }
 }
 
 float ProspectorAi::get_cash() const {
@@ -49,18 +53,23 @@ float ProspectorAi::get_real_gross_profit(int months_to_average) const {
     ERR_FAIL_COND_V_EDMSG(months_to_average <= 0, 0, "Cannot average over a 0 or negitive amount of months");
     float total = 0;
     int i = 1;
-    for (auto it = past_cash.begin(); it != past_cash.end(); it++) {
-        total += (*it);
-        if (++i > months_to_average) {
-            break;
-        }       
+    
+    {
+        std::scoped_lock lock(m);
+        for (auto it = past_cash.begin(); it != past_cash.end(); it++) {
+            total += (*it);
+            if (++i > months_to_average) {
+                break;
+            }       
+        }
     }
+    
     return total / i;
 }
 
 void ProspectorAi::pay_employees() {
     float to_pay_each = get_wage(); // Profit over last n months averaged
-    for (int pop_id: employees) {
+    for (int pop_id: get_employees()) {
         PopManager::get_instance()->pay_pop(pop_id, to_pay_each);
     }
 }
@@ -69,12 +78,22 @@ void ProspectorAi::pay_employees() {
 float ProspectorAi::get_wage() const {
     float income_wage = ((past_cash.back() - get_cash()) / past_cash.size()) * 0.9; // Profit over last n months averaged
     float total_wage_wanted = 0.0;
-    for (const auto& id: employees) {
+    const auto employees_copy = get_employees();
+    for (const auto& id: employees_copy) {
         float exp_wage = PopManager::get_instance()->get_expected_wage(id);
         total_wage_wanted += exp_wage;
     }
-    float ave_exp_wage = total_wage_wanted /= employees.size();
+    float ave_exp_wage = total_wage_wanted /= employees_copy.size();
     return std::max(income_wage, ave_exp_wage);
+}
+
+int ProspectorAi::get_cargo_type() const {
+    return cargo_type;
+}
+
+bool ProspectorAi::needs_investment_from_pops() const {
+    float profit = get_real_gross_profit(4) * 2.0f;
+    return get_cash() < profit; // Less than 2 months of profit
 }
 
 bool ProspectorAi::does_have_money_for_investment() {
@@ -210,7 +229,7 @@ float ProspectorAi::get_build_score_for_factory(const Vector2i& tile) const {
 
 void ProspectorAi::build_factory(const Vector2i& factory_tile, const Vector2i& town_tile) {
     int terminal_id = FactoryCreator::get_instance()->create_construction_site(factory_tile, get_owner_id());
-    exisiting_buildings.push_back(terminal_id);
+    add_building(terminal_id);
     Recipe* recipe = RecipeInfo::get_instance()->get_primary_recipe_for_type(cargo_type);
     if (recipe == nullptr) return;
     auto construction_site = TerminalMap::get_instance()->get_terminal_as<ConstructionSite>(terminal_id);

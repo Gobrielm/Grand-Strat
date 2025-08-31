@@ -55,7 +55,8 @@ void MoneyController::add_money_to_player(int id, float amount) {
     std::scoped_lock lock(m);
     ERR_FAIL_COND_MSG(!money.count(id), "Money entry does not exist for player ID " + String::num_int64(id));
     money[id] += amount;
-    emit_signal("Update_Money_Gui", id, money[id]);
+    if (id > 0) emit_signal("Update_Money_Gui", id, money[id]); // If negitive, then it is ai
+    
 }
 
 void MoneyController::remove_money_from_player(int id, float amount) {

@@ -1,8 +1,5 @@
 #include "ai_base.hpp"
 #include "../singletons/province_manager.hpp"
-#include "../singletons/terminal_map.hpp"
-#include "../singletons/road_map.hpp"
-#include "../singletons/factory_creator.hpp"
 
 using namespace godot;
 
@@ -32,8 +29,3 @@ bool AiBase::is_tile_owned(Vector2i tile) const {
     Ref<ProvinceManager> province_manager = ProvinceManager::get_instance();
     return province_manager -> get_province(province_manager -> get_province_id(tile)) -> get_country_id() == get_country_id();
 }   
-
-void AiBase::place_depot(Vector2i tile) {
-    RoadMap::get_instance()->place_road_depot(tile);
-	FactoryCreator::get_instance()->create_road_depot(tile, get_owner_id());
-}

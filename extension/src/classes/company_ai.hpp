@@ -20,7 +20,11 @@ protected:
 
     std::unordered_set<int> employees;
     std::vector<int> exisiting_buildings; // terminal_ids
+    std::unordered_set<int> get_employees() const;
+    void add_building(int terminal_id);
     virtual bool does_have_money_for_investment();
+
+    void place_depot(const Vector2i& tile);
 
     //Utilities
     RoadMap* road_map;

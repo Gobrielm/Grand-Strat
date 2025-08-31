@@ -5,6 +5,7 @@
 #include "../classes/town.hpp"
 #include "../classes/prospector_ai.hpp"
 #include "ai_manager.hpp"
+#include "money_controller.hpp"
 
 std::shared_ptr<PopManager> PopManager::singleton_instance = nullptr;
 
@@ -30,6 +31,10 @@ PopManager::PopManager() {
 
 PopManager::~PopManager() {
     delete thread_pool;
+    std::scoped_lock sp_pops_lock(m);
+    for (auto& [id, __]: pops) {
+        fire_pop(id);
+    }
 }
 
 std::shared_ptr<PopManager> PopManager::get_instance() {
@@ -153,7 +158,7 @@ void PopManager::find_employment_for_pops(std::vector<BasePop*>& pop_group) {
 
 void PopManager::employment_finder_helper(BasePop* pop, PopTypes pop_type) {
     int country_id = get_pop_country_id(pop);
-    if (pop_type == town && pop->get_wealth() > 5000) {
+    if (pop_type == town && pop->get_wealth() > 5000) { // TODO: Using constant money amount
         bool was_sucessful = employment_for_potential_investor(pop, country_id);
         if (was_sucessful) return;
     }
@@ -180,9 +185,18 @@ void PopManager::employment_finder_helper(BasePop* pop, PopTypes pop_type) {
     }
 }
 
+// TODO: Create invement building so pops can actually work at a real terminal, follows suite to other terminal ids being employement id
 bool PopManager::employment_for_potential_investor(BasePop* pop, int country_id) {
     int type = 10; // TODO: get most lucrious type
-    auto ai_id = AiManager::get_instance()->create_prospector_ai(country_id, type, pop);
+    auto ai_manager = AiManager::get_instance();
+    auto ai_id = ai_manager->get_prospector_ai_that_needs_investment(country_id, type);
+    if (ai_id == 0) { // Was unsuccessful
+        ai_id = ai_manager->create_prospector_ai(country_id, type);
+    }
+
+    float wealth_transfer = pop->transfer_wealth();
+    MoneyController::get_instance()->add_money_to_player(ai_id, wealth_transfer);
+
     return true; // Always succeeds, never fails
 }
 
@@ -357,15 +371,16 @@ int PopManager::get_pop_desired(int pop_id, int type, float price) {
     return get_pop(pop_id)->get_desired(type, price);
 }
 
-void PopManager::pay_pops(int num_to_pay, double for_each) { // Isn't random
+void PopManager::pay_pops(int num_to_pay, double for_each) { // TODO: Add thing so only pays pops in country
     std::shared_lock lock(m);
     auto it = pops.begin();
     int total = pops.size();
     while (num_to_pay > 0 && it != pops.end()) {
-        if ((rand() % (total / num_to_pay)) == 0) {
-            BasePop& pop = (it)->second;
+        BasePop& pop = (it)->second;
+        int mult = pop.get_type() == town ? 50: 1; // Town pops get *50 bonus
+        if ((rand() % int((float(total) / num_to_pay) / mult)) == 0) {
             auto lock = lock_pop_write(it->first);
-            pop.add_wealth(for_each);
+            pop.add_wealth_no_change_to_income(for_each);
             num_to_pay--;
         }
         total--;

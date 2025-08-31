@@ -18,7 +18,7 @@ class ProspectorAi : public CompanyAi {
     GDCLASS(ProspectorAi, CompanyAi);
     static int constexpr MONTHS_OF_CASH_DATA = 12;
     std::deque<float> past_cash;
-    int cargo_type; //Cargo the Company produces
+    const int cargo_type; //Cargo the Company produces
 
     void record_cash();
     float get_cash() const;
@@ -51,5 +51,7 @@ public:
     void month_tick() override;
 
     virtual float get_wage() const;
+    int get_cargo_type() const;
+    bool needs_investment_from_pops() const;
 };
 
