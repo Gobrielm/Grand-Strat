@@ -12,6 +12,7 @@
 #include "../singletons/cargo_info.hpp"
 #include "../singletons/pop_manager.hpp"
 
+// TODO: Something here doesn't check whether something is water or not for some check about provinces
 
 void ProspectorAi::_bind_methods() {
     ClassDB::bind_static_method(get_class_static(), D_METHOD("create", "p_country_id", "p_owner_id", "p_cargo_type"), &ProspectorAi::create);
