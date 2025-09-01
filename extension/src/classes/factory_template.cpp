@@ -458,7 +458,7 @@ void FactoryTemplate::day_tick() {
     ERR_FAIL();
 }
 
-void FactoryTemplate::month_tick() {
+void FactoryTemplate::month_tick() { 
     add_monthly_demand_across_broad_market();
     update_income_array();
     pay_employees();

@@ -34,13 +34,10 @@
 #include "../singletons/user_singletons/country_manager.hpp"
 #include "../singletons/user_singletons/country.hpp"
 
-
-
 using namespace godot;
 
 void initialize_gdextension_types(ModuleInitializationLevel p_level)
 {
-
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
