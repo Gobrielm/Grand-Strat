@@ -27,5 +27,6 @@ void AiBase::set_stored_tile(Vector2i tile) {
 
 bool AiBase::is_tile_owned(Vector2i tile) const {
     Ref<ProvinceManager> province_manager = ProvinceManager::get_instance();
-    return province_manager -> get_province(province_manager -> get_province_id(tile)) -> get_country_id() == get_country_id();
+    auto province = province_manager -> get_province(tile);
+    return province != nullptr && province -> get_country_id() == get_country_id();
 }   

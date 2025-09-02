@@ -55,14 +55,13 @@ void FactoryTemplate::initialize(Vector2i new_location, int player_owner, Recipe
     local_pricer = new LocalPriceController;
 }
 
-void FactoryTemplate::create_construction_materials() {
+void FactoryTemplate::create_construction_materials_unsafe() {
     Ref<CargoInfo> cargo_info = CargoInfo::get_instance();
-    create_construction_material(cargo_info->get_cargo_type("wood"), 100);
+    create_construction_material_unsafe(cargo_info->get_cargo_type("wood"), 100);
 }
 
-void FactoryTemplate::create_construction_material(int type, int amount) {
-    add_accept(type);
-    std::scoped_lock lock(m);
+void FactoryTemplate::create_construction_material_unsafe(int type, int amount) {
+    accepts.insert(type);
 	max_amounts_of_construction_materials[type] = amount;
 	construction_materials[type] = 0;
 }
@@ -71,6 +70,15 @@ Dictionary FactoryTemplate::get_construction_materials() const {
     Dictionary d;
     std::scoped_lock lock(m);
     for (const auto& [key, val]: construction_materials) {
+        d[key] = val;
+    }
+    return d;
+}
+
+Dictionary FactoryTemplate::get_needed_construction_materials() const {
+    Dictionary d;
+    std::scoped_lock lock(m);
+    for (const auto& [key, val]: max_amounts_of_construction_materials) {
         d[key] = val;
     }
     return d;
@@ -285,7 +293,8 @@ bool FactoryTemplate::is_max_level() const {
 
 void FactoryTemplate::upgrade() {
     if (can_factory_upgrade()) {
-        create_construction_materials();
+        std::scoped_lock lock(m);
+        create_construction_materials_unsafe();
     }
 }
 

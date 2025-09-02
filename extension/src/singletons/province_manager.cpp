@@ -163,21 +163,21 @@ int ProvinceManager::get_province_id_unsafe(Vector2i tile) const {
     std::shared_lock lock(province_mutex);
     auto it = tiles_to_province_id.find(tile);
 
-    ERR_FAIL_COND_V_MSG(it == tiles_to_province_id.end(), -1, "Tried to find province with tile: " + tile + " which does not exist");
+    if (it == tiles_to_province_id.end()) return -1;
     return it->second;
 }
 
 Province* ProvinceManager::get_province_godot(int id) const {
     std::shared_lock lock(province_mutex);
     auto it = provinces.find(id);
-    ERR_FAIL_COND_V_MSG(it == provinces.end(), nullptr, "Province of id " + String::num_int64(id) + " is not a valid province id.");
+    if (it == provinces.end()) return nullptr;
     return it->second;
 }
 
 Province* ProvinceManager::get_province(int id) const {
     std::shared_lock lock(province_mutex);
     auto it = provinces.find(id);
-    ERR_FAIL_COND_V_MSG(it == provinces.end(), nullptr, "Province of id " + String::num_int64(id) + " is not a valid province id.");
+    if (it == provinces.end()) return nullptr;
     return it->second;
 }
 
@@ -185,7 +185,7 @@ Province* ProvinceManager::get_province(const Vector2i& tile) const {
     std::shared_lock lock(province_mutex);
     int id = get_province_id_unsafe(tile);
     auto it = provinces.find(id);
-    ERR_FAIL_COND_V_MSG(it == provinces.end(), nullptr, "Province of id " + String::num_int64(id) + " is not a valid province id.");
+    if (it == provinces.end()) return nullptr;
     return it->second;
 }
 

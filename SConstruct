@@ -1,7 +1,5 @@
-#!/usr/bin/env python
 import os
 import sys
-import sysconfig
 
 from methods import print_error
 
@@ -48,16 +46,6 @@ def find_cpp_files(path):
 src_dir = "extension/src"
 env.Append(CPPPATH=[src_dir])
 sources = find_cpp_files(src_dir)
-
-# To Include python for pybind
-python_include = sysconfig.get_paths()["include"]
-python_libpath = sysconfig.get_config_var("LIBDIR")
-python_lib = "python" + sysconfig.get_config_var("VERSION").replace(".", "")
-env.Append(CPPPATH=[python_include])
-env.Append(LIBPATH=[python_libpath])
-env.Append(LIBS=[python_lib])
-env.Append(CPPPATH=["external_libraries/pybind/include"])
-env.Append(CCFLAGS=["/EHsc"])
 
 
 # env.Append(CPPPATH=["src/"])

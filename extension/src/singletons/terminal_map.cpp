@@ -62,6 +62,7 @@ void TerminalMap::_bind_methods() {
     ClassDB::bind_method(D_METHOD("get_cargo_dict", "coords"), &TerminalMap::get_cargo_dict);
     ClassDB::bind_method(D_METHOD("get_construction_site_recipe", "coords"), &TerminalMap::get_construction_site_recipe);
     ClassDB::bind_method(D_METHOD("get_construction_materials", "coords"), &TerminalMap::get_construction_materials);
+    ClassDB::bind_method(D_METHOD("get_needed_construction_materials", "coords"), &TerminalMap::get_needed_construction_materials);
     ClassDB::bind_method(D_METHOD("get_cash_of_firm", "coords"), &TerminalMap::get_cash_of_firm);
     ClassDB::bind_method(D_METHOD("get_local_prices", "coords"), &TerminalMap::get_local_prices);
     ClassDB::bind_method(D_METHOD("get_station_orders", "coords"), &TerminalMap::get_station_orders);
@@ -427,7 +428,6 @@ Dictionary TerminalMap::get_cargo_dict(const Vector2i &coords) {
 
 Array TerminalMap::get_construction_site_recipe(const Vector2i &coords) {
     Array toReturn;
-    Ref<Terminal> temp = get_terminal(coords);
     Ref<ConstructionSite> construction_site = get_terminal_as<ConstructionSite>(coords);
     if (construction_site.is_valid()) {
         toReturn = construction_site->get_recipe();
@@ -439,6 +439,14 @@ Dictionary TerminalMap::get_construction_materials(const Vector2i &coords) {
     Dictionary toReturn;
     if (is_owned_construction_site(coords)) {
         toReturn = get_terminal_as<ConstructionSite>(coords) -> get_construction_materials();
+    }
+    return toReturn;
+}
+
+Dictionary TerminalMap::get_needed_construction_materials(const Vector2i &coords) {
+    Dictionary toReturn;
+    if (is_owned_construction_site(coords)) {
+        toReturn = get_terminal_as<ConstructionSite>(coords) -> get_needed_construction_materials();
     }
     return toReturn;
 }

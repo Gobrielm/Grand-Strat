@@ -32,8 +32,9 @@ void ProspectorAi::month_tick() {
     pay_employees();
     if (does_have_money_for_investment()) {
         std::shared_ptr<Vector2i> town_tile = find_town_for_investment();
-        if (town_tile != nullptr)
+        if (town_tile != nullptr) {
             build_building(*town_tile);
+        }
     }
 }
 
@@ -136,6 +137,7 @@ bool ProspectorAi::does_have_building_in_area_already(const Vector2i& center) { 
     const int MAX_TILES_OUT = 4;
     std::queue<Vector2i> q;
     std::unordered_map<Vector2i, int, godot_helpers::Vector2iHasher> tile_dist_map;
+    int number_of_competitor_construct_sites = 0;
     q.push(center);
     tile_dist_map[center] = 0;
     Vector2i curr;
@@ -152,20 +154,27 @@ bool ProspectorAi::does_have_building_in_area_already(const Vector2i& center) { 
             q.push(tile);
             tile_dist_map[tile] = tile_dist_map[curr] + 1;
 
+            
+
             Ref<FactoryTemplate> factory = terminal_map -> get_terminal_as<FactoryTemplate>(tile);
-            if (factory.is_valid() && factory->get_player_owner() == get_owner_id() && factory->get_outputs().count(cargo_type)) {
+            if (factory.is_valid() && factory->get_outputs().count(cargo_type)) {
                 
-                if (!factory->is_max_level()) {
+                if (!factory->is_max_level() && factory->get_player_owner() == get_owner_id()) {
                     return true;
                 }
                 Ref<ConstructionSite> site = Ref<ConstructionSite>(factory);
                 if (site.is_valid()) {
-                    return true;
+                    if (factory->get_player_owner() == get_owner_id()) {
+                        return true;
+                    } else {
+                        number_of_competitor_construct_sites++;
+                    }
+                    
                 }
             }
         }
     }
-    return false;
+    return number_of_competitor_construct_sites >= 3;
 }
 
 void ProspectorAi::build_building(const Vector2i& town_tile) {
@@ -235,6 +244,7 @@ void ProspectorAi::build_factory(const Vector2i& factory_tile, const Vector2i& t
     Recipe* recipe = RecipeInfo::get_instance()->get_primary_recipe_for_type(cargo_type);
     ERR_FAIL_COND_MSG(recipe == nullptr, "Recipe is null for type: " + CargoInfo::get_instance()->get_cargo_name(cargo_type));
     auto construction_site = TerminalMap::get_instance()->get_terminal_as<ConstructionSite>(terminal_id);
+    print_line("Built building at " + String(factory_tile));
     construction_site -> set_recipe(recipe);
     connect_factory(factory_tile, town_tile);
 }
@@ -245,93 +255,60 @@ void ProspectorAi::connect_factory(const Vector2i& factory_tile, const Vector2i&
 
     //IF depot exists for factory, or adj to town, no need to connect
     bool result = is_tile_adjacent(factory_tile, [town_tile] (const Vector2i& tile) { 
-        return tile == town_tile || TerminalMap::get_instance()->is_road_depot(tile); 
+        return tile == town_tile; 
     });
     if (result) return;
 
-    auto town_depot = get_best_depot_tile_of_town(town_tile, factory_tile);
+    auto town_depot = get_best_depot_tile_or_place_best(town_tile, factory_tile);
     if (!town_depot) {
         return;
     }
 
-    auto fact_depot = get_best_depot_tile_of_factory(factory_tile, town_tile);
+    auto fact_depot = get_best_depot_tile_or_place_best(factory_tile, town_tile);
     if (!fact_depot) {
         return;
     }
 
+    auto depot1 = terminal_map->get_terminal_as<RoadDepot>(*town_depot);
+    if (depot1->is_connected_to_road_depot(*fact_depot)) return; // Chosen depots already connected
+
     RoadMap::get_instance() -> bfs_and_connect(*town_depot, *fact_depot);
 }
 
-std::shared_ptr<Vector2i> ProspectorAi::get_best_depot_tile_of_town(const Vector2i& town_tile, const Vector2i& target) { //Will either get the closest depot, or build the closest
+std::shared_ptr<Vector2i> ProspectorAi::get_best_depot_tile_or_place_best(const Vector2i& center_tile, const Vector2i& target) {
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     TileMapLayer* main_map = terminal_map -> get_main_map();
     //Placing or finding depot for town
-    bool town_has_station = false;
+    bool has_depot = false;
     Vector2i best_tile;
-    float closest = -1; //Prioritizes closest
-    Array tiles = main_map->get_surrounding_cells(town_tile);
+    float closest = 100; //Prioritizes closest
+    Array tiles = main_map->get_surrounding_cells(center_tile);
     for (int i = 0; i < tiles.size(); i++) {
         Vector2i tile = tiles[i];
-        if (!is_tile_owned(tile)) continue;
-
-        if (!terminal_map->is_tile_available(tile) && !terminal_map->is_road_depot(tile)) continue; // If blocked, by non road depot, cant
-
-
+        if (!is_tile_owned(tile) || !terminal_map->is_tile_traversable(tile, true)) continue;
+        
         float dist = tile.distance_to(target);
-        if (dist < closest || closest == -1) {
-            if (!town_has_station) { //No station yet
-                closest = dist;
-                best_tile = tile;
-                town_has_station = terminal_map->is_road_depot(tile);
-            } else if (town_has_station && terminal_map->is_road_depot(tile)) { //If found station that must only replace with only station
+        bool will_replace = (dist < closest || best_tile == Vector2i(0, 0));
+
+        if (terminal_map->is_road_depot(tile)) {
+            if (!has_depot || (has_depot && will_replace)) {
+                has_depot = true;
                 closest = dist;
                 best_tile = tile;
             }
-        }
-    }
-    if (!town_has_station && best_tile != Vector2i(0, 0)) {
-        place_depot(best_tile);
-        //Check if bfs is needed
-        if (is_tile_adjacent(best_tile, target)) return nullptr;
-    } else if (best_tile == Vector2i(0, 0)) {
-        print_error("No possible depots from town");
-        return nullptr;
-    }
-    return std::make_shared<Vector2i>(best_tile); //Will return (0, 0) if no depot possible
-}
-
-std::shared_ptr<Vector2i> ProspectorAi::get_best_depot_tile_of_factory(const Vector2i& factory_tile, const Vector2i& target) {
-    TileMapLayer* main_map = TerminalMap::get_instance()->get_main_map();
-    float best_weight = -1;
-    Vector2i best_tile;
-    //Placing depot for factory
-    Array tiles = main_map->get_surrounding_cells(factory_tile);
-    for (int i = 0; i < tiles.size(); i++) {
-        Vector2i tile = tiles[i];
-        if (!TerminalMap::get_instance()->is_tile_available(tile)) continue;
-        float weight = get_build_score_for_depot(tile, target);
-
-        if ((weight > best_weight) || (best_weight == -1)) {
-            best_weight = weight;
+        } else if (!has_depot && terminal_map->is_tile_available(tile) && will_replace) {
+            closest = dist;
             best_tile = tile;
         }
+    }
+    ERR_FAIL_COND_V_MSG(best_tile == Vector2i(0, 0), nullptr, "No available locations for depot.");
 
-        if (tile == target) return nullptr; //Town depot already borders both
+    if (!has_depot) {
+        place_depot(best_tile);
     }
 
-    if (best_weight == -1) {
-        print_error("No possible depot location's for factory");
-        return nullptr;
-    }
-
-    place_depot(best_tile);
-
-    //Check to see if bfs is needed
-    if (is_tile_adjacent(best_tile, target)) return nullptr; //Depot is adj to town, no bfs needed
-    
-    return std::make_shared<Vector2i>(best_tile);
+    return std::make_shared<Vector2i>(best_tile); //Will return (0, 0) if no depot possible
 }
-
 float ProspectorAi::get_build_score_for_depot(const Vector2i& tile, const Vector2i& target) const {
     TileMapLayer* main_map = TerminalMap::get_instance()->get_main_map();
     float weight = 0;

@@ -44,10 +44,9 @@ func request_recipe(coords: Vector2i) -> void:
 
 @rpc("any_peer", "call_local", "unreliable")
 func request_construction_materials(coords: Vector2i) -> void:
-	var new_needed_materials: Dictionary = TerminalMap.get_instance().get_construction_materials(coords)
-	var new_current_materials: Dictionary = TerminalMap.get_instance().get_cargo_dict(coords)
-	var prices: Dictionary = TerminalMap.get_instance().get_local_prices(coords)
-	set_construction_materials.rpc_id(multiplayer.get_remote_sender_id(), new_current_materials, new_needed_materials, prices)
+	var new_needed_materials: Dictionary = TerminalMap.get_instance().get_needed_construction_materials(coords)
+	var new_current_materials: Dictionary = TerminalMap.get_instance().get_construction_materials(coords)
+	set_construction_materials.rpc_id(multiplayer.get_remote_sender_id(), new_current_materials, new_needed_materials)
 
 @rpc("authority", "call_local", "unreliable")
 func add_recipe(recipe_item: Array) -> void:
@@ -55,24 +54,24 @@ func add_recipe(recipe_item: Array) -> void:
 	current_recipe_textbox.text = get_name_for_recipe(current_recipe[0], current_recipe[1])
 
 @rpc("authority", "call_local", "unreliable")
-func set_construction_materials(new_current_materials: Dictionary, new_needed_materials: Dictionary, prices: Dictionary) -> void:
+func set_construction_materials(new_current_materials: Dictionary, new_needed_materials: Dictionary) -> void:
 	current_materials = new_current_materials
 	needed_materials = new_needed_materials
 	material_list.clear()
 	for type: int in needed_materials:
-		var price: float = Utils.round(prices[type], 2)
-		material_list.add_item(CargoInfo.get_instance().get_cargo_name(type) + " - $" + str(price) + " " + str(current_materials[type]) + "/" + str(needed_materials[type]))
+		material_list.add_item(CargoInfo.get_instance().get_cargo_name(type) + ": "  + str(current_materials[type]) + "/" + str(needed_materials[type]))
 
 func get_name_for_recipe(inputs: Dictionary, outputs: Dictionary) -> String:
 	var toReturn: String = ""
 	for type: int in inputs:
 		toReturn += CargoInfo.get_instance().get_cargo_name(type) + " "
-		toReturn += str(inputs[type]) + "+ "
+		
+		toReturn += str("%.2f" % inputs[type]) + "+ "
 	toReturn = toReturn.left(toReturn.length() - 2)
 	toReturn += " = "
 	for type: int in outputs:
 		toReturn += CargoInfo.get_instance().get_cargo_name(type) + " "
-		toReturn += str(outputs[type]) + "+ "
+		toReturn += str("%.2f" % outputs[type]) + "+ "
 	toReturn = toReturn.left(toReturn.length() - 2)
 	return toReturn
 

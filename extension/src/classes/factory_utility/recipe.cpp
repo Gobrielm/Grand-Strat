@@ -15,9 +15,9 @@ Recipe::Recipe(std::unordered_map<int, float> p_inputs, std::unordered_map<int, 
 }
 
 Recipe::Recipe(const Recipe& other) {
-    inputs = other.get_inputs();
-    outputs = other.get_outputs();
-    pops_needed = other.get_pops_needed();
+    inputs = other.inputs;
+    outputs = other.outputs;
+    pops_needed = other.pops_needed;
     employees = other.employees;
     level = other.level;
 }
@@ -130,7 +130,7 @@ int Recipe::get_level_without_employment() const {
 }
 
 bool Recipe::has_recipe() const {
-    return inputs.size() == 0 && outputs.size() == 0;
+    return inputs.size() != 0 || outputs.size() != 0;
 }
 
 bool Recipe::does_create(int type) const {

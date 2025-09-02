@@ -47,9 +47,10 @@ public:
     virtual void initialize(Vector2i new_location, int player_owner, Recipe* recipe);
 
     //Construction
-    void create_construction_materials();
-    void create_construction_material(int type, int amount);
+    void create_construction_materials_unsafe();
+    void create_construction_material_unsafe(int type, int amount);
     Dictionary get_construction_materials() const;
+    Dictionary get_needed_construction_materials() const;
     bool is_needed_for_construction(int type) const;
     bool is_needed_for_construction_unsafe(int type) const;
     int get_amount_of_type_needed_for_construction_unsafe(int type) const;

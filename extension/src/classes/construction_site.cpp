@@ -10,7 +10,6 @@ void ConstructionSite::_bind_methods() {
 
     ClassDB::bind_method(D_METHOD("has_recipe"), &ConstructionSite::has_recipe);
     ClassDB::bind_method(D_METHOD("destroy_recipe"), &ConstructionSite::destroy_recipe);
-    ClassDB::bind_method(D_METHOD("get_construction_materials"), &ConstructionSite::get_construction_materials);
     
     ADD_SIGNAL(MethodInfo("Done_Building", PropertyInfo(Variant::OBJECT, "site")));
 }
@@ -34,24 +33,28 @@ void ConstructionSite::initialize(Vector2i new_location, int player_owner) {
 
 //Recipe
 void ConstructionSite::set_recipe(Recipe* p_recipe) {
+    std::scoped_lock lock(m);
     recipe = p_recipe;
-	create_construction_materials();
+	create_construction_materials_unsafe();
 }
 
-Array ConstructionSite::get_recipe() const {
-    Dictionary in_d;
-    m.lock();
-    for (const auto& [key, val]: get_inputs()) {
-        in_d[key] = val;
-    }
-    Dictionary out_d;
-    for (const auto& [key, val]: get_outputs()) {
-        out_d[key] = val;
-    }
-    m.unlock();
+Array ConstructionSite::get_recipe() const {    
     Array a;
-    a.push_back(in_d);
-    a.push_back(out_d);
+    if (recipe == nullptr) return Array();
+    {
+        std::scoped_lock lock(m);
+        Dictionary d1;
+        Dictionary d2;
+        for (const auto& [type, amount]: recipe->get_inputs()) {
+            d1[type] = round(amount * 100) / 100;
+        }   
+        for (const auto& [type, amount]: recipe->get_outputs()) {
+            d2[type] = round(amount * 100) / 100;
+        }  
+        
+        a.push_back(d1);
+        a.push_back(d2);
+    }
     return a;
 }
 
@@ -62,7 +65,7 @@ bool ConstructionSite::has_recipe() const {
 
 void ConstructionSite::destroy_recipe() {
     std::scoped_lock lock(m);
-    memdelete(recipe);
+    delete (recipe);
     recipe = nullptr;
 }
 

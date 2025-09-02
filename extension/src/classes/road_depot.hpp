@@ -36,11 +36,15 @@ public:
     RoadDepot(Vector2i new_location, int player_owner);
     virtual ~RoadDepot();
 
+    
+
     void add_connected_broker(Ref<Broker> broker);
     void remove_connected_broker(const Ref<Broker> broker);
 
-    void add_connected_road_depot(const Vector2i road_depot_tile);
-    void remove_connected_road_depot(const Vector2i road_depot_tile);
+    void add_connected_road_depot(const Vector2i& road_depot_tile);
+    void remove_connected_road_depot(const Vector2i& road_depot_tile);
+
+    bool is_connected_to_road_depot(const Vector2i& road_depot_tile) const;
 
     std::unordered_set<int> get_broker_ids_in_broad_market();
     std::unordered_set<int> get_broker_ids_in_local_market() const;

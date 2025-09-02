@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <deque>
+#include <functional>
 #include <memory>
 #include <godot_cpp/classes/tile_map_layer.hpp>
 
@@ -11,6 +12,13 @@ class RoadMap;
 class TerminalMap;
 class ProvinceManager;
 class Factory;
+
+enum f_return {
+    survey_next,
+    do_not_survey_next,
+    return_true,
+    return_false,
+};
 
 using namespace godot;
 
@@ -33,9 +41,9 @@ class ProspectorAi : public CompanyAi {
     
     void build_factory(const Vector2i& factory_tile, const Vector2i& town_tile);
     void connect_factory(const Vector2i& factory_tile, const Vector2i& town_tile);
-    std::shared_ptr<Vector2i> get_best_depot_tile_of_town(const Vector2i& town_tile, const Vector2i& target);
+    /// @brief Will place the best depot or find the best depot if available
+    std::shared_ptr<Vector2i> get_best_depot_tile_or_place_best(const Vector2i& center_tile, const Vector2i& target);
     
-    std::shared_ptr<Vector2i> get_best_depot_tile_of_factory(const Vector2i& factory_tile, const Vector2i& target);
     float get_build_score_for_depot(const Vector2i& tile, const Vector2i& target) const;
 
 protected:
