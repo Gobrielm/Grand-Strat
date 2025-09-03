@@ -37,6 +37,7 @@ protected:
     Vector2i get_random_adjacent_tile(const Vector2i &center) const;
     int get_cargo_value_of_tile(const Vector2i &tile, int type) const;
     int get_cargo_value_of_tile(const Vector2i &tile, String cargo_name) const;
+    std::vector<int> get_existing_buildings() const;
 
     bool is_factory_placement_valid(const Vector2i &fact_to_place) const;
     bool will_factory_by_cut_off(const Vector2i &factory_tile) const;

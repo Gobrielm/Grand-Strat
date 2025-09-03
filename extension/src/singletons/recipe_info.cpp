@@ -32,36 +32,36 @@ RecipeInfo* RecipeInfo::get_instance() {
 }
 
 void RecipeInfo::add_recipes() {
-    create_recipe({{}, {{"clay", 1.0f}}}, {{rural, 1}});
-    create_recipe({{}, {{"sand", 1.0f}}}, {{rural, 1}});
-    create_recipe({{}, {{"sulfur", 1.0f}}}, {{rural, 1}});
-    create_recipe({{}, {{"lead", 1.0f}}}, {{rural, 1}});
-    create_recipe({{}, {{"iron", 1.0f}}}, {{rural, 1}});
-    create_recipe({{}, {{"coal", 1.0f}}}, {{rural, 1}});
-    create_recipe({{}, {{"copper", 1.0f}}}, {{rural, 1}});
-    create_recipe({{}, {{"zinc", 1.0f}}}, {{rural, 1}});
+    create_recipe({{}, {{"clay", 0.05f}}}, {{rural, 2}});
+    create_recipe({{}, {{"sand", 0.05f}}}, {{rural, 2}});
+    create_recipe({{}, {{"sulfur", 0.05f}}}, {{rural, 2}});
+    create_recipe({{}, {{"lead", 0.05f}}}, {{rural, 2}});
+    create_recipe({{}, {{"iron", 0.05f}}}, {{rural, 2}});
+    create_recipe({{}, {{"coal", 0.05f}}}, {{rural, 2}});
+    create_recipe({{}, {{"copper", 0.05f}}}, {{rural, 2}});
+    create_recipe({{}, {{"zinc", 0.05f}}}, {{rural, 2}});
     create_recipe({{}, {{"wood", 0.1f}}}, {{rural, 2}});
     create_recipe({{}, {{"salt", 0.05f}}}, {{rural, 2}});
     create_recipe({{}, {{"grain", 0.1f}}}, {{rural, 2}});
-    create_recipe({{}, {{"livestock", 1.0f}}}, {{rural, 1}});
-    create_recipe({{}, {{"fish", 1.0f}}}, {{rural, 1}});
-    create_recipe({{}, {{"fruit", 1.0f}}}, {{rural, 1}});
-    create_recipe({{}, {{"cotton", 1.0f}}}, {{rural, 1}});
-    create_recipe({{}, {{"silk", 1.0f}}}, {{rural, 1}});
-    create_recipe({{}, {{"spices", 1.0f}}}, {{rural, 1}});
-    create_recipe({{}, {{"coffee", 1.0f}}}, {{rural, 1}});
-    create_recipe({{}, {{"tea", 1.0f}}}, {{rural, 1}});
-    create_recipe({{}, {{"tobacco", 1.0f}}}, {{rural, 1}});
-    create_recipe({{}, {{"gold", 1.0f}}}, {{rural, 1}});
+    create_recipe({{}, {{"livestock", 0.1f}}}, {{rural, 2}});
+    create_recipe({{}, {{"fish", 0.1f}}}, {{rural, 2}});
+    create_recipe({{}, {{"fruit", 0.05f}}}, {{rural, 2}});
+    create_recipe({{}, {{"cotton", 0.05f}}}, {{rural, 2}});
+    create_recipe({{}, {{"silk", 0.05f}}}, {{rural, 2}});
+    create_recipe({{}, {{"spices", 0.05f}}}, {{rural, 2}});
+    create_recipe({{}, {{"coffee", 0.05f}}}, {{rural, 2}});
+    create_recipe({{}, {{"tea", 0.05f}}}, {{rural, 2}});
+    create_recipe({{}, {{"tobacco", 0.05f}}}, {{rural, 2}});
+    create_recipe({{}, {{"gold", 0.005f}}}, {{rural, 1}});
 
     // Secondary
-    create_recipe({{{"grain", 5.0f}, {"salt", 2.0f}}, {{"bread", 2.0f}}}, {{town, 1}});
-    create_recipe({{{"cotton", 5.0f}}, {{"clothes", 1.0f}}}, {{town, 1}});
-    create_recipe({{{"wood", 3.0f}}, {{"lumber", 1.0f}}}, {{town, 1}});
-    create_recipe({{{"wood", 2.0f}}, {{"paper", 1.0f}}}, {{town, 1}});
-    create_recipe({{{"lumber", 3.0f}}, {{"furniture", 1.0f}}}, {{town, 1}});
-    create_recipe({{{"lumber", 4.0f}}, {{"wagons", 1.0f}}}, {{town, 1}});
-    create_recipe({{{"lumber", 10.0f}}, {{"boats", 1.0f}}}, {{town, 1}});
+    create_recipe({{{"grain", 1.0f}, {"salt", 0.4f}}, {{"bread", 0.4f}}}, {{town, 2}});
+    create_recipe({{{"cotton", 1.0f}}, {{"clothes", 0.2f}}}, {{town, 2}});
+    create_recipe({{{"wood", 1.0f}}, {{"lumber", 0.3f}}}, {{town, 1}});
+    create_recipe({{{"wood", 1.0f}}, {{"paper", 0.5f}}}, {{town, 1}});
+    create_recipe({{{"lumber", 1.0f}}, {{"furniture", 0.3f}}}, {{town, 2}});
+    create_recipe({{{"lumber", 1.0f}}, {{"wagons", 0.25f}}}, {{town, 2}});
+    create_recipe({{{"lumber", 2.0f}}, {{"boats", 0.2f}}}, {{town, 3}});
 }
 
 
@@ -116,11 +116,21 @@ Recipe* RecipeInfo::get_primary_recipe_for_type_read_only(int output_type) const
     return nullptr;
 }
 
-Recipe* RecipeInfo::get_secondary_recipe_for_type(int output_type) const {
+Recipe* RecipeInfo::get_recipe_for_type(int output_type) const {
     for (int i = 0; i < recipes.size(); i++) {
         Recipe* recipe = recipes[i];
         if (recipe->does_create(output_type)) {
             return new Recipe(*recipe);
+        }
+    }
+    return nullptr;
+}
+
+Recipe* RecipeInfo::get_recipe_for_type_read_only(int output_type) const {
+    for (int i = 0; i < recipes.size(); i++) {
+        Recipe* recipe = recipes[i];
+        if (recipe->does_create(output_type)) {
+            return recipe;
         }
     }
     return nullptr;

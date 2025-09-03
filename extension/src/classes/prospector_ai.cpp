@@ -30,7 +30,7 @@ ProspectorAi::ProspectorAi(int p_country_id, int p_owner_id, int p_cargo_type): 
 void ProspectorAi::month_tick() {
     record_cash();
     pay_employees();
-    if (does_have_money_for_investment()) {
+    if (does_have_money_for_investment() && should_build()) {
         std::shared_ptr<Vector2i> town_tile = find_town_for_investment();
         if (town_tile != nullptr) {
             build_building(*town_tile);
@@ -102,6 +102,18 @@ bool ProspectorAi::needs_investment_from_pops() const {
 bool ProspectorAi::does_have_money_for_investment() {
     float profit = get_real_gross_profit(4);
     return profit > 0;
+}
+
+bool ProspectorAi::should_build() const {
+    auto terminal_map = TerminalMap::get_instance();
+    int count = 0;
+    auto existing_buildings_copy = get_existing_buildings();
+
+    for (const auto& building_id: existing_buildings_copy) {
+        auto fact = terminal_map->get_terminal_as<FactoryTemplate>(building_id);
+        if (fact->is_constructing()) count++;
+    }
+    return (float(count) / existing_buildings_copy.size()) < 0.15; // Isn't building too much
 }
 
 std::shared_ptr<Vector2i> ProspectorAi::find_town_for_investment() {

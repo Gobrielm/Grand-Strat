@@ -1,4 +1,6 @@
 #include "province_manager.hpp"
+#include "terminal_map.hpp"
+#include "../classes/town.hpp"
 #include <godot_cpp/core/class_db.hpp>
 #include <chrono>
 
@@ -224,4 +226,26 @@ std::unordered_set<int> ProvinceManager::get_country_ids() const {
         s.insert(id);
     }
     return s;
+}
+std::unordered_map<int, float> ProvinceManager::get_average_country_prices(int country_id) const {
+    std::unordered_map<int, float> average_prices;
+    auto terminal_map = TerminalMap::get_instance();
+    int town_count = 0;
+    for (const int& province_id: get_country_provinces(country_id)) {
+        Province* province = get_province(province_id);
+        for (const auto& tile: province->get_town_tiles()) {
+            auto town = terminal_map->get_town(tile);
+            if (town.is_null()) continue;
+            town_count++;
+            for (const auto& [type, price]: town->get_local_prices_map()) {
+                average_prices[type];
+                if (town->get_demand(type) != 0) average_prices[type] += price; // If Demand is 0, then don' consider price
+            }
+        }
+    }
+    if (town_count == 0) return average_prices;
+    for (auto& [__, price]: average_prices) {
+        price /= town_count;
+    }
+    return average_prices;
 }

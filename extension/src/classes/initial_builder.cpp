@@ -112,7 +112,7 @@ void InitialBuilder::build_t2_factory_in_towns(Province* province) {
 }
 
 void InitialBuilder::build_t2_factory_in_town(Ref<Town> town, int output_type) {
-    Recipe* recipe = RecipeInfo::get_instance()->get_secondary_recipe_for_type(output_type);
+    Recipe* recipe = RecipeInfo::get_instance()->get_recipe_for_type(output_type);
     ERR_FAIL_COND_MSG(recipe == nullptr, "Recipe is null from type: " + CargoInfo::get_instance()->get_cargo_name(output_type));
     Ref<AiFactory> factory = Ref<AiFactory>(memnew(AiFactory(town->get_location(), 0, recipe)));
     TerminalMap::get_instance()->create_isolated_terminal(factory);

@@ -29,7 +29,9 @@ public:
     void add_recipe(Recipe* recipe);
     Recipe* get_primary_recipe_for_type(int output_type) const;
     Recipe* get_primary_recipe_for_type_read_only(int output_type) const;
-    Recipe* get_secondary_recipe_for_type(int output_type) const;
+    /// @brief Will get the recipe that creates output type
+    Recipe* get_recipe_for_type(int output_type) const;
+    Recipe* get_recipe_for_type_read_only(int output_type) const;
     Recipe* get_recipe(std::unordered_set<std::string> inputs, std::unordered_set<std::string> outputs);
     Recipe* get_recipe(Dictionary inputs, Dictionary outputs);
     bool map_and_dict_match(Dictionary d, std::unordered_map<int, float> m);

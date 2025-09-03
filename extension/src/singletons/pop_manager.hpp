@@ -47,6 +47,9 @@ class PopManager {
     void employment_finder_helper(BasePop* pop, PopTypes pop_type);
     /// @return Returns whether the pop is employed or not
     bool employment_for_potential_investor(BasePop* pop, int country_id); 
+    /// @brief Currently Only takes into account profitabiltiy over entire country
+    int get_cargo_type_to_build(int country_id) const;
+    float get_profit_of_recipe(const Recipe* recipe, const std::unordered_map<int, float>& average_prices) const;
     void refresh_employment_sorted_by_wage();
     void refresh_rural_employment_sorted_by_wage();
     void refresh_town_employment_sorted_by_wage();

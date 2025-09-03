@@ -4,8 +4,11 @@
 #include "../classes/province.hpp"
 #include "../classes/town.hpp"
 #include "../classes/prospector_ai.hpp"
+#include "cargo_info.hpp"
+#include "recipe_info.hpp"
 #include "ai_manager.hpp"
 #include "money_controller.hpp"
+#include <set>
 
 std::shared_ptr<PopManager> PopManager::singleton_instance = nullptr;
 
@@ -42,7 +45,7 @@ std::shared_ptr<PopManager> PopManager::get_instance() {
     return singleton_instance;
 }
 
-int PopManager::thread_month_tick_loader() { // TESTING WITHOUT EMPLOYMENT TO SEE IF PROBLEM
+int PopManager::thread_month_tick_loader() {
     refresh_employment_sorted_by_wage();
     {
         std::scoped_lock sp_pops_lock(m);
@@ -187,17 +190,65 @@ void PopManager::employment_finder_helper(BasePop* pop, PopTypes pop_type) {
 
 // TODO: Create invement building so pops can actually work at a real terminal, follows suite to other terminal ids being employement id
 bool PopManager::employment_for_potential_investor(BasePop* pop, int country_id) {
-    int type = 10; // TODO: get most lucrious type
+    int type = get_cargo_type_to_build(country_id);
+    if (type == -1) return false;
+    print_line(CargoInfo::get_instance()->get_cargo_name(type));
     auto ai_manager = AiManager::get_instance();
     auto ai_id = ai_manager->get_prospector_ai_that_needs_investment(country_id, type);
     if (ai_id == 0) { // Was unsuccessful
         ai_id = ai_manager->create_prospector_ai(country_id, type);
     }
-
-    float wealth_transfer = pop->transfer_wealth();
+    float wealth_transfer = 0;
+    {
+        auto lock = lock_pop_write(pop->get_pop_id());
+        wealth_transfer = pop->transfer_wealth();
+    }
+    ai_manager->employ_pop(ai_id, pop->get_pop_id());
     MoneyController::get_instance()->add_money_to_player(ai_id, wealth_transfer);
 
     return true; // Always succeeds, never fails
+}
+
+int PopManager::get_cargo_type_to_build(int country_id) const { // TODO: Eventually consider access, volitility, price changing, ect
+    std::unordered_map<int, float> average_prices = ProvinceManager::get_instance()->get_average_country_prices(country_id);
+    if (!average_prices.size()) return -1;
+    auto cmp = [](const std::pair<int, float>& p1,
+                  const std::pair<int, float>& p2) {
+        if (p1.second == p2.second) return p1.first < p2.second;
+        return p1.second > p2.second;
+    };
+    std::set<std::pair<int, float>, decltype(cmp)> s(cmp);
+    for (const auto& [type, price]: average_prices) {
+        const auto recipe = RecipeInfo::get_instance()->get_recipe_for_type(type);
+        if (recipe == nullptr) continue;
+        float exp_profit = get_profit_of_recipe(recipe, average_prices);
+        s.insert({type, exp_profit});
+    }
+    std::vector<int> random_selector = {0, 0, 0, 1, 1, 2, 2, 3, 3, 4};
+    int random = std::min(random_selector[rand() % 10], int(s.size() - 1));
+    const auto& pair_profit = *std::next(s.begin(), random);
+    if (pair_profit.second <= 0) {
+        // print_line(String::num_scientific(pair_profit.second));
+        return -1;
+    } // Shows no profit, maybe not
+    return pair_profit.first;
+}
+
+float PopManager::get_profit_of_recipe(const Recipe* recipe, const std::unordered_map<int, float>& average_prices) const {
+    float profit = 0;
+    for (const auto& [type, amount]: recipe->get_inputs()) {
+        profit -= average_prices.at(type) * amount * 30;
+    }
+    for (const auto& [type, amount]: recipe->get_outputs()) {
+        profit += average_prices.at(type) * amount * 30;
+    }
+    for (const auto& [type, amount_of_pops]: recipe->get_pops_needed()) {
+        for (const auto& [type, amount]: BasePop::get_base_needs(type)) {
+            profit -= average_prices.at(type) * amount * amount_of_pops;
+        }
+    }
+
+    return profit;
 }
 
 void PopManager::refresh_employment_sorted_by_wage() {

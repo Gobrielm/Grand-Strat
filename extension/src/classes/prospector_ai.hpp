@@ -33,6 +33,7 @@ class ProspectorAi : public CompanyAi {
     float get_real_gross_profit(int months_to_average) const;
     void pay_employees();
     bool does_have_money_for_investment() override;
+    bool should_build() const;
     std::shared_ptr<Vector2i> find_town_for_investment();
     bool does_have_building_in_area_already(const Vector2i& center);
     void build_building(const Vector2i& town_tile);

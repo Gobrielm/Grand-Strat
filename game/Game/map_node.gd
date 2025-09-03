@@ -74,7 +74,7 @@ func initialize_game() -> void:
 		#Then create pops which needs towns
 		ProvinceManager.get_instance().create_pops()
 		call_deferred("update_map_creation_progress", 100)
-		cargo_map.add_industries_to_towns()
+		cargo_map.add_industries_to_towns() # DEADLOCK HERE
 	enable_nation_picker()
 	call_deferred("sync_creation_thread")
 

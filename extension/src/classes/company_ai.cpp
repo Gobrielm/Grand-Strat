@@ -81,6 +81,11 @@ int CompanyAi::get_cargo_value_of_tile(const Vector2i &tile, String cargo_name) 
     return get_cargo_value_of_tile(tile, CargoInfo::get_instance()->get_cargo_type(cargo_name));
 }
 
+std::vector<int> CompanyAi::get_existing_buildings() const {
+    std::scoped_lock lock(m);
+    return exisiting_buildings;
+}
+
 bool CompanyAi::is_factory_placement_valid(const Vector2i &fact_to_place) const {
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     Array tiles = terminal_map->get_main_map()->get_surrounding_cells(fact_to_place);
