@@ -9,9 +9,17 @@
 void CompanyAi::_bind_methods() {}
 
 CompanyAi::CompanyAi(): AiBase() {}
-CompanyAi::CompanyAi(int p_country_id, int p_owner_id): AiBase(p_country_id, p_owner_id) {
+
+CompanyAi::CompanyAi(int p_country_id, Vector2i tile): AiBase(p_country_id, tile) {
     cargo_map = TerminalMap::get_instance() -> get_cargo_map();
     road_map = RoadMap::get_instance();
+    MoneyController::get_instance()->add_peer(get_owner_id());
+}
+
+CompanyAi::CompanyAi(int p_country_id, int p_owner_id, Vector2i tile): AiBase(p_country_id, p_owner_id, tile) {
+    cargo_map = TerminalMap::get_instance() -> get_cargo_map();
+    road_map = RoadMap::get_instance();
+    MoneyController::get_instance()->add_peer(get_owner_id());
 }
 
 void CompanyAi::month_tick() {
@@ -44,7 +52,7 @@ void CompanyAi::place_depot(const Vector2i& tile) {
     add_building(id);
 }
 
-bool CompanyAi::is_tile_adjacent(const Vector2i &tile, const Vector2i &target) const {
+bool CompanyAi::is_tile_adjacent(const Vector2i &tile, const Vector2i &target) {
     Array cells = TerminalMap::get_instance()->get_main_map() -> get_surrounding_cells(tile);
     for (int i = 0; i < cells.size(); i++) {
         Vector2i cell = cells[i];
@@ -53,7 +61,7 @@ bool CompanyAi::is_tile_adjacent(const Vector2i &tile, const Vector2i &target) c
     return false;
 }
 
-bool CompanyAi::is_tile_adjacent(const Vector2i &tile, const std::function<bool(const Vector2i&)>& f) const {
+bool CompanyAi::is_tile_adjacent(const Vector2i &tile, const std::function<bool(const Vector2i&)>& f) {
     Array cells = TerminalMap::get_instance()->get_main_map() -> get_surrounding_cells(tile);
     for (int i = 0; i < cells.size(); i++) {
         Vector2i cell = cells[i];
@@ -62,7 +70,7 @@ bool CompanyAi::is_tile_adjacent(const Vector2i &tile, const std::function<bool(
     return false;
 }
 
-bool CompanyAi::is_tile_adjacent_to_depot(const Vector2i &tile) const {
+bool CompanyAi::is_tile_adjacent_to_depot(const Vector2i &tile) {
     return is_tile_adjacent(tile, [](const Vector2i &tile){ 
         return TerminalMap::get_instance()->is_road_depot(tile); 
     });

@@ -11,6 +11,7 @@
 #include "base_pop.hpp"
 #include "town_utility/town_cargo.hpp"
 #include "town_utility/pop_order.hpp"
+#include "investment_company.hpp"
 
 class CargoInfo;
 class TownLocalPriceController;
@@ -21,8 +22,9 @@ class Town : public Broker {
     GDCLASS(Town, Broker)
 
 private:
-    std::unordered_map<int, std::vector<Ref<FactoryTemplate>>> internal_factories; //Not thread safe
-    mutable std::mutex internal_factories_mutex;
+    std::unordered_map<int, std::vector<Ref<FactoryTemplate>>> internal_factories; // Owner id -> vector of factories
+    std::unordered_map<int, Ref<CompanyAi>> internal_companies; // Terminal id -> Investment Company
+    mutable std::mutex internal_buildings_mutex;
     std::unordered_set<int> town_pop_ids;
     float INITIAL_CASH = 10000;
 
@@ -57,7 +59,10 @@ public:
     float get_fulfillment(int type) const;
     Dictionary get_fulfillment_dict() const;
     void add_factory(Ref<FactoryTemplate> fact);
+    void add_company(Ref<CompanyAi> company);
     Array get_factories() const;
+    bool has_invesment_company_of_type(int cargo_type) const;
+    Ref<InvestmentCompany> get_first_invesment_company_looking_for_employees(int cargo_type) const;
 
     //Pop stuff
     void add_pop(int pop_id);

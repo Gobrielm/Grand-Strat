@@ -33,10 +33,10 @@ protected:
     static void _bind_methods();
 
 public:
-    static InfastructureAi* create(int p_country_id, int p_owner_id);
+    static InfastructureAi* create(int p_country_id, int p_owner_id, Vector2i tile);
 
     InfastructureAi();
-    InfastructureAi(int p_country_id, int p_owner_id);
+    InfastructureAi(int p_country_id, int p_owner_id, Vector2i tile);
     
     void build_roads();
     void build_road_depot();

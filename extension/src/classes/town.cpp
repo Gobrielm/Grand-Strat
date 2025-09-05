@@ -54,7 +54,7 @@ Ref<Town> Town::create(Vector2i new_location) {
 }
 
 Town::~Town() {
-    std::scoped_lock lock(internal_factories_mutex);
+    std::scoped_lock lock(internal_buildings_mutex);
     internal_factories.clear();
 }
 
@@ -120,21 +120,50 @@ float Town::get_fulfillment(int type) const {
 
 void Town::add_factory(Ref<FactoryTemplate> fact) {
     {
-        std::scoped_lock lock(internal_factories_mutex);
+        std::scoped_lock lock(internal_buildings_mutex);
         internal_factories[fact->get_player_owner()].push_back(fact);
     }
 	fact->add_connected_broker(this);
 }
 
+void Town::add_company(Ref<CompanyAi> company) {
+    {
+        std::scoped_lock lock(internal_buildings_mutex);
+        internal_factories[company->get_player_owner()].push_back(company);
+    }
+}
+
 Array Town::get_factories() const {
     Array a;
-    std::scoped_lock lock(internal_factories_mutex);
+    std::scoped_lock lock(internal_buildings_mutex);
     for (const auto &[__, v]: internal_factories){
         for (Ref<FactoryTemplate> f: v) {
             a.push_back(f);
         }
     }   
     return a;
+}
+
+bool Town::has_invesment_company_of_type(int cargo_type) const {
+    std::scoped_lock lock(internal_buildings_mutex);
+    for (const auto &[__, company]: internal_companies){
+        Ref<InvestmentCompany> investment_company = company;
+        if (investment_company.is_valid() && investment_company->get_cargo_type() == cargo_type) {
+            return true;
+        }
+    }   
+    return false;
+}
+
+Ref<InvestmentCompany> Town::get_first_invesment_company_looking_for_employees(int cargo_type) const {
+    std::scoped_lock lock(internal_buildings_mutex);
+    for (const auto &[__, company]: internal_companies){
+        Ref<InvestmentCompany> investment_company = company;
+        if (investment_company.is_valid() && investment_company->get_cargo_type() == cargo_type && investment_company->is_seeking_investment_from_pops()) {
+            return company;
+        }
+    }   
+    return nullptr;
 }
 
 //Pop stuff
@@ -234,7 +263,7 @@ int Town::get_total_pops() const {
 std::set<FactoryTemplate::FactoryWageWrapper, FactoryTemplate::FactoryWageWrapper::FactoryWageCompare> Town::get_employment_sorted_by_wage(PopTypes pop_type) const {
     std::set<FactoryTemplate::FactoryWageWrapper, FactoryTemplate::FactoryWageWrapper::FactoryWageCompare> s;
 
-    std::scoped_lock lock(internal_factories_mutex);
+    std::scoped_lock lock(internal_buildings_mutex);
     for (const auto &[__, fact_vector]: internal_factories) {
         for (const auto &fact: fact_vector) {
             if (fact->is_hiring(pop_type))
@@ -280,7 +309,7 @@ std::set<TradeInteraction, TradeInteractionPtrCompare> Town::get_brokers_to_dist
     std::unordered_set<int> s; // Broker locations already looked at
     //Distribute to local factories
     {
-        std::scoped_lock lock(internal_factories_mutex);
+        std::scoped_lock lock(internal_buildings_mutex);
         for (const auto& [__, fact_vector]: internal_factories) {
             for (Ref<FactoryTemplate> fact: fact_vector) {
                 add_broker_to_sorted_set(type, s, brokers_to_sell_to, TradeInteraction(get_price_average(type, fact), fact));

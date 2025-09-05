@@ -183,12 +183,45 @@ void TerminalMap::unpause_time() {
 
 //Creators
 void TerminalMap::create_isolated_terminal(Ref<Terminal> p_terminal) {
+    Vector2i tile = p_terminal->get_location();
+    Ref<FactoryTemplate> factory = p_terminal;
+    if (is_town(tile) && factory.is_valid()) {
+        create_isolated_factory_in_town(factory);
+        return;
+    }
+
     int term_id = p_terminal->get_terminal_id();
     {
         std::unique_lock lock(cargo_map_mutex);
         ERR_FAIL_COND_MSG(terminal_id_to_terminal.count(term_id), "Tried to create terminal where terminal exists with id " + String::num_int64(term_id));
         terminal_id_to_terminal[term_id] = p_terminal;
     }
+}
+
+void TerminalMap::create_isolated_factory_in_town(Ref<FactoryTemplate> p_factory) {
+    int term_id = p_factory->get_terminal_id();
+    {
+        std::unique_lock lock(cargo_map_mutex);
+        ERR_FAIL_COND_MSG(terminal_id_to_terminal.count(term_id), "Tried to create terminal where terminal exists with id " + String::num_int64(term_id));
+        terminal_id_to_terminal[term_id] = p_factory;
+    }
+    Vector2i tile = p_factory->get_location();
+    Ref<Town> town = get_town(tile);
+    ERR_FAIL_COND_MSG(town.is_null(), "Adding isolated terminal to invalid town.");
+    town->add_factory(p_factory);
+}
+
+void TerminalMap::create_isolated_company_in_town(Ref<CompanyAi> p_company) {
+    int term_id = p_company->get_terminal_id();
+    {
+        std::unique_lock lock(cargo_map_mutex);
+        ERR_FAIL_COND_MSG(terminal_id_to_terminal.count(term_id), "Tried to create terminal where terminal exists with id " + String::num_int64(term_id));
+        terminal_id_to_terminal[term_id] = p_company;
+    }
+    Vector2i tile = p_company->get_location();
+    Ref<Town> town = get_town(tile);
+    ERR_FAIL_COND_MSG(town.is_null(), "Adding isolated terminal to invalid town.");
+    town->add_company(p_company);
 }
 
 void TerminalMap::create_terminal(Ref<Terminal> p_terminal) {

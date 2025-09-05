@@ -1,5 +1,5 @@
 #include <queue>
-#include "prospector_ai.hpp"
+#include "investment_company.hpp"
 #include "factory_template.hpp"
 #include "factory.hpp"
 #include "town.hpp"
@@ -12,22 +12,30 @@
 #include "../singletons/cargo_info.hpp"
 #include "../singletons/pop_manager.hpp"
 
-// TODO: Something here doesn't check whether something is water or not for some check about provinces
+void InvestmentCompany::_bind_methods() {
+    ClassDB::bind_static_method(get_class_static(), D_METHOD("create", "p_country_id", "tile", "p_cargo_type"), &InvestmentCompany::godot_create);
 
-void ProspectorAi::_bind_methods() {
-    ClassDB::bind_static_method(get_class_static(), D_METHOD("create", "p_country_id", "p_owner_id", "p_cargo_type"), &ProspectorAi::create);
-
-    ClassDB::bind_method(D_METHOD("month_tick"), &ProspectorAi::month_tick);
+    ClassDB::bind_method(D_METHOD("month_tick"), &InvestmentCompany::month_tick);
 }
 
-ProspectorAi* ProspectorAi::create(int p_country_id, int p_owner_id, int p_cargo_type) {
-    return memnew(ProspectorAi(p_country_id, p_owner_id, p_cargo_type));
+Ref<InvestmentCompany> InvestmentCompany::godot_create(int p_country_id, Vector2i tile, int p_cargo_type) {
+    return create(p_country_id, tile, p_cargo_type);
 }
 
-ProspectorAi::ProspectorAi(): CompanyAi(), cargo_type(-1) {}
-ProspectorAi::ProspectorAi(int p_country_id, int p_owner_id, int p_cargo_type): CompanyAi(p_country_id, p_owner_id), cargo_type(p_cargo_type) {}
+Ref<InvestmentCompany> InvestmentCompany::create(int p_country_id, Vector2i tile, int p_cargo_type) {
+    return memnew(InvestmentCompany(p_country_id, tile, p_cargo_type));
+}
 
-void ProspectorAi::month_tick() {
+Ref<InvestmentCompany> InvestmentCompany::create(int p_country_id, int p_owner_id, Vector2i tile, int p_cargo_type) {
+    return memnew(InvestmentCompany(p_country_id, p_owner_id, tile, p_cargo_type));
+}
+
+InvestmentCompany::InvestmentCompany(): CompanyAi(), cargo_type(-1) {}
+InvestmentCompany::InvestmentCompany(int p_country_id, Vector2i tile, int p_cargo_type): CompanyAi(p_country_id, tile), cargo_type(p_cargo_type) {}
+InvestmentCompany::InvestmentCompany(int p_country_id, int p_owner_id, Vector2i tile, int p_cargo_type): CompanyAi(p_country_id, p_owner_id, tile), cargo_type(p_cargo_type) {}
+
+void InvestmentCompany::month_tick() {
+    print_line("AA");
     record_cash();
     pay_employees();
     if (does_have_money_for_investment() && should_build()) {
@@ -38,7 +46,7 @@ void ProspectorAi::month_tick() {
     }
 }
 
-void ProspectorAi::record_cash() {
+void InvestmentCompany::record_cash() {
     float cash = get_cash();
     {
         std::scoped_lock lock(m);
@@ -48,11 +56,7 @@ void ProspectorAi::record_cash() {
     }
 }
 
-float ProspectorAi::get_cash() const {
-    return MoneyController::get_instance()->get_money(get_owner_id());
-}
-
-float ProspectorAi::get_real_gross_profit(int months_to_average) const {
+float InvestmentCompany::get_real_gross_profit(int months_to_average) const {
     ERR_FAIL_COND_V_EDMSG(months_to_average <= 0, 0, "Cannot average over a 0 or negitive amount of months");
     float total = 0;
     int i = 1;
@@ -70,7 +74,7 @@ float ProspectorAi::get_real_gross_profit(int months_to_average) const {
     return total / i;
 }
 
-void ProspectorAi::pay_employees() {
+void InvestmentCompany::pay_employees() {
     float to_pay_each = get_wage(); // Profit over last n months averaged
     for (int pop_id: get_employees()) {
         PopManager::get_instance()->pay_pop(pop_id, to_pay_each);
@@ -78,7 +82,7 @@ void ProspectorAi::pay_employees() {
 }
 
 
-float ProspectorAi::get_wage() const {
+float InvestmentCompany::get_wage() const {
     float income_wage = ((past_cash.back() - get_cash()) / past_cash.size()) * 0.9; // Profit over last n months averaged
     float total_wage_wanted = 0.0;
     const auto employees_copy = get_employees();
@@ -90,21 +94,26 @@ float ProspectorAi::get_wage() const {
     return std::max(income_wage, ave_exp_wage);
 }
 
-int ProspectorAi::get_cargo_type() const {
+int InvestmentCompany::get_cargo_type() const {
     return cargo_type;
 }
 
-bool ProspectorAi::needs_investment_from_pops() const {
+bool InvestmentCompany::is_seeking_investment_from_pops() const {
     float profit = get_real_gross_profit(4) * 2.0f;
-    return get_cash() < profit; // Less than 2 months of profit
+
+    int employees_size = get_employees().size();
+    // Won't hire an excessive amount, still lenient
+    float building_ratio = employees_size != 0 ? float(get_existing_buildings().size() + 2) / employees_size: 10;
+    
+    return get_cash() < profit && building_ratio >= 1; // Less than 2 months of profit
 }
 
-bool ProspectorAi::does_have_money_for_investment() {
+bool InvestmentCompany::does_have_money_for_investment() {
     float profit = get_real_gross_profit(4);
     return profit > 0;
 }
 
-bool ProspectorAi::should_build() const {
+bool InvestmentCompany::should_build() const {
     auto terminal_map = TerminalMap::get_instance();
     int count = 0;
     auto existing_buildings_copy = get_existing_buildings();
@@ -116,7 +125,7 @@ bool ProspectorAi::should_build() const {
     return (float(count) / existing_buildings_copy.size()) < 0.15; // Isn't building too much
 }
 
-std::shared_ptr<Vector2i> ProspectorAi::find_town_for_investment() {
+std::shared_ptr<Vector2i> InvestmentCompany::find_town_for_investment() {
     float highest_price = 0;
     std::shared_ptr<Vector2i> best_coords = nullptr;
     Ref<ProvinceManager> province_manager = ProvinceManager::get_instance();
@@ -143,7 +152,7 @@ std::shared_ptr<Vector2i> ProspectorAi::find_town_for_investment() {
     return best_coords;
 }
 
-bool ProspectorAi::does_have_building_in_area_already(const Vector2i& center) { // Will count non-maxed factories and construction sites
+bool InvestmentCompany::does_have_building_in_area_already(const Vector2i& center) { // Will count non-maxed factories and construction sites
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     TileMapLayer* main_map = terminal_map -> get_main_map();
     const int MAX_TILES_OUT = 4;
@@ -189,13 +198,13 @@ bool ProspectorAi::does_have_building_in_area_already(const Vector2i& center) { 
     return number_of_competitor_construct_sites >= 3;
 }
 
-void ProspectorAi::build_building(const Vector2i& town_tile) {
+void InvestmentCompany::build_building(const Vector2i& town_tile) {
     auto tile_to_build_in = find_tile_for_new_building(town_tile);
     if (tile_to_build_in == nullptr) return;
     build_factory(*tile_to_build_in, town_tile);
 }
 
-std::shared_ptr<Vector2i> ProspectorAi::find_tile_for_new_building(const Vector2i& town_tile) {
+std::shared_ptr<Vector2i> InvestmentCompany::find_tile_for_new_building(const Vector2i& town_tile) {
     float best_weight = -1;
     std::shared_ptr<Vector2i> best_tile = nullptr;
 
@@ -232,7 +241,7 @@ std::shared_ptr<Vector2i> ProspectorAi::find_tile_for_new_building(const Vector2
     return best_tile;
 }
 
-float ProspectorAi::get_build_score_for_factory(const Vector2i& tile) const {
+float InvestmentCompany::get_build_score_for_factory(const Vector2i& tile) const {
     auto terminal_map = TerminalMap::get_instance();
     TileMapLayer* main_map = terminal_map -> get_main_map();
     float score = terminal_map->get_cargo_value_of_tile(tile, cargo_type);
@@ -250,10 +259,19 @@ float ProspectorAi::get_build_score_for_factory(const Vector2i& tile) const {
     return score;
 }
 
-void ProspectorAi::build_factory(const Vector2i& factory_tile, const Vector2i& town_tile) {
-    int terminal_id = FactoryCreator::get_instance()->create_construction_site(factory_tile, get_owner_id());
+void InvestmentCompany::build_factory(const Vector2i& factory_tile, const Vector2i& town_tile) {
+    bool is_in_town = town_tile == factory_tile;
+    int terminal_id = 0;
+    if (is_in_town) {
+        Ref<ConstructionSite> construction_site = memnew(ConstructionSite(factory_tile, get_owner_id()));
+        terminal_id = construction_site->get_terminal_id();
+        TerminalMap::get_instance()->create_isolated_factory_in_town(construction_site);
+    } else {
+        terminal_id = FactoryCreator::get_instance()->create_construction_site(factory_tile, get_owner_id());
+    }
+    
     add_building(terminal_id);
-    Recipe* recipe = RecipeInfo::get_instance()->get_primary_recipe_for_type(cargo_type);
+    Recipe* recipe = RecipeInfo::get_instance()->get_recipe_for_type(cargo_type);
     ERR_FAIL_COND_MSG(recipe == nullptr, "Recipe is null for type: " + CargoInfo::get_instance()->get_cargo_name(cargo_type));
     auto construction_site = TerminalMap::get_instance()->get_terminal_as<ConstructionSite>(terminal_id);
     print_line("Built building at " + String(factory_tile));
@@ -261,12 +279,29 @@ void ProspectorAi::build_factory(const Vector2i& factory_tile, const Vector2i& t
     connect_factory(factory_tile, town_tile);
 }
 
-void ProspectorAi::connect_factory(const Vector2i& factory_tile, const Vector2i& town_tile) {
+void InvestmentCompany::build_factory_instantly(const Vector2i& factory_tile, const Vector2i& town_tile) {
+    Recipe* recipe = RecipeInfo::get_instance()->get_recipe_for_type(cargo_type);
+    ERR_FAIL_COND_MSG(recipe == nullptr, "Recipe is null for type: " + CargoInfo::get_instance()->get_cargo_name(cargo_type));
+    auto terminal_map = TerminalMap::get_instance();
+    bool is_in_town = town_tile == factory_tile;
+    Ref<Factory> factory = memnew(Factory(factory_tile, get_owner_id(), recipe));
+    if (is_in_town) {
+        terminal_map->create_isolated_factory_in_town(factory);
+    } else {
+        terminal_map->encode_factory(factory);
+    }
+
+    add_building(factory->terminal_id);
+    print_line("Built building at " + String(factory_tile));
+    connect_factory(factory_tile, town_tile);
+}
+
+void InvestmentCompany::connect_factory(const Vector2i& factory_tile, const Vector2i& town_tile) {
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     TileMapLayer* main_map = terminal_map -> get_main_map();
 
     //IF depot exists for factory, or adj to town, no need to connect
-    bool result = is_tile_adjacent(factory_tile, [town_tile] (const Vector2i& tile) { 
+    bool result = (factory_tile == town_tile) || is_tile_adjacent(factory_tile, [town_tile] (const Vector2i& tile) { 
         return tile == town_tile; 
     });
     if (result) return;
@@ -287,7 +322,7 @@ void ProspectorAi::connect_factory(const Vector2i& factory_tile, const Vector2i&
     RoadMap::get_instance() -> bfs_and_connect(*town_depot, *fact_depot);
 }
 
-std::shared_ptr<Vector2i> ProspectorAi::get_best_depot_tile_or_place_best(const Vector2i& center_tile, const Vector2i& target) {
+std::shared_ptr<Vector2i> InvestmentCompany::get_best_depot_tile_or_place_best(const Vector2i& center_tile, const Vector2i& target) {
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     TileMapLayer* main_map = terminal_map -> get_main_map();
     //Placing or finding depot for town
@@ -321,7 +356,7 @@ std::shared_ptr<Vector2i> ProspectorAi::get_best_depot_tile_or_place_best(const 
 
     return std::make_shared<Vector2i>(best_tile); //Will return (0, 0) if no depot possible
 }
-float ProspectorAi::get_build_score_for_depot(const Vector2i& tile, const Vector2i& target) const {
+float InvestmentCompany::get_build_score_for_depot(const Vector2i& tile, const Vector2i& target) const {
     TileMapLayer* main_map = TerminalMap::get_instance()->get_main_map();
     float weight = 0;
     Array cells = main_map -> get_surrounding_cells(tile);

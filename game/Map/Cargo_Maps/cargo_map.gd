@@ -66,6 +66,7 @@ func add_industries_to_towns() -> void:
 	for country_id: int in tile_ownership.get_instance().get_country_ids():
 		var other: InitialBuilder = InitialBuilder.create(country_id)
 		other.build_initital_factories()
+		other.free()
 
 func place_random_road_depot(middle: Vector2i) -> Vector2i:
 	var tiles: Array = Utils.world_map.thread_get_surrounding_cells(middle)

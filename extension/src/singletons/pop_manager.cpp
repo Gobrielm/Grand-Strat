@@ -3,10 +3,10 @@
 #include "province_manager.hpp"
 #include "../classes/province.hpp"
 #include "../classes/town.hpp"
-#include "../classes/prospector_ai.hpp"
+#include "../classes/investment_company.hpp"
 #include "cargo_info.hpp"
 #include "recipe_info.hpp"
-#include "ai_manager.hpp"
+#include "terminal_map.hpp"
 #include "money_controller.hpp"
 #include <set>
 
@@ -188,25 +188,35 @@ void PopManager::employment_finder_helper(BasePop* pop, PopTypes pop_type) {
     }
 }
 
-// TODO: Create invement building so pops can actually work at a real terminal, follows suite to other terminal ids being employement id
-bool PopManager::employment_for_potential_investor(BasePop* pop, int country_id) {
-    int type = get_cargo_type_to_build(country_id);
-    if (type == -1) return false;
-    print_line(CargoInfo::get_instance()->get_cargo_name(type));
-    auto ai_manager = AiManager::get_instance();
-    auto ai_id = ai_manager->get_prospector_ai_that_needs_investment(country_id, type);
-    if (ai_id == 0) { // Was unsuccessful
-        ai_id = ai_manager->create_prospector_ai(country_id, type);
+
+bool PopManager::employment_for_potential_investor(BasePop* pop, int country_id) { // TODO: Test Logic
+    int cargo_type = get_cargo_type_to_build(country_id);
+    if (cargo_type == -1) return false;
+    print_line(CargoInfo::get_instance()->get_cargo_name(cargo_type));
+    auto terminal_map = TerminalMap::get_instance();
+    Vector2i town_tile;
+    {
+        auto lock = lock_pop_read(pop->get_pop_id());
+        town_tile = pop->get_location();
     }
+    auto town = terminal_map->get_town(town_tile);
+
+    Ref<InvestmentCompany> company = town->get_first_invesment_company_looking_for_employees(cargo_type);
+
+    if (!company.is_valid()) {
+        company = InvestmentCompany::create(country_id, town_tile, cargo_type);
+        TerminalMap::get_instance()->create_isolated_company_in_town(company);
+    }
+
     float wealth_transfer = 0;
     {
         auto lock = lock_pop_write(pop->get_pop_id());
         wealth_transfer = pop->transfer_wealth();
     }
-    ai_manager->employ_pop(ai_id, pop->get_pop_id());
-    MoneyController::get_instance()->add_money_to_player(ai_id, wealth_transfer);
+    company->employ_pop(pop->get_pop_id());
+    MoneyController::get_instance()->add_money_to_player(company->get_owner_id(), wealth_transfer);
 
-    return true; // Always succeeds, never fails
+    return true;
 }
 
 int PopManager::get_cargo_type_to_build(int country_id) const { // TODO: Eventually consider access, volitility, price changing, ect

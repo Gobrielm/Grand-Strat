@@ -13,6 +13,7 @@
 #include "terminal_map_utility/terminal_map_thread_pool.hpp"
 #include "../utility/vector2i_hash.hpp"
 #include "../classes/construction_site.hpp"
+#include "../classes/company_ai.hpp"
 
 class Terminal;
 class Broker;
@@ -73,7 +74,10 @@ public:
     void unpause_time();
 
     //Creators
+    /// @brief If provided terminal is factory located on town, will parse and call create_isolated_factory_in_town instead.
     void create_isolated_terminal(Ref<Terminal> p_terminal);
+    void create_isolated_factory_in_town(Ref<FactoryTemplate> p_factory);
+    void create_isolated_company_in_town(Ref<CompanyAi> p_company);
     void create_terminal(Ref<Terminal> p_terminal);
     void encode_factory(Ref<Factory> factory, int mult = 1);
     void encode_factory_no_calls_to_cargo_map(Ref<Factory> factory, int mult = 1); // used when calling this a lot to prevent deferred calls from clogging memory

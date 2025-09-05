@@ -30,10 +30,6 @@ protected:
     //Utilities
     RoadMap* road_map;
     TileMapLayer* cargo_map;
-    //Utility Functions
-    bool is_tile_adjacent(const Vector2i &tile, const Vector2i &target) const;
-    bool is_tile_adjacent(const Vector2i &tile, const std::function<bool(const Vector2i&)>& f) const;
-    bool is_tile_adjacent_to_depot(const Vector2i &tile) const;
     Vector2i get_random_adjacent_tile(const Vector2i &center) const;
     int get_cargo_value_of_tile(const Vector2i &tile, int type) const;
     int get_cargo_value_of_tile(const Vector2i &tile, String cargo_name) const;
@@ -44,7 +40,13 @@ protected:
 
 public:
     CompanyAi();
-    CompanyAi(int p_country_id, int p_owner_id);
+    CompanyAi(int p_country_id, Vector2i tile);
+    CompanyAi(int p_country_id, int p_owner_id, Vector2i tile);
+
+    //Utility Functions
+    static bool is_tile_adjacent(const Vector2i &tile, const Vector2i &target);
+    static bool is_tile_adjacent(const Vector2i &tile, const std::function<bool(const Vector2i&)>& f);
+    static bool is_tile_adjacent_to_depot(const Vector2i &tile);
 
     void employ_pop(int pop_id);
 

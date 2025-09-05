@@ -1,6 +1,6 @@
 #include "ai_manager.hpp"
 #include "money_controller.hpp"
-#include "../classes/prospector_ai.hpp"
+#include "../classes/investment_company.hpp"
 #include "../classes/base_pop.hpp"
 
 std::shared_ptr<AiManager> AiManager::singleton_instance = nullptr;
@@ -31,28 +31,6 @@ void AiManager::work_adder_function() {
     for (const auto& [__, ai]: ais) {
         thread_pool->add_work(ai);
     }
-}
-
-int AiManager::create_prospector_ai(int p_country_id, int type) {
-    auto ai = memnew(ProspectorAi(p_country_id, --number_of_ais, type));
-    {
-        std::scoped_lock lock(m);
-        ais[ai->get_owner_id()] = ai;
-    }
-    MoneyController::get_instance()->add_peer(ai->get_owner_id());
-    
-    return ai->get_owner_id();
-}
-
-int AiManager::get_prospector_ai_that_needs_investment(int p_country_id, int type) const {
-    std::scoped_lock lock(m);
-    for (const auto& [id, ai]: ais) {
-        ProspectorAi* prospect_ai = dynamic_cast<ProspectorAi*>(ai);
-        if (prospect_ai != nullptr && prospect_ai->get_cargo_type() == type && prospect_ai->needs_investment_from_pops()) {
-            return id; // Returns first available
-        }
-    }
-    return 0;
 }
 
 void AiManager::employ_pop(int owner_ai_id, int pop_id) {

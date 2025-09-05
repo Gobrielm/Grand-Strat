@@ -17,22 +17,18 @@ void InitialBuilder::_bind_methods() {
     ClassDB::bind_method(D_METHOD("build_initital_factories"), &InitialBuilder::build_initital_factories);
 }
 
-bool InitialBuilder::does_have_money_for_investment() {
-    return true;
-}
-
 InitialBuilder* InitialBuilder::create(int p_country_id) {
     return memnew(InitialBuilder(p_country_id));
 }
 
-InitialBuilder::InitialBuilder(): CompanyAi() {}
-InitialBuilder::InitialBuilder(int p_country_id): CompanyAi(p_country_id, 0) {}
+InitialBuilder::InitialBuilder() {}
+InitialBuilder::InitialBuilder(int p_country_id): country_id(p_country_id), owner_id(0) {}
 
 void InitialBuilder::build_initital_factories() {
     auto start_time = std::chrono::high_resolution_clock::now();
     Ref<ProvinceManager> province_manager = ProvinceManager::get_instance();
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
-    std::unordered_set<int> prov_ids = province_manager->get_country_provinces(get_country_id());
+    std::unordered_set<int> prov_ids = province_manager->get_country_provinces(country_id);
     for (const int &prov_id: prov_ids) {
         Province* province = province_manager->get_province(prov_id);
         if (province->has_town()) {
@@ -49,7 +45,7 @@ void InitialBuilder::build_initital_factories() {
     print_line("Factory Placement took " + String::num_scientific(elapsed.count()) + " seconds");
     Dictionary d = godot_helpers::convert_map_to_dictionary<Vector2i, int, godot_helpers::Vector2iHasher>(factories_to_place_on_map);
     factories_to_place_on_map.clear();
-    cargo_map->call_deferred("place_factories_client_side", d);
+    TerminalMap::get_instance() -> get_cargo_map()->call_deferred("place_factories_client_side", d);
 }
 
 void InitialBuilder::build_factory_type(int type, Province* province) {
@@ -60,13 +56,13 @@ void InitialBuilder::build_factory_type(int type, Province* province) {
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     for (const Vector2i &tile: province->get_town_centered_tiles()) {
         if (TerminalMap::get_instance()->is_tile_available(tile)) {
-            int cargo_val = get_cargo_value_of_tile(tile, type);
+            int cargo_val = terminal_map->get_cargo_value_of_tile(tile, type);
 
             if (cargo_val != 0 && rand() % 3 == 0) {
                 //Need to check if this factory will be cutoff, then check neighboors
                 if (!is_factory_placement_valid(tile)) continue;
                 int mult = std::min(rand() % cargo_val, cargo_val);
-                FactoryCreator::get_instance()->create_primary_industry_no_cargo_map_call(type, tile, get_owner_id(), mult);
+                FactoryCreator::get_instance()->create_primary_industry_no_cargo_map_call(type, tile, owner_id, mult);
                 factories_to_place_on_map[tile] = type;
 
                 levels_placed += mult;
@@ -76,6 +72,34 @@ void InitialBuilder::build_factory_type(int type, Province* province) {
             }
         }
     }
+}
+
+bool InitialBuilder::is_factory_placement_valid(const Vector2i &fact_to_place) const {
+    Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
+    Array tiles = terminal_map->get_main_map()->get_surrounding_cells(fact_to_place);
+    int available_tiles = 0; //Checks to see if fact to place can place
+    for (int i = 0; i < tiles.size(); i++) {
+        Vector2i tile = tiles[i];
+        Ref<Broker> broker = terminal_map->get_broker(tile);
+        if (broker.is_valid() && will_factory_by_cut_off(tile)) return false; // Checks factories that will be blocked
+        if (terminal_map->is_tile_available(tile)) {
+            available_tiles++;
+        }
+    }
+    return available_tiles > 0;
+}
+
+bool InitialBuilder::will_factory_by_cut_off(const Vector2i &factory_tile) const {
+    Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
+    Array tiles = terminal_map->get_main_map()->get_surrounding_cells(factory_tile);
+    int free_tiles = 0;
+    for (int i = 0; i < tiles.size(); i++) {
+        Vector2i tile = tiles[i];
+        if (terminal_map->is_tile_available(tile)) {
+            free_tiles++;
+        }
+    }
+    return free_tiles <= 1;
 }
 
 int InitialBuilder::get_levels_to_build(int type, Province* province) const {
@@ -115,19 +139,18 @@ void InitialBuilder::build_t2_factory_in_town(Ref<Town> town, int output_type) {
     Recipe* recipe = RecipeInfo::get_instance()->get_recipe_for_type(output_type);
     ERR_FAIL_COND_MSG(recipe == nullptr, "Recipe is null from type: " + CargoInfo::get_instance()->get_cargo_name(output_type));
     Ref<AiFactory> factory = Ref<AiFactory>(memnew(AiFactory(town->get_location(), 0, recipe)));
-    TerminalMap::get_instance()->create_isolated_terminal(factory);
-    town->add_factory(factory);
+    TerminalMap::get_instance()->create_isolated_factory_in_town(factory);
 }
 
 void InitialBuilder::build_and_connect_depots() {
     Ref<ProvinceManager> province_manager = ProvinceManager::get_instance();
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
-    std::unordered_set<int> prov_ids = province_manager->get_country_provinces(get_country_id());
+    std::unordered_set<int> prov_ids = province_manager->get_country_provinces(country_id);
     
     for (const int &prov_id: prov_ids) {
         Province* province = province_manager->get_province(prov_id);
         for (const Vector2i &tile: province->get_terminal_tiles_set()) {
-            if (is_tile_adjacent_to_depot(tile)) continue;
+            if (CompanyAi::is_tile_adjacent_to_depot(tile)) continue;
             Ref<FactoryTemplate> factory = terminal_map->get_terminal_as<FactoryTemplate>(tile);
             if (factory.is_null()) continue;
             
@@ -247,3 +270,14 @@ std::vector<Vector2i> InitialBuilder::bfs_to_closest(Vector2i start, bool(*f)(Ve
     }
     return toReturn;
 }
+
+void InitialBuilder::place_depot(const Vector2i& tile) {
+    RoadMap::get_instance()->place_road_depot(tile);
+	FactoryCreator::get_instance()->create_road_depot(tile, owner_id);
+}
+
+bool InitialBuilder::is_tile_owned(Vector2i tile) const {
+    Ref<ProvinceManager> province_manager = ProvinceManager::get_instance();
+    auto province = province_manager -> get_province(tile);
+    return province != nullptr && province -> get_country_id() == country_id;
+} 

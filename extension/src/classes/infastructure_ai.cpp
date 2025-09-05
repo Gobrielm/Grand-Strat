@@ -12,13 +12,13 @@ void InfastructureAi::_bind_methods() {
     ClassDB::bind_method(D_METHOD("connect_towns"), &InfastructureAi::connect_towns);
 }
 
-InfastructureAi* InfastructureAi::create(int p_country_id, int p_owner_id) {
-    return memnew(InfastructureAi(p_country_id, p_owner_id));
+InfastructureAi* InfastructureAi::create(int p_country_id, int p_owner_id, Vector2i tile) {
+    return memnew(InfastructureAi(p_country_id, p_owner_id, tile));
 }
 
 InfastructureAi::InfastructureAi(): AiBase() {}
 
-InfastructureAi::InfastructureAi(int p_country_id, int p_owner_id): AiBase(p_country_id, p_owner_id) {
+InfastructureAi::InfastructureAi(int p_country_id, int p_owner_id, Vector2i tile): AiBase(p_country_id, p_owner_id, tile) {
     road_map = RoadMap::get_instance();
     cargo_map = TerminalMap::get_instance()->get_cargo_map();
 }
