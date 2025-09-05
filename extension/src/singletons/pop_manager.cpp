@@ -214,6 +214,12 @@ bool PopManager::employment_for_potential_investor(BasePop* pop, int country_id)
         wealth_transfer = pop->transfer_wealth();
     }
     company->employ_pop(pop->get_pop_id());
+    float wage = company->get_wage();
+    {
+        auto lock = lock_pop_read(pop->get_pop_id());
+        pop->employ(company->get_terminal_id(), wage);
+    }
+    
     MoneyController::get_instance()->add_money_to_player(company->get_owner_id(), wealth_transfer);
 
     return true;
