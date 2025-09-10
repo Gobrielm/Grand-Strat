@@ -29,8 +29,6 @@ private:
 protected:
     static void _bind_methods();
     void _notification(int what);
-    template<typename T>
-    void report_data(std::ofstream& file, const std::vector<T>& data);
 
 public:
     DataCollector();
