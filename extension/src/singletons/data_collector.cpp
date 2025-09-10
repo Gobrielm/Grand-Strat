@@ -66,65 +66,45 @@ void DataCollector::month_tick() {
 void DataCollector::write_data_to_file() {
     std::ofstream file("data.xlsx");
     file << "Month,";
+    file << "Road Depot Data points,";
+    file << "Factory Data points,";
+    file << "Pops average wealth,";
+    file << "Factory average level,";
+    file << "Grain Demand,";
+    file << "Grain Supply,";
+    file << "Starving pops,";
+    file << "Broke pops,";
+    file << "Unemployment Rate,";
+    file << "Real Unemployment Rate,";
+    file << "Number Of Peasants,";
+    file << '\n';
     for (int i = 1; i < road_depot_data_points.size(); i++) {
         file << i << ", ";
     }
-    file << "\nRoad Depot Data points,\n";
-    for (float x: road_depot_data_points) {
-        file << x;
-        file << ",";
-    }
-    file << "\nFactory Data points,\n";
-    for (float x: factory_data_points) {
-        file << x;
-        file << ",";
-    }
-    file << "\nPops average wealth,\n";
-    for (float x: pops_data_points) {
-        file << x;
-        file << ",";
-    }
-    file << "\nFactory average level,\n";
-    for (float x: factory_ave_level) {
-        file << x;
-        file << ",";
-    }
-    file << "\nGrain Demand,\n";
-    for (int x: grain_demand) {
-        file << x;
-        file << ",";
-    }
-    file << "\nGrain Supply,\n";
-    for (int x: grain_supply) {
-        file << x;
-        file << ",";
-    }
-    file << "\nStarving pops,\n";
-    for (int x: starving_pops) {
-        file << x;
-        file << ",";
-    }
-    file << "\nBroke pops,\n";
-    for (int x: broke_pops) {
-        file << x;
-        file << ",";
-    }
-    file << "\nUnemployment Rate,\n";
-    for (float x: unemployement_rate) {
-        file << x;
-        file << ",";
-    }
-    file << "\nReal Unemployment Rate,\n";
-    for (float x: real_unemployement_rate) {
-        file << x;
-        file << ",";
-    }
-    file << "\nNumber Of Peasants,\n";
-    for (int x: number_of_peasants) {
-        file << x;
-        file << ",";
-    }
+    file << '\n';
+    report_data(file, road_depot_data_points);
+    report_data(file, factory_data_points);
+    report_data(file, pops_data_points);
+    report_data(file, factory_ave_level);
+    report_data(file, grain_demand);
+    report_data(file, grain_supply);
+
+    report_data(file, starving_pops);
+    report_data(file, broke_pops);
+    report_data(file, unemployement_rate);
+    report_data(file, real_unemployement_rate);
+    report_data(file, number_of_peasants);
+    
     file.close();
+}
+
+template<typename T>
+void DataCollector::report_data(std::ofstream& file, const std::vector<T>& data) {
+    for (const auto&: data) {
+        file << x;
+        file << ',';
+    }
+    file << '\n';
 }
 
 void DataCollector::add_demand(int type, float amount) {
