@@ -27,7 +27,7 @@ void Country::pay_random_pops(int total_number_to_pay, float total_money_to_pay)
 
 void Country::month_tick() {
     if (player_id != -1) {
-        pay_random_pops(50, minting);
+        pay_random_pops(10, minting);
     }
 }
 

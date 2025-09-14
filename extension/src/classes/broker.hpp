@@ -32,9 +32,9 @@ class Broker : public FixedHold {
     LocalPriceController* local_pricer = nullptr;
     const float MAX_TRADE_MARGIN = 1.05f;
 
-    virtual std::set<TradeInteraction, TradeInteractionPtrCompare> get_brokers_to_distribute_to(int type); // Abstract
+    virtual std::set<TradeInteraction, TradeInteractionPtrCompare> get_brokers_to_distribute_to(int type) const;
     float get_price_average(int type, Ref<Broker> other) const;
-    void add_broker_to_sorted_set(int type, std::unordered_set<int> &s, std::set<TradeInteraction, TradeInteractionPtrCompare> &trade_interactions, const TradeInteraction& trade_interaction);
+    void add_broker_to_sorted_set(int type, std::unordered_set<int> &s, std::set<TradeInteraction, TradeInteractionPtrCompare> &trade_interactions, const TradeInteraction& trade_interaction) const;
     public:
     
     Broker();
@@ -66,13 +66,13 @@ class Broker : public FixedHold {
     virtual void edit_order(int type, int amount, bool buy, float maxPrice);
 
     TradeOrder* get_order(int type) const;
-    std::unordered_map<int, TradeOrder*> get_orders();
-    Dictionary get_orders_dict();
+    std::unordered_map<int, TradeOrder*> get_orders() const;
+    Dictionary get_orders_dict() const;
     virtual void remove_order(int type);
 
     virtual void add_connected_broker(Ref<Broker> broker);
     virtual void remove_connected_broker(const Ref<Broker> broker);
-    Dictionary get_connected_broker_locations();
+    Dictionary get_connected_broker_locations() const;
 
     void add_connected_station(const Vector2i p_location);
     void remove_connected_station(const Vector2i p_location);

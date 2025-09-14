@@ -136,8 +136,9 @@ Vector2i PopManager::get_town_tile(const BasePop* pop) const {
 void PopManager::change_pop_unsafe(BasePop * pop) {
     if (pop->will_degrade()) {
         pop->degrade();
-    } else if (pop->will_upgrade()) {
-        pop->upgrade();
+    } else if (pop->will_upgrade() && rand() % 5 == 0) {
+        int free_jobs = employment_options[pop->get_type()][get_pop_country_id_unsafe(pop)].size();
+        if (free_jobs > 0) pop->upgrade();
     }
 }
 
@@ -161,7 +162,7 @@ void PopManager::find_employment_for_pops(std::vector<BasePop*>& pop_group) {
 
 void PopManager::employment_finder_helper(BasePop* pop, PopTypes pop_type) {
     int country_id = get_pop_country_id(pop);
-    if (pop_type == town && pop->get_wealth() > 5000) { // TODO: Using constant money amount
+    if (pop_type == town && pop->get_wealth() > 50000) { // TODO: Using constant money amount
         bool was_sucessful = employment_for_potential_investor(pop, country_id);
         if (was_sucessful) return;
     }
@@ -184,7 +185,7 @@ void PopManager::employment_finder_helper(BasePop* pop, PopTypes pop_type) {
         if (is_acceptable) {
             work.internal_fact->employ_pop(pop, *get_lock(pop->get_pop_id()), pop_type);
         }
-        break; // Break if found job or not
+        break; // Break if found job or not, since wage would only go down
     }
 }
 
@@ -192,7 +193,7 @@ void PopManager::employment_finder_helper(BasePop* pop, PopTypes pop_type) {
 bool PopManager::employment_for_potential_investor(BasePop* pop, int country_id) { // TODO: Test Logic
     int cargo_type = get_cargo_type_to_build(country_id);
     if (cargo_type == -1) return false;
-    print_line(CargoInfo::get_instance()->get_cargo_name(cargo_type));
+    // print_line(CargoInfo::get_instance()->get_cargo_name(cargo_type));
     auto terminal_map = TerminalMap::get_instance();
     Vector2i town_tile;
     {
@@ -200,14 +201,13 @@ bool PopManager::employment_for_potential_investor(BasePop* pop, int country_id)
         town_tile = pop->get_location();
     }
     auto town = terminal_map->get_town(town_tile);
+    ERR_FAIL_COND_V_MSG(town.is_null(), false, "Town Pop not located on Town");
+    Ref<InvestmentCompany> company = town->get_first_invesment_company_looking_for_employees(cargo_type); // Doesn't check for pop_location, migration avoided and searchs country
 
-    Ref<InvestmentCompany> company = town->get_first_invesment_company_looking_for_employees(cargo_type);
-
-    if (!company.is_valid()) {
+    if (company.is_null()) {
         company = InvestmentCompany::create(country_id, town_tile, cargo_type);
         TerminalMap::get_instance()->create_isolated_company_in_town(company);
     }
-
     float wealth_transfer = 0;
     {
         auto lock = lock_pop_write(pop->get_pop_id());
@@ -219,9 +219,7 @@ bool PopManager::employment_for_potential_investor(BasePop* pop, int country_id)
         auto lock = lock_pop_read(pop->get_pop_id());
         pop->employ(company->get_terminal_id(), wage);
     }
-    
     MoneyController::get_instance()->add_money_to_player(company->get_owner_id(), wealth_transfer);
-
     return true;
 }
 
@@ -396,6 +394,10 @@ int PopManager::get_pop_country_id(BasePop* pop) const {
     return ProvinceManager::get_instance()->get_province(location)->get_country_id();
 }
 
+int PopManager::get_pop_country_id_unsafe(BasePop* pop) const {
+    return ProvinceManager::get_instance()->get_province(pop->get_location())->get_country_id();
+}
+
 // Pop Utility
 void PopManager::set_pop_location(int pop_id, const Vector2i& location) {
     auto lock = lock_pop_write(pop_id);
@@ -444,7 +446,7 @@ void PopManager::pay_pops(int num_to_pay, double for_each) { // TODO: Add thing 
     int total = pops.size();
     while (num_to_pay > 0 && it != pops.end()) {
         BasePop& pop = (it)->second;
-        int mult = pop.get_type() == town ? 50: 1; // Town pops get *50 bonus
+        int mult = pop.get_type() == town ? 50: 1; // Town pops get *50 bonus to chance
         if ((rand() % int((float(total) / num_to_pay) / mult)) == 0) {
             auto lock = lock_pop_write(it->first);
             pop.add_wealth_no_change_to_income(for_each);

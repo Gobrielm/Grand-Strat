@@ -33,7 +33,7 @@ protected:
     static void _bind_methods();
     
     
-    std::set<TradeInteraction, TradeInteractionPtrCompare> get_brokers_to_distribute_to(int type) override;
+    std::set<TradeInteraction, TradeInteractionPtrCompare> get_brokers_to_distribute_to(int type) const override;
 
 public:
     Town();

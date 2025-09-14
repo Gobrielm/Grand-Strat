@@ -66,12 +66,12 @@ bool Broker::can_afford_unsafe(float price) const {
 }
 
 Dictionary Broker::get_local_prices() const {
-    std::scoped_lock lock(m);
+    std::shared_lock lock(m);
     return local_pricer -> get_local_prices_dict();
 }
 
 float Broker::get_local_price(int type) const {
-    std::scoped_lock lock(m);
+    std::shared_lock lock(m);
     return local_pricer->get_local_price(type);
 }
 
@@ -80,7 +80,7 @@ float Broker::get_local_price_unsafe(int type) const {
 }
 
 int Broker::get_desired_cargo(int type, float pricePer) const {
-    std::scoped_lock lock(m);
+    std::shared_lock lock(m);
     return get_desired_cargo_unsafe(type, pricePer);
 }
 
@@ -156,19 +156,19 @@ void Broker::edit_order(int type, int amount, bool buy, float maxPrice) {
 }
 
 TradeOrder* Broker::get_order(int type) const {
-    std::scoped_lock lock(m);
+    std::shared_lock lock(m);
     if (trade_orders.count(type) == 1) return trade_orders.at(type);
     return nullptr;
 }
 
-std::unordered_map<int, TradeOrder*> Broker::get_orders() {
-    std::scoped_lock lock(m);
+std::unordered_map<int, TradeOrder*> Broker::get_orders() const {
+    std::shared_lock lock(m);
     return trade_orders;
 }
 
-Dictionary Broker::get_orders_dict() { 
+Dictionary Broker::get_orders_dict() const { 
     Dictionary d;
-    std::scoped_lock lock(m);
+    std::shared_lock lock(m);
     for (const auto &[type, order]: trade_orders) {
         d[type] = order;
     }
@@ -195,8 +195,8 @@ void Broker::remove_connected_broker(const Ref<Broker> broker) {
     connected_brokers.erase(loc);
 }
 
-Dictionary Broker::get_connected_broker_locations() {
-    std::scoped_lock lock(m);
+Dictionary Broker::get_connected_broker_locations() const {
+    std::shared_lock lock(m);
     Dictionary d;
     for (const auto &tile: connected_brokers) {
         d[tile] = true;
@@ -217,7 +217,7 @@ void Broker::remove_connected_station(const Vector2i p_location) {
 }
 
 int Broker::get_number_of_connected_terminals() const {
-    std::scoped_lock lock(m);
+    std::shared_lock lock(m);
     return connected_brokers.size() + connected_stations.size();
 }
 
@@ -240,7 +240,7 @@ void Broker::distribute_type(int type) {
     
 }
 
-std::set<TradeInteraction, TradeInteractionPtrCompare> Broker::get_brokers_to_distribute_to(int type) {
+std::set<TradeInteraction, TradeInteractionPtrCompare> Broker::get_brokers_to_distribute_to(int type) const {
     std::set<TradeInteraction, TradeInteractionPtrCompare> brokers_to_sell_to; // Sorted by highest price
     std::unordered_set<int> s; // Broker locations already looked at
     s.insert(terminal_id);
@@ -264,7 +264,7 @@ float Broker::get_price_average(int type, Ref<Broker> other) const {
     return (get_local_price(type) + other->get_local_price(type)) / 2.0;
 }
 
-void Broker::add_broker_to_sorted_set(int type, std::unordered_set<int> &s, std::set<TradeInteraction, TradeInteractionPtrCompare> &trade_interactions, const TradeInteraction& trade_interaction) {
+void Broker::add_broker_to_sorted_set(int type, std::unordered_set<int> &s, std::set<TradeInteraction, TradeInteractionPtrCompare> &trade_interactions, const TradeInteraction& trade_interaction) const {
     Ref<Broker> broker = trade_interaction.main_buyer;
     
     if (!s.count(broker->get_terminal_id()) && broker->is_price_acceptable(type, trade_interaction.price)) {
@@ -339,17 +339,17 @@ std::unordered_set<int> Broker::get_broker_ids_in_broad_market() const {
 }
 
 std::unordered_map<int, float> Broker::get_last_month_demand_ten_price_map(int type) const {
-    std::scoped_lock lock(m);
+    std::shared_lock lock(m);
     return local_pricer->get_last_month_demand_ten_price_map(type);
 }
 
 std::unordered_map<int, float> Broker::get_last_month_supply_ten_price_map(int type) const {
-    std::scoped_lock lock(m);
+    std::shared_lock lock(m);
     return local_pricer->get_last_month_supply_ten_price_map(type);
 }
 
 float Broker::get_diff_between_demand_and_supply(int type) const {
-    std::scoped_lock lock(m);
+    std::shared_lock lock(m);
     return local_pricer->get_demand(type) - local_pricer->get_supply(type);
 }
 
@@ -402,11 +402,11 @@ float Broker::get_demand_at_price_unsafe(int type, float price) const {
 }
 
 Dictionary Broker::get_last_month_supply() const {
-    std::scoped_lock lock(m);
+    std::shared_lock lock(m);
     return local_pricer->get_last_month_supply_dict();
 }
 
 Dictionary Broker::get_last_month_demand() const {
-    std::scoped_lock lock(m);
+    std::shared_lock lock(m);
     return local_pricer->get_last_month_demand_dict();
 }

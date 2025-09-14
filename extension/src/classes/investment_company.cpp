@@ -35,7 +35,6 @@ InvestmentCompany::InvestmentCompany(int p_country_id, Vector2i tile, int p_carg
 InvestmentCompany::InvestmentCompany(int p_country_id, int p_owner_id, Vector2i tile, int p_cargo_type): CompanyAi(p_country_id, p_owner_id, tile), cargo_type(p_cargo_type) {}
 
 void InvestmentCompany::month_tick() {
-    print_line("AA");
     record_cash();
     pay_employees();
     if (does_have_money_for_investment() && should_build()) {
@@ -56,7 +55,7 @@ void InvestmentCompany::record_cash() {
     }
 }
 
-float InvestmentCompany::get_real_gross_profit(int months_to_average) const {
+float InvestmentCompany::get_net_profit(int months_to_average) const {
     ERR_FAIL_COND_V_EDMSG(months_to_average <= 0, 0, "Cannot average over a 0 or negitive amount of months");
     float total = 0;
     int i = 1;
@@ -83,14 +82,15 @@ void InvestmentCompany::pay_employees() {
 
 
 float InvestmentCompany::get_wage() const {
-    float income_wage = ((past_cash.back() - get_cash()) / past_cash.size()) * 0.9; // Profit over last n months averaged
-    float total_wage_wanted = 0.0;
     const auto employees_copy = get_employees();
+    const auto& num_of_employees = std::max(1, int(employees_copy.size()));
+    float income_wage = get_net_profit(2) * 0.9 / num_of_employees; // Most of gross profit
+    float total_wage_wanted = 0.0;
     for (const auto& id: employees_copy) {
         float exp_wage = PopManager::get_instance()->get_expected_wage(id);
         total_wage_wanted += exp_wage;
     }
-    float ave_exp_wage = total_wage_wanted /= employees_copy.size();
+    float ave_exp_wage = total_wage_wanted / num_of_employees;
     return std::max(income_wage, ave_exp_wage);
 }
 
@@ -99,17 +99,17 @@ int InvestmentCompany::get_cargo_type() const {
 }
 
 bool InvestmentCompany::is_seeking_investment_from_pops() const {
-    float profit = get_real_gross_profit(4) * 2.0f;
+    float two_months_of_profit = get_net_profit(4) * 2.0f;
 
     int employees_size = get_employees().size();
     // Won't hire an excessive amount, still lenient
     float building_ratio = employees_size != 0 ? float(get_existing_buildings().size() + 2) / employees_size: 10;
     
-    return get_cash() < profit && building_ratio >= 1; // Less than 2 months of profit
+    return get_cash() < two_months_of_profit && building_ratio >= 1; // Less than 2 months of profit
 }
 
 bool InvestmentCompany::does_have_money_for_investment() {
-    float profit = get_real_gross_profit(4);
+    float profit = get_net_profit(4);
     return profit > 0;
 }
 

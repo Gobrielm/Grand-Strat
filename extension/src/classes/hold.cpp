@@ -1,5 +1,6 @@
 #include "hold.hpp"
 #include <godot_cpp/core/class_db.hpp>
+#include "../singletons/cargo_info.hpp"
 
 using namespace godot;
 
@@ -61,7 +62,7 @@ float Hold::add_cargo(int type, float amount) {
 }
 
 float Hold::get_cargo_amount(int type) const {
-    std::scoped_lock lock(m);
+    std::shared_lock lock(m);
     ERR_FAIL_COND_V_EDMSG(!storage.count(type), 0, "No cargo of type: " + String::num(type));
     return storage.at(type);
 }
@@ -102,7 +103,7 @@ float Hold::get_amount_to_add(int type, float amount) const {
 }
 
 Dictionary Hold::get_current_hold() const {
-    std::scoped_lock lock(m);
+    std::shared_lock lock(m);
     Dictionary d;
     for (const auto &pair : storage) {
         d[pair.first] = (round(pair.second * 100)) / 100.0;
@@ -120,7 +121,7 @@ void Hold::set_current_hold(Dictionary hold) {
 }
 
 float Hold::get_current_hold_total() const {
-    std::scoped_lock lock(m);
+    std::shared_lock lock(m);
     float total = 0;
     for (const auto &pair : storage) {
         total += pair.second;

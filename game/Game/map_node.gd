@@ -68,13 +68,13 @@ func initialize_game() -> void:
 		tile_ownership_obj.create_countries()
 		call_deferred("update_map_creation_progress", 65)
 		#Then resources and industries that need both of those
-		cargo_map.place_resources(main_map) # Creates resources and towns
+		Utils.cargo_values.place_resources(main_map, true) # Creates resources and towns
 		call_deferred("update_map_creation_progress", 70)
 		#cargo_map.test()
 		#Then create pops which needs towns
 		ProvinceManager.get_instance().create_pops()
 		call_deferred("update_map_creation_progress", 100)
-		cargo_map.add_industries_to_towns() # DEADLOCK HERE
+		cargo_map.add_industries_to_towns() # DEADLOCK HERE SOMETIMES
 	enable_nation_picker()
 	call_deferred("sync_creation_thread")
 

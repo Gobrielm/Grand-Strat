@@ -68,7 +68,7 @@ void FactoryTemplate::create_construction_material_unsafe(int type, int amount) 
 
 Dictionary FactoryTemplate::get_construction_materials() const {
     Dictionary d;
-    std::scoped_lock lock(m);
+    std::shared_lock lock(m);
     for (const auto& [key, val]: construction_materials) {
         d[key] = val;
     }
@@ -77,7 +77,7 @@ Dictionary FactoryTemplate::get_construction_materials() const {
 
 Dictionary FactoryTemplate::get_needed_construction_materials() const {
     Dictionary d;
-    std::scoped_lock lock(m);
+    std::shared_lock lock(m);
     for (const auto& [key, val]: max_amounts_of_construction_materials) {
         d[key] = val;
     }
@@ -85,7 +85,7 @@ Dictionary FactoryTemplate::get_needed_construction_materials() const {
 }
 
 bool FactoryTemplate::is_needed_for_construction(int type) const {
-    std::scoped_lock lock(m);
+    std::shared_lock lock(m);
     return is_needed_for_construction_unsafe(type);
 }
 
@@ -104,7 +104,7 @@ int FactoryTemplate::get_amount_of_type_needed_for_construction_unsafe(int type)
 }
 
 bool FactoryTemplate::is_finished_constructing() const {
-    std::scoped_lock lock(m);
+    std::shared_lock lock(m);
     if (construction_materials.size() == 0) return false; // If not constructing than not finished to avoid upgrading
     for (const auto& [type, val]: construction_materials) {
 		if (max_amounts_of_construction_materials.at(type) != val) {
@@ -115,7 +115,7 @@ bool FactoryTemplate::is_finished_constructing() const {
 }
 
 bool FactoryTemplate::is_constructing() const {
-    std::scoped_lock lock(m);
+    std::shared_lock lock(m);
     return !max_amounts_of_construction_materials.empty();
 }
 
@@ -188,12 +188,12 @@ int FactoryTemplate::get_desired_cargo_unsafe(int type, float price_per) const {
 }
 
 std::unordered_map<int, float> FactoryTemplate::get_outputs() const {
-    std::scoped_lock lock(m);
+    std::shared_lock lock(m);
     return recipe->get_outputs();
 }
 
 std::unordered_map<int, float> FactoryTemplate::get_inputs() const {
-    std::scoped_lock lock(m);
+    std::shared_lock lock(m);
     return recipe->get_inputs();
 }
 
@@ -204,7 +204,7 @@ void FactoryTemplate::create_recipe() {
 }
 
 double FactoryTemplate::get_batch_size() const {
-    std::scoped_lock lock(m);
+    std::shared_lock lock(m);
     double batch_size = recipe->get_level();
     for (auto& [type, amount]: recipe->get_inputs()) {
         batch_size = std::min(storage.at(type) / double(amount), batch_size);
@@ -274,12 +274,12 @@ void FactoryTemplate::distribute_cargo() {
 }
 
 double FactoryTemplate::get_level() const {
-    std::scoped_lock lock(m);
+    std::shared_lock lock(m);
     return recipe->get_level();
 }
 
 int FactoryTemplate::get_level_without_employment() const {
-    std::scoped_lock lock(m);
+    std::shared_lock lock(m);
     return recipe->get_level_without_employment();
 }
 
@@ -341,7 +341,7 @@ void FactoryTemplate::update_income_array() {
 }
 
 float FactoryTemplate::get_last_month_income() const {
-    std::scoped_lock lock(m);
+    std::shared_lock lock(m);
     if (income_list.size() == 0) return 0;
     return income_list.front();
 }
@@ -351,7 +351,7 @@ bool FactoryTemplate::is_hiring() const {
 }
 
 bool FactoryTemplate::is_hiring(PopTypes pop_type) const {
-    std::scoped_lock lock(m);
+    std::shared_lock lock(m);
 
     return recipe->is_pop_type_needed(pop_type) && is_hiring_tracker; // TODO: Check requirements
 }
@@ -364,29 +364,26 @@ bool FactoryTemplate::is_firing() const {
 }
 
 float FactoryTemplate::get_wage() const {
-    std::scoped_lock lock(m);
-    int pops_needed_num = recipe->get_pops_needed_num();
-    if (pops_needed_num == 0) return 0;
-    float gross_profit = std::min(float(get_theoretical_gross_profit_unsafe()), get_cash_unsafe());
-    return (gross_profit) / pops_needed_num;
+    std::shared_lock lock(m);
+    return get_wage_unsafe();
 }
 
 float FactoryTemplate::get_wage_unsafe() const {
     float gross_profit = std::min(float(get_theoretical_gross_profit_unsafe()), get_cash_unsafe());
     int pops_needed_num = recipe->get_pops_needed_num();
     if (!pops_needed_num) return 0;
-    
     return (gross_profit) / pops_needed_num;
 }
 
 float FactoryTemplate::get_theoretical_gross_profit() const {
     float available = 0;
+    double level = get_level();
     
     for (const auto &[type, amount]: get_inputs()) {
-        available -= get_local_price(type) * amount * std::max(get_level(), 1.0); // Always assume that the business will pay according to the first level, so hiring wont bug out
+        available -= get_local_price(type) * amount * std::max(level, 1.0); // Always assume that the business will pay according to the first level, so hiring wont bug out
     }
     for (const auto &[type, amount]: get_outputs()) {
-        available += get_local_price(type) * amount * std::max(get_level(), 1.0);
+        available += get_local_price(type) * amount * std::max(level, 1.0);
     }
     available *= 30;
     return available;
@@ -394,12 +391,12 @@ float FactoryTemplate::get_theoretical_gross_profit() const {
 
 float FactoryTemplate::get_theoretical_gross_profit_unsafe() const {
     float available = 0;
-    
+    double level = recipe->get_level();
     for (const auto &[type, amount]: recipe->get_inputs()) {
-        available -= get_local_price_unsafe(type) * amount * std::max(recipe->get_level(), 1.0); // Always assume that the business will pay according to the first level, so hiring wont bug out
+        available -= get_local_price_unsafe(type) * amount * std::max(level, 1.0); // Always assume that the business will pay according to the first level, so hiring wont bug out
     }
     for (const auto &[type, amount]: recipe->get_outputs()) {
-        available += get_local_price_unsafe(type) * amount * std::max(recipe->get_level(), 1.0);
+        available += get_local_price_unsafe(type) * amount * std::max(level, 1.0);
     }
     available *= 30;
     return available;
@@ -472,8 +469,10 @@ void FactoryTemplate::month_tick() {
     update_income_array();
     pay_employees();
     if (is_hiring()) {
+        std::scoped_lock lock(m);
         is_hiring_tracker = true;
     } else {
+        std::scoped_lock lock(m);
         is_hiring_tracker = false;
     }
     if (is_firing()) {

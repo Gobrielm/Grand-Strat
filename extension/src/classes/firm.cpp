@@ -27,11 +27,11 @@ void Firm::initialize(const Vector2i p_location, const int p_owner) {
 }
 
 int Firm::get_amount_can_buy(const float amount_per) const {
-    return floor(get_cash() / amount_per);
+    return amount_per <= 0 ? 10000000 : floor(get_cash() / amount_per);
 }
 
 int Firm::get_amount_can_buy_unsafe(const float amount_per) const {
-    return amount_per > 0 ? 1000000 : floor(get_cash_unsafe() / amount_per);
+    return amount_per <= 0 ? 10000000 : floor(get_cash_unsafe() / amount_per);
 }
 
 void Firm::add_cash(float amount) {
@@ -54,7 +54,7 @@ void Firm::remove_cash(float amount) {
 
 float Firm::get_cash() const {
     if (get_player_owner() == 0) {
-        std::scoped_lock lock(m);
+        std::shared_lock lock(m);
         return cash;
     } else {
         return MoneyController::get_instance()->get_money(get_player_owner());

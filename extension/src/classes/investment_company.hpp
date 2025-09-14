@@ -31,7 +31,7 @@ class InvestmentCompany : public CompanyAi {
     const int cargo_type; //Cargo the Company produces
 
     void record_cash();
-    float get_real_gross_profit(int months_to_average) const;
+    float get_net_profit(int months_to_average) const;
     void pay_employees();
     bool does_have_money_for_investment() override;
     bool should_build() const;

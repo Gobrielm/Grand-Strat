@@ -70,7 +70,7 @@ void FixedHold::reset_accepts() {
 }
 
 Dictionary FixedHold::get_accepts() const {
-    std::scoped_lock lock(m);
+    std::shared_lock lock(m);
     Dictionary dict;
     for (const int& type : accepts) {
         dict[type] = true;
@@ -80,8 +80,9 @@ Dictionary FixedHold::get_accepts() const {
 
 std::vector<bool> FixedHold::get_accepts_vector() const {
     std::vector<bool> v;
-    for (int type = 0; type < CargoInfo::get_instance() -> get_number_of_goods(); type++) {
-        if (does_accept(type)) {
+    std::shared_lock lock(m);
+    for (int type = 0; type < NUMBER_OF_GOODS; type++) {
+        if (accepts.count(type)) {
             v.push_back(true);
         } else {
             v.push_back(false);
@@ -101,7 +102,7 @@ void FixedHold::remove_accept(int type) {
 }
 
 bool FixedHold::does_accept(int type) const {
-    std::scoped_lock lock(m);
+    std::shared_lock lock(m);
     return accepts.count(type);
 }
 

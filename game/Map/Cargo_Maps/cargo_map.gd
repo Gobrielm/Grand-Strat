@@ -128,9 +128,6 @@ func place_construction_site_tile(coords: Vector2i) -> void:
 func get_available_primary_recipes(coords: Vector2i) -> Array:
 	return cargo_values.get_available_primary_recipes(coords)
 
-func place_resources(map: TileMapLayer) -> void:
-	cargo_values.place_resources(map)
-
 @rpc("authority", "call_local", "unreliable")
 func set_tile(coords: Vector2i, atlas: Vector2i) -> void:
 	mutex.lock()

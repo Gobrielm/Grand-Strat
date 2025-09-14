@@ -129,7 +129,7 @@ void Town::add_factory(Ref<FactoryTemplate> fact) {
 void Town::add_company(Ref<CompanyAi> company) {
     {
         std::scoped_lock lock(internal_buildings_mutex);
-        internal_factories[company->get_player_owner()].push_back(company);
+        internal_companies[company->get_player_owner()] = company;
     }
 }
 
@@ -304,7 +304,7 @@ void Town::distribute_type(int type) {
     }
 }
 
-std::set<TradeInteraction, TradeInteractionPtrCompare> Town::get_brokers_to_distribute_to(int type) {
+std::set<TradeInteraction, TradeInteractionPtrCompare> Town::get_brokers_to_distribute_to(int type) const {
     std::set<TradeInteraction, TradeInteractionPtrCompare> brokers_to_sell_to; // Sorted by highest price
     std::unordered_set<int> s; // Broker locations already looked at
     //Distribute to local factories

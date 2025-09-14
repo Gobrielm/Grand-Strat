@@ -697,7 +697,7 @@ float TerminalMap::get_average_cash_of_terminal() const {
         std::shared_lock lock(cargo_map_mutex);
         for (const auto &[__, terminal]: terminal_id_to_terminal) {
             Ref<T> typed = Ref<T>(terminal);
-            if (typed.is_valid()) {
+            if (typed.is_valid() && terminal->get_player_owner() == 0) {
                 ave += typed -> get_cash();
                 count++;
             }

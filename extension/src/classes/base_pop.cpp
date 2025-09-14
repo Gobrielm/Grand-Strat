@@ -415,7 +415,7 @@ void BasePop::degrade() {
 }
 
 bool BasePop::will_upgrade() const {
-    return (pop_type == peasant && wealth > 10000);
+    return (pop_type == peasant);
 }
 
 void BasePop::upgrade() {

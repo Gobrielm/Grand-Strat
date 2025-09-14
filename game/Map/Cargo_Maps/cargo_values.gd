@@ -96,16 +96,47 @@ func get_available_primary_recipes(coords: Vector2i) -> Array[Array]:
 			toReturn.append([{}, dict])
 	return toReturn
 
-func place_resources(_map: TileMapLayer) -> void:
+func place_resources(_map: TileMapLayer, is_loading: bool = false) -> void:
 	map = _map
+	if is_loading:
+		var status: bool = load_resources()
+		if status:
+			return
 	var helper: RefCounted = load("res://Map/Cargo_Maps/cargo_values_helper.gd").new(map)
 	var resource_array: Array = helper.create_resource_array()
 	assert(resource_array != null or resource_array.is_empty(), "Resources generated improperly")
 	
-	for i: int in get_child_count():
+	for i: int in range(0, resource_array.size()):
 		call_deferred("autoplace_resource_client", resource_array[i], i, MAX_RESOURCES[i])
 		autoplace_resource(resource_array[i], i, MAX_RESOURCES[i])
+	save_cargo_values()
 	finished_created_map_resources.emit()
+
+# Returns with status
+func load_resources() -> bool:
+	var file: FileAccess = FileAccess.open("./Stored_Info/cargo_values.bin", FileAccess.READ)
+	if file == null:
+		return false
+	resource_dict = file.get_var(true)
+	file.close()
+	sync_resource_values.call_deferred(resource_dict)
+	finished_created_map_resources.emit()
+	return true
+
+func sync_resource_values(p_resource_dict: Dictionary) -> void:
+	mutex.lock()
+	resource_dict = p_resource_dict
+	mutex.unlock()
+	for tile: Vector2i in resource_dict:
+		for type: int in resource_dict[tile]:
+			var mag: int = resource_dict[tile][type]
+			set_resource_locally(type, tile, get_atlas_for_magnitude(mag))
+			set_resource_rpc(type, tile, get_atlas_for_magnitude(mag))
+
+func save_cargo_values() -> void:
+	var file: FileAccess = FileAccess.open("./Stored_Info/cargo_values.bin", FileAccess.WRITE)
+	file.store_var(resource_dict, true)
+	file.close()
 
 func create_provinces_and_pop() -> void:
 	create_territories()
@@ -124,13 +155,13 @@ func autoplace_resource_client(tiles: Dictionary, type: int, max_resources: int)
 		if count > max_resources and max_resources != -1:
 			return
 
-func autoplace_resource(tiles: Dictionary, type: int, max_resources: int) -> void:
-	var array: Array = tiles.keys()
-	array.shuffle()
+func autoplace_resource(resource_map: Dictionary, type: int, max_resources: int) -> void:
+	var tiles: Array = resource_map.keys()
+	tiles.shuffle() # Shuffle so when resources run out, it doesn't cut off part of map
 	var count: int = 0
-	for cell: Vector2i in array:
+	for cell: Vector2i in tiles:
 		
-		var mag: int = randi() % 4 + tiles[cell]
+		var mag: int = randi() % 4 + resource_map[cell]
 		mutex.lock()
 		if (!resource_dict.has(cell)):
 			resource_dict[cell] = {}
@@ -280,47 +311,3 @@ func create_colors_to_province_id(colors_to_province_id: Dictionary) -> void:
 func is_tile_water_and_real(coords: Vector2i) -> bool:
 	var atlas: Vector2i = map.get_cell_atlas_coords(coords)
 	return atlas == Vector2i(6, 0) or atlas == Vector2i(7, 0)
-
-#func create_continents():
-	#var file = FileAccess.open("res://Map/Map_Info/North_America.txt", FileAccess.WRITE)
-	#for tile in $Layer1Sand.get_used_cells():
-		#if !is_tile_water(map, tile):
-			#save_to_file(file, str(tile) + '.')
-	#file.close()
-	#file = FileAccess.open("res://Map/Map_Info/South_America.txt", FileAccess.WRITE)
-	#for tile in $Layer2Sulfur.get_used_cells():
-		#if !is_tile_water(map, tile):
-			#save_to_file(file, str(tile) + '.')
-	#file.close()
-	#file = FileAccess.open("res://Map/Map_Info/Europe.txt", FileAccess.WRITE)
-	#for tile in $Layer3Lead.get_used_cells():
-		#if !is_tile_water(map, tile):
-			#save_to_file(file, str(tile) + '.')
-	#file.close()
-	#file = FileAccess.open("res://Map/Map_Info/Africa.txt", FileAccess.WRITE)
-	#for tile in $Layer4Iron.get_used_cells():
-		#if !is_tile_water(map, tile):
-			#save_to_file(file, str(tile) + '.')
-	#file.close()
-	#file = FileAccess.open("res://Map/Map_Info/Asia.txt", FileAccess.WRITE)
-	#for tile in $Layer5Coal.get_used_cells():
-		#if !is_tile_water(map, tile):
-			#save_to_file(file, str(tile) + '.')
-	#file.close()
-	#file = FileAccess.open("res://Map/Map_Info/Australia.txt", FileAccess.WRITE)
-	#for tile in $Layer6Copper.get_used_cells():
-		#if !is_tile_water(map, tile):
-			#save_to_file(file, str(tile) + '.')
-	#file.close()
-	#file = FileAccess.open("res://Map/Map_Info/Australia.txt", FileAccess.READ)
-	#try_to_read(file)
-#
-#func save_to_file(file, content: String):
-	#file.store_string(content)
-	#
-#
-#func try_to_read(file: FileAccess):
-	#var packedString = file.get_csv_line('.')
-	#print(packedString[0])
-	#print(packedString[999])
-	#

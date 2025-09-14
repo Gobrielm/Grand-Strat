@@ -38,7 +38,7 @@ Vector2i Terminal::get_location() const {
 }
 
 int Terminal::get_player_owner() const {
-    std::scoped_lock lock(m);
+    std::shared_lock lock(m);
     return player_owner;
 }
 

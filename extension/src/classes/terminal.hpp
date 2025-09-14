@@ -1,7 +1,7 @@
 #pragma once
 
 #include <godot_cpp/classes/ref_counted.hpp>
-#include <mutex>
+#include <shared_mutex>
 
 
 using namespace godot;
@@ -19,7 +19,7 @@ class Terminal : public RefCounted {
 
     public:
     const int terminal_id;
-    mutable std::mutex m;
+    mutable std::shared_mutex m;
     void set_location(const Vector2i p_location);
     Vector2i get_location() const;
     int get_player_owner() const;

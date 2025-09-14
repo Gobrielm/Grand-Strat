@@ -33,6 +33,7 @@ class PopManager {
     const BasePop* get_pop(int pop_id) const;
     BasePop* get_pop(int pop_id);
     int get_pop_country_id(BasePop* pop) const;
+    int get_pop_country_id_unsafe(BasePop* pop) const;
     void month_tick(std::vector<BasePop*>& pop_group);
     void sell_to_pops(std::vector<BasePop*>& pop_group);
     void create_pop_location_to_towns(std::vector<BasePop*>& pop_group, std::unordered_map<Vector2i, Vector2i, godot_helpers::Vector2iHasher>& location_to_nearest_town) const;
