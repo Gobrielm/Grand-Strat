@@ -3,16 +3,19 @@ class_name artillery extends base_unit
 static func get_cost() -> int:
 	return 1000
 
-func _init(new_location: Vector2i, new_player_id: int):
-	super._init(new_location, new_player_id)
+func _init() -> void:
 	
 	max_manpower = 200
 	manpower = max_manpower
 	morale = 100
 	
-	organization = null
-	speed = 10
-	unit_range = 2
+	var supply_neeeded: Dictionary[int, int] = {}
+	supply_neeeded[CargoInfo.get_instance().get_cargo_type("grain")] = 2
+	supply_neeeded[CargoInfo.get_instance().get_cargo_type("artillery")] = 1
+	org = organization.new(supply_neeeded)
+	
+	speed = 20
+	unit_range = 2.5
 	shock = 40
 	firepower = 100
 	cohesion = 15
@@ -22,7 +25,7 @@ func _init(new_location: Vector2i, new_player_id: int):
 	experience = 0
 	combat_arm = 2
 
-func _to_string():
+func _to_string() -> String:
 	return "Artillery"
 
 static func toString() -> String:

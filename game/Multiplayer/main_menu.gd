@@ -1,32 +1,24 @@
 extends Control
-@onready var join_game_button: Button = $ColorRect/Join_Game
+@onready var join_game_button: Button = $TextureRect/Join_Game
 @onready var lobby: Node = get_parent()
 
-var c: int = 0
+func _ready() -> void:
+	randomize_texture_rect()
 
 func _on_create_game_pressed() -> void:
-	if c == 1:
-		lobby.start_game.rpc()
-	else:
-		lobby.create_game()
-		c += 1
-
+	lobby.create_game()
 
 func _on_join_game_pressed() -> void:
-	if join_game_button.get_child_count() == 0:
-		var ip_box: TextEdit = TextEdit.new()
-		join_game_button.add_child(ip_box)
-		ip_box.size = Vector2(200, 50)
-		ip_box.position.x -= ip_box.size.x / 2 - 25
-		ip_box.position.y += 100
-	else:
-		var ip_box_text: String = join_game_button.get_child(0).text
-		var ip_address: String = parse_valid_ip_address(ip_box_text)
-		if ip_address == "-1":
-			return
-		lobby.join_game(ip_address)
+	var ip_box_text: String = $TextureRect/Join_Game/TextEdit.text
+	var ip_address: String = parse_valid_ip_address(ip_box_text)
+	if ip_address == "-1":
+		return
+	lobby.join_game(ip_address)
 
 func parse_valid_ip_address(input: String) -> String:
+	if input.is_empty():
+		#TODO: DO NOT KEEP THIS
+		input = "10.100.0.236"
 	var ip_address_blocks: Array = ["0", "0", "0", "0"]
 	var curr_block: int = 0
 	var tracker: int = 0
@@ -53,4 +45,14 @@ func parse_valid_ip_address(input: String) -> String:
 	address[-1] = ""
 	return address
 	
+func randomize_texture_rect() -> void:
+	var images: Array = []
+	var dir: DirAccess = DirAccess.open("res://external_images")
+	dir.list_dir_begin()
+	var file_name: String = dir.get_next()
+	while file_name != "":
+		if !dir.current_is_dir() and (file_name.ends_with(".jpg") or file_name.ends_with(".png")):
+			images.append(file_name)
+		file_name = dir.get_next()
 	
+	$TextureRect.texture = load("res://external_images/" + str(images.pick_random()))

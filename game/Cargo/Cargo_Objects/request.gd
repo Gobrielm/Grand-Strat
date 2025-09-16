@@ -1,4 +1,4 @@
-class_name request extends Node
+class_name request extends RefCounted
 
 var type: int
 var amount: int

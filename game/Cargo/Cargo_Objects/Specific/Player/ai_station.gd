@@ -1,108 +1,116 @@
-class_name ai_station extends station
+class_name AiStation extends Station
 
 const TRADE_MARGINS: float = 1.1
 
-var local_market: Dictionary[int, int]
-var local_market_prices: Dictionary[int, float]
+var stations_in_network: Dictionary[Vector2i, bool] #Set of stations
 
-var requests: Dictionary[int, Dictionary] #Type to Dictionary[Vector2i, Array[request]]
-#Represents amount of local goods already commited to request
-var committed_sales: Dictionary[int, int] #Type -> Amount
+#TODO: Eventually have ai_trains only take as much as other station needs
 
-#Represents downstream stations from this station
-var ds_stations: Dictionary[Vector2i, int] #Set of coords, int represents dist
+#TODO: Get rid of local pricer, it doesn't work and won;t ever really work
 
-#TODO: Basically sell whatever you have in hold, if price good
-#TODO: Buy if it knows it can sell it for higher, or if connected station logic
+func _init(p_location: Vector2i, p_owner: int) -> void:
+	super.initialize(p_location, p_owner)
 
-func get_local_market() -> Dictionary[int, int]:
-	return local_market
-
-func get_local_market_prices() -> Dictionary[int, float]:
-	return local_market_prices
-
-func get_requests() -> Dictionary[int, Dictionary]:
-	return requests
-
-func reset_local_market() -> void:
-	for type: int in terminal_map.get_number_of_goods():
-		local_market[type] = 0
-		local_market_prices[type] = 0.0
+func add_station(p_stop: Vector2i) -> void:
+	assert(TerminalMap.get_instance().get_ai_station(p_stop) != null)
+	stations_in_network[p_stop] = true
 
 func month_tick() -> void:
-	update_all_markets()
 	update_orders()
 
-#Thread unsafe
-func update_all_markets() -> void:
-	reset_local_market()
-	fetch_local_market()
-	update_orders()
+func fetch_local_goods_needed() -> Array[TradeOrder]:
+	var toReturn: Array[TradeOrder] = []
+	for tile: Vector2i in get_connected_broker_locations():
+		var broker: Broker = TerminalMap.get_instance().get_broker(tile)
+		if broker == null: continue
+		for order: TradeOrder in broker.get_orders().values():
+			if order.is_buy_order():
+				toReturn.append(order)
+	return toReturn
 
-func fetch_local_market() -> void:
-	for tile: Vector2i in connected_terminals:
-		var broker_obj: broker = terminal_map.get_broker(tile)
-		if broker_obj != null:
-			var dist: int = connected_terminals[tile]
-			add_orders_to_local_market(broker_obj.get_orders(), dist)
-	for type: int in local_market_prices:
-		local_market_prices[type] /= local_market[type]
-
-func add_orders_to_local_market(orders: Dictionary, dist: int) -> void:
-	for order: trade_order in orders.values():
-		var type: int = order.get_type()
-		var amount: int = order.get_amount()
-		#If can only trade by road, limit amount
-		if dist != 1:
-			amount = min(amount, AUTO_ROAD_LOAD_TICK_AMOUNT)
-		local_market[type] += amount
-		local_market_prices[type] += order.get_max_price() * amount
+#Returns which types are available
+func get_local_goods_available() -> Dictionary[int, bool]:
+	var toReturn: Dictionary[int, bool] = {}
+	for tile: Vector2i in get_connected_broker_locations():
+		var broker: Broker = TerminalMap.get_instance().get_broker(tile)
+		if broker == null: continue
+		for order: TradeOrder in broker.get_orders_dict().values():
+			if order.is_sell_order():
+				toReturn[order.get_type()] = true
+	return toReturn
 
 func update_orders() -> void:
-	update_buy_orders()
 	update_sell_orders()
-
-func update_buy_orders() -> void:
-	for tile: Vector2i in ds_stations:
-		var ds_station: ai_station = terminal_map.get_ai_station(tile)
-		var ds_requests: Dictionary[int, Dictionary] = ds_station.get_requests()
-		for type: int in ds_requests:
-			for req: request in ds_requests[type].values():
-				update_buy_orders_from_station(req)
-
-func update_buy_orders_from_station(req: request) -> void:
-	var type: int = req.type
-	#Represents looping request
-	if req.source == location:
-		return
+	update_buy_orders()
 	
-	#Do price checking before seeing if it will fill request or repeat
-	if local_market_prices[type] * TRADE_MARGINS < req.max_price:
-		var amount_avail: int = local_market[type] - committed_sales[type]
-		var amount_sourced_globally: int = 0
-		if req.amount > amount_avail:
-			committed_sales[type] = local_market[type]
-			update_buy_order(type, local_market[type], req.max_price)
-			amount_sourced_globally = req.amount - amount_avail
-		else:
-			#More than enough to fill req
-			committed_sales[type] += req.amount
-			update_buy_order(type, committed_sales[type], req.max_price)
-		
-		#Deal with global sourced, pass on
-		update_request(type, req.source, amount_sourced_globally, req.max_price)
-	else:
-		update_request(type, req.source, req.amount, req.max_price)
+#Stuff this could sell to trains
+func update_buy_orders() -> void:
+	var available_goods: Dictionary[int, bool] = get_local_goods_available()
+	#Sets all buy orders to amount of 0, but doesn't delete, waits for re-new
+	for order: TradeOrder in get_orders_dict().values():
+		if order.is_buy_order():
+			order.change_amount(0)
+	
+	
+	for tile: Vector2i in stations_in_network:
+		var ai_station_obj: AiStation = TerminalMap.get_instance().get_ai_station(tile)
+		update_buy_orders_for_station(ai_station_obj, available_goods)
+	
+	#Cleans up any order still with 0 that weren't re-newed
+	clean_up_buy_orders()
+	
 
-func update_request(p_type: int, p_source: Vector2i, p_amount: int, p_max_price: float) -> void:
-	if requests[p_type].has(p_source):
-		requests[p_type][p_source].amount = p_amount
-	else:
-		requests[p_type][p_source] = request.new(p_type, p_amount, p_source, p_max_price)
+func update_buy_orders_for_station(ai_station_obj: AiStation, available_goods: Dictionary[int, bool]) -> void:
+	var orders: Dictionary[int, TradeOrder] = ai_station_obj.get_orders()
+	for order: TradeOrder in orders.values():
+		#If other station wants it to sell and will pay higher than min price here
+		if order.is_sell_order() and available_goods.has(order.get_type()) and ai_station_obj.get_local_price(order.get_type()) > get_local_price(order.type) * TRADE_MARGINS:
+			#Order exists and price is not adequete
+			add_amount_to_buy_order(order.get_type(), order.get_amount(), get_local_price(order.get_type()) * TRADE_MARGINS)
 
-func update_buy_order(type: int, amount: int, max_price: float) -> void:
-	edit_order(type, amount, true, max_price)
+func add_amount_to_buy_order(type: int, amount: int, p_market_price: float) -> void:
+	var this_order: TradeOrder = get_order(type)
+	var new_amount: int = amount if !this_order else this_order.get_amount() + amount
+	edit_order(type, new_amount, true, p_market_price)
 
+func clean_up_buy_orders() -> void:
+	var to_remove: Array = []
+	
+	for order: TradeOrder in get_orders_dict().values():
+		if order.is_buy_order() and order.get_amount() == 0:
+			to_remove.append(order.get_type())
+
+	for type: int in to_remove:
+		remove_order(type)
+
+
+#Stuff this wants from trains
 func update_sell_orders() -> void:
-	for type: int in local_market:
-		update_request(type, location, local_market[type], local_market_prices[type])
+	var market: Dictionary[int, TradeOrder] = create_consolidated_market_for_desired_goods()
+	for type: int in market:
+		#PBUG:Makes the limit price slightly less than mp, limit_price should be irreleveant
+		edit_order(type, market[type].get_amount(), false, market[type].get_limit_price() * 0.99)
+
+func create_consolidated_market_for_desired_goods() -> Dictionary[int, TradeOrder]:
+	var amount_total: Dictionary[int, int] = {}
+	var market_price: Dictionary[int, float] = {} # Represents either the max for buying or min for selling
+	var toReturn : Dictionary[int, TradeOrder] = {}
+	for tile: Vector2i in get_connected_broker_locations():
+		var broker: Broker = TerminalMap.get_instance().get_broker(tile)
+		if broker == null: continue
+		for order: TradeOrder in broker.get_orders_dict().values():
+			if order.is_buy_order():
+				if !amount_total.has(order.type):
+					amount_total[order.get_type()] = 0
+					market_price[order.get_type()] = 0.0
+				amount_total[order.get_type()] += order.get_amount()
+				market_price[order.get_type()] += order.get_amount() * broker.get_local_price(order.type)
+	
+	for type: int in amount_total:
+		market_price[type] /= amount_total[type]
+		toReturn[type] = TradeOrder.create(type, amount_total[type], false, market_price[type])
+	
+	return toReturn
+
+func has_station_connection() -> bool:
+	return stations_in_network.size() > 0

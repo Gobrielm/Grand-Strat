@@ -1,6 +1,8 @@
 extends TileMapLayer
 var start: Vector2i = Vector2i(0, 0)
+var is_start_valid: bool = false
 var unique_id: int
+var mutex: Mutex = Mutex.new()
 #Buttons
 @onready var camera: Camera2D = $player_camera
 @onready var track_button: Button = $player_camera/CanvasLayer/track_button
@@ -10,16 +12,13 @@ var unique_id: int
 @onready var unit_creator_window: Window = $unit_creator_window
 @onready var tile_window: Window = $tile_window
 @onready var game: Node = get_parent().get_parent()
-@onready var rail_placer: Node = $Rail_Placer
+@onready var rail_placer_obj: rail_placer = $Rail_Placer
 @onready var map_node: Node = get_parent()
 var unit_map: TileMapLayer
-var money_interface: Node
 var untraversable_tiles: Dictionary = {}
 var visible_tiles: Array = []
 
-const train_scene: PackedScene = preload("res://Cargo/Cargo_Objects/train.tscn")
 const train_scene_client: PackedScene = preload('res://Client_Objects/client_train.tscn')
-const depot: Script = preload("res://Cargo/depot.gd")
 
 var testing: Node
 
@@ -30,6 +29,7 @@ func _on_timer_timeout() -> void:
 	if unique_id == 1:
 		for peer: int in multiplayer.get_peers():
 			if heart_beat[peer] != 0:
+				print("deysnc")
 				camera.update_desync_label(heart_beat[peer])
 			heart_beat[peer] += 1
 		server_heart_beat()
@@ -47,33 +47,61 @@ func recognize_heart_beat() -> void:
 
 func _ready() -> void:
 	unique_id = multiplayer.get_unique_id()
+	Utils.assign_world_map(self)
+
+func initialize_game() -> void:
+	clock_singleton.get_instance().sync_clock_pause(true)
+	get_parent().connect("map_creation_finished", camera.start_nation_picking)
+	ProvinceManager.create()
 	map_data.new(self)
 	if unique_id == 1:
-		Utils.assign_world_map(self)
 		create_untraversable_tiles()
-		money_interface = money_controller.new(multiplayer.get_peers(), self)
-		for peer: int in multiplayer.get_peers():
-			heart_beat[peer] = 0
-			update_money_label.rpc_id(peer, get_money(peer))
-		update_money_label.rpc_id(1, get_money(1))
 		unit_map = load("res://Map/unit_map.tscn").instantiate()
 		add_child(unit_map)
-		for cell: Vector2i in get_used_cells():
-			rail_placer.init_track_connection.rpc(cell)
-		var cargo_controller: Node = load("res://Cargo/cargo_controller.tscn").instantiate()
-		cargo_controller.assign_map_node(map_node)
-		add_child(cargo_controller)
-		terminal_map.create(self)
+		var cargo_cntrlr: cargo_controller = load("res://Singletons/cargo_controller.tscn").instantiate()
+		add_child(cargo_cntrlr)
+		TerminalMap.create(self)
+		TerminalMap.get_instance().assign_cargo_controller(cargo_cntrlr)
 		recipe.create_set_recipes()
-		$player_camera/CanvasLayer/Desync_Label.visible = true
-		testing = preload("res://Test/testing.gd").new(self)
+		rail_placer_obj.init_all_rails()
+		MoneyController.create(multiplayer.get_peers())
+		MoneyController.get_instance().connect("Update_Money_Gui", update_money_label_of_player)
+		on_singleton_creation()
+		#testing = preload("res://Test/testing.gd").new(self)
+		#start_test()
 	else:
 		unit_map = load("res://Client_Objects/client_unit_map.tscn").instantiate()
 		unit_map.name = "unit_map"
 		add_child(unit_map)
 		for tile: Vector2i in get_used_cells():
 			visible_tiles.append(tile)
-	
+
+func on_singleton_creation() -> void:
+	for peer: int in multiplayer.get_peers():
+		heart_beat[peer] = 0
+		update_money_label.rpc_id(peer, get_money(peer))
+	update_money_label.rpc_id(1, get_money(1))
+
+#Testing
+func is_testing() -> bool:
+	return testing != null
+
+func start_test() -> void:
+	if Utils.is_ready() and is_testing():
+		await get_tree().process_frame
+		clear()
+		TerminalMap.get_instance().clear()
+		create_testing_map()
+		testing.test()
+	elif is_testing():
+		call_deferred("start_test")
+
+func create_testing_map() -> void:
+	var tile_ownership_obj: tile_ownership = tile_ownership.get_instance()
+	for i: int in range(-500, 500):
+		for j: int in range(-500, 500):
+			tile_ownership_obj.add_tile_to_country(Vector2i(i, j), 1)
+			set_cell(Vector2i(i, j), 0, Vector2i(0, 0))
 
 #Constants
 func is_owned(player_id: int, coords: Vector2i) -> bool:
@@ -84,7 +112,6 @@ func start_building_units() -> void:
 
 func is_controlling_camera() -> bool:
 	return state_machine.is_controlling_camera()
-
 
 #Units
 func create_untraversable_tiles() -> void:
@@ -97,12 +124,11 @@ func is_tile_traversable(tile_to_check: Vector2i) -> bool:
 	var atlas_coords: Vector2i = get_cell_atlas_coords(tile_to_check)
 	return !untraversable_tiles.has(atlas_coords)
 
-func show_unit_info_window() -> void:
-	var unit_info_array: Array = unit_map.get_unit_client_array(get_cell_position())
-	$unit_info_window.show_unit(unit_info_array)
+func show_army_info_window(army_obj: army) -> void:
+	$army_info_window.show_army(army_obj)
 
-func update_info_window(unit_info_array: Array) -> void:
-	$unit_info_window.update_unit(unit_info_array)
+func update_info_window(army_obj: army) -> void:
+	$army_info_window.update_army(army_obj)
 
 func create_unit() -> void:
 	unit_map.check_before_create.rpc_id(1, get_cell_position(), unit_creator_window.get_type_selected(), unique_id)
@@ -112,10 +138,7 @@ func refresh_unit_map(unit_tiles: Dictionary) -> void:
 	unit_map.refresh_map(visible_tiles, unit_tiles)
 
 func close_unit_box() -> void:
-	$unit_info_window.hide()
-
-func is_unit_double_clicked() -> bool:
-	return unit_map.is_unit_double_clicked(get_cell_position(), unique_id)
+	$army_info_window.hide()
 
 #Tracks
 func get_rail_type_selected() -> int:
@@ -128,85 +151,75 @@ func get_rail_type_selected() -> int:
 	return 3
 
 func clear_all_temps() -> void:
-	rail_placer.clear_all_temps()
+	rail_placer_obj.clear_all_temps()
 
 func update_hover() -> void:
 	var rail_type: int = get_rail_type_selected()
-	if get_rail_type_selected() < 3:
-		rail_placer.hover(get_cell_position(), rail_type, map_to_local(get_cell_position()), get_mouse_local_to_map())
-	elif start != null and track_button.active:
+	if get_rail_type_selected() < 3 and single_track_button.active:
+		rail_placer_obj.hover(get_cell_position(), rail_type, map_to_local(get_cell_position()), get_mouse_local_to_map())
+	elif is_start_valid and track_button.active:
 		get_rail_to_hover()
+	elif state_machine.is_building_roads():
+		hover_roads()
 
 func record_hover_click() -> void:
-	var coords: Vector2i = rail_placer.get_coordinates()
-	var orientation: int = rail_placer.get_orientation()
+	var coords: Vector2i = rail_placer_obj.get_coordinates()
+	var orientation: int = rail_placer_obj.get_orientation()
 	if single_track_button.active:
-		rail_placer.place_hover()
 		place_rail_general(coords, orientation, 0)
 	elif depot_button.active:
-		rail_placer.place_hover()
 		place_rail_general(coords, orientation, 1)
 	elif station_button.active:
-		rail_placer.place_hover()
 		place_rail_general(coords, orientation, 2)
 
 func get_depot_direction(coords: Vector2i) -> int:
-	return rail_placer.get_depot_direction(coords)
+	return rail_placer_obj.get_depot_direction(coords)
 
 func place_road_depot() -> void:
-	if !state_machine.is_hovering_over_gui():
-		rail_placer.place_road_depot(get_cell_position(), unique_id)
+	var tile: Vector2i = get_cell_position()
+	if DisplayServer.window_is_focused() and Utils.is_tile_taken(tile):
+		TerminalMap.get_instance().create_terminal(RoadDepot.create(tile, unique_id))
+		RoadMap.get_instance().place_road_depot(tile)
 
 #Cargo
-func is_depot(coords: Vector2i) -> bool:
-	return map_data.get_instance().is_depot(coords)
-
-func is_owned_depot(coords: Vector2i) -> bool:
-	return map_data.get_instance().is_owned_depot(coords, unique_id)
-
-func is_hold(coords: Vector2i) -> bool:
-	return terminal_map.is_hold(coords)
-
-func is_owned_hold(coords: Vector2i) -> bool:
-	return map_data.get_instance().is_owned_hold(coords, unique_id)
-
-func is_factory(coords: Vector2i) -> bool:
-	return terminal_map.is_factory(coords)
-
-func is_owned_station(coords: Vector2i) -> bool:
-	return terminal_map.is_station(coords)
-
 func is_location_valid_stop(coords: Vector2i) -> bool:
 	return map_data.get_instance().is_hold(coords) or map_data.get_instance().is_depot(coords)
 
-func get_depot_or_terminal(coords: Vector2i) -> terminal:
-	var new_depot: terminal = map_data.get_instance().get_depot(coords)
+func get_depot_or_terminal(coords: Vector2i) -> Terminal:
+	var new_depot: Terminal = map_data.get_instance().get_depot(coords)
 	if new_depot != null:
 		return new_depot
-	return terminal_map.get_terminal(coords)
+	return TerminalMap.get_instance().get_terminal(coords)
 
 #Trains
 @rpc("any_peer", "reliable", "call_local")
 func create_train(coords: Vector2i) -> void:
 	var caller: int = multiplayer.get_remote_sender_id()
+	if !caller:
+		caller = 1
 	if unique_id == 1:
-		var train: Sprite2D = train_scene.instantiate()
-		train.name = "Train" + str(get_number_of_trains())
-		add_child(train)
-		train.create(coords, caller)
+		train_manager.get_instance().create_train(coords, caller)
 	else:
-		var train: Sprite2D = train_scene_client.instantiate()
-		train.name = "Train" + str(get_number_of_trains())
-		add_child(train)
-		train.create(coords)
+		var train_obj: Sprite2D = train_scene_client.instantiate()
+		train_obj.name = "Train" + str(get_number_of_trains())
+		add_child(train_obj)
+		train_obj.create(coords)
 
 func get_number_of_trains() -> int:
 	var children: Array = get_children()
 	var count: int = 0
 	for child: Node in children:
-		if child is Sprite2D:
+		if child is train:
 			count += 1
 	return count
+
+func get_trains() -> Array:
+	var children: Array = get_children()
+	var toReturn: Array = []
+	for child: Node in children:
+		if child is train:
+			toReturn.push_back(child)
+	return toReturn
 
 func get_trains_in_depot(coords: Vector2i) -> Array:
 	if map_data.get_instance().is_depot(coords):
@@ -214,19 +227,19 @@ func get_trains_in_depot(coords: Vector2i) -> Array:
 	return []
 
 #Rail Builder
-func record_start_rail() -> void:
+func record_start() -> void:
 	start = get_cell_position()
+	is_start_valid = true
 
 func reset_start() -> void:
 	start = Vector2i(0, 0)
+	is_start_valid = false
 
 func place_rail_to_start() -> void:
 	place_to_end_rail(start, get_cell_position())
 
 func place_to_end_rail(new_start: Vector2i, new_end: Vector2i) -> void:
 	start = new_start
-	if start == Vector2i(0, 0):
-		return
 	var end: Vector2i = new_end
 	var queue: Array = []
 	
@@ -245,10 +258,46 @@ func place_to_end_rail(new_start: Vector2i, new_end: Vector2i) -> void:
 		prev = current
 	reset_start()
 
+func place_road_to_start() -> void:
+	create_roads(false)
+
+func hover_roads() -> void:
+	create_roads(true)
+
+func create_roads(temp: bool) -> void:
+	var end: Vector2i = get_cell_position()
+	var queue: Array = [start]
+	var curr: Vector2i
+	var tile_to_prev: Dictionary[Vector2i, Vector2i] = {}
+	var found: bool = false
+	tile_to_prev[start] = Vector2i(0, 0)
+	
+	while !queue.is_empty():
+		curr = queue.pop_front()
+		if curr == end:
+			found = true
+			break
+		for tile: Vector2i in thread_get_surrounding_cells(curr):
+			if !tile_to_prev.has(tile) and is_tile_traversable(tile):
+				queue.push_back(tile)
+				tile_to_prev[tile] = curr
+	var road_map: RoadMap = RoadMap.get_instance()
+	road_map.remove_hovers()
+	while curr != Vector2i(0, 0) and found:
+		if temp:
+			road_map.hover_road(curr)
+		else:
+			road_map.place_road(curr)
+		curr = tile_to_prev[curr]
+	if !temp:
+		reset_start()
+
 func get_rail_to_hover() -> void:
+	if !is_start_valid:
+		return
 	var end: Vector2i = get_cell_position()
 	var toReturn: Dictionary = get_rails_from(start, end)
-	rail_placer.hover_many_tiles(toReturn)
+	rail_placer_obj.hover_many_tiles(toReturn)
 
 func get_rails_from(begin: Vector2i, end: Vector2i) -> Dictionary:
 	var queue: Array = []
@@ -298,9 +347,19 @@ func get_orientation(current: Vector2i, prev: Vector2i) -> int:
 	assert(false)
 	return -1
 
+#Thread safe map functions
+func thread_get_surrounding_cells(center: Vector2i) -> Array[Vector2i]:
+	var toReturn: Array[Vector2i]
+	mutex.lock()
+	toReturn = get_surrounding_cells(center)
+	mutex.unlock()
+	return toReturn
+
 #Map Functions
 func get_cell_position() -> Vector2i:
+	mutex.lock()
 	var cell_position: Vector2i = local_to_map(get_mouse_local_to_map())
+	mutex.unlock()
 	return cell_position
 
 func get_mouse_local_to_map() -> Vector2:
@@ -339,100 +398,122 @@ func get_biome_name(coords: Vector2i) -> String:
 	return biome_name
 
 func is_forested(coords: Vector2i) -> bool:
+	mutex.lock()
 	var atlas: Vector2i = get_cell_atlas_coords(coords)
+	mutex.unlock()
 	if (atlas.y >= 0 and atlas.y <= 2) and (atlas.x == 1 or atlas.x == 2 or atlas.x == 4):
 		return true
 	return false
 
 func is_hilly(coords: Vector2i) -> bool:
+	mutex.lock()
 	var atlas: Vector2i = get_cell_atlas_coords(coords)
+	mutex.unlock()
 	if (atlas == Vector2i(3, 0) or atlas == Vector2i(4, 0) or atlas == Vector2i(5, 1) or atlas == Vector2i(3, 2) or atlas == Vector2i(4, 2) or atlas == Vector2i(1, 3)):
 		return true
 	return false
 
 func is_mountainous(coords: Vector2i) -> bool:
+	mutex.lock()
 	var atlas: Vector2i = get_cell_atlas_coords(coords)
+	mutex.unlock()
 	if (atlas == Vector2i(5, 0) or atlas == Vector2i(3, 3)):
 		return true
 	return false
 
 func is_desert(coords: Vector2i) -> bool:
+	mutex.lock()
 	var atlas: Vector2i = get_cell_atlas_coords(coords)
+	mutex.unlock()
 	if (atlas.y == 3):
 		return true
 	return false
 
 func is_tundra(coords: Vector2i) -> bool:
+	mutex.lock()
 	var atlas: Vector2i = get_cell_atlas_coords(coords)
+	mutex.unlock()
 	if (atlas.y == 2):
 		return true
 	return false
 
 func is_water(coords: Vector2i) -> bool:
+	mutex.lock()
 	var atlas: Vector2i = get_cell_atlas_coords(coords)
-	if (atlas.y == 0 and atlas.x >= 6):
+	mutex.unlock()
+	if (atlas.y == 0 and atlas.x >= 6) or atlas == Vector2i(-1, -1):
 		return true
 	return false
 
 func is_dry(coords: Vector2i) -> bool:
+	mutex.lock()
 	var atlas: Vector2i = get_cell_atlas_coords(coords)
+	mutex.unlock()
 	if (atlas.y == 1):
 		return true
 	return false
 
+func get_terrain_speed_mult(tile: Vector2) -> float:
+	if is_hilly(tile):
+		return 0.75
+	elif is_forested(tile):
+		return 0.8
+	return 1
+
 #Tile Effects
 func highlight_cell(coords: Vector2i) -> void:
+	mutex.lock()
 	clear_highlights()
 	var highlight: Sprite2D = Sprite2D.new()
 	highlight.texture = load("res://Map_Icons/selected.png")
 	add_child(highlight)
 	highlight.name = "highlight"
 	highlight.position = map_to_local(coords)
+	mutex.unlock()
 
 func clear_highlights() -> void:
+	mutex.lock()
 	if has_node("highlight"):
 		var node: Sprite2D = get_node("highlight")
 		remove_child(node)
 		node.queue_free()
+	mutex.unlock()
 
 func make_cell_invisible(coords: Vector2i) -> void:
+	mutex.lock()
 	set_cell(coords, 1, get_cell_atlas_coords(coords))
+	mutex.unlock()
 
 func make_cell_visible(coords: Vector2i) -> void:
+	mutex.lock()
 	set_cell(coords, 0, get_cell_atlas_coords(coords))
+	mutex.unlock()
 
 #Money Stuff
 func get_cash_of_firm(coords: Vector2i) -> int:
-	return terminal_map.get_cash_of_firm(coords)
+	return TerminalMap.get_instance().get_cash_of_firm(coords)
 
-func add_money_to_player(id: int, amount: int) -> void:
-	money_interface.add_money_to_player(id, amount)
+func get_money(id: int) -> float:
+	return MoneyController.get_instance().get_money(id)
 
-func remove_money(id: int, amount: int) -> void:
-	money_interface.add_money_to_player(id, -amount)
+@rpc("authority", "unreliable", "call_local")
+func update_money_label_of_player(player_id: int, amount: int) -> void:
+	call_deferred("update_money_label_of_player_helper", player_id, amount)
 
-func player_has_enough_money(id: int, amount: int) -> bool:
-	return get_money(id) >= amount
-
-func get_money(id: int) -> int:
-	return money_interface.get_money(id)
-
-func get_money_of_all_players() -> Dictionary:
-	return money_interface.get_money_dictionary()
+@rpc("authority", "unreliable", "call_local")
+func update_money_label_of_player_helper(player_id: int, amount: int) -> void:
+	update_money_label.rpc_id(player_id, amount)
 
 @rpc("authority", "unreliable", "call_local")
 func update_money_label(amount: int) -> void:
 	camera.update_cash_label(amount)
 
 #Tile Data
-func get_tile_connections(coords: Vector2i) -> int:
-	return rail_placer.get_track_connections(coords)
-
 func request_tile_data(coordinates: Vector2i) -> TileData:
 	return get_cell_tile_data(coordinates)
 
 func do_tiles_connect(coord1: Vector2i, coord2: Vector2i) -> bool:
-	return rail_placer.are_tiles_connected_by_rail(coord1, coord2, get_surrounding_cells(coord1))
+	return rail_placer_obj.are_tiles_connected_by_rail(coord1, coord2, get_surrounding_cells(coord1))
 
 func open_tile_window(coords: Vector2i) -> void:
 	if !is_water(coords):
@@ -441,49 +522,17 @@ func open_tile_window(coords: Vector2i) -> void:
 		tile_window.hide()
 
 #Rail General
-@rpc("authority", "call_local", "unreliable")
-func place_tile(coords: Vector2i, orientation: int, type: int, _new_owner: int) -> void:
-	rail_placer.place_tile(coords, orientation, type)
+func remove_rail(coords: Vector2i, orientation: int, p_type: int) -> void:
+	#TODO: Needed for testing, but should be updated and/or removed
+	if unique_id == 1:
+		rail_placer_obj.remove_tile(coords, orientation, p_type)
 
-func set_cell_rail_placer_request(coords: Vector2i, orientation: int, type: int, new_owner: int) -> void:
-	set_cell_rail_placer_server.rpc_id(1, coords, orientation, type, new_owner)
-
-@rpc("any_peer", "call_remote", "unreliable")
-func set_cell_rail_placer_server(coords: Vector2i, orientation: int, type: int, new_owner: int) -> void:
-	map_node.acknowledge_pending_deferred_call(new_owner)
-	if rail_check(coords) and is_owned(new_owner, coords):
-		place_tile.rpc(coords, orientation, type, new_owner)
-		if type == 1:
-			encode_depot(coords, new_owner)
-			var depot_name: String = map_data.get_instance().get_depot_name(coords)
-			encode_depot_client.rpc(coords, depot_name, new_owner)
-		elif type == 2:
-			encode_station.rpc(coords, new_owner)
-			terminal_map.create_station(coords, new_owner)
-	else:
-		rail_placer.clear_all_temps()
-
-@rpc("authority", "call_local", "unreliable")
-func encode_depot(coords: Vector2i, new_owner: int) -> void:
-	map_data.get_instance().add_depot(coords, depot.new(coords, new_owner))
-
-@rpc("authority", "call_remote", "unreliable")
-func encode_depot_client(coords: Vector2i, depot_name: String, new_owner: int) -> void:
-	#TODO: Client map_data
-	pass
-	map_data.get_instance().add_depot(coords, depot.new(depot_name, new_owner))
-
-@rpc("authority", "call_local", "unreliable")
-func encode_station(coords: Vector2i, new_owner: int) -> void:
-	map_data.get_instance().add_hold(coords, "Station", new_owner)
-
-#Rails, Depot, Station
 func place_rail_general(coords: Vector2i, orientation: int, type: int) -> void:
 	if unique_id == 1:
-		set_cell_rail_placer_server(coords, orientation, type, unique_id)
+		rail_placer_obj.place_tile(coords, orientation, type, unique_id)
 	else:
-		set_cell_rail_placer_request(coords, orientation, type, unique_id)
-	
-func rail_check(coords: Vector2i) -> bool:
-	var atlas_coords: Vector2i = get_cell_atlas_coords(coords)
-	return !untraversable_tiles.has(atlas_coords)
+		set_cell_rail_placer_request.rpc_id(1, coords, orientation, type, unique_id)
+
+@rpc("any_peer", "call_remote", "unreliable")
+func set_cell_rail_placer_request(coords: Vector2i, orientation: int, type: int, new_owner: int) -> void:
+	rail_placer_obj.place_tile(coords, orientation, type, new_owner)

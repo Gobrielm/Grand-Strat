@@ -1,0 +1,176 @@
+#include "recipe_info.hpp"
+#include "cargo_info.hpp"
+#include "../classes/factory_utility/recipe.hpp"
+
+RecipeInfo* RecipeInfo::singleton_instance = nullptr;
+
+RecipeInfo::RecipeInfo() {
+    add_recipes();
+}
+
+RecipeInfo::~RecipeInfo() {
+    
+}
+
+void RecipeInfo::create() {
+    if (singleton_instance == nullptr) {
+        singleton_instance = (new(RecipeInfo));
+    }
+    
+}
+
+void RecipeInfo::cleanup() {
+    if (singleton_instance != nullptr) {
+        delete singleton_instance;
+        singleton_instance = nullptr;
+    }
+}
+
+RecipeInfo* RecipeInfo::get_instance() {
+    ERR_FAIL_COND_V_MSG(singleton_instance == nullptr, nullptr, "RecipeInfo not created but accessed.");
+    return singleton_instance;
+}
+
+void RecipeInfo::add_recipes() {
+    create_recipe({{}, {{"clay", 0.05f}}}, {{rural, 2}});
+    create_recipe({{}, {{"sand", 0.05f}}}, {{rural, 2}});
+    create_recipe({{}, {{"sulfur", 0.05f}}}, {{rural, 2}});
+    create_recipe({{}, {{"lead", 0.05f}}}, {{rural, 2}});
+    create_recipe({{}, {{"iron", 0.05f}}}, {{rural, 2}});
+    create_recipe({{}, {{"coal", 0.05f}}}, {{rural, 2}});
+    create_recipe({{}, {{"copper", 0.05f}}}, {{rural, 2}});
+    create_recipe({{}, {{"zinc", 0.05f}}}, {{rural, 2}});
+    create_recipe({{}, {{"wood", 0.1f}}}, {{rural, 2}});
+    create_recipe({{}, {{"salt", 0.05f}}}, {{rural, 2}});
+    create_recipe({{}, {{"grain", 0.1f}}}, {{rural, 2}});
+    create_recipe({{}, {{"livestock", 0.1f}}}, {{rural, 2}});
+    create_recipe({{}, {{"fish", 0.1f}}}, {{rural, 2}});
+    create_recipe({{}, {{"fruit", 0.05f}}}, {{rural, 2}});
+    create_recipe({{}, {{"cotton", 0.05f}}}, {{rural, 2}});
+    create_recipe({{}, {{"silk", 0.05f}}}, {{rural, 2}});
+    create_recipe({{}, {{"spices", 0.05f}}}, {{rural, 2}});
+    create_recipe({{}, {{"coffee", 0.05f}}}, {{rural, 2}});
+    create_recipe({{}, {{"tea", 0.05f}}}, {{rural, 2}});
+    create_recipe({{}, {{"tobacco", 0.05f}}}, {{rural, 2}});
+    create_recipe({{}, {{"gold", 0.005f}}}, {{rural, 1}});
+
+    // Secondary
+    create_recipe({{{"grain", 1.0f}, {"salt", 0.4f}}, {{"bread", 0.4f}}}, {{town, 2}});
+    create_recipe({{{"cotton", 1.0f}}, {{"clothes", 0.2f}}}, {{town, 2}});
+    create_recipe({{{"wood", 1.0f}}, {{"lumber", 0.3f}}}, {{town, 1}});
+    create_recipe({{{"wood", 1.0f}}, {{"paper", 0.5f}}}, {{town, 1}});
+    create_recipe({{{"lumber", 1.0f}}, {{"furniture", 0.3f}}}, {{town, 2}});
+    create_recipe({{{"lumber", 1.0f}}, {{"wagons", 0.25f}}}, {{town, 2}});
+    create_recipe({{{"lumber", 2.0f}}, {{"boats", 0.2f}}}, {{town, 3}});
+}
+
+
+void RecipeInfo::create_recipe(std::vector<std::unordered_map<std::string, float>> v, std::unordered_map<PopTypes, int> p) {
+    Ref<CargoInfo> cargo_info = CargoInfo::get_instance();
+    std::vector<std::unordered_map<int, float>> v_float;
+    v_float.emplace_back(); v_float.emplace_back(); // Add two maps to the vector for i/o
+    for (const auto &[cargo_name, amount]: v[0]) {
+        v_float[0][cargo_info->get_cargo_type(cargo_name.c_str())] = amount;
+    }
+    for (const auto &[cargo_name, amount]: v[1]) {
+        v_float[1][cargo_info->get_cargo_type(cargo_name.c_str())] = amount;
+    }
+
+    add_recipe(new Recipe(v_float[0], v_float[1], p));
+}
+
+Recipe* RecipeInfo::convert_readable_recipe_into_recipe(std::vector<std::unordered_map<std::string, float>> v, std::unordered_map<PopTypes, int> p) {
+    Ref<CargoInfo> cargo_info = CargoInfo::get_instance();
+    std::vector<std::unordered_map<int, float>> v_float;
+    v_float.emplace_back(); v_float.emplace_back(); // Add two maps to the vector for i/o
+    for (const auto &[cargo_name, amount]: v[0]) {
+        v_float[0][cargo_info->get_cargo_type(cargo_name.c_str())] = amount;
+    }
+    for (const auto &[cargo_name, amount]: v[1]) {
+        v_float[1][cargo_info->get_cargo_type(cargo_name.c_str())] = amount;
+    }
+    return new Recipe(v_float[0], v_float[1], p);
+}
+
+void RecipeInfo::add_recipe(Recipe* recipe) {
+    recipes.push_back(recipe);
+}
+
+Recipe* RecipeInfo::get_primary_recipe_for_type(int output_type) const {
+    for (int i = 0; i < recipes.size(); i++) {
+        Recipe* recipe = recipes[i];
+        if (recipe->is_primary() && recipe->does_create(output_type)) {
+            return new Recipe(*recipe);
+        }
+    }
+    return nullptr;
+}
+
+Recipe* RecipeInfo::get_primary_recipe_for_type_read_only(int output_type) const {
+    for (int i = 0; i < recipes.size(); i++) {
+        Recipe* recipe = recipes[i];
+        if (recipe->is_primary() && recipe->does_create(output_type)) {
+            return recipe;
+        }
+    }
+    return nullptr;
+}
+
+Recipe* RecipeInfo::get_recipe_for_type(int output_type) const {
+    for (int i = 0; i < recipes.size(); i++) {
+        Recipe* recipe = recipes[i];
+        if (recipe->does_create(output_type)) {
+            return new Recipe(*recipe);
+        }
+    }
+    return nullptr;
+}
+
+Recipe* RecipeInfo::get_recipe_for_type_read_only(int output_type) const {
+    for (int i = 0; i < recipes.size(); i++) {
+        Recipe* recipe = recipes[i];
+        if (recipe->does_create(output_type)) {
+            return recipe;
+        }
+    }
+    return nullptr;
+}
+
+Recipe* RecipeInfo::get_recipe(std::unordered_set<std::string> inputs, std::unordered_set<std::string> outputs) {
+    for (int i = 0; i < recipes.size(); i++) {
+        Recipe* recipe = recipes[i];
+        if (map_and_set_match(inputs, recipe->get_inputs()) && map_and_set_match(outputs, recipe->get_outputs())) {
+            return new Recipe(*recipe);
+        }
+    }
+    return nullptr;
+}
+
+Recipe* RecipeInfo::get_recipe(Dictionary inputs, Dictionary outputs) {
+    for (int i = 0; i < recipes.size(); i++) {
+        Recipe* recipe = recipes[i];
+        if (map_and_dict_match(inputs, recipe->get_inputs()) && map_and_dict_match(outputs, recipe->get_outputs())) {
+            return new Recipe(*recipe);
+        }
+    }
+    return nullptr;
+}
+
+bool RecipeInfo::map_and_dict_match(Dictionary d, std::unordered_map<int, float> m) {
+    for (const auto& [type, amount]: m) {
+        if (!d.has(type) || float(d[type]) != amount) {
+            return false;
+        }
+    }
+    return d.size() == m.size();
+}
+
+bool RecipeInfo::map_and_set_match(std::unordered_set<std::string> s, std::unordered_map<int, float> m) {
+    Ref<CargoInfo> cargo_info = CargoInfo::get_instance();
+    for (const auto& cargo_name: s) {
+        if (!m.count(cargo_info->get_cargo_type(cargo_name.c_str()))) {
+            return false;
+        }
+    }
+    return s.size() == m.size();
+}

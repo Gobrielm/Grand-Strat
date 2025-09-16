@@ -2,109 +2,148 @@ extends TileMapLayer
 
 @onready var cargo_values: Node = $cargo_values
 
+var mutex: Mutex = Mutex.new()
+
 func _ready() -> void:
 	Utils.assign_cargo_map(self)
-	for cell: Vector2i in get_used_cells():
-		var building: terminal = instance_preplaced_towns(cell)
-		terminal_map.create_terminal(building)
 
-func instance_preplaced_towns(coords: Vector2i) -> terminal:
-	var atlas: Vector2i = get_cell_atlas_coords(coords)
-	#No other types accounted for, just towns should be preplaced. TODO: Towns automated too.
-	assert(atlas == Vector2i(0, 1))
-	var loaded_script: Resource = load("res://Cargo/Cargo_Objects/Specific/Endpoint/town.gd")
-	assert(loaded_script != null)
-	Utils.world_map.make_cell_invisible(coords)
-	return loaded_script.new(coords, Utils.tile_ownership.get_player_id_from_cell(coords))
+func add_terminal_to_province(term: Terminal) -> void:
+	var province_manager: ProvinceManager = ProvinceManager.get_instance()
+	var prov: Province = province_manager.get_province(province_manager.get_province_id(term.get_location()))
+	prov.add_terminal(term.get_location())
+
+func remove_terminal_from_province(coords: Vector2i) -> void:
+	var province_manager: ProvinceManager = ProvinceManager.get_instance()
+	var prov: Province = province_manager.get_province(province_manager.get_province_id(coords))
+	prov.remove_terminal(coords)
 
 func transform_construction_site_to_factory(coords: Vector2i) -> void:
-	set_tile(coords, Vector2i(4, 1))
+	TerminalMap.get_instance().transform_construction_site_to_factory(coords)
+	set_tile.rpc(coords, Vector2i(4, 1))
+	add_terminal_to_province(TerminalMap.get_instance().get_terminal(coords))
 
 func place_random_industries() -> void:
-	var map_data_singleton: map_data = map_data.get_instance()
-	for province_id: int in map_data_singleton.provinces:
-		var pop: int = map_data_singleton.get_population(province_id)
-		var chances: Array = [
-			{ "threshold": 10000000, "mod": 1, "mult": 5, "count": 3 },
-			{ "threshold": 1000000,  "mod": 3, "mult": 4, "count": 2 },
-			{ "threshold": 100000,   "mod": 5, "mult": 3, "count": 1 },
-			{ "threshold": 10000,    "mod": 10, "mult": 2, "count": 1 },
-			{ "threshold": 0,        "mod": 30, "mult": 1, "count": 1 }
-		]
-		for entry: Dictionary in chances:
-			if pop > entry.threshold and randi() % entry.mod == 0:
-				pick_and_place_random_industry(map_data_singleton, province_id, entry.count, entry.mult)
-				break
+	var town_tiles_to_place: Array[Vector2i] = []
+	for prov: Province in ProvinceManager.get_instance().get_provinces():
+		var tile: Variant = create_town_in_province(prov)
+		if tile:
+			town_tiles_to_place.append(tile as Vector2i)
+	call_deferred("place_towns_client_side", town_tiles_to_place)
+	
+	
+func create_town_in_province(prov: Province) -> Variant:
+	var tile: Vector2i = prov.get_random_tile()
+	if tile != Vector2i(0, 0): # Isn;t available
+		if create_town(tile, prov.get_province_id()):
+			return tile
+	return null
 
-func pick_and_place_random_industry(map_data_singleton: map_data, province_id: int, count: int, multiplier: int) -> void:
-	var prov: province = map_data_singleton.get_province(province_id)
-	for i: int in range(count):
-		place_random_industry(get_random_unowned_tile(prov), randi() % multiplier)
+## Returns true if town sucessfully placed
+func create_town(coords: Vector2i, prov_id: int) -> bool:
+	const TOWN_THRESHOLD: int = 100000
+	var province_manager: ProvinceManager = ProvinceManager.get_instance()
+	if province_manager.get_population(prov_id) < TOWN_THRESHOLD:
+		return false
+	FactoryCreator.get_instance().create_town(coords)
+	Utils.world_map.make_cell_invisible(coords)
+	return true
 
-func get_random_unowned_tile(prov: province) -> Vector2i:
-	var choices: Array = prov.get_tiles()
-	while true:
-		var temp: Vector2i = choices.pick_random()
-		if get_cell_atlas_coords(temp) == Vector2i(-1, -1):
-			return temp
-	assert(false, "Attempted to place industry where none could go")
+func place_towns_client_side(town_tiles: Array[Vector2i]) -> void:
+	for tile: Vector2i in town_tiles:
+		set_tile.rpc(tile, Vector2i(0, 1))
+
+func place_factories_client_side(fact_tiles: Dictionary) -> void:
+	mutex.lock()
+	
+	for tile: Vector2i in fact_tiles:
+		var atlas: Vector2i = get_atlas_cell(fact_tiles[tile])
+		set_cell(tile, 0, atlas)
+		Utils.world_map.make_cell_invisible(tile)
+	
+	mutex.unlock()
+
+func add_industries_to_towns() -> void:
+	for country_id: int in tile_ownership.get_instance().get_country_ids():
+		var other: InitialBuilder = InitialBuilder.create(country_id)
+		other.build_initital_factories()
+		other.free()
+
+func place_random_road_depot(middle: Vector2i) -> Vector2i:
+	var tiles: Array = Utils.world_map.thread_get_surrounding_cells(middle)
+	tiles.shuffle()
+	for tile: Vector2i in tiles:
+		if !Utils.is_tile_taken(tile):
+			place_road_depot(tile, 0)
+			return tile
 	return Vector2i(0, 0)
 
-func place_random_industry(tile: Vector2i, mult: int) -> void:
-	var tile_ownership: Node = Utils.tile_ownership
-	var best_resource: int = cargo_values.get_best_resource(tile)
-	if best_resource == -1:
-		return
-	create_factory(tile_ownership.get_player_id_from_cell(tile), tile, get_primary_recipe_for_type(best_resource), mult)
+func place_road_depot(tile: Vector2i, owner_id: int) -> void:
+	RoadMap.get_instance().place_road_depot(tile)
+	FactoryCreator.get_instance().create_road_depot(tile, owner_id)
 
-func get_primary_recipe_for_type(type: int) -> Array:
-	for recipe_set: Array in recipe.get_set_recipes():
-		for output: int in recipe_set[1]:
-			if output == type:
-				return recipe_set
-	return []
+func get_most_prominent_resources(province: Province) -> Dictionary:
+	var d: Dictionary = {}
+	for tile: Vector2i in province.get_tiles():
+		var resources: Dictionary = cargo_values.get_available_resources(tile)
+		for type: int in resources:
+			var amount: int = resources[type]
+			if !d.has(type):
+				d[type] = 0
+			d[type] += amount
+	#var toReturn: priority_queue = priority_queue.new()
+	#for type: int in d:
+		#toReturn.insert_element(type, d[type])
+	
+	return d
 
 func create_factory(p_player_id: int, coords: Vector2i, obj_recipe: Array, mult: int) -> void:
-	var new_factory: factory
-	if p_player_id > 0:
-		new_factory =  player_factory.new(coords, p_player_id, obj_recipe[0], obj_recipe[1])
-	else:
-		new_factory =  ai_factory.new(coords, p_player_id, obj_recipe[0], obj_recipe[1])
+	var new_factory: Factory = TerminalMap.get_instance().create_factory(coords, p_player_id, obj_recipe[0], obj_recipe[1])
+	
 	for i: int in range(1, mult):
 		new_factory.admin_upgrade()
-	set_tile(coords, get_atlas_cell(obj_recipe))
-	terminal_map.create_terminal(new_factory)
+	call_thread_safe("call_set_tile_rpc", coords, (obj_recipe[1] as Dictionary).keys()[0])
+	add_terminal_to_province(new_factory)
+	TerminalMap.get_instance().create_terminal(new_factory)
 
-func get_atlas_cell(obj_recipe: Array) -> Vector2i:
-	var output: Dictionary = obj_recipe[1]
-	if obj_recipe[0].is_empty() and output.size() == 1:
-		var primary_type: int = output.keys()[0]
+func call_set_tile_rpc(coords: Vector2i, type: int) -> void:
+	set_tile.rpc(coords, get_atlas_cell(type))
+
+func get_atlas_cell(primary_type: int = -1) -> Vector2i:
+	if primary_type != -1:
 		if (primary_type >= 2 and primary_type <= 7) or primary_type == 20:
 			return Vector2i(3, 0)
 		elif primary_type == 10 or primary_type == 13 or primary_type == 14 or (primary_type >= 16 and primary_type <= 19):
 			return Vector2i(4, 0)
+		elif primary_type == 8:
+			return Vector2i(1, 0)
 	return Vector2i(4, 1)
 
 func create_construction_site(_player_id: int, coords: Vector2i) -> void:
-	var new_factory: construction_site = load("res://Cargo/Cargo_Objects/Specific/Player/construction_site.gd").new(coords, _player_id)
-	set_tile(coords, Vector2i(3, 1))
-	terminal_map.create_terminal(new_factory)
+	FactoryCreator.get_instance().create_construction_site(coords, _player_id)
+	place_construction_site_tile(coords)
 
-func create_town(coords: Vector2i) -> void:
-	var tile_ownership: Node = Utils.tile_ownership
-	var new_town: terminal = load("res://Cargo/Cargo_Objects/Specific/Endpoint/town.gd").new(coords, tile_ownership.get_player_id_from_cell(coords))
-	set_tile(coords, Vector2i(0, 1))
-	terminal_map.create_terminal(new_town)
+func place_construction_site_tile(coords: Vector2i) -> void:
+	set_tile.rpc(coords, Vector2i(3, 1))
 
 func get_available_primary_recipes(coords: Vector2i) -> Array:
 	return cargo_values.get_available_primary_recipes(coords)
 
-func place_resources(map: TileMapLayer) -> void:
-	cargo_values.place_resources(map)
-
+@rpc("authority", "call_local", "unreliable")
 func set_tile(coords: Vector2i, atlas: Vector2i) -> void:
+	mutex.lock()
 	set_cell(coords, 0, atlas)
+	mutex.unlock()
 	Utils.world_map.make_cell_invisible(coords)
 
 func _on_cargo_values_finished_created_map_resources() -> void:
-	place_random_industries()
+	if !Utils.world_map.is_testing():
+		place_random_industries()
+
+func test() -> void:
+	FactoryCreator.get_instance().create_primary_industry(10, Vector2i(101, -117), 0, 1)
+	var tile1: Vector2i = place_random_road_depot(Vector2i(101, -117))
+	
+	FactoryCreator.get_instance().create_primary_industry(10, Vector2i(101, -113), 0, 1)
+	create_town(Vector2i(101, -114), 177)
+	var tile2: Vector2i = place_random_road_depot(Vector2i(101, -114))
+	RoadMap.get_instance().bfs_and_connect(tile1, tile2)

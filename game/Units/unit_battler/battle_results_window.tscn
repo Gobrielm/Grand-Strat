@@ -1,0 +1,70 @@
+[gd_scene load_steps=3 format=3 uid="uid://b6rfa55aamk7s"]
+
+[ext_resource type="Script" uid="uid://b76g731hpuclm" path="res://Units/unit_battler/battle_results_window.gd" id="1_6dlq0"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_xfhaa"]
+font_size = 30
+
+[node name="battle_results_window" type="Window"]
+initial_position = 1
+size = Vector2i(400, 300)
+script = ExtResource("1_6dlq0")
+
+[node name="Result" type="Label" parent="."]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -28.0
+offset_right = 28.0
+offset_bottom = 69.0
+grow_horizontal = 2
+text = "Win"
+label_settings = SubResource("LabelSettings_xfhaa")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Control" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 400.0
+offset_bottom = 301.0
+
+[node name="Casualties" type="ItemList" parent="Control"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = -84.5
+offset_right = -9.0
+offset_bottom = 85.5
+grow_horizontal = 2
+grow_vertical = 2
+item_count = 5
+item_0/text = "Casualties"
+item_1/text = "Inf: "
+item_2/text = "Cav: "
+item_3/text = "Art: "
+item_4/text = "Total: "
+
+[node name="Kills" type="ItemList" parent="Control"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 9.0
+offset_top = -84.5
+offset_right = 151.0
+offset_bottom = 84.5
+grow_horizontal = 2
+grow_vertical = 2
+item_count = 5
+item_0/text = "Kills"
+item_1/text = "Inf: "
+item_2/text = "Cav: "
+item_3/text = "Art: "
+item_4/text = "Total: "

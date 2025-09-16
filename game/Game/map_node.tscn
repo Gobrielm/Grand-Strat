@@ -1,10 +1,159 @@
-[gd_scene load_steps=6 format=4 uid="uid://dlmwgwie45non"]
+[gd_scene load_steps=11 format=3 uid="uid://dlmwgwie45non"]
 
 [ext_resource type="Script" uid="uid://bb01noce8wuix" path="res://Game/map_node.gd" id="1_4blso"]
 [ext_resource type="PackedScene" uid="uid://bpj5gy156fc3x" path="res://Map/Main_Maps/world_map.tscn" id="2_6stc2"]
 [ext_resource type="PackedScene" uid="uid://dbdsinyte2gu1" path="res://Map/tile_ownership.tscn" id="3_3b3ai"]
 [ext_resource type="PackedScene" uid="uid://dkoyapss2hyif" path="res://Map/Cargo_Maps/cargo_map.tscn" id="4_jxo5k"]
 [ext_resource type="PackedScene" uid="uid://c4wm8wphno506" path="res://Music/background_music.tscn" id="5_k18o7"]
+[ext_resource type="Texture2D" uid="uid://u285v0nq61tw" path="res://Map_Icons/roads.png" id="5_pag1p"]
+[ext_resource type="Texture2D" uid="uid://ccgq3fpkl3jha" path="res://Map_Icons/bridges.png" id="7_1lcu7"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_vmahd"]
+texture = ExtResource("5_pag1p")
+separation = Vector2i(0, 64)
+texture_region_size = Vector2i(128, 128)
+0:5/0 = 0
+1:5/0 = 0
+6:0/0 = 0
+0:2/0 = 0
+0:0/0 = 0
+0:4/0 = 0
+0:1/0 = 0
+0:3/0 = 0
+1:2/0 = 0
+1:0/0 = 0
+1:4/0 = 0
+1:1/0 = 0
+1:3/0 = 0
+2:2/0 = 0
+2:0/0 = 0
+2:4/0 = 0
+2:1/0 = 0
+2:3/0 = 0
+3:2/0 = 0
+3:0/0 = 0
+3:4/0 = 0
+3:1/0 = 0
+3:3/0 = 0
+4:2/0 = 0
+4:0/0 = 0
+4:4/0 = 0
+4:1/0 = 0
+4:3/0 = 0
+5:2/0 = 0
+5:0/0 = 0
+5:4/0 = 0
+5:1/0 = 0
+5:3/0 = 0
+6:2/0 = 0
+6:1/0 = 0
+6:3/0 = 0
+7:2/0 = 0
+7:1/0 = 0
+7:3/0 = 0
+8:2/0 = 0
+8:1/0 = 0
+8:3/0 = 0
+9:2/0 = 0
+9:1/0 = 0
+9:3/0 = 0
+10:2/0 = 0
+10:1/0 = 0
+10:3/0 = 0
+11:2/0 = 0
+11:1/0 = 0
+11:3/0 = 0
+12:2/0 = 0
+12:1/0 = 0
+12:3/0 = 0
+13:2/0 = 0
+13:1/0 = 0
+13:3/0 = 0
+14:2/0 = 0
+14:1/0 = 0
+14:3/0 = 0
+15:2/0 = 0
+16:2/0 = 0
+17:2/0 = 0
+18:2/0 = 0
+19:2/0 = 0
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_hm2cb"]
+texture = ExtResource("7_1lcu7")
+separation = Vector2i(0, 64)
+texture_region_size = Vector2i(128, 128)
+0:5/0 = 0
+1:5/0 = 0
+6:0/0 = 0
+0:2/0 = 0
+0:0/0 = 0
+0:4/0 = 0
+0:1/0 = 0
+0:3/0 = 0
+1:2/0 = 0
+1:0/0 = 0
+1:4/0 = 0
+1:1/0 = 0
+1:3/0 = 0
+2:2/0 = 0
+2:0/0 = 0
+2:4/0 = 0
+2:1/0 = 0
+2:3/0 = 0
+3:2/0 = 0
+3:0/0 = 0
+3:4/0 = 0
+3:1/0 = 0
+3:3/0 = 0
+4:2/0 = 0
+4:0/0 = 0
+4:4/0 = 0
+4:1/0 = 0
+4:3/0 = 0
+5:2/0 = 0
+5:0/0 = 0
+5:4/0 = 0
+5:1/0 = 0
+5:3/0 = 0
+6:2/0 = 0
+6:1/0 = 0
+6:3/0 = 0
+7:2/0 = 0
+7:1/0 = 0
+7:3/0 = 0
+8:2/0 = 0
+8:1/0 = 0
+8:3/0 = 0
+9:2/0 = 0
+9:1/0 = 0
+9:3/0 = 0
+10:2/0 = 0
+10:1/0 = 0
+10:3/0 = 0
+11:2/0 = 0
+11:1/0 = 0
+11:3/0 = 0
+12:2/0 = 0
+12:1/0 = 0
+12:3/0 = 0
+13:2/0 = 0
+13:1/0 = 0
+13:3/0 = 0
+14:2/0 = 0
+14:1/0 = 0
+14:3/0 = 0
+15:2/0 = 0
+16:2/0 = 0
+17:2/0 = 0
+18:2/0 = 0
+19:2/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_3hhe8"]
+tile_shape = 3
+tile_offset_axis = 1
+tile_size = Vector2i(127, 110)
+sources/0 = SubResource("TileSetAtlasSource_vmahd")
+sources/1 = SubResource("TileSetAtlasSource_hm2cb")
 
 [node name="map_node" type="CanvasGroup"]
 script = ExtResource("1_4blso")
@@ -14,12 +163,8 @@ script = ExtResource("1_4blso")
 [node name="tile_ownership" parent="." instance=ExtResource("3_3b3ai")]
 
 [node name="cargo_map" parent="." instance=ExtResource("4_jxo5k")]
-tile_map_data = PackedByteArray("AABxAI7/AAAAAAEAAAB4AJv/AAAAAAEAAACAAI//AAAAAAEAAABdAJD/AAAAAAEAAABwAIb/AAAAAAEAAABpAKD/AAAAAAEAAAA=")
-
-[node name="ai_timer" type="Timer" parent="."]
-wait_time = 0.05
-autostart = true
 
 [node name="background_music" parent="." instance=ExtResource("5_k18o7")]
 
-[connection signal="timeout" from="ai_timer" to="." method="_on_ai_timer_timeout"]
+[node name="RoadMap" type="RoadMap" parent="."]
+tile_set = SubResource("TileSet_3hhe8")

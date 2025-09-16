@@ -1,0 +1,54 @@
+[gd_scene load_steps=4 format=3 uid="uid://dbb2spx1uq6ln"]
+
+[ext_resource type="Script" uid="uid://3umfxkqtipoh" path="res://Multiplayer/lobby_screen.gd" id="1_avp8e"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_avp8e"]
+bg_color = Color(0, 0.733333, 0, 1)
+
+[sub_resource type="Theme" id="Theme_76eev"]
+ProgressBar/colors/font_color = Color(0, 0, 0, 1)
+ProgressBar/styles/fill = SubResource("StyleBoxFlat_avp8e")
+
+[node name="lobby_screen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_avp8e")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+layout_mode = 0
+offset_right = 1151.0
+offset_bottom = 649.0
+
+[node name="PlayerList" type="ItemList" parent="ColorRect"]
+layout_mode = 0
+offset_left = 1.0
+offset_top = 226.0
+offset_right = 338.0
+offset_bottom = 646.0
+focus_mode = 0
+allow_search = false
+
+[node name="Button" type="Button" parent="ColorRect"]
+layout_mode = 0
+offset_left = 560.0
+offset_top = 137.0
+offset_right = 611.0
+offset_bottom = 192.0
+text = "Start Game"
+
+[node name="ProgressBar" type="ProgressBar" parent="ColorRect"]
+layout_mode = 0
+offset_left = 488.0
+offset_top = 210.0
+offset_right = 735.0
+offset_bottom = 237.0
+theme = SubResource("Theme_76eev")
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(575.5, 324.5)
+
+[connection signal="pressed" from="ColorRect/Button" to="." method="_on_button_pressed"]

@@ -1,0 +1,40 @@
+[gd_scene load_steps=8 format=3 uid="uid://bk4w7r4wsqtnt"]
+
+[ext_resource type="Shader" uid="uid://cju3ifomdtohx" path="res://Map/Main_Maps/main_map.gdshader" id="1_sd6f1"]
+[ext_resource type="Texture2D" uid="uid://dr53rged12e1u" path="res://Map_Icons/cargo_set.png" id="2_2jepq"]
+[ext_resource type="Script" uid="uid://charl6a6wfue0" path="res://Singletons/Client_Singletons/client_cargo_map.gd" id="3_ndk6s"]
+[ext_resource type="PackedScene" uid="uid://d1mrh6ujhrmuc" path="res://Singletons/Client_Singletons/client_cargo_values.tscn" id="4_c2w42"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_g6odn"]
+shader = ExtResource("1_sd6f1")
+shader_parameter/onoff = 0
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_c5pk0"]
+texture = ExtResource("2_2jepq")
+margins = Vector2i(0, 34)
+texture_region_size = Vector2i(128, 192)
+0:0/0 = 0
+1:0/0 = 0
+0:1/0 = 0
+1:1/0 = 0
+2:1/0 = 0
+3:1/0 = 0
+4:1/0 = 0
+3:0/0 = 0
+4:0/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_toufl"]
+tile_shape = 3
+tile_offset_axis = 1
+tile_size = Vector2i(127, 110)
+sources/0 = SubResource("TileSetAtlasSource_c5pk0")
+
+[node name="client_cargo_map" type="TileMapLayer"]
+z_index = -1
+z_as_relative = false
+y_sort_enabled = true
+material = SubResource("ShaderMaterial_g6odn")
+tile_set = SubResource("TileSet_toufl")
+script = ExtResource("3_ndk6s")
+
+[node name="client_cargo_values" parent="." instance=ExtResource("4_c2w42")]

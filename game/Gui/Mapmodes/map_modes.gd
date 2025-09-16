@@ -22,7 +22,7 @@ func _on_cargo_pressed() -> void:
 func _on_diplomatic_pressed() -> void:
 	close_other_mapmodes()
 	Utils.turn_on_black_white_map()
-	Utils.tile_ownership.visible = true
+	tile_ownership.get_instance().visible = true
 	unpress_other_buttons()
 	press_button($diplomatic)
 
@@ -48,7 +48,7 @@ func unpress_button(button: Button) -> void:
 	button.modulate = Color(1, 1, 1, 1)
 
 func close_other_mapmodes() -> void:
-	Utils.tile_ownership.visible = false
+	tile_ownership.get_instance().visible = false
 	Utils.cargo_values.close_all_layers()
 
 func _on_resource_window_resource_window_picked(type: int) -> void:

@@ -5,24 +5,38 @@ var map: TileMapLayer
 const TILES_PER_ROW: int = 8
 const MAX_RESOURCES: Array = [5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, -1, 5000, -1, -1, -1, -1, 5000, 5000, 5000, 5000, 5000, 50000, 1000]
 var magnitude_layers: Array = []
+var mutex: Mutex = Mutex.new()
+var resource_dict: Dictionary[Vector2i, Dictionary] = {} # Dictionary[Vector2i, Dictionary[type(int)]] = int
 
 signal finished_created_map_resources
-
-func _ready() -> void:
-	create_magnitude_layers()
 
 func can_build_type(type: int, coords: Vector2i) -> bool:
 	return get_tile_magnitude(coords, type) > 0
 
 func create_magnitude_layers() -> void:
+	mutex.lock()
 	for child: Node in get_children():
 		if child is TileMapLayer:
 			magnitude_layers.append(child)
+	mutex.unlock()
 
 func get_layer(type: int) -> TileMapLayer:
+	mutex.lock()
+	assert(magnitude_layers.size() > type, "Layers doesnt have type: " + str(type))
 	var layer: TileMapLayer = magnitude_layers[type]
+	mutex.unlock()
 	assert(layer != null and layer.name == ("Layer" + str(type) + get_good_name_uppercase(type)))
 	return layer
+
+func set_resource_rpc(type: int, coords: Vector2i, atlas: Vector2i) -> void:
+	set_cell_rpc.rpc(type, coords, atlas)
+
+func set_resource_locally(type: int, coords: Vector2i, atlas: Vector2i) -> void:
+	get_layer(type).set_cell(coords, 1, atlas)
+
+@rpc("authority", "call_remote", "reliable")
+func set_cell_rpc(type: int, coords: Vector2i, atlas: Vector2i) -> void:
+	get_layer(type).set_cell(coords, 1, atlas)
 
 func get_layers() -> Array:
 	return magnitude_layers
@@ -43,7 +57,7 @@ func get_best_resource(coords: Vector2i) -> int:
 
 func get_available_resources(coords: Vector2i) -> Dictionary:
 	var toReturn: Dictionary = {}
-	for type: int in get_child_count():
+	for type: int in CargoInfo.get_instance().amount_of_primary_goods:
 		var mag: int = get_tile_magnitude(coords, type)
 		if mag > 0:
 			toReturn[type] = mag
@@ -53,81 +67,118 @@ func open_resource_map(type: int) -> void:
 	get_layer(type).visible = true
 
 func close_all_layers() -> void:
-	for i: int in terminal_map.amount_of_primary_goods:
+	for i: int in CargoInfo.get_instance().amount_of_primary_goods:
 		get_layer(i).visible = false
 
 func get_tile_magnitude(coords: Vector2i, type: int) -> int:
-	var layer: TileMapLayer = get_layer(type)
-	assert(layer != null)
-	var atlas: Vector2i = layer.get_cell_atlas_coords(coords)
-	if atlas == Vector2i(-1, -1):
-		return 0
-	return atlas.y * TILES_PER_ROW + atlas.x
+	var val: int = 0
+	mutex.lock()
+	if (resource_dict.has(coords) and resource_dict[coords].has(type)):
+		val = resource_dict[coords][type]
+	mutex.unlock()
+	return val
 
 func get_atlas_for_magnitude(num: int) -> Vector2i:
 	@warning_ignore("integer_division")
 	return Vector2i(num % TILES_PER_ROW, num / TILES_PER_ROW)
 
 func get_good_name_uppercase(type: int) -> String:
-	var cargo_name: String = terminal_map.get_cargo_name(type)
+	var cargo_name: String = CargoInfo.get_instance().get_cargo_name(type)
 	cargo_name[0] = cargo_name[0].to_upper()
 	return cargo_name
 
-func get_available_primary_recipes(coords: Vector2i) -> Array:
-	var toReturn: Array = []
+func get_available_primary_recipes(coords: Vector2i) -> Array[Array]:
+	var toReturn: Array[Array] = []
 	for type: int in get_child_count():
 		if can_build_type(type, coords):
 			var dict: Dictionary = {}
-			dict[terminal_map.get_cargo_name(type)] = 1
+			dict[type] = 1
 			toReturn.append([{}, dict])
 	return toReturn
 
-func place_resources(_map: TileMapLayer) -> void:
+func place_resources(_map: TileMapLayer, is_loading: bool = false) -> void:
 	map = _map
-	var helper: Node = load("res://Map/Cargo_Maps/cargo_values_helper.gd").new(map)
+	if is_loading:
+		var status: bool = load_resources()
+		if status:
+			return
+	var helper: RefCounted = load("res://Map/Cargo_Maps/cargo_values_helper.gd").new(map)
 	var resource_array: Array = helper.create_resource_array()
 	assert(resource_array != null or resource_array.is_empty(), "Resources generated improperly")
-	helper.queue_free()
+	
+	for i: int in range(0, resource_array.size()):
+		call_deferred("autoplace_resource_client", resource_array[i], i, MAX_RESOURCES[i])
+		autoplace_resource(resource_array[i], i, MAX_RESOURCES[i])
+	save_cargo_values()
+	finished_created_map_resources.emit()
+
+# Returns with status
+func load_resources() -> bool:
+	var file: FileAccess = FileAccess.open("./Stored_Info/cargo_values.bin", FileAccess.READ)
+	if file == null:
+		return false
+	resource_dict = file.get_var(true)
+	file.close()
+	sync_resource_values.call_deferred(resource_dict)
+	finished_created_map_resources.emit()
+	return true
+
+func sync_resource_values(p_resource_dict: Dictionary) -> void:
+	mutex.lock()
+	resource_dict = p_resource_dict
+	mutex.unlock()
+	for tile: Vector2i in resource_dict:
+		for type: int in resource_dict[tile]:
+			var mag: int = resource_dict[tile][type]
+			set_resource_locally(type, tile, get_atlas_for_magnitude(mag))
+			set_resource_rpc(type, tile, get_atlas_for_magnitude(mag))
+
+func save_cargo_values() -> void:
+	var file: FileAccess = FileAccess.open("./Stored_Info/cargo_values.bin", FileAccess.WRITE)
+	file.store_var(resource_dict, true)
+	file.close()
+
+func create_provinces_and_pop() -> void:
 	create_territories()
 	place_population()
-	var threads: Array = []
-	for i: int in get_child_count():
-		var thread: Thread = Thread.new()
-		threads.append(thread)
-		thread.start(autoplace_resource.bind(resource_array[i], get_child(i), MAX_RESOURCES[i]))
-	for thread: Thread in threads:
-		thread.wait_to_finish()
-	finished_created_map_resources.emit()
-	
 
-func autoplace_resource(tiles: Dictionary, layer: TileMapLayer, max_resouces: int) -> void:
+func autoplace_resource_client(tiles: Dictionary, type: int, max_resources: int) -> void:
 	var array: Array = tiles.keys()
 	array.shuffle()
 	var count: int = 0
 	for cell: Vector2i in array:
+		
 		var mag: int = randi() % 4 + tiles[cell]
-		layer.set_cell(cell, 1, get_atlas_for_magnitude(mag))
-		#layer.call_deferred_thread_group("set_cell", cell, 1, get_atlas_for_magnitude(mag))
+		set_resource_locally(type, cell, get_atlas_for_magnitude(mag))
+		set_resource_rpc(type, cell, get_atlas_for_magnitude(mag))
 		count += mag
-		if count > max_resouces and max_resouces != -1:
+		if count > max_resources and max_resources != -1:
+			return
+
+func autoplace_resource(resource_map: Dictionary, type: int, max_resources: int) -> void:
+	var tiles: Array = resource_map.keys()
+	tiles.shuffle() # Shuffle so when resources run out, it doesn't cut off part of map
+	var count: int = 0
+	for cell: Vector2i in tiles:
+		
+		var mag: int = randi() % 4 + resource_map[cell]
+		mutex.lock()
+		if (!resource_dict.has(cell)):
+			resource_dict[cell] = {}
+		resource_dict[cell][type] = mag
+		mutex.unlock()
+		count += mag
+		if count > max_resources and max_resources != -1:
 			return
 
 func place_population() -> void:
-	var helper: Node = load("res://Map/Cargo_Maps/population_helper.gd").new()
+	var helper: RefCounted = load("res://Map/Cargo_Maps/population_helper.gd").new()
 	helper.create_population_map()
-	helper.queue_free()
 
 func create_territories() -> void:
-	var provinces: TileMapLayer = preload("res://Map/Map_Info/provinces.tscn").instantiate()
-	var tile_info: map_data = map_data.get_instance()
-	for real_x: int in range(-609, 671):
-		for real_y: int in range(-243, 282):
-			var tile: Vector2i = Vector2i(real_x, real_y)
-			if !tile_info.is_tile_a_province(tile) and !is_tile_water(tile):
-				var group: Array = create_territory(tile, provinces)
-				var province_id: int = tile_info.create_new_province()
-				tile_info.add_many_tiles_to_province(province_id, group)
+	refresh_territories()
 
+#Adds provinces and provinces, used for creating territories from multiple colors
 func create_territory(start: Vector2i, provinces: TileMapLayer) -> Array:
 	var atlas: Vector2i = provinces.get_cell_atlas_coords(start)
 	var visited: Dictionary = {}
@@ -150,11 +201,18 @@ func create_territory(start: Vector2i, provinces: TileMapLayer) -> Array:
 					queue.push_back(tile)
 	return toReturn
 
+#Uses image to re-create provinces tilemaplayer, then remakes image to match tilemaplater
 func refresh_territories() -> void:
-	var im_provinces: Image = load("res://Map/Map_Info/provinces.png").get_image()
-	var provinces: TileMapLayer = preload("res://Map/Map_Info/provinces.tscn").instantiate()
-	var coords_to_province_id: Dictionary = {}
+	var province_manager: ProvinceManager = ProvinceManager.get_instance()
+	#Uses states for now, may change
+	var file: String = "res://Map/Map_Info/states.png"
+	var im_provinces: Image = load(file).get_image()
+	#For Testing
+	#var provinces: TileMapLayer = preload("res://Map/Map_Info/provinces.tscn").instantiate()
+	#add_child(provinces)
 	var colors_to_province_id: Dictionary = {}
+	var province_id_to_color: Dictionary = {}
+	var current_prov_id: int = 0
 	create_colors_to_province_id(colors_to_province_id)
 	for real_x: int in range(-609, 671):
 		for real_y: int in range(-243, 282):
@@ -163,23 +221,16 @@ func refresh_territories() -> void:
 			@warning_ignore("integer_division")
 			var y: int = (real_y + 243) * 7 / 4
 			var tile: Vector2i = Vector2i(real_x, real_y)
-			var color: Color = get_closest_color(im_provinces.get_pixel(x, y))
-			if is_tile_water(tile):
+			var color: Color = im_provinces.get_pixel(x, y)
+			if Utils.is_tile_water(tile):
 				continue
-
 			if !colors_to_province_id.has(color):
-				provinces.erase_cell(tile)
-				continue
-
-			coords_to_province_id[tile] = colors_to_province_id[color]
-			provinces.add_tile_to_province(tile, colors_to_province_id[color])
-	var scene: PackedScene = PackedScene.new()
-	scene.pack(provinces)
-	var file: String = "res://Map/Map_Info/provinces.tscn"
-	if FileAccess.file_exists(file):
-		var error: int = ResourceSaver.save(scene, file)
-		if error != OK:
-			push_error("An error occurred while saving the scene to disk.")
+				colors_to_province_id[color] = current_prov_id
+				province_id_to_color[current_prov_id] = color
+				current_prov_id += 1
+			#provinces.add_tile_to_province(tile, colors_to_province_id[color])
+			province_manager.create_new_if_empty(colors_to_province_id[color])
+			province_manager.add_tile_to_province(colors_to_province_id[color], tile)
 
 	var new_image: Image = Image.create(1920, 919, false, Image.FORMAT_RGBA8)
 	for real_x: int in range(-609, 671):
@@ -189,18 +240,51 @@ func refresh_territories() -> void:
 			@warning_ignore("integer_division")
 			var y: int = (real_y + 243) * 7 / 4
 			var tile: Vector2i = Vector2i(real_x, real_y)
-			if is_tile_water(tile):
+			if Utils.is_tile_water(tile):
 				continue
-			new_image.set_pixel(x, y, provinces.get_color(tile))
+			var prov_id: int = province_manager.get_province_id(tile)
+			var color: Color = province_id_to_color[prov_id]
+			new_image.set_pixel(x, y, color)
 			if x != 0 and y != 0:
-				new_image.set_pixel(x - 1, y - 1, provinces.get_color(tile))
+				new_image.set_pixel(x - 1, y - 1, color)
 			if y != 0:
-				new_image.set_pixel(x, y - 1, provinces.get_color(tile))
+				new_image.set_pixel(x, y - 1, color)
 			if x != 0:
-				new_image.set_pixel(x - 1, y, provinces.get_color(tile))
-	file = "res://Map/Map_Info/provinces.png"
+				new_image.set_pixel(x - 1, y, color)
+	
 	new_image.save_png(file)
-	provinces.queue_free()
+
+func use_image_to_create_unique_province_colors() -> void:
+	var province_manager: ProvinceManager = ProvinceManager.get_instance()
+	var new_image: Image = Image.create(1920, 919, false, Image.FORMAT_RGBA8)
+	var colors: Dictionary[Color, bool] = {}
+	var prov_id_to_color: Dictionary[int, Color] = {}
+	for prov: Province in province_manager.get_provinces():
+		var prov_id: int = prov.get_province_id()
+		for tile: Vector2i in prov.get_tiles():
+			@warning_ignore("integer_division")
+			var x: int = (tile.x + 609) * 3 / 2
+			@warning_ignore("integer_division")
+			var y: int = (tile.y + 243) * 7 / 4
+			var color: Color = get_color(prov_id)
+			#Could potentially double map a color
+			if colors.has(color) and !prov_id_to_color.has(prov_id):
+				assert(false)
+			prov_id_to_color[prov_id] = color
+			colors[color] = true
+			new_image.set_pixel(x, y, color)
+			if x != 0 and y != 0:
+				new_image.set_pixel(x - 1, y - 1, color)
+			if y != 0:
+				new_image.set_pixel(x, y - 1, color)
+			if x != 0:
+				new_image.set_pixel(x - 1, y, color)
+	var file: String = "res://Map/Map_Info/provinces.png"
+	new_image.save_png(file)
+
+func get_color(prov_id: int) -> Color:
+	var id: int = (prov_id + 31) * 53
+	return Color((int(id * 1.1) % 255) / 255.0, ((int(id * 1.2) + 100) % 255) / 255.0, ((int(id * 1.3) + 200) % 255) / 255.0)
 
 func get_closest_color(color: Color) -> Color:
 	var red: float = 0.0
@@ -224,54 +308,6 @@ func create_colors_to_province_id(colors_to_province_id: Dictionary) -> void:
 	colors_to_province_id[Color(0.5, 0, 0.5, 1)] = 4
 	colors_to_province_id[Color(0, 0.5, 0.5, 1)] = 5
 
-func is_tile_water(coords: Vector2i) -> bool:
-	var atlas: Vector2i = map.get_cell_atlas_coords(coords)
-	return atlas == Vector2i(6, 0) or atlas == Vector2i(7, 0) or atlas == Vector2i(-1, -1)
-
 func is_tile_water_and_real(coords: Vector2i) -> bool:
 	var atlas: Vector2i = map.get_cell_atlas_coords(coords)
 	return atlas == Vector2i(6, 0) or atlas == Vector2i(7, 0)
-
-#func create_continents():
-	#var file = FileAccess.open("res://Map/Map_Info/North_America.txt", FileAccess.WRITE)
-	#for tile in $Layer1Sand.get_used_cells():
-		#if !is_tile_water(map, tile):
-			#save_to_file(file, str(tile) + '.')
-	#file.close()
-	#file = FileAccess.open("res://Map/Map_Info/South_America.txt", FileAccess.WRITE)
-	#for tile in $Layer2Sulfur.get_used_cells():
-		#if !is_tile_water(map, tile):
-			#save_to_file(file, str(tile) + '.')
-	#file.close()
-	#file = FileAccess.open("res://Map/Map_Info/Europe.txt", FileAccess.WRITE)
-	#for tile in $Layer3Lead.get_used_cells():
-		#if !is_tile_water(map, tile):
-			#save_to_file(file, str(tile) + '.')
-	#file.close()
-	#file = FileAccess.open("res://Map/Map_Info/Africa.txt", FileAccess.WRITE)
-	#for tile in $Layer4Iron.get_used_cells():
-		#if !is_tile_water(map, tile):
-			#save_to_file(file, str(tile) + '.')
-	#file.close()
-	#file = FileAccess.open("res://Map/Map_Info/Asia.txt", FileAccess.WRITE)
-	#for tile in $Layer5Coal.get_used_cells():
-		#if !is_tile_water(map, tile):
-			#save_to_file(file, str(tile) + '.')
-	#file.close()
-	#file = FileAccess.open("res://Map/Map_Info/Australia.txt", FileAccess.WRITE)
-	#for tile in $Layer6Copper.get_used_cells():
-		#if !is_tile_water(map, tile):
-			#save_to_file(file, str(tile) + '.')
-	#file.close()
-	#file = FileAccess.open("res://Map/Map_Info/Australia.txt", FileAccess.READ)
-	#try_to_read(file)
-#
-#func save_to_file(file, content: String):
-	#file.store_string(content)
-	#
-#
-#func try_to_read(file: FileAccess):
-	#var packedString = file.get_csv_line('.')
-	#print(packedString[0])
-	#print(packedString[999])
-	#

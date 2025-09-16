@@ -57,7 +57,6 @@ sources/0 = SubResource("TileSetAtlasSource_tabeg")
 sources/1 = SubResource("TileSetAtlasSource_csdo2")
 
 [node name="tile_ownership" type="TileMapLayer"]
-modulate = Color(1, 1, 1, 0.721569)
 z_index = 1
 y_sort_enabled = true
 tile_set = SubResource("TileSet_yxa6a")

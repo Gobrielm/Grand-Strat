@@ -30,7 +30,6 @@ tile_size = Vector2i(127, 110)
 sources/0 = SubResource("TileSetAtlasSource_c5pk0")
 
 [node name="cargo_map" type="TileMapLayer"]
-z_index = -1
 z_as_relative = false
 y_sort_enabled = true
 material = SubResource("ShaderMaterial_g6odn")

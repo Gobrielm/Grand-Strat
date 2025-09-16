@@ -3,7 +3,7 @@
 [ext_resource type="Texture2D" uid="uid://ccnaqeoxd17cj" path="res://Map_Icons/resources.png" id="1_vt0ai"]
 [ext_resource type="Script" uid="uid://bbkae8r74eqdn" path="res://Map/Cargo_Maps/cargo_values.gd" id="2_hxp8l"]
 
-[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_v58i0"]
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_wwdkp"]
 texture = ExtResource("1_vt0ai")
 margins = Vector2i(0, 34)
 texture_region_size = Vector2i(128, 192)
@@ -33,7 +33,7 @@ texture_region_size = Vector2i(128, 192)
 tile_shape = 3
 tile_offset_axis = 1
 tile_size = Vector2i(127, 110)
-sources/1 = SubResource("TileSetAtlasSource_v58i0")
+sources/1 = SubResource("TileSetAtlasSource_wwdkp")
 
 [node name="cargo_values" type="Node2D"]
 modulate = Color(1, 0, 1, 1)

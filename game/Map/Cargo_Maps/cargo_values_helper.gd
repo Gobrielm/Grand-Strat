@@ -1,71 +1,96 @@
-extends Node
+extends RefCounted
 
 var map: TileMapLayer
-var mutex := Mutex.new()
+var mutex: Mutex = Mutex.new()
 
-var im_volcanoes: Image = load("res://Map/Map_Images/volcanos.png").get_image()
-var im_lead: Image = load("res://Map/Map_Images/lead.png").get_image()
-var im_iron: Image = load("res://Map/Map_Images/iron.png").get_image()
-var im_coal: Image = load("res://Map/Map_Images/coal.png").get_image()
-var im_copper: Image = load("res://Map/Map_Images/copper.png").get_image()
-var im_zinc: Image = load("res://Map/Map_Images/zinc.png").get_image()
-var im_salt: Image = load("res://Map/Map_Images/salt.png").get_image()
-var im_cotton: Image = load("res://Map/Map_Images/cotton.png").get_image()
-var im_silk: Image = load("res://Map/Map_Images/silk.png").get_image()
-var im_spices: Image = load("res://Map/Map_Images/spices.png").get_image()
-var im_coffee: Image = load("res://Map/Map_Images/coffee.png").get_image()
-var im_tea: Image = load("res://Map/Map_Images/tea.png").get_image()
-var im_tobacco: Image = load("res://Map/Map_Images/tobacco.png").get_image()
-var im_gold: Image = load("res://Map/Map_Images/gold.png").get_image()
+var im_volcanoes: Image = preload("res://Map/Map_Images/volcanos.png").get_image()
+var im_lead: Image = preload("res://Map/Map_Images/lead.png").get_image()
+var im_iron: Image = preload("res://Map/Map_Images/iron.png").get_image()
+var im_coal: Image = preload("res://Map/Map_Images/coal.png").get_image()
+var im_copper: Image = preload("res://Map/Map_Images/copper.png").get_image()
+var im_zinc: Image = preload("res://Map/Map_Images/zinc.png").get_image()
+var im_salt: Image = preload("res://Map/Map_Images/salt.png").get_image()
+var im_cotton: Image = preload("res://Map/Map_Images/cotton.png").get_image()
+var im_silk: Image = preload("res://Map/Map_Images/silk.png").get_image()
+var im_spices: Image = preload("res://Map/Map_Images/spices.png").get_image()
+var im_coffee: Image = preload("res://Map/Map_Images/coffee.png").get_image()
+var im_tea: Image = preload("res://Map/Map_Images/tea.png").get_image()
+var im_tobacco: Image = preload("res://Map/Map_Images/tobacco.png").get_image()
+var im_gold: Image = preload("res://Map/Map_Images/gold.png").get_image()
 
-func _init(_map: TileMapLayer):
+func _init(_map: TileMapLayer) -> void:
 	map = _map
 
 func create_resource_array() -> Array:
 	var toReturn: Array = []
-	for i in terminal_map.amount_of_primary_goods:
+	for i: int in CargoInfo.get_instance().amount_of_primary_goods:
 		toReturn.push_back({})
 	
-	toReturn[0] = get_tiles_for_clay()
 	
-	var thread := Thread.new()
-	var thread1 := Thread.new()
-	var thread2 := Thread.new()
-	var thread3 := Thread.new()
-	thread.start(create_part_of_array.bind(-609, 0, -243, 0, toReturn))
-	thread1.start(create_part_of_array.bind(0, 671, -243, 0, toReturn))
-	thread2.start(create_part_of_array.bind(-609, 0, 0, 282, toReturn))
-	thread3.start(create_part_of_array.bind(0, 671, 0, 282, toReturn))
-	var threads := [thread, thread1, thread2, thread3]
-	for thd: Thread in threads:
-		thd.wait_to_finish()
+	start_threads_on_grid(-609, 671, -243, 282, 4, toReturn)
 	return toReturn
 
+func start_threads_on_grid(x_min: int, x_max: int, y_min: int, y_max: int, n: int, toReturn: Array) -> void:
+	assert(sqrt(n) == int(sqrt(n)), "n must be a perfect square (1, 4, 9, 16, ...)")
+
+	var threads: Array[Thread] = []
+	@warning_ignore("narrowing_conversion")
+	var grid_size: int = (sqrt(n))
+	@warning_ignore("integer_division")
+	var x_step: int = ((x_max - x_min) / grid_size)
+	@warning_ignore("integer_division")
+	var y_step: int = ((y_max - y_min) / grid_size)
+
+	for i: int in range(grid_size):
+		for j: int in range(grid_size):
+			var x_start: int = x_min + i * x_step
+			var x_end: int = x_start + x_step
+			var y_start: int = y_min + j * y_step
+			var y_end: int = y_start + y_step
+			
+			if i == (grid_size - 1):
+				x_end = 671
+			if j == (grid_size - 1):
+				y_end = 282
+			
+			var thread: Thread = Thread.new()
+			thread.start(create_part_of_array.bind(x_start, x_end, y_start, y_end, toReturn))
+			threads.append(thread)
+	
+	var dict: Dictionary = get_tiles_for_clay()
+	mutex.lock()
+	toReturn[0] = dict
+	mutex.unlock()
+	
+	for thread: Thread in threads:
+		thread.wait_to_finish()
+
 func get_tiles_for_clay() -> Dictionary:
-	var toReturn = {}
-	for tile in map.get_used_cells_by_id(0, Vector2i(6, 0)):
+	var toReturn: Dictionary = {}
+	for tile: Vector2i in map.get_used_cells_by_id(0, Vector2i(6, 0)):
 		if is_tile_river(tile):
 			for cell: Vector2i in map.get_surrounding_cells(tile):
 				if !is_tile_water(cell):
 					toReturn[cell] = 1
-	for tile in map.get_used_cells_by_id(0, Vector2i(5, 0)):
-		for cell in map.get_surrounding_cells(tile):
+	for tile: Vector2i in map.get_used_cells_by_id(0, Vector2i(5, 0)):
+		for cell: Vector2i in map.get_surrounding_cells(tile):
 			if get_tile_elevation(map.get_cell_atlas_coords(cell)) == 0:
 				toReturn[cell] = 1
 	
 	return toReturn
 
-func create_part_of_array(from_x: int, to_x: int, from_y: int, to_y: int, toReturn: Array):
-	for real_x in range(from_x, to_x):
-		for real_y in range(from_y, to_y):
+func create_part_of_array(from_x: int, to_x: int, from_y: int, to_y: int, toReturn: Array) -> void:
+	for real_x: int in range(from_x, to_x):
+		for real_y: int in range(from_y, to_y):
 			@warning_ignore("integer_division")
-			var x := (real_x + 609) * 3 / 2
+			var x: int = (real_x + 609) * 3 / 2
 			@warning_ignore("integer_division")
-			var y := (real_y + 243) * 7 / 4
-			var tile := Vector2i(real_x, real_y)
+			var y: int = (real_y + 243) * 7 / 4
+			var tile: Vector2i = Vector2i(real_x, real_y)
 			helper(x, y, tile, toReturn)
 
-func helper(x: int, y: int, tile: Vector2i, toReturn: Array):
+func helper(x: int, y: int, tile: Vector2i, toReturn: Array) -> void:
+	
 	add_basic_resource(toReturn, tile)
 	
 	var color: Color = im_volcanoes.get_pixel(x, y)
@@ -145,14 +170,16 @@ func helper(x: int, y: int, tile: Vector2i, toReturn: Array):
 	elif color.r > 0.75 and color.r > (color.b + 0.1) and !is_tile_water(tile):
 		update_resource_array(20, tile, 1, toReturn)
 
-func update_resource_array(type: int, tile: Vector2i, val: int, toReturn: Array):
+func update_resource_array(type: int, tile: Vector2i, val: int, toReturn: Array) -> void:
 	mutex.lock()
 	toReturn[type][tile] = val
 	mutex.unlock()
 
 #Resource_array is array[good_index] -> dict
-func add_basic_resource(resource_array: Array , tile: Vector2i):
-	var atlas = map.get_cell_atlas_coords(tile)
+func add_basic_resource(resource_array: Array , tile: Vector2i) -> void:
+	var atlas: Vector2i = map.get_cell_atlas_coords(tile)
+	if randi() % 3 == 0: # Every province will get some grain
+		update_resource_array(10, tile, 1, resource_array)
 	if is_forested(atlas):
 		if atlas == Vector2i(1, 0):
 			update_resource_array(13, tile, 1, resource_array)
@@ -160,11 +187,14 @@ func add_basic_resource(resource_array: Array , tile: Vector2i):
 		if is_dense_forest(atlas):
 			update_resource_array(8, tile, 3, resource_array)
 	elif is_plains(atlas) or atlas == Vector2i(3, 0):
-		update_resource_array(10, tile, 1, resource_array)
-		update_resource_array(11, tile, 1, resource_array)
+		update_resource_array(10, tile, 4, resource_array)
+		update_resource_array(11, tile, 4, resource_array)
 		if is_lush_plains(atlas):
-			update_resource_array(10, tile, 3, resource_array)
-			update_resource_array(11, tile, 3, resource_array)
+			update_resource_array(10, tile, 7, resource_array)
+			update_resource_array(11, tile, 7, resource_array)
+	elif atlas == Vector2i(0, 2):
+		update_resource_array(10, tile, 2, resource_array)
+		update_resource_array(11, tile, 2, resource_array)
 	
 	if is_desert(atlas) and is_tile_within_4_tiles_of_water(tile):
 		update_resource_array(1, tile, 1, resource_array)
@@ -178,7 +208,7 @@ func add_basic_resource(resource_array: Array , tile: Vector2i):
 func is_tile_near_water(coords: Vector2i) -> bool:
 	if is_tile_water(coords):
 		return false
-	for tile in map.get_surrounding_cells(coords):
+	for tile: Vector2i in map.get_surrounding_cells(coords):
 		if is_tile_water(tile):
 			return true
 	return false
@@ -186,14 +216,14 @@ func is_tile_near_water(coords: Vector2i) -> bool:
 func is_coastal(coords: Vector2i) -> bool:
 	if is_tile_water(coords):
 		return false
-	for tile in map.get_surrounding_cells(coords):
+	for tile: Vector2i in map.get_surrounding_cells(coords):
 		if is_tile_water(tile) and is_tile_surrounded_by_water(tile):
 			return true
 	return false
 
 func is_tile_surrounded_by_water(coords: Vector2i) -> bool:
 	var count: int = 0
-	for tile in map.get_surrounding_cells(coords):
+	for tile: Vector2i in map.get_surrounding_cells(coords):
 		if is_tile_water(tile):
 			count += 1
 	return count >= 3
@@ -210,16 +240,15 @@ func is_plains(atlas: Vector2i) -> bool:
 func is_desert(atlas: Vector2i) -> bool:
 	return atlas.y == 3
 
-
 func is_tile_within_4_tiles_of_water(coords: Vector2i) -> bool:
-	var visited = {}
-	var queue = [coords]
+	var visited: Dictionary = {}
+	var queue: Array[Vector2i] = [coords]
 	visited[coords] = 0
 	while (!queue.is_empty()):
-		var curr = queue.pop_front()
+		var curr: Vector2i = queue.pop_front()
 		if is_tile_water(curr):
 			return true
-		for tile in map.get_surrounding_cells(curr):
+		for tile: Vector2i in map.get_surrounding_cells(curr):
 			if !visited.has(tile):
 				visited[tile] = visited[curr] + 1
 				if visited[tile] < 5:
@@ -230,7 +259,7 @@ func is_lush_plains(atlas: Vector2i) -> bool:
 	return atlas == Vector2i(0, 0)
 
 func is_tile_water(coords: Vector2i) -> bool:
-	var atlas = map.get_cell_atlas_coords(coords)
+	var atlas: Vector2i = map.get_cell_atlas_coords(coords)
 	return atlas == Vector2i(6, 0) or atlas == Vector2i(7, 0)
 
 func get_tile_elevation(atlas: Vector2i) -> int:
@@ -241,8 +270,8 @@ func get_tile_elevation(atlas: Vector2i) -> int:
 	return 0
 
 func is_tile_river(coords: Vector2i) -> bool:
-	var count = 0
-	for cell in map.get_surrounding_cells(coords):
+	var count: int = 0
+	for cell: Vector2i in map.get_surrounding_cells(coords):
 		if !is_tile_water(cell):
 			count += 1
 	return count > 3

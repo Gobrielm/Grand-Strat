@@ -21,7 +21,7 @@ use_texture_padding = false
 [sub_resource type="TileSet" id="TileSet_ojujq"]
 tile_shape = 3
 tile_offset_axis = 1
-tile_size = Vector2i(128, 110)
+tile_size = Vector2i(127, 110)
 sources/0 = SubResource("TileSetAtlasSource_hwa8g")
 
 [node name="unit_map" type="TileMapLayer"]
@@ -38,9 +38,3 @@ volume_db = -21.667
 stream = ExtResource("4_dn7ni")
 volume_db = -21.667
 pitch_scale = 0.5
-
-[node name="regen_timer" type="Timer" parent="."]
-wait_time = 10.0
-autostart = true
-
-[connection signal="timeout" from="regen_timer" to="." method="_on_regen_timer_timeout"]

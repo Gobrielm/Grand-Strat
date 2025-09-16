@@ -3,18 +3,21 @@ class_name calvary extends base_unit
 static func get_cost() -> int:
 	return 700
 
-func _init(new_location: Vector2i, new_player_id: int):
-	super._init(new_location, new_player_id)
+func _init() -> void:
 	
 	max_manpower = 600
 	manpower = max_manpower
 	morale = 100
 	
-	organization = null
+	var supply_neeeded: Dictionary[int, int] = {}
+	supply_neeeded[CargoInfo.get_instance().get_cargo_type("grain")] = 2
+	supply_neeeded[CargoInfo.get_instance().get_cargo_type("guns")] = 1
+	org = organization.new(supply_neeeded)
+	
 	speed = 80
-	unit_range = 1
-	shock = 100
-	firepower = 25
+	unit_range = 0.5
+	shock = 60
+	firepower = 40
 	cohesion = 40
 	experience_gain = 3
 	battle_multiple = 10

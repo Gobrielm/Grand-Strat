@@ -1,22 +1,33 @@
 extends Node
 
 func _ready() -> void:
-	var stack: sorted_stack = sorted_stack.new()
-	stack.insert_element(0, 5)
-	stack.insert_element(1, 6)
-	stack.insert_element(2, 7)
-	stack.insert_element(3, 4)
-	stack.insert_element(4, 3)
-	stack.insert_element(0, 9)
-	print(stack)
-	stack.insert_element(1, 7)
-	print(stack)
-	stack.insert_element(2, 8)
-	print(stack)
-	stack.insert_element(3, 10)
-	print(stack)
-	stack.insert_element(4, 2)
-	print(stack)
-	for i: int in range(50):
-		stack.insert_element(4, randi() % 30)
-	print(stack)
+	randomize()
+	$Unit_battler.set_cw(16)
+	var army1: army = army.new(1, Vector2i(0, 0))
+	army1.add_unit(calvary.new())
+	#for i: int in range(0, 10):
+		#var num: int = randi() % 3
+		#if num == 0:
+			#army1.add_unit(infantry.new())
+		#elif num == 1:
+			#army1.add_unit(calvary.new())
+		#else:
+			#army1.add_unit(artillery.new())
+	$Unit_battler.add_atk_army(army1)
+	
+	var army2: army = army.new(2, Vector2i(0, 0))
+	army2.add_unit(infantry.new())
+	#for i: int in range(0, 10):
+		#var num: int = randi() % 3
+		#if num == 0:
+			#army2.add_unit(infantry.new())
+		#elif num == 1:
+			#army2.add_unit(calvary.new())
+		#else:
+			#army2.add_unit(artillery.new())
+	$Unit_battler.add_def_army(army2)
+	$Unit_battler.start_battle()
+
+
+func _on_timer_timeout() -> void:
+	$Unit_battler.day_tick()

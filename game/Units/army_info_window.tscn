@@ -1,0 +1,52 @@
+[gd_scene load_steps=3 format=3 uid="uid://dqvn8y35ax23b"]
+
+[ext_resource type="Script" uid="uid://b83e3r3ow62k8" path="res://Units/army_info_window.gd" id="1_g6u0w"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_5okbt"]
+font_size = 30
+
+[node name="army_info_window" type="Window"]
+position = Vector2i(0, 36)
+size = Vector2i(500, 500)
+unfocusable = true
+script = ExtResource("1_g6u0w")
+
+[node name="stat_label" type="Label" parent="."]
+offset_left = 3.0
+offset_top = 91.0
+offset_right = 104.0
+offset_bottom = 166.0
+text = "Manpower: 0
+Morale: 0
+Exp: 0
+Organ: 0"
+
+[node name="destination_label" type="Label" parent="."]
+anchors_preset = -1
+anchor_left = 0.002
+anchor_right = 0.002
+offset_left = 2.0
+offset_top = 195.0
+offset_right = 101.0
+offset_bottom = 218.0
+grow_horizontal = 0
+text = "Destination: "
+
+[node name="unit_list" type="ItemList" parent="."]
+offset_left = 177.0
+offset_top = 93.0
+offset_right = 500.0
+offset_bottom = 501.0
+
+[node name="name_label" type="Label" parent="."]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -48.0
+offset_right = 48.0
+offset_bottom = 57.0
+grow_horizontal = 2
+text = "Army1"
+label_settings = SubResource("LabelSettings_5okbt")
+
+[connection signal="close_requested" from="." to="." method="_on_close_requested"]

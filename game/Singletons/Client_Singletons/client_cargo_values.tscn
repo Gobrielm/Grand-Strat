@@ -1,0 +1,125 @@
+[gd_scene load_steps=5 format=3 uid="uid://d1mrh6ujhrmuc"]
+
+[ext_resource type="Texture2D" uid="uid://ccnaqeoxd17cj" path="res://Map_Icons/resources.png" id="1_llgjk"]
+[ext_resource type="Script" uid="uid://kgiiqqel0ic2" path="res://Singletons/Client_Singletons/client_cargo_values.gd" id="1_shrrr"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_shrrr"]
+texture = ExtResource("1_llgjk")
+margins = Vector2i(0, 34)
+texture_region_size = Vector2i(128, 192)
+0:0/0 = 0
+1:0/0 = 0
+2:0/0 = 0
+3:0/0 = 0
+4:0/0 = 0
+5:0/0 = 0
+6:0/0 = 0
+7:0/0 = 0
+0:1/0 = 0
+1:1/0 = 0
+2:1/0 = 0
+3:1/0 = 0
+4:1/0 = 0
+5:1/0 = 0
+6:1/0 = 0
+7:1/0 = 0
+0:2/0 = 0
+1:2/0 = 0
+2:2/0 = 0
+3:2/0 = 0
+4:2/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_17l7h"]
+tile_shape = 3
+tile_offset_axis = 1
+tile_size = Vector2i(127, 110)
+sources/1 = SubResource("TileSetAtlasSource_shrrr")
+
+[node name="client_cargo_values" type="Node2D"]
+modulate = Color(1, 0, 1, 1)
+z_index = 1
+script = ExtResource("1_shrrr")
+
+[node name="Layer0Clay" type="TileMapLayer" parent="."]
+visible = false
+tile_set = SubResource("TileSet_17l7h")
+
+[node name="Layer1Sand" type="TileMapLayer" parent="."]
+visible = false
+tile_set = SubResource("TileSet_17l7h")
+
+[node name="Layer2Sulfur" type="TileMapLayer" parent="."]
+visible = false
+tile_set = SubResource("TileSet_17l7h")
+
+[node name="Layer3Lead" type="TileMapLayer" parent="."]
+visible = false
+tile_set = SubResource("TileSet_17l7h")
+
+[node name="Layer4Iron" type="TileMapLayer" parent="."]
+visible = false
+tile_set = SubResource("TileSet_17l7h")
+
+[node name="Layer5Coal" type="TileMapLayer" parent="."]
+visible = false
+tile_set = SubResource("TileSet_17l7h")
+
+[node name="Layer6Copper" type="TileMapLayer" parent="."]
+visible = false
+tile_set = SubResource("TileSet_17l7h")
+
+[node name="Layer7Zinc" type="TileMapLayer" parent="."]
+visible = false
+tile_set = SubResource("TileSet_17l7h")
+
+[node name="Layer8Wood" type="TileMapLayer" parent="."]
+visible = false
+tile_set = SubResource("TileSet_17l7h")
+
+[node name="Layer9Salt" type="TileMapLayer" parent="."]
+visible = false
+tile_set = SubResource("TileSet_17l7h")
+
+[node name="Layer10Grain" type="TileMapLayer" parent="."]
+visible = false
+tile_set = SubResource("TileSet_17l7h")
+
+[node name="Layer11Livestock" type="TileMapLayer" parent="."]
+visible = false
+tile_set = SubResource("TileSet_17l7h")
+
+[node name="Layer12Fish" type="TileMapLayer" parent="."]
+visible = false
+tile_set = SubResource("TileSet_17l7h")
+
+[node name="Layer13Fruit" type="TileMapLayer" parent="."]
+visible = false
+tile_set = SubResource("TileSet_17l7h")
+
+[node name="Layer14Cotton" type="TileMapLayer" parent="."]
+visible = false
+tile_set = SubResource("TileSet_17l7h")
+
+[node name="Layer15Silk" type="TileMapLayer" parent="."]
+visible = false
+tile_set = SubResource("TileSet_17l7h")
+
+[node name="Layer16Spices" type="TileMapLayer" parent="."]
+visible = false
+tile_set = SubResource("TileSet_17l7h")
+
+[node name="Layer17Coffee" type="TileMapLayer" parent="."]
+visible = false
+tile_set = SubResource("TileSet_17l7h")
+
+[node name="Layer18Tea" type="TileMapLayer" parent="."]
+visible = false
+tile_set = SubResource("TileSet_17l7h")
+
+[node name="Layer19Tobacco" type="TileMapLayer" parent="."]
+visible = false
+tile_set = SubResource("TileSet_17l7h")
+
+[node name="Layer20Gold" type="TileMapLayer" parent="."]
+visible = false
+tile_set = SubResource("TileSet_17l7h")

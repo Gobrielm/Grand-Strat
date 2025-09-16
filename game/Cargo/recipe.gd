@@ -1,4 +1,4 @@
-class_name recipe extends Node
+class_name recipe extends RefCounted
 
 var inputs: Dictionary = {}
 
@@ -35,20 +35,42 @@ static func create_set_recipes() -> void:
 	add_set_recipe([{}, {"tea" = 1}])
 	add_set_recipe([{}, {"tobacco" = 1}])
 	add_set_recipe([{}, {"gold" = 1}])
+	
 	#Secondary
+	add_set_recipe([{"grain" = 5}, {"salt" = 1}, {"bread" = 2}])
+	add_set_recipe([{"cotton" = 3}, {"clothes" = 1}])
 	add_set_recipe([{"wood" = 3}, {"lumber" = 1}])
 	add_set_recipe([{"wood" = 2}, {"paper" = 1}])
 	add_set_recipe([{"lumber" = 3}, {"furniture" = 1}])
 	add_set_recipe([{"lumber" = 4}, {"wagons" = 1}])
 	add_set_recipe([{"lumber" = 10}, {"boats" = 1}])
 
+static func get_primary_recipe_for_type(type: int) -> Array:
+	for recipe_set: Array in get_set_recipes():
+		for output: int in recipe_set[1]:
+			if output == type:
+				return recipe_set
+	return []
+
+static func get_secondary_recipe_for_types(p_inputs: Dictionary) -> Array:
+	var found: bool = true
+	for recipe_set: Array in get_set_recipes():
+		found = true
+		for input: int in recipe_set[0]:
+			if !p_inputs.has(input):
+				found = false
+				break
+		if found:
+			return recipe_set
+	return []
+
 static func add_set_recipe(readable_recipe: Array) -> void:
 	var input: Dictionary = {}
 	var output: Dictionary = {}
 	for i: String in readable_recipe[0]:
-		input[terminal_map.get_cargo_type(i)] = readable_recipe[0][i]
+		input[CargoInfo.get_instance().get_cargo_type(i)] = readable_recipe[0][i]
 	for i: String in readable_recipe[1]:
-		output[terminal_map.get_cargo_type(i)] = readable_recipe[1][i]
+		output[CargoInfo.get_instance().get_cargo_type(i)] = readable_recipe[1][i]
 	set_recipes.append([input, output])
 
 static func get_set_recipes() -> Array:
