@@ -219,7 +219,7 @@ std::unordered_map<int, float> LocalPriceController::get_local_prices() const {
     return current_prices;
 }
 
-Dictionary LocalPriceController::get_local_prices_dict() {
+Dictionary LocalPriceController::get_local_prices_dict() const {
     Dictionary d;
     for (const auto& [type, price]: current_prices) {
         d[type] = price;

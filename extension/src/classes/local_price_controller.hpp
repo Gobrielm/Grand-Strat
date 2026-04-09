@@ -63,6 +63,6 @@ class LocalPriceController {
     static float get_base_price(int type);
 
     std::unordered_map<int, float> get_local_prices() const;
-    Dictionary get_local_prices_dict();
+    Dictionary get_local_prices_dict() const;
 
 };
