@@ -1,0 +1,27 @@
+#include "storage_component.hpp"
+
+StorageComponent::StorageComponent(): MAX_STORAGE(INITIAL_MAX_STORAGE) {}
+
+float StorageComponent::get_desired_cargo(int type, float pricePer) {
+    return MAX_STORAGE - storage[type];
+}
+
+float StorageComponent::get_amount(int type) {
+    return storage[type];
+}
+
+float StorageComponent::add_cargo(int type, float amount) {
+    if (amount >= 0) {
+        float amt_to_take = std::min(amount, MAX_STORAGE - amount);
+        storage[type] += amt_to_take;
+        return amount - amt_to_take;
+    }
+    return amount;
+}
+
+void StorageComponent::remove_cargo(int type, float amount) {
+    if (amount >= 0) {
+        storage[type] -= amount;
+        ERR_FAIL_COND_MSG(storage[type] < 0, "Storage went below 0.");
+    }
+}

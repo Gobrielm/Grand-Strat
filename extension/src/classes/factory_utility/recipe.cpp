@@ -80,8 +80,7 @@ float Recipe::get_employment_rate() const {
     return employement / float(get_pops_needed_num());
 }
 
-std::vector<int> Recipe::fire_employees_and_get_vector() {
-    std::vector<int> v;
+void Recipe::queue_employees_to_be_fired() {
     int fired = 0;
     int to_fire = std::max((int)(get_employement() * 0.1), 1); // Fire atleast 1 pop
     std::unordered_map<int, PopTypes> pop_ids = get_employee_ids();
@@ -93,10 +92,9 @@ std::vector<int> Recipe::fire_employees_and_get_vector() {
 
         pop_ids.erase(it);              //Remove locally
         remove_pop(pop_id, it->second); //Remove within object
-        v.push_back(pop_id);            //Add to vector to return
+        pops_to_fire.push_back(pop_id);            //Add to vector to return
         fired++;
     }
-    return v;
 }
 
 void Recipe::upgrade() {
@@ -144,6 +142,14 @@ void Recipe::clear() {
     inputs.clear();
     outputs.clear();
     pops_needed.clear();
+}
+
+float Recipe::get_input(int type) const {
+    return 0 ? !inputs.count(type): inputs.at(type);
+}
+
+float Recipe::get_output(int type) const {
+    return 0 ? !outputs.count(type): outputs.at(type);
 }
 
 std::unordered_map<int, float> Recipe::get_inputs() const {

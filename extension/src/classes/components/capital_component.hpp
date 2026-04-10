@@ -5,7 +5,7 @@
 
 using namespace godot;
 
-class CapitalInterface {
+class CapitalComponent {
     private:
     float cash;
     std::list<float> cash_history;
@@ -13,7 +13,7 @@ class CapitalInterface {
 
     public:
 
-    CapitalInterface();
+    CapitalComponent();
 
     int get_amount_can_buy(const float amount_per) const;
     void add_cash(float amount);
@@ -22,5 +22,6 @@ class CapitalInterface {
     float transfer_cash(float amount);
     void update_cash_history();
     const std::list<float>& get_cash_history() const;
-    
+    const float get_recent_change() const;
+
 };

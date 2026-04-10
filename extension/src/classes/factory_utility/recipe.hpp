@@ -9,6 +9,9 @@ class BasePop;
 
 class Recipe {
     std::unordered_map<PopTypes, std::vector<int>> employees;
+    std::vector<int> pops_to_fire;
+
+
     std::unordered_map<int, float> inputs;
     std::unordered_map<int, float> outputs;
     std::unordered_map<PopTypes, int> pops_needed;
@@ -32,7 +35,7 @@ class Recipe {
     int get_employement() const;
     int get_pops_needed_num() const;
     float get_employment_rate() const;
-    std::vector<int> fire_employees_and_get_vector();
+    void queue_employees_to_be_fired();
 
     // Levels
     virtual void upgrade();
@@ -46,6 +49,10 @@ class Recipe {
     void clear();
 
     // Getters
+
+    float get_input(int type) const;
+    float get_output(int type) const;
+
     std::unordered_map<int, float> get_inputs() const;
     std::unordered_map<int, float> get_outputs() const;
     std::unordered_map<PopTypes, int> get_pops_needed() const;
