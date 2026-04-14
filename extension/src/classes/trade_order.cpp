@@ -31,7 +31,10 @@ TradeOrder::TradeOrder(int p_type, int p_amount, bool p_buy, double p_limit_pric
     initialize(p_type, p_amount, p_buy, p_limit_price);
 }
 
-TradeOrder::~TradeOrder() {}
+TradeOrder::TradeOrder(int p_pos_id, int p_type, int p_amount, bool p_buy, double p_price, double p_limit_price): TradeOrder(p_type, p_amount, p_buy, p_limit_price) {
+    pos_id = p_pos_id;
+    price = p_price;
+}
 
 TradeOrder* TradeOrder::create(int p_type, int p_amount, bool p_buy, double p_limit_price) {
     return memnew(TradeOrder(p_type, p_amount, p_buy, p_limit_price));
@@ -41,7 +44,7 @@ void TradeOrder::initialize(int p_type, int p_amount, bool p_buy, double p_limit
     type = p_type;
     amount = p_amount;
     buy = p_buy;
-    max_price = p_limit_price;
+    limit_price = p_limit_price;
 }
 
 TradeOrder* TradeOrder::create_buy_order(int p_type, int p_amount, double p_limit_price) {
@@ -72,16 +75,24 @@ void TradeOrder::change_amount(int p_amount) {
     amount = p_amount;
 }
 
-int TradeOrder::get_amount() const {
+unsigned int TradeOrder::get_amount() const {
     return amount;
 }
 
+double TradeOrder::get_price() const {
+    return price;
+}
+
 double TradeOrder::get_limit_price() const {
-    return max_price;
+    return limit_price;
 }
 
 void TradeOrder::set_max_price(double p_limit_price) {
-    max_price = p_limit_price;
+    limit_price = p_limit_price;
+}
+
+void TradeOrder::set_price(double p_price) {
+    price = p_price;
 }
 
 Array TradeOrder::convert_to_array() const {
@@ -89,14 +100,22 @@ Array TradeOrder::convert_to_array() const {
     arr.push_back(type);
     arr.push_back(amount);
     arr.push_back(buy);
-    arr.push_back(max_price);
+    arr.push_back(limit_price);
     return arr;
 }
 
 bool TradeOrder::is_price_acceptable(double price) const {
-    return buy ? price <= max_price : price >= max_price;
+    return buy ? price <= limit_price : price >= limit_price;
+}
+
+int TradeOrder::get_pos_id() const {
+    return pos_id;
 }
 
 TradeOrder* TradeOrder::construct_from_array(const Array& array) {
     return memnew(TradeOrder(array[0], array[1], array[2], array[3]));
+}
+
+void TradeOrder::cancel_order() {
+    active = false;
 }

@@ -23,7 +23,10 @@ class Province : public Object {
     int country_id = -1;
     int population;
     std::vector<Vector2i> tiles;
-    std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> terminal_tiles; //Doesn't 'own' Terminals yet
+    std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> terminal_tiles;
+
+    std::vector<int> factory_ids;
+
     std::unordered_map<Vector2i, Vector2i, godot_helpers::Vector2iHasher> closest_town_to_tile;
 
     std::unordered_set<int> pops;
@@ -56,6 +59,9 @@ class Province : public Object {
     const std::vector<Vector2i> get_tiles_vector() const;
     std::vector<Vector2i> get_town_centered_tiles() const;
     Vector2i get_random_tile() const;
+
+    void add_factory(PositionComponent& pc);
+    std::vector<int> get_factories() const;
     void add_terminal(Vector2i tile);
     void remove_terminal(Vector2i tile);
     Array get_terminal_tiles() const;

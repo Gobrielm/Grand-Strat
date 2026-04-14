@@ -2,7 +2,7 @@
 #include "terminal_map.hpp"
 #include "province_manager.hpp"
 #include "../classes/province.hpp"
-#include "../classes/town.hpp"
+#include <src/classes/map_objects/town.hpp>
 #include "../classes/investment_company.hpp"
 #include "cargo_info.hpp"
 #include "recipe_info.hpp"
@@ -104,11 +104,10 @@ void PopManager::sell_to_pops(std::vector<BasePop*>& pop_group) {
     // Get closest town and then use town functions to sell to those pops
     
     for (auto& pop: pop_group) {
-        Ref<Town> town = terminal_map->get_town(location_to_nearest_town[pop->get_location()]);
-        if (town.is_null()) {
-            continue;
-        }
-        town->sell_to_pop(pop, *get_lock(pop->get_pop_id()));
+        auto loc = location_to_nearest_town[pop->get_location()];
+        auto& list_of_pos = terminal_map->get_position_components(loc);
+        Town& town = terminal_map->get_town(list_of_pos[0].building_id);
+        town.mp.sell_to_pop(*pop);
     }
 }
 
@@ -200,9 +199,9 @@ bool PopManager::employment_for_potential_investor(BasePop* pop, int country_id)
         auto lock = lock_pop_read(pop->get_pop_id());
         town_tile = pop->get_location();
     }
-    auto town = terminal_map->get_town(town_tile);
-    ERR_FAIL_COND_V_MSG(town.is_null(), false, "Town Pop not located on Town");
-    Ref<InvestmentCompany> company = town->get_first_invesment_company_looking_for_employees(cargo_type); // Doesn't check for pop_location, migration avoided and searchs country
+    auto town = get_town_helper(town_tile);
+    ERR_FAIL_COND_V_MSG(!town.has_value(), false, "Town Pop not located on Town");
+    Ref<InvestmentCompany> company = town.value().get_first_invesment_company_looking_for_employees(cargo_type); // Doesn't check for pop_location, migration avoided and searchs country
 
     if (company.is_null()) {
         company = InvestmentCompany::create(country_id, town_tile, cargo_type);
@@ -312,10 +311,10 @@ void PopManager::refresh_town_employment_sorted_by_wage() {
 using employ_type = std::unordered_map<PopTypes, std::unordered_map<int, std::set<FactoryTemplate::FactoryWageWrapper, FactoryTemplate::FactoryWageWrapper::FactoryWageCompare>>>;
 
 void PopManager::refresh_town_employment_sorted_by_wage_helper(int country_id, const Vector2i& tile, employ_type& local_employment_options) {
-    Ref<Town> town_ref = TerminalMap::get_instance()->get_town(tile);
-    ERR_FAIL_COND_MSG(town_ref.is_null(), "Location sent is to a null town");
-    for (const auto& fact: town_ref->get_employment_sorted_by_wage(town)) {
-        local_employment_options[town][country_id].insert(FactoryTemplate::FactoryWageWrapper(fact));
+    auto town = get_town_helper(tile);
+    ERR_FAIL_COND_MSG(!town.has_value(), "Location sent is to a null town");
+    for (const auto& fact: town.value().get_employment_sorted_by_wage(town)) {
+        local_employment_options[PopTypes::town][country_id].insert(FactoryTemplate::FactoryWageWrapper(fact));
     }
 }
 
@@ -349,6 +348,14 @@ void PopManager::remove_first_employment_option(PopTypes pop_type, int country_i
         if ((first_it->internal_fact).ptr()->get_terminal_id() == double_check.ptr()->get_terminal_id())
             employment_options[pop_type][country_id].erase(first_it);
     }
+}
+
+std::optional<Town&> PopManager::get_town_helper(Vector2i pos) const {
+    auto tm = TerminalMap::get_instance();
+    if (tm->is_town(pos)) {
+        return tm->get_town(tm->get_position_components(pos)[0].building_id);
+    }
+    return std::nullopt;
 }
 
 int PopManager::get_pop_mutex_number(int pop_id) const {
@@ -461,9 +468,9 @@ float PopManager::get_expected_wage(int pop_id) const {
     ERR_FAIL_COND_V_MSG(!pops.count(pop_id), 0.0, "Pop of id: " + String::num(pop_id) + " does not exist");
     auto pop = get_pop(pop_id);
     auto lock = lock_pop_read(pop_id);
-    auto town = TerminalMap::get_instance()->get_town(get_town_tile(pop));
-    if (town.is_null()) return 0.0;
-    return pops.at(pop_id).get_expected_income(town->get_local_prices_map());
+    auto town = get_town_helper(get_town_tile(pop));
+    if (!town.has_value()) return 0.0;
+    return pops.at(pop_id).get_expected_income(town.value().get_local_prices_map());
 }
 
 //Economy stats

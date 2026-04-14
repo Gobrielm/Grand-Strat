@@ -15,6 +15,10 @@
 #include "../classes/construction_site.hpp"
 #include "../classes/company_ai.hpp"
 
+#include <src/classes/map_objects/factory.hpp>
+#include <src/classes/map_objects/town.hpp>
+#include "trading_system.hpp"
+
 class Terminal;
 class Broker;
 class Factory;
@@ -26,6 +30,7 @@ class RoadDepot;
 using namespace godot;
 
 class TerminalMap : public RefCounted {
+    friend TradingSystem;
     GDCLASS(TerminalMap, RefCounted);
 
 private:
@@ -40,6 +45,13 @@ private:
     mutable std::mutex m;                       // Protects everyhing else, mainly the different godot objects above
     std::unordered_map<Vector2i, int, godot_helpers::Vector2iHasher> cargo_map_terminals;
     std::unordered_map<int, Ref<Terminal>> terminal_id_to_terminal;
+
+    // TODO Insert into, replace cargo_map_terminals
+    std::unordered_map<Vector2i, std::vector<PositionComponent>, godot_helpers::Vector2iHasher> map_objects_from_position;
+    std::unordered_map<int, PositionComponent> map_objects_from_id; 
+
+    std::unordered_map<int, Factory> factories;
+    std::unordered_map<int, Town> towns;
 
     TerminalMapThreadPool* thread_pool = nullptr;
 
@@ -79,16 +91,16 @@ public:
     void create_isolated_factory_in_town(Ref<FactoryTemplate> p_factory);
     void create_isolated_company_in_town(Ref<CompanyAi> p_company);
     void create_terminal(Ref<Terminal> p_terminal);
-    void encode_factory(Ref<Factory> factory, int mult = 1);
-    void encode_factory_no_calls_to_cargo_map(Ref<Factory> factory, int mult = 1); // used when calling this a lot to prevent deferred calls from clogging memory
-    void encode_factory_from_construction_site(Ref<Factory> factory);
+    void encode_factory(Factory& factory, int mult = 1);
+    void encode_factory_no_calls_to_cargo_map(Factory& factory, int mult = 1); // used when calling this a lot to prevent deferred calls from clogging memory
+    void encode_factory_from_construction_site(Factory& factory);
     void encode_road_depot(Ref<RoadDepot> road_depot);
     void encode_construction_site(Ref<ConstructionSite> construction_site);
     void add_connected_brokers(Ref<Broker> p_broker);
     void add_connected_stations(Ref<RoadDepot> road_depot);
     void find_stations(Ref<Broker> broker);
-    Ref<Factory> create_factory(const Vector2i &p_location, int p_player_owner, const Dictionary &p_inputs, const Dictionary &p_outputs);
-    Ref<Factory> create_primary_factory(const Vector2i &p_location, int p_player_owner, int type) const;
+    Factory create_factory(const Vector2i &p_location, int p_player_owner, const Dictionary &p_inputs, const Dictionary &p_outputs);
+    Factory create_primary_factory(const Vector2i &p_location, int p_player_owner, int type) const;
     
     //Checkers
     int get_cargo_value_of_tile(const Vector2i &coords, int type) const;
@@ -115,7 +127,6 @@ public:
     int get_cash_of_firm(const Vector2i &coords);
     Dictionary get_local_prices(const Vector2i &coords);
     Dictionary get_station_orders(const Vector2i &coords);
-    Dictionary get_town_fulfillment(const Vector2i &coords);
     bool is_tile_traversable(const Vector2i& coords, bool is_water_untraversable = true);
     bool is_tile_available(const Vector2i& coords);
     Array get_available_primary_recipes(const Vector2i& coords) const;
@@ -125,8 +136,14 @@ public:
     Ref<Broker> get_broker(const Vector2i &coords);
     Ref<StationWOMethods> get_station(const Vector2i &coords);
     Ref<StationWOMethods> get_ai_station(const Vector2i &coords);
-    Ref<Town> get_town(const Vector2i &coords);
-    Ref<Factory> get_factory(const Vector2i &coords);
+
+    Factory& get_factory(int id);
+    std::unordered_map<int, Factory>& get_factories();
+    Town& get_town(int id);
+    std::unordered_map<int, Town>& get_towns();
+    const PositionComponent& get_position_component(int pos_id);
+    const std::vector<PositionComponent&>& get_position_components(Vector2i pos);
+
 
     template <typename T>
     Ref<T> get_terminal_as(const Vector2i &coords, const std::function<bool(const Vector2i &)> &type_check = nullptr) const {

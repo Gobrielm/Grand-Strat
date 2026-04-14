@@ -49,6 +49,7 @@ public:
     void create_pops_range(MapType::iterator start, MapType::iterator end);
 
     // Province queries
+    std::vector<int> get_provinces_vector();
     Array get_provinces() const;
     bool is_tile_a_province(Vector2i tile) const;
     int get_province_id(Vector2i tile) const;
@@ -64,6 +65,6 @@ public:
     std::unordered_set<int> get_country_ids() const;
 
     //Stats Stuff
-    std::unordered_map<int, float> get_average_country_prices(int country_id) const;
+    // std::unordered_map<int, float> get_average_country_prices(int country_id) const;
 
 };

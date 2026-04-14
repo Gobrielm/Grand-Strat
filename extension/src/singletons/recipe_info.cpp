@@ -79,7 +79,7 @@ void RecipeInfo::create_recipe(std::vector<std::unordered_map<std::string, float
     add_recipe(new Recipe(v_float[0], v_float[1], p));
 }
 
-Recipe* RecipeInfo::convert_readable_recipe_into_recipe(std::vector<std::unordered_map<std::string, float>> v, std::unordered_map<PopTypes, int> p) {
+Recipe RecipeInfo::convert_readable_recipe_into_recipe(std::vector<std::unordered_map<std::string, float>> v, std::unordered_map<PopTypes, int> p) {
     Ref<CargoInfo> cargo_info = CargoInfo::get_instance();
     std::vector<std::unordered_map<int, float>> v_float;
     v_float.emplace_back(); v_float.emplace_back(); // Add two maps to the vector for i/o
@@ -89,71 +89,51 @@ Recipe* RecipeInfo::convert_readable_recipe_into_recipe(std::vector<std::unorder
     for (const auto &[cargo_name, amount]: v[1]) {
         v_float[1][cargo_info->get_cargo_type(cargo_name.c_str())] = amount;
     }
-    return new Recipe(v_float[0], v_float[1], p);
+    return Recipe(v_float[0], v_float[1], p);
 }
 
 void RecipeInfo::add_recipe(Recipe* recipe) {
     recipes.push_back(recipe);
 }
 
-Recipe* RecipeInfo::get_primary_recipe_for_type(int output_type) const {
+std::optional<Recipe> RecipeInfo::get_primary_recipe_for_type(int output_type) const {
     for (int i = 0; i < recipes.size(); i++) {
         Recipe* recipe = recipes[i];
         if (recipe->is_primary() && recipe->does_create(output_type)) {
-            return new Recipe(*recipe);
+            return Recipe(*recipe);
         }
     }
-    return nullptr;
+    return std::nullopt;
 }
 
-Recipe* RecipeInfo::get_primary_recipe_for_type_read_only(int output_type) const {
-    for (int i = 0; i < recipes.size(); i++) {
-        Recipe* recipe = recipes[i];
-        if (recipe->is_primary() && recipe->does_create(output_type)) {
-            return recipe;
-        }
-    }
-    return nullptr;
-}
-
-Recipe* RecipeInfo::get_recipe_for_type(int output_type) const {
+std::optional<Recipe> RecipeInfo::get_recipe_for_type(int output_type) const {
     for (int i = 0; i < recipes.size(); i++) {
         Recipe* recipe = recipes[i];
         if (recipe->does_create(output_type)) {
-            return new Recipe(*recipe);
+            return Recipe(*recipe);
         }
     }
-    return nullptr;
+    return std::nullopt;
 }
 
-Recipe* RecipeInfo::get_recipe_for_type_read_only(int output_type) const {
-    for (int i = 0; i < recipes.size(); i++) {
-        Recipe* recipe = recipes[i];
-        if (recipe->does_create(output_type)) {
-            return recipe;
-        }
-    }
-    return nullptr;
-}
-
-Recipe* RecipeInfo::get_recipe(std::unordered_set<std::string> inputs, std::unordered_set<std::string> outputs) {
+std::optional<Recipe> RecipeInfo::get_recipe(std::unordered_set<std::string> inputs, std::unordered_set<std::string> outputs) {
     for (int i = 0; i < recipes.size(); i++) {
         Recipe* recipe = recipes[i];
         if (map_and_set_match(inputs, recipe->get_inputs()) && map_and_set_match(outputs, recipe->get_outputs())) {
-            return new Recipe(*recipe);
+            return Recipe(*recipe);
         }
     }
-    return nullptr;
+    return std::nullopt;
 }
 
-Recipe* RecipeInfo::get_recipe(Dictionary inputs, Dictionary outputs) {
+std::optional<Recipe> RecipeInfo::get_recipe(Dictionary inputs, Dictionary outputs) {
     for (int i = 0; i < recipes.size(); i++) {
         Recipe* recipe = recipes[i];
         if (map_and_dict_match(inputs, recipe->get_inputs()) && map_and_dict_match(outputs, recipe->get_outputs())) {
-            return new Recipe(*recipe);
+            return Recipe(*recipe);
         }
     }
-    return nullptr;
+    return std::nullopt;
 }
 
 bool RecipeInfo::map_and_dict_match(Dictionary d, std::unordered_map<int, float> m) {

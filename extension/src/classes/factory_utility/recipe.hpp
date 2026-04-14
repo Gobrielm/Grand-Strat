@@ -11,7 +11,6 @@ class Recipe {
     std::unordered_map<PopTypes, std::vector<int>> employees;
     std::vector<int> pops_to_fire;
 
-
     std::unordered_map<int, float> inputs;
     std::unordered_map<int, float> outputs;
     std::unordered_map<PopTypes, int> pops_needed;

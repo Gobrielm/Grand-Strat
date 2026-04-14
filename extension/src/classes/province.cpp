@@ -194,6 +194,15 @@ Vector2i Province::get_random_tile() const {
     return tiles_copy.at(rand() % (tiles_copy.size() - 1));
 }
 
+void Province::add_factory(PositionComponent& pc) {
+    factory_ids.push_back(pc.building_id);
+    terminal_tiles.insert(pc.get_position_vector2i());
+}
+
+std::vector<int> Province::get_factories() const {
+    return factory_ids;
+}
+
 void Province::add_terminal(Vector2i tile) {
     {
         std::scoped_lock lock(m);
@@ -330,7 +339,7 @@ void Province::create_town_pops(int amount, const std::vector<Vector2i>& towns) 
 	for (int i = 0; i < amount; i++) {
         Ref<Town> town = town_refs[index];
         if (town.is_valid()) {
-            int pop_id = create_town_pop(0, town -> get_location());
+            int pop_id = create_town_pop(0, town->position.get_position_vector2i());
             town -> add_pop(pop_id);
         }
         

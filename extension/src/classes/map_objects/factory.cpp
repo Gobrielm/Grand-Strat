@@ -20,8 +20,7 @@ Factory::~Factory() {
 
 }
 
-Factory::Factory(std::pair<int, int> p_position, int p_owner, Recipe p_recipe) {
-    position = PositionComponent(p_position);
+Factory::Factory(std::pair<int, int> p_position, int p_owner, Recipe p_recipe): position(p_position, BuildingType::FACTORY) {
     owner = OwnerComponent(p_owner);
     recipe = p_recipe;
     lpc = LocalPriceController();
@@ -32,23 +31,25 @@ void Factory::create_construction_materials() {
     construction.add_construction_material(cargo_info->get_cargo_type("wood"), 100);
 }
 
-float Factory::get_min_price(int type) const {
+float Factory::get_min_price(int type, std::optional<Town&> town = std::nullopt) const {
     ERR_FAIL_COND_V(recipe.get_output(type) == 0, 0.0);
     float available = 0;
     const float bias_term = 1.03;
     for (const auto &[other_type, amount]: recipe.get_inputs()) {
-        available -= lpc.get_local_price(other_type) * amount * bias_term;
+        float price = town.value().mp.get_price(other_type) ? town.has_value(): orders.at(type)->get_limit_price();
+        available -= price * amount * bias_term;
     }
 
     for (const auto &[other_type, amount]: recipe.get_outputs()) {
         if (type == other_type) continue;
-        available += lpc.get_local_price(other_type) * amount;
+        float price = town.value().mp.get_price(other_type) ? town.has_value(): orders.at(type)->get_limit_price();
+        available += price * amount;
     }
     
     return std::max(available / recipe.get_output(type) * -1, 0.0f);
 }
 
-float Factory::get_max_price(int type) const {
+float Factory::get_max_price(int type, std::optional<Town&> town = std::nullopt) const {
     ERR_FAIL_COND_V(recipe.get_input(type) == 0, 1000.0);
 
     float available = 0;
@@ -56,10 +57,12 @@ float Factory::get_max_price(int type) const {
 
     for (const auto &[other_type, amount]: recipe.get_inputs()) {
         if (type == other_type) continue;
-        available -= lpc.get_local_price(other_type) * amount;
+        float price = town.value().mp.get_price(other_type) ? town.has_value(): orders.at(type)->get_limit_price();
+        available -= price * amount;
     }
     for (const auto &[other_type, amount]: recipe.get_outputs()) {
-        available += lpc.get_local_price(other_type) * amount * bias_term;
+        float price = town.value().mp.get_price(other_type) ? town.has_value(): orders.at(type)->get_limit_price();
+        available += price * amount * bias_term;
     }
 
     return std::min(available / recipe.get_input(type), 0.0f);
@@ -83,6 +86,15 @@ int Factory::get_desired_cargo(int type, float price_per) {
         int wanted_for_construction = construction.get_amount_of_type_needed_for_construction(type);
 
         return std::min((wanted_for_construction + wanted_for_recipe), canGet);
+    }
+    return 0;
+}
+
+
+/// @brief TODO: Add other factors
+int Factory::get_desired_cargo_to_sell(int type) {
+    if (recipe.get_output(type) != 0) {
+        return storage.get_amount(type);
     }
     return 0;
 }
@@ -252,7 +264,6 @@ void Factory::day_tick() {
 }
 
 void Factory::month_tick() { 
-    create_recipe();
     capital.update_cash_history();
     if (is_firing()) {
         recipe.queue_employees_to_be_fired();
@@ -260,4 +271,40 @@ void Factory::month_tick() {
     if (construction.is_finished_constructing()) {
         finish_upgrade();
     }
+    
+    create_recipe();
+}
+
+void Factory::adjust_trade_orders(Town& town) {
+    for (const auto& [type, amt]: recipe.get_inputs()) {
+        if (!orders.count(type)) {
+            orders[type] = std::make_shared<TradeOrder>(position.building_id, type, amt, true, town.mp.get_price(type), get_max_price(type, town));
+            town.mp.add_order(orders[type]);
+        }
+
+        float price = orders[type]->get_limit_price();
+        orders[type]->set_max_price(get_max_price(type));
+        if (last_month_storage.get_amount(type) < amt) {
+            float new_price = std::min(get_max_price(type), price + 0.05f);
+            orders[type]->set_price(new_price);
+        } else {
+            orders[type]->set_price(price -= 0.05f);
+        }
+    }
+    for (const auto& [type, amt]: recipe.get_outputs()) {
+        if (!orders.count(type)) {
+            orders[type] = std::make_shared<TradeOrder>(position.building_id, type, amt, false, town.mp.get_price(type), get_min_price(type, town));
+            town.mp.add_order(orders[type]);
+        }
+
+        float price = orders[type]->get_limit_price();
+        orders[type]->set_max_price(get_min_price(type));
+        if (last_month_storage.get_amount(type) > 1) {
+            float new_price = std::max(get_min_price(type), price - 0.05f);
+            orders[type]->set_price(new_price);
+        } else {
+            orders[type]->set_price(price += 0.05f);
+        }
+    }
+    last_month_storage = storage;
 }

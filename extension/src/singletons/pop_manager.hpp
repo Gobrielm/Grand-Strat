@@ -59,6 +59,8 @@ class PopManager {
     FactoryTemplate::FactoryWageWrapper get_first_employment_option(PopTypes pop_type, int country_id) const;
     void remove_first_employment_option(PopTypes pop_type, int country_id, const Ref<FactoryTemplate>& double_check);
 
+    std::optional<Town&> get_town_helper(Vector2i pos) const;
+
     public:
     static void create();
     static void cleanup();

@@ -7,9 +7,8 @@
 #include "../classes/terminal.hpp"
 #include "../classes/station.hpp"
 #include "../classes/broker.hpp"
-#include "../classes/Factory.hpp"
+#include <src/classes/map_objects/factory.hpp>
 #include "../classes/ai_factory.hpp"
-#include "../classes/town.hpp"
 #include "../classes/road_depot.hpp"
 
 
@@ -66,7 +65,6 @@ void TerminalMap::_bind_methods() {
     ClassDB::bind_method(D_METHOD("get_cash_of_firm", "coords"), &TerminalMap::get_cash_of_firm);
     ClassDB::bind_method(D_METHOD("get_local_prices", "coords"), &TerminalMap::get_local_prices);
     ClassDB::bind_method(D_METHOD("get_station_orders", "coords"), &TerminalMap::get_station_orders);
-    ClassDB::bind_method(D_METHOD("get_town_fulfillment", "coords"), &TerminalMap::get_town_fulfillment);
     ClassDB::bind_method(D_METHOD("get_available_primary_recipes", "coords"), &TerminalMap::get_available_primary_recipes);
     
 
@@ -74,8 +72,6 @@ void TerminalMap::_bind_methods() {
     ClassDB::bind_method(D_METHOD("get_broker", "coords"), &TerminalMap::get_broker);
     ClassDB::bind_method(D_METHOD("get_station", "coords"), &TerminalMap::get_station);
     ClassDB::bind_method(D_METHOD("get_ai_station", "coords"), &TerminalMap::get_ai_station);
-    ClassDB::bind_method(D_METHOD("get_town", "coords"), &TerminalMap::get_town);
-    ClassDB::bind_method(D_METHOD("get_factory", "coords"), &TerminalMap::get_factory);
 
     // Action doers
     ClassDB::bind_method(D_METHOD("set_construction_site_recipe", "coords", "selected_recipe"), &TerminalMap::set_construction_site_recipe_godot);
@@ -197,7 +193,7 @@ void TerminalMap::create_isolated_terminal(Ref<Terminal> p_terminal) {
         terminal_id_to_terminal[term_id] = p_terminal;
     }
 }
-
+//TODO
 void TerminalMap::create_isolated_factory_in_town(Ref<FactoryTemplate> p_factory) {
     int term_id = p_factory->get_terminal_id();
     {
@@ -206,9 +202,8 @@ void TerminalMap::create_isolated_factory_in_town(Ref<FactoryTemplate> p_factory
         terminal_id_to_terminal[term_id] = p_factory;
     }
     Vector2i tile = p_factory->get_location();
-    Ref<Town> town = get_town(tile);
-    ERR_FAIL_COND_MSG(town.is_null(), "Adding isolated terminal to invalid town.");
-    town->add_factory(p_factory);
+    Town& town = get_town(get_position_components(tile)[0].building_id);
+    town.add_factory(p_factory);
 }
 
 void TerminalMap::create_isolated_company_in_town(Ref<CompanyAi> p_company) {
@@ -244,43 +239,59 @@ void TerminalMap::create_terminal(Ref<Terminal> p_terminal) {
     }
 }
 
-void TerminalMap::encode_factory(Ref<Factory> factory, int mult) {
+void TerminalMap::encode_factory(Factory& factory, int mult) {
     for (int i = 1; i < mult; i++) {
-        factory->admin_upgrade();
+        factory.admin_upgrade();
     }
     Ref<ProvinceManager> province_manager = ProvinceManager::get_instance();
-    Vector2i coords = factory->get_location();
+    Vector2i coords = factory.position.get_position_vector2i();
+    Province* province = province_manager->get_province(province_manager->get_province_id(coords));
+    if (province == nullptr) {
+        print_error("Province not found with tile : " + coords);
+        return;
+    }
+    {
+        std::scoped_lock lock(m);
+        factories[factory.position.building_id] = factory;
+        map_objects_from_position[coords].push_back(factory.position);
+        map_objects_from_id[factory.position.building_id] = factory.position;
+    }
+    
+    province->add_terminal(coords); // Adds to province
+    cargo_map->call_deferred("call_set_tile_rpc", coords, factory.get_primary_type()); // Will result in lots of memory when used extensively
+}
+
+void TerminalMap::encode_factory_no_calls_to_cargo_map(Factory& factory, int mult) {
+    for (int i = 1; i < mult; i++) {
+        factory.admin_upgrade();
+    }
+    Ref<ProvinceManager> province_manager = ProvinceManager::get_instance();
+    Vector2i coords = factory.position.get_position_vector2i();
     Province* province = province_manager->get_province(province_manager->get_province_id(coords));
     if (province == nullptr) {
         print_error("Province not found with tile : " + coords);
         return;
     }
     
-    create_terminal(factory);
-    province->add_terminal(coords); // Adds to province
-    cargo_map->call_deferred("call_set_tile_rpc", coords, factory->get_primary_type()); // Will result in lots of memory when used extensively
-}
+    {
+        std::scoped_lock lock(m);
+        factories[factory.position.building_id] = factory;
+        map_objects_from_position[coords].push_back(factory.position);
+        map_objects_from_id[factory.position.building_id] = factory.position;
+    }
 
-void TerminalMap::encode_factory_no_calls_to_cargo_map(Ref<Factory> factory, int mult) {
-    for (int i = 1; i < mult; i++) {
-        factory->admin_upgrade();
-    }
-    Ref<ProvinceManager> province_manager = ProvinceManager::get_instance();
-    Vector2i coords = factory->get_location();
-    Province* province = province_manager->get_province(province_manager->get_province_id(coords));
-    if (province == nullptr) {
-        print_error("Province not found with tile : " + coords);
-        return;
-    }
-    
-    create_terminal(factory);
     province->add_terminal(coords); // Adds to province
 }
 
-void TerminalMap::encode_factory_from_construction_site(Ref<Factory> factory) {
-    Vector2i coords = factory->get_location();
-    create_terminal(factory);
-    cargo_map->call("call_set_tile_rpc", coords, factory->get_primary_type());
+void TerminalMap::encode_factory_from_construction_site(Factory& factory) {
+    Vector2i coords = factory.position.get_position_vector2i();
+    {
+        std::scoped_lock lock(m);
+        factories[factory.position.building_id] = factory;
+        map_objects_from_position[coords].push_back(factory.position);
+        map_objects_from_id[factory.position.building_id] = factory.position;
+    }
+    cargo_map->call("call_set_tile_rpc", coords, factory.get_primary_type());
 }
 
 void TerminalMap::encode_road_depot(Ref<RoadDepot> road_depot) {
@@ -339,12 +350,10 @@ void TerminalMap::find_stations(Ref<Broker> broker) {
     }
 }
 
-Ref<Factory> TerminalMap::create_factory(const Vector2i &p_location, int p_player_owner, const Dictionary &p_inputs, const Dictionary &p_outputs) {
+Factory TerminalMap::create_factory(const Vector2i &p_location, int p_player_owner, const Dictionary &p_inputs, const Dictionary &p_outputs) {
     if (p_player_owner > 0) {
-        Ref<Factory> factory;
-        factory.instantiate();
-        
-        factory->initialize(p_location, p_player_owner, RecipeInfo::get_instance()->get_recipe(p_inputs, p_outputs));
+        Factory factory(std::make_pair(p_location.x, p_location.y), p_player_owner, RecipeInfo::get_instance()->get_recipe(p_inputs, p_outputs).value());
+
         return factory;
     } else {
         Ref<AiFactory> factory;
@@ -354,9 +363,9 @@ Ref<Factory> TerminalMap::create_factory(const Vector2i &p_location, int p_playe
     }
 }
 
-Ref<Factory> TerminalMap::create_primary_factory(const Vector2i &p_location, int p_player_owner, int type) const {
+Factory TerminalMap::create_primary_factory(const Vector2i &p_location, int p_player_owner, int type) const {
     if (p_player_owner > 0) {
-        Ref<Factory> factory = Ref<Factory>(memnew(Factory(p_location, p_player_owner, RecipeInfo::get_instance()->get_primary_recipe_for_type(type))));
+        Factory factory = Factory(std::make_pair(p_location.x, p_location.y), p_player_owner, RecipeInfo::get_instance()->get_primary_recipe_for_type(type).value());
         return factory;
     } else {
         Ref<AiFactory> factory = Ref<AiFactory>(memnew(AiFactory(p_location, p_player_owner, RecipeInfo::get_instance()->get_primary_recipe_for_type(type))));
@@ -412,7 +421,8 @@ bool TerminalMap::is_owned_construction_site(const Vector2i &coords) {
    return get_terminal_as<ConstructionSite>(coords).is_valid();
 }
 bool TerminalMap::is_factory(const Vector2i &coords) {
-    return get_terminal_as<Factory>(coords).is_valid();
+    if (!map_objects_from_position.count(coords)) return false;
+    return map_objects_from_position[coords][0].type == FACTORY;
 }
 bool TerminalMap::is_station(const Vector2i &coords) {
     return get_terminal_as<StationWOMethods>(coords).is_valid();
@@ -445,7 +455,8 @@ bool TerminalMap::is_owned_ai_station(const Vector2i &coords, int id) {
     return val;
 } 
 bool TerminalMap::is_town(const Vector2i &coords) {
-    return get_terminal_as<Town>(coords).is_valid();
+    if (!map_objects_from_position.count(coords)) return false;
+    return map_objects_from_position[coords][0].type == TOWN;
 }
 
 //Info getters
@@ -510,15 +521,6 @@ Dictionary TerminalMap::get_station_orders(const Vector2i &coords) {
     return toReturn;
 }
 
-Dictionary TerminalMap::get_town_fulfillment(const Vector2i &coords) {
-    Dictionary toReturn;
-    Ref<Town> town = get_town(coords);
-    if (town.is_valid()) {
-        toReturn = town -> get_fulfillment_dict();
-    }
-    return toReturn;
-}
-
 bool TerminalMap::is_tile_traversable(const Vector2i& coords, bool is_water_untraversable) {
     std::scoped_lock lock(m);
     Vector2i atlas = map -> get_cell_atlas_coords(coords);
@@ -566,12 +568,29 @@ Ref<StationWOMethods> TerminalMap::get_station(const Vector2i &coords) {
 Ref<StationWOMethods> TerminalMap::get_ai_station(const Vector2i &coords) {
     return get_terminal_as<StationWOMethods>(coords, [](const Vector2i &pos) { return TerminalMap::get_instance()->is_ai_station(pos);});
 }
-Ref<Town> TerminalMap::get_town(const Vector2i &coords) {
-    return get_terminal_as<Town>(coords);
+
+Factory& TerminalMap::get_factory(int id) {
+    return factories.at(id);
 }
 
-Ref<Factory> TerminalMap::get_factory(const Vector2i &coords) {
-    return get_terminal_as<Factory>(coords);
+std::unordered_map<int, Factory>& TerminalMap::get_factories() {
+    return factories;
+}
+
+Town& TerminalMap::get_town(int id) {
+    return towns.at(id);
+}
+
+std::unordered_map<int, Town>& TerminalMap::get_towns() {
+    return towns
+}
+
+const PositionComponent& TerminalMap::get_position_component(int pos_id) {
+    return map_objects_from_id[pos_id];
+}
+
+const std::vector<PositionComponent&>& TerminalMap::get_position_components(Vector2i pos) {
+    return map_objects_from_position[pos];
 }
 
 //Action doers
@@ -583,7 +602,7 @@ void TerminalMap::set_construction_site_recipe(const Vector2i &coords, Recipe* s
 
 void TerminalMap::set_construction_site_recipe_godot(const Vector2i &coords, const Array &selected_recipe) {
     if (is_owned_recipeless_construction_site(coords)) {
-        get_terminal_as<ConstructionSite>(coords) -> set_recipe(RecipeInfo::get_instance()->get_recipe(selected_recipe[0], selected_recipe[1]));
+        get_terminal_as<ConstructionSite>(coords) -> set_recipe(RecipeInfo::get_instance()->get_recipe(selected_recipe[0], selected_recipe[1]).value());
     }
 }
 
@@ -596,7 +615,7 @@ void TerminalMap::destroy_recipe(const Vector2i &coords) {
 void TerminalMap::transform_construction_site_to_factory(const Vector2i &coords) { // Doesn't keep same id
     if (is_owned_construction_site(coords)) {
         Ref<ConstructionSite> old_site = get_terminal_as<ConstructionSite>(coords);
-        Ref<Factory> factory = create_factory(coords, old_site->get_player_owner(), old_site->get_recipe()[0], old_site->get_recipe()[1]);
+        Factory factory = create_factory(coords, old_site->get_player_owner(), old_site->get_recipe()[0], old_site->get_recipe()[1]);
         {
             std::unique_lock lock(cargo_map_mutex);
             terminal_id_to_terminal.erase(old_site->get_terminal_id());
@@ -644,13 +663,11 @@ float TerminalMap::get_average_factory_level() const {
     double ave = 0;
     int count = 0;
     {
-        std::shared_lock lock(cargo_map_mutex);
-        for (const auto &[__, terminal]: terminal_id_to_terminal) {
-            Ref<Factory> typed = Ref<Factory>(terminal);
-            if (typed.is_valid()) {
-                ave += typed -> get_level();
-                count++;
-            }
+        std::shared_lock lock(m);
+        for (const auto& [_, factory]: factories) {
+            ave += factory.recipe.get_level();
+            count++;
+            
         }
     }
     return ave / count;
@@ -660,13 +677,11 @@ unsigned long TerminalMap::get_grain_demand() const {
     unsigned long total_demand = 0;
 
     {
-        std::shared_lock lock(cargo_map_mutex);
-        for (const auto &[__, terminal]: terminal_id_to_terminal) {
-            Ref<Town> typed = Ref<Town>(terminal);
-            if (typed.is_valid()) {
-                int num = (typed->get_local_demand(CargoInfo::get_instance()->get_cargo_type("grain")));
-                total_demand += num;
-            }
+        std::shared_lock lock(m);
+        for (const auto& [_, town]: towns) {
+            int num = (town.mp.get_current_demand(CargoInfo::get_instance()->get_cargo_type("grain")));
+            total_demand += num;
+            
         }
     }
     return round(total_demand);
@@ -677,13 +692,10 @@ unsigned long TerminalMap::get_grain_supply() const {
     double total_demand = 0;
 
     {
-        std::shared_lock lock(cargo_map_mutex);
-        for (const auto &[__, terminal]: terminal_id_to_terminal) {
-            Ref<Town> typed = Ref<Town>(terminal);
-            if (typed.is_valid()) {
-                double num = double(typed->get_cargo_amount(CargoInfo::get_instance()->get_cargo_type("grain")));
-                total_demand += num;
-            }
+        std::shared_lock lock(m);
+        for (const auto& [_, town]: towns) {
+            double num = double(town.mp.get_current_supply(CargoInfo::get_instance()->get_cargo_type("grain")));
+            total_demand += num;
         }
     }
     return round(total_demand);
