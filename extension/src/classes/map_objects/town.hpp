@@ -35,7 +35,7 @@ public:
     MarketComponent mp;
 
     Town(std::pair<int, int> p_position = {0, 0});
-    Town(Town& town);
+    Town(const Town& town);
 
     Town operator=(Town &town);
 

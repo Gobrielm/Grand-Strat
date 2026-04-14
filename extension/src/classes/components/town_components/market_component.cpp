@@ -3,7 +3,7 @@
 
 MarketComponent::MarketComponent() {}
 
-MarketComponent::MarketComponent(MarketComponent& other): 
+MarketComponent::MarketComponent(const MarketComponent& other): 
     sell_orders(other.sell_orders), 
     buy_orders(other.buy_orders)
 {}

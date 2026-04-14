@@ -87,10 +87,10 @@ public:
 
     //Creators
     /// @brief If provided terminal is factory located on town, will parse and call create_isolated_factory_in_town instead.
-    void create_isolated_terminal(Ref<Terminal> p_terminal);
-    void create_isolated_factory_in_town(Ref<FactoryTemplate> p_factory);
-    void create_isolated_company_in_town(Ref<CompanyAi> p_company);
-    void create_terminal(Ref<Terminal> p_terminal);
+    // void create_isolated_terminal(Ref<Terminal> p_terminal);
+    // void create_isolated_factory_in_town(Ref<FactoryTemplate> p_factory);
+    // void create_isolated_company_in_town(Ref<CompanyAi> p_company);
+    // void create_terminal(Ref<Terminal> p_terminal);
     void encode_factory(Factory& factory, int mult = 1);
     void encode_factory_no_calls_to_cargo_map(Factory& factory, int mult = 1); // used when calling this a lot to prevent deferred calls from clogging memory
     void encode_factory_from_construction_site(Factory& factory);
@@ -139,6 +139,7 @@ public:
 
 
     void encode_building(PositionComponent pos);
+    void place_object_on_map(PositionComponent pos);
     const PositionComponent& get_position_component(int pos_id);
 
 

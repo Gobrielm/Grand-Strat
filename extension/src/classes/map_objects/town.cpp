@@ -12,7 +12,7 @@ Town::Town(std::pair<int, int> p_position): position(p_position, BuildingType::T
 
 Town::Town(std::pair<int, int> p_position): position(p_position, BuildingType::TOWN) {}
 
-Town::Town(Town& town): position(town.position), owner(town.owner), mp(town.mp) {}
+Town::Town(const Town& town): position(town.position), owner(town.owner), mp(town.mp) {}
 
 Town Town::operator=(Town &town) {
     return Town(town);

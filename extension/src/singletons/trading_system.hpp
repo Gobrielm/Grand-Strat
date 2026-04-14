@@ -9,7 +9,7 @@ class TradingSystem {
     public:
     void day_tick();
     
-    void adjust_factory_orders(std::vector<Factory>& factories);
+    void adjust_factory_orders();
     
 
     void trading_tick();

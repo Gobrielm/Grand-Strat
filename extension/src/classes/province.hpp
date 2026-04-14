@@ -29,8 +29,6 @@ class Province : public Object {
 
     std::vector<int> factory_ids;
 
-    std::unordered_map<Vector2i, Vector2i, godot_helpers::Vector2iHasher> closest_town_to_tile;
-
     std::unordered_set<int> pops;
 
 
@@ -38,7 +36,7 @@ class Province : public Object {
     std::unordered_map<Vector2i, std::vector<PositionComponent&>, godot_helpers::Vector2iHasher> position_components;
 
     // Owned objects
-    std::unordered_map<int, Town> towns;
+    Town town;
     std::unordered_map<int, Factory> factories;
     std::unordered_map<int, Station> stations;
 
@@ -71,15 +69,17 @@ class Province : public Object {
     std::vector<Vector2i> get_town_centered_tiles() const;
     Vector2i get_random_tile() const;
 
+    Town create_town();
+
     void add_factory(Factory& factory);
-    void add_town(Town& town);
+    void add_town(Town& p_town);
     void add_station(Station& station);
 
     Factory& get_factory(int pos_id);
-    Town& get_town(int pos_id);
     Station& get_station(int pos_id);
+    Town& get_town();
 
-    std::unordered_map<int, Factory>& get_factories() const;
+    std::unordered_map<int, Factory>& get_factories();
 
 
     // void add_terminal(Vector2i tile);
@@ -90,11 +90,6 @@ class Province : public Object {
 
     void init_province();
 
-    //Town Stuff
-    void refresh_closest_town_to_tile();
-    Vector2i get_closest_town_to_tile(Vector2i tile, std::vector<Vector2i> towns);
-    std::vector<Vector2i> get_town_tiles() const;
-
     // === Pops ===
     // Info Stuff
     int get_number_of_pops() const;
@@ -104,12 +99,10 @@ class Province : public Object {
     void create_pops();
     void create_peasant_pop(Variant culture, Vector2i p_location);
     void create_rural_pop(Variant culture, Vector2i p_location);
-    void create_town_pops(int amount, const std::vector<Vector2i>& towns);
+    void create_town_pops(int amount);
     int create_town_pop(Variant culture, Vector2i p_location);
     std::vector<int> create_buildings_for_peasants();
     void employ_peasants();
     int count_pops() const;
-    Vector2i get_closest_town_tile_to_pop(const Vector2i& pop_location) const;
-    bool has_closest_town_tile_to_pop(const Vector2i& pop_location) const;
     
 };

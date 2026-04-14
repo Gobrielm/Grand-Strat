@@ -180,66 +180,67 @@ void TerminalMap::unpause_time() {
 }
 
 //Creators
-void TerminalMap::create_isolated_terminal(Ref<Terminal> p_terminal) {
-    Vector2i tile = p_terminal->get_location();
-    Ref<FactoryTemplate> factory = p_terminal;
-    if (is_town(tile) && factory.is_valid()) {
-        create_isolated_factory_in_town(factory);
-        return;
-    }
+// void TerminalMap::create_isolated_terminal(Ref<Terminal> p_terminal) {
+//     Vector2i tile = p_terminal->get_location();
+//     Ref<FactoryTemplate> factory = p_terminal;
+//     if (is_town(tile) && factory.is_valid()) {
+//         create_isolated_factory_in_town(factory);
+//         return;
+//     }
 
-    int term_id = p_terminal->get_terminal_id();
-    {
-        std::unique_lock lock(cargo_map_mutex);
-        ERR_FAIL_COND_MSG(terminal_id_to_terminal.count(term_id), "Tried to create terminal where terminal exists with id " + String::num_int64(term_id));
-        terminal_id_to_terminal[term_id] = p_terminal;
-    }
-}
-//TODO
-void TerminalMap::create_isolated_factory_in_town(Ref<FactoryTemplate> p_factory) {
-    int term_id = p_factory->get_terminal_id();
-    {
-        std::unique_lock lock(cargo_map_mutex);
-        ERR_FAIL_COND_MSG(terminal_id_to_terminal.count(term_id), "Tried to create terminal where terminal exists with id " + String::num_int64(term_id));
-        terminal_id_to_terminal[term_id] = p_factory;
-    }
-    Vector2i tile = p_factory->get_location();
-    Town& town = get_town(get_position_components(tile)[0].building_id);
-    town.add_factory(p_factory);
-}
+//     int term_id = p_terminal->get_terminal_id();
+//     {
+//         std::unique_lock lock(cargo_map_mutex);
+//         ERR_FAIL_COND_MSG(terminal_id_to_terminal.count(term_id), "Tried to create terminal where terminal exists with id " + String::num_int64(term_id));
+//         terminal_id_to_terminal[term_id] = p_terminal;
+//     }
+// }
+// //TODO
+// void TerminalMap::create_isolated_factory_in_town(Factory p_factory) {
+//     int term_id = p_factory->get_terminal_id();
+//     {
+//         std::unique_lock lock(cargo_map_mutex);
+//         ERR_FAIL_COND_MSG(terminal_id_to_terminal.count(term_id), "Tried to create terminal where terminal exists with id " + String::num_int64(term_id));
+//         terminal_id_to_terminal[term_id] = p_factory;
+//     }
+//     Vector2i tile = p_factory->get_location();
+//     auto pm = ProvinceManager::get_instance();
+//     Town& town = pm->get_province(tile)->get_town();
+//     town.add_factory(p_factory);
+// }
 
-void TerminalMap::create_isolated_company_in_town(Ref<CompanyAi> p_company) {
-    int term_id = p_company->get_terminal_id();
-    {
-        std::unique_lock lock(cargo_map_mutex);
-        ERR_FAIL_COND_MSG(terminal_id_to_terminal.count(term_id), "Tried to create terminal where terminal exists with id " + String::num_int64(term_id));
-        terminal_id_to_terminal[term_id] = p_company;
-    }
-    Vector2i tile = p_company->get_location();
-    Ref<Town> town = get_town(tile);
-    ERR_FAIL_COND_MSG(town.is_null(), "Adding isolated terminal to invalid town.");
-    town->add_company(p_company);
-}
+// void TerminalMap::create_isolated_company_in_town(Ref<CompanyAi> p_company) {
+//     int term_id = p_company->get_terminal_id();
+//     {
+//         std::unique_lock lock(cargo_map_mutex);
+//         ERR_FAIL_COND_MSG(terminal_id_to_terminal.count(term_id), "Tried to create terminal where terminal exists with id " + String::num_int64(term_id));
+//         terminal_id_to_terminal[term_id] = p_company;
+//     }
+//     Vector2i tile = p_company->get_location();
+//     Ref<Town> town = get_town(tile);
+//     ERR_FAIL_COND_MSG(town.is_null(), "Adding isolated terminal to invalid town.");
+//     town->add_company(p_company);
+// }
 
-void TerminalMap::create_terminal(Ref<Terminal> p_terminal) {
-    Vector2i location = p_terminal->get_location();
-    int term_id = p_terminal->get_terminal_id();
-    {
-        std::unique_lock lock(cargo_map_mutex);
-        ERR_FAIL_COND_MSG(cargo_map_terminals.count(location) || terminal_id_to_terminal.count(term_id), "Tried to create terminal where terminal exists at " + location + " with id " + String::num_int64(term_id));
-        cargo_map_terminals[location] = term_id;
-        terminal_id_to_terminal[term_id] = p_terminal;
-    }
-    Ref<Broker> broker = get_broker(location);
-    if (broker.is_valid()) {
-        add_connected_brokers(broker);
-        find_stations(broker);
-    }
-    Ref<RoadDepot> road_depot = get_terminal_as<RoadDepot>(location);
-    if (road_depot.is_valid()) {
-        add_connected_stations(road_depot);
-    }
-}
+// void TerminalMap::create_terminal(Ref<Terminal> p_terminal) {
+//     Vector2i location = p_terminal->get_location();
+//     int term_id = p_terminal->get_terminal_id();
+//     {
+//         std::unique_lock lock(cargo_map_mutex);
+//         ERR_FAIL_COND_MSG(cargo_map_terminals.count(location) || terminal_id_to_terminal.count(term_id), "Tried to create terminal where terminal exists at " + location + " with id " + String::num_int64(term_id));
+//         cargo_map_terminals[location] = term_id;
+//         terminal_id_to_terminal[term_id] = p_terminal;
+//     }
+//     Ref<Broker> broker = get_broker(location);
+//     if (broker.is_valid()) {
+//         add_connected_brokers(broker);
+//         find_stations(broker);
+//     }
+//     Ref<RoadDepot> road_depot = get_terminal_as<RoadDepot>(location);
+//     if (road_depot.is_valid()) {
+//         add_connected_stations(road_depot);
+//     }
+// }
 
 void TerminalMap::encode_factory(Factory& factory, int mult) {
     for (int i = 1; i < mult; i++) {
@@ -573,6 +574,19 @@ Ref<StationWOMethods> TerminalMap::get_ai_station(const Vector2i &coords) {
 
 void TerminalMap::encode_building(PositionComponent pos) {
     map_objects_from_id[pos.building_id] = pos;
+}
+
+void TerminalMap::place_object_on_map(PositionComponent pos) {
+    auto province = ProvinceManager::get_instance()->get_province(pos.get_position_vector2i());
+    switch (pos.type) {
+        case BuildingType::FACTORY:
+            cargo_map->call_deferred("call_set_tile_rpc", pos.get_position_vector2i(), province->get_factory(pos.building_id).get_primary_type());
+        case BuildingType::TOWN:
+
+        case BuildingType::STATION:
+        
+        
+    }
 }
 
 const PositionComponent& TerminalMap::get_position_component(int pos_id) {
