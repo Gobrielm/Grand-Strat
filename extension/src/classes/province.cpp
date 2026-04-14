@@ -9,6 +9,8 @@
 #include "factory_utility/recipe.hpp"
 #include "../singletons/pop_manager.hpp"
 
+#include <classes/map_objects/station.hpp>
+
 void Province::_bind_methods() {
     ClassDB::bind_static_method(get_class_static(), D_METHOD("create", "p_prov_id"), &Province::create);
 
@@ -194,51 +196,98 @@ Vector2i Province::get_random_tile() const {
     return tiles_copy.at(rand() % (tiles_copy.size() - 1));
 }
 
-void Province::add_factory(PositionComponent& pc) {
-    factory_ids.push_back(pc.building_id);
-    terminal_tiles.insert(pc.get_position_vector2i());
+void Province::add_factory(Factory& factory) {
+    factories[factory.position.building_id] = factory;
+    position_components[factory.position.get_position_vector2i()].push_back(factory.position);
 }
 
-std::vector<int> Province::get_factories() const {
-    return factory_ids;
+void Province::add_town(Town& town) {
+    towns[town.position.building_id] = town;
+    position_components[town.position.get_position_vector2i()].push_back(town.position);
 }
 
-void Province::add_terminal(Vector2i tile) {
-    {
-        std::scoped_lock lock(m);
-        if (terminal_tiles.count(tile) != 0) {
-            ERR_FAIL_MSG("Already has a terminal there");
-            return;
-        }
-        terminal_tiles.insert(tile);
+void Province::add_station(Station& station) {
+    stations[station.position.building_id] = station;
+    position_components[station.position.get_position_vector2i()].push_back(station.position);
+}
+
+Factory& Province::get_factory(int pos_id) {
+    if (!factories.count(pos_id)) {
+        Factory factory;
+        ERR_FAIL_V_MSG(factory, "Tried to fetch invalid factory with pos: "  + String(std::to_string(pos_id).c_str()));
     }
+    return factories[pos_id];
+}
+
+Town& Province::get_town(int pos_id) {
+    if (!towns.count(pos_id)) {
+        Town town;
+        ERR_FAIL_V_MSG(town, "Tried to fetch invalid town with pos: "  + String(std::to_string(pos_id).c_str()));
+    }
+    return towns[pos_id];
+}
+
+Station& Province::get_station(int pos_id) {
+    if (!stations.count(pos_id)) {
+        Station station;
+        ERR_FAIL_V_MSG(station, "Tried to fetch invalid station with pos: "  + String(std::to_string(pos_id).c_str()));
+    }
+    return stations[pos_id];
+}
+// TODO: DOES THIS HOLD REFERENCES
+std::unordered_map<int, Factory>& Province::get_factories() const {
+    return factories;
+}
+
+// void Province::add_terminal(Vector2i tile) {
+//     {
+//         std::scoped_lock lock(m);
+//         if (terminal_tiles.count(tile) != 0) {
+//             ERR_FAIL_MSG("Already has a terminal there");
+//             return;
+//         }
+//         terminal_tiles.insert(tile);
+//     }
     
-    refresh_closest_town_to_tile();
-}
+//     refresh_closest_town_to_tile();
+// }
 
-void Province::remove_terminal(Vector2i tile) { //BUG: Never gets called when deleting terminals
-    std::scoped_lock lock(m);
-    if (terminal_tiles.count(tile) == 0) {
-        ERR_FAIL_MSG("No terminal there");
-        return;
-    }
-    terminal_tiles.erase(tile);
-}
-Array Province::get_terminal_tiles() const {
-    Array a;
-    std::shared_lock lock(m);
-    for (const auto tile: terminal_tiles) {
-        a.push_back(tile);
-    }
-    return a;
-}
+// void Province::remove_terminal(Vector2i tile) { //BUG: Never gets called when deleting terminals
+//     std::scoped_lock lock(m);
+//     if (terminal_tiles.count(tile) == 0) {
+//         ERR_FAIL_MSG("No terminal there");
+//         return;
+//     }
+//     terminal_tiles.erase(tile);
+// }
+// Array Province::get_terminal_tiles() const {
+//     Array a;
+//     std::shared_lock lock(m);
+//     for (const auto tile: terminal_tiles) {
+//         a.push_back(tile);
+//     }
+//     return a;
+// }
 
 bool Province::has_town() const {
-    return get_town_tiles().size() != 0;
+    return towns.size() != 0;
 }
 
 const std::unordered_set<Vector2i, godot_helpers::Vector2iHasher>& Province::get_terminal_tiles_set() const {
     return terminal_tiles;
+}
+
+void Province::init_province() {
+    auto tm = TerminalMap::get_instance();
+
+    // Create Town
+    Vector2i town_tile = tiles[rand() % tiles.size()];
+    Town town(std::make_pair(town_tile.x, town_tile.y));
+    towns[town.position.building_id] = town;
+    tm->encode_building(town.position);
+
+    // Create factories
+    
 }
 
 void Province::refresh_closest_town_to_tile() {

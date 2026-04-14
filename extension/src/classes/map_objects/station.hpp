@@ -35,5 +35,7 @@ class Station : public RefCounted {
 
     Station();
     Station(TYPE_OF_STATION p_type, std::pair<int, int> position, int owner);
+    Station(Station& other);
+    Station operator=(Station& other);
 
 };

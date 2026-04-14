@@ -3,6 +3,11 @@
 
 MarketComponent::MarketComponent() {}
 
+MarketComponent::MarketComponent(MarketComponent& other): 
+    sell_orders(other.sell_orders), 
+    buy_orders(other.buy_orders)
+{}
+
 void MarketComponent::add_order(std::shared_ptr<TradeOrder> to) {
     if (to->is_buy_order()) {
         buy_orders[to->get_type()].insert(to);

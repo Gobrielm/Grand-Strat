@@ -32,6 +32,7 @@ class MarketComponent {
     public:
     
     MarketComponent();
+    MarketComponent(MarketComponent& other);
 
     void add_order(std::shared_ptr<TradeOrder> to);
     float get_price(int type) const;

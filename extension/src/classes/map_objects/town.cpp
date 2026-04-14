@@ -8,9 +8,15 @@ void Town::_bind_methods() {
     
 }
 
-Town::Town() {}
+Town::Town(std::pair<int, int> p_position): position(p_position, BuildingType::TOWN) {}
 
 Town::Town(std::pair<int, int> p_position): position(p_position, BuildingType::TOWN) {}
+
+Town::Town(Town& town): position(town.position), owner(town.owner), mp(town.mp) {}
+
+Town Town::operator=(Town &town) {
+    return Town(town);
+}
 
 void Town::add_factory(int factory_owner, int factory_id) {
     internal_factories[factory_owner].push_back(factory_id);

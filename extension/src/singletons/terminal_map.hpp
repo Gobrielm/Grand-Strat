@@ -137,12 +137,9 @@ public:
     Ref<StationWOMethods> get_station(const Vector2i &coords);
     Ref<StationWOMethods> get_ai_station(const Vector2i &coords);
 
-    Factory& get_factory(int id);
-    std::unordered_map<int, Factory>& get_factories();
-    Town& get_town(int id);
-    std::unordered_map<int, Town>& get_towns();
+
+    void encode_building(PositionComponent pos);
     const PositionComponent& get_position_component(int pos_id);
-    const std::vector<PositionComponent&>& get_position_components(Vector2i pos);
 
 
     template <typename T>

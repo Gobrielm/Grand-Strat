@@ -18,8 +18,7 @@ void TradingSystem::adjust_factory_orders(std::vector<Factory>& factories) {
         int town_id = tm->cargo_map_terminals[town_tiles[0]];
         Town& town = tm->towns[town_id];
 
-        for (auto id: province->get_factories()) {
-            auto &factory = tm->get_factory(id);
+        for (auto& [id, factory]: province->get_factories()) {
             adjust_factory_orders(factory, town);
         }
     }

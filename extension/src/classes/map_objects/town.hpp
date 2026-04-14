@@ -31,13 +31,13 @@ public:
 
     PositionComponent position;
     OwnerComponent owner;
-    CapitalComponent capital;
-    ConstructionComponent construction;
 
     MarketComponent mp;
 
-    Town();
     Town(std::pair<int, int> p_position = {0, 0});
+    Town(Town& town);
+
+    Town operator=(Town &town);
 
     void add_factory(int factory_owner, int factory_id);
     void add_company(int company_id);

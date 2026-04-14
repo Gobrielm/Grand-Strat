@@ -5,11 +5,13 @@
 #include "pop_manager.hpp"
 #include "ai_manager.hpp"
 #include "../classes/terminal.hpp"
-#include "../classes/station.hpp"
 #include "../classes/broker.hpp"
-#include <src/classes/map_objects/factory.hpp>
 #include "../classes/ai_factory.hpp"
 #include "../classes/road_depot.hpp"
+
+#include <src/classes/map_objects/factory.hpp>
+#include <src/classes/map_objects/station.hpp>
+#include <src/classes/map_objects/town.hpp>
 
 
 using namespace godot;
@@ -569,28 +571,12 @@ Ref<StationWOMethods> TerminalMap::get_ai_station(const Vector2i &coords) {
     return get_terminal_as<StationWOMethods>(coords, [](const Vector2i &pos) { return TerminalMap::get_instance()->is_ai_station(pos);});
 }
 
-Factory& TerminalMap::get_factory(int id) {
-    return factories.at(id);
-}
-
-std::unordered_map<int, Factory>& TerminalMap::get_factories() {
-    return factories;
-}
-
-Town& TerminalMap::get_town(int id) {
-    return towns.at(id);
-}
-
-std::unordered_map<int, Town>& TerminalMap::get_towns() {
-    return towns
+void TerminalMap::encode_building(PositionComponent pos) {
+    map_objects_from_id[pos.building_id] = pos;
 }
 
 const PositionComponent& TerminalMap::get_position_component(int pos_id) {
     return map_objects_from_id[pos_id];
-}
-
-const std::vector<PositionComponent&>& TerminalMap::get_position_components(Vector2i pos) {
-    return map_objects_from_position[pos];
 }
 
 //Action doers

@@ -10,6 +10,8 @@
 
 class BasePop;
 class Town;
+class Factory;
+class Station;
 enum PopTypes;
 
 using namespace godot;
@@ -30,6 +32,15 @@ class Province : public Object {
     std::unordered_map<Vector2i, Vector2i, godot_helpers::Vector2iHasher> closest_town_to_tile;
 
     std::unordered_set<int> pops;
+
+
+    // New Structures
+    std::unordered_map<Vector2i, std::vector<PositionComponent&>, godot_helpers::Vector2iHasher> position_components;
+
+    // Owned objects
+    std::unordered_map<int, Town> towns;
+    std::unordered_map<int, Factory> factories;
+    std::unordered_map<int, Station> stations;
 
     protected:
     static void _bind_methods();
@@ -60,13 +71,24 @@ class Province : public Object {
     std::vector<Vector2i> get_town_centered_tiles() const;
     Vector2i get_random_tile() const;
 
-    void add_factory(PositionComponent& pc);
-    std::vector<int> get_factories() const;
-    void add_terminal(Vector2i tile);
-    void remove_terminal(Vector2i tile);
-    Array get_terminal_tiles() const;
+    void add_factory(Factory& factory);
+    void add_town(Town& town);
+    void add_station(Station& station);
+
+    Factory& get_factory(int pos_id);
+    Town& get_town(int pos_id);
+    Station& get_station(int pos_id);
+
+    std::unordered_map<int, Factory>& get_factories() const;
+
+
+    // void add_terminal(Vector2i tile);
+    // void remove_terminal(Vector2i tile);
+    // Array get_terminal_tiles() const;
     bool has_town() const;
     const std::unordered_set<Vector2i, godot_helpers::Vector2iHasher>& get_terminal_tiles_set() const;
+
+    void init_province();
 
     //Town Stuff
     void refresh_closest_town_to_tile();

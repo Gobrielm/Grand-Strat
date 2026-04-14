@@ -16,6 +16,18 @@ Station::Station(TYPE_OF_STATION p_type, std::pair<int, int> p_position, int p_o
     owner = OwnerComponent(p_owner);
 }
 
+Station::Station(Station& other):
+    position(other.position),
+    owner(other.owner),
+    MAX_SUPPLY_DISTANCE(other.MAX_SUPPLY_DISTANCE),
+    SUPPLY_DROPOFF(other.SUPPLY_DROPOFF),
+    type(other.type)
+{}
+
+Station Station::operator=(Station& other) {
+    return Station(other);
+}
+
 int Station::get_SUPPLY_DROPOFF() {
     switch (type) {
         RAIL:
