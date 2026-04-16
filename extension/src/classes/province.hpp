@@ -33,10 +33,12 @@ class Province : public Object {
 
 
     // New Structures
-    std::unordered_map<Vector2i, std::vector<PositionComponent&>, godot_helpers::Vector2iHasher> position_components;
+    // never pass these by reference
+    std::unordered_map<Vector2i, std::vector<PositionComponent>, godot_helpers::Vector2iHasher> position_components;
 
     // Owned objects
     Town town;
+    // TODO: change to vectors with map lookups
     std::unordered_map<int, Factory> factories;
     std::unordered_map<int, Station> stations;
 
