@@ -255,12 +255,10 @@ void TerminalMap::encode_factory(Factory& factory, int mult) {
     }
     {
         std::scoped_lock lock(m);
-        factories[factory.position.building_id] = factory;
-        map_objects_from_position[coords].push_back(factory.position);
-        map_objects_from_id[factory.position.building_id] = factory.position;
+        id_to_position_component[factory.position.building_id] = factory.position;
     }
     
-    province->add_terminal(coords); // Adds to province
+    province->add_factory(factory); // Adds to province
     cargo_map->call_deferred("call_set_tile_rpc", coords, factory.get_primary_type()); // Will result in lots of memory when used extensively
 }
 
@@ -278,21 +276,17 @@ void TerminalMap::encode_factory_no_calls_to_cargo_map(Factory& factory, int mul
     
     {
         std::scoped_lock lock(m);
-        factories[factory.position.building_id] = factory;
-        map_objects_from_position[coords].push_back(factory.position);
-        map_objects_from_id[factory.position.building_id] = factory.position;
+        id_to_position_component[factory.position.building_id] = factory.position;
     }
 
-    province->add_terminal(coords); // Adds to province
+    province->add_factory(factory); // Adds to province
 }
 
 void TerminalMap::encode_factory_from_construction_site(Factory& factory) {
     Vector2i coords = factory.position.get_position_vector2i();
     {
         std::scoped_lock lock(m);
-        factories[factory.position.building_id] = factory;
-        map_objects_from_position[coords].push_back(factory.position);
-        map_objects_from_id[factory.position.building_id] = factory.position;
+        id_to_position_component[factory.position.building_id] = factory.position;
     }
     cargo_map->call("call_set_tile_rpc", coords, factory.get_primary_type());
 }
@@ -387,79 +381,6 @@ std::vector<int> TerminalMap::get_available_resources_of_tile(const Vector2i &co
         toReturn.push_back(get_cargo_value_of_tile(coords, type));
     }
     return toReturn;
-}
-
-bool TerminalMap::is_terminal(const Vector2i &coords) {
-    std::shared_lock lock(cargo_map_mutex);
-    return cargo_map_terminals.count(coords) == 1;
-}
-
-bool TerminalMap::is_hold(const Vector2i &coords) {
-    return get_terminal_as<Hold>(coords).is_valid();
-}
-bool TerminalMap::is_owned_recipeless_construction_site(const Vector2i &coords) {
-    Ref<ConstructionSite> construction_site =  get_terminal_as<ConstructionSite>(coords);
-    if (construction_site.is_null()) return false;
-    
-    bool toReturn = !(construction_site -> has_recipe());
-
-    return toReturn;
-}
-bool TerminalMap::is_building(const Vector2i &coords) {
-    bool toReturn = false;
-    {
-        std::shared_lock lock(cargo_map_mutex);
-        if (!cargo_map_terminals.count(coords)) return false;
-    }
-    toReturn = get_terminal_as<ConstructionSite>(coords).is_valid() ||  get_terminal_as<Town>(coords).is_valid() ||  get_terminal_as<FactoryTemplate>(coords).is_valid();
-    return toReturn;
-}
-bool TerminalMap::is_owned_building(const Vector2i &coords, int id) {
-    if (is_building(coords)) {
-        return get_terminal(coords) -> get_player_owner() == id;
-    }
-    return false;
-}
-bool TerminalMap::is_owned_construction_site(const Vector2i &coords) {
-   return get_terminal_as<ConstructionSite>(coords).is_valid();
-}
-bool TerminalMap::is_factory(const Vector2i &coords) {
-    if (!map_objects_from_position.count(coords)) return false;
-    return map_objects_from_position[coords][0].type == FACTORY;
-}
-bool TerminalMap::is_station(const Vector2i &coords) {
-    return get_terminal_as<StationWOMethods>(coords).is_valid();
-}
-bool TerminalMap::is_road_depot(const Vector2i &coords) {
-    return get_terminal_as<RoadDepot>(coords).is_valid();
-}
-bool TerminalMap::is_owned_station(const Vector2i &coords, int player_id) {
-    Ref<StationWOMethods> temp = get_terminal_as<StationWOMethods>(coords);
-    if (temp.is_valid()) {
-        return temp->get_player_owner() == player_id;
-    }
-    return false;
-}
-bool TerminalMap::is_ai_station(const Vector2i &coords) {                       //May work?
-    bool val = false;
-    std::unique_lock lock(cargo_map_mutex);
-    Ref<StationWOMethods> term = get_terminal_as<StationWOMethods>(coords);
-    if (term.is_valid()) {
-        val = term -> get_class() == "AiStation";
-    }
-    return val;
-} 
-bool TerminalMap::is_owned_ai_station(const Vector2i &coords, int id) {
-    bool val = false;
-    if (is_ai_station(coords)) {
-        Ref<StationWOMethods> station = get_terminal_as<StationWOMethods>(coords);
-        val = station -> get_player_owner() == id;
-    }
-    return val;
-} 
-bool TerminalMap::is_town(const Vector2i &coords) {
-    if (!map_objects_from_position.count(coords)) return false;
-    return map_objects_from_position[coords][0].type == TOWN;
 }
 
 //Info getters
@@ -573,7 +494,7 @@ Ref<StationWOMethods> TerminalMap::get_ai_station(const Vector2i &coords) {
 }
 
 void TerminalMap::encode_building(PositionComponent pos) {
-    map_objects_from_id[pos.building_id] = pos;
+    id_to_position_component[pos.building_id] = pos;
 }
 
 void TerminalMap::place_object_on_map(PositionComponent pos) {
@@ -589,8 +510,11 @@ void TerminalMap::place_object_on_map(PositionComponent pos) {
     }
 }
 
-const PositionComponent& TerminalMap::get_position_component(int pos_id) {
-    return map_objects_from_id[pos_id];
+PositionComponent TerminalMap::get_position_component(int pos_id) const {
+    if (!id_to_position_component.count(pos_id)) {
+        ERR_FAIL_V_MSG(PositionComponent(), "Tried to access invalid position id: " + String(std::to_string(pos_id).c_str()));
+    }
+    return id_to_position_component.at(pos_id);
 }
 
 //Action doers
@@ -648,72 +572,4 @@ void TerminalMap::refresh_road_depots(const std::unordered_set<Vector2i, godot_h
         Ref<RoadDepot> road_depot = get_terminal_as<RoadDepot>(*it);
         if (road_depot.is_valid()) road_depot -> refresh_other_road_depots();
     }
-}
-
-
-float TerminalMap::get_average_cash_of_road_depot() const {
-    return get_average_cash_of_terminal<RoadDepot>();
-}
-
-float TerminalMap::get_average_cash_of_factory() const {
-    return get_average_cash_of_terminal<Factory>();
-}
-
-float TerminalMap::get_average_factory_level() const {
-    double ave = 0;
-    int count = 0;
-    {
-        std::shared_lock lock(m);
-        for (const auto& [_, factory]: factories) {
-            ave += factory.recipe.get_level();
-            count++;
-            
-        }
-    }
-    return ave / count;
-}
-
-unsigned long TerminalMap::get_grain_demand() const {
-    unsigned long total_demand = 0;
-
-    {
-        std::shared_lock lock(m);
-        for (const auto& [_, town]: towns) {
-            int num = (town.mp.get_current_demand(CargoInfo::get_instance()->get_cargo_type("grain")));
-            total_demand += num;
-            
-        }
-    }
-    return round(total_demand);
-}
-
-
-unsigned long TerminalMap::get_grain_supply() const {
-    double total_demand = 0;
-
-    {
-        std::shared_lock lock(m);
-        for (const auto& [_, town]: towns) {
-            double num = double(town.mp.get_current_supply(CargoInfo::get_instance()->get_cargo_type("grain")));
-            total_demand += num;
-        }
-    }
-    return round(total_demand);
-}
-
-template <typename T>
-float TerminalMap::get_average_cash_of_terminal() const {
-    double ave = 0;
-    int count = 0;
-    {
-        std::shared_lock lock(cargo_map_mutex);
-        for (const auto &[__, terminal]: terminal_id_to_terminal) {
-            Ref<T> typed = Ref<T>(terminal);
-            if (typed.is_valid() && terminal->get_player_owner() == 0) {
-                ave += typed -> get_cash();
-                count++;
-            }
-        }
-    }
-    return ave / count;
 }

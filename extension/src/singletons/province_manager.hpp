@@ -17,7 +17,10 @@ class ProvinceManager : public RefCounted {
 
     mutable std::shared_mutex province_mutex;
     static Ref<ProvinceManager> singleton_instance;
-    std::unordered_map<int, Province*> provinces; // Province id -> province
+
+    std::unordered_map<int, int> province_id_to_vector_position; // Province id -> province
+    std::vector<Province*> provinces;
+
     std::unordered_map<Vector2i, int, godot_helpers::Vector2iHasher> tiles_to_province_id; 
     std::unordered_map<int, std::unordered_set<int>> country_id_to_province_ids;
 
@@ -67,4 +70,9 @@ public:
     //Stats Stuff
     // std::unordered_map<int, float> get_average_country_prices(int country_id) const;
 
+    //Economy Testing Functions
+    float get_average_cash_of_factory() const;
+    float get_average_factory_level() const;
+    unsigned long get_grain_demand() const;
+    unsigned long get_grain_supply() const;
 };

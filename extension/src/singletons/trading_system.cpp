@@ -12,9 +12,11 @@ void TradingSystem::adjust_factory_orders() {
     for (auto prov_id: pm->get_provinces_vector()) {
         auto province = pm->get_province(prov_id);
 
-        Town& town = province->get_town();
+        std::scoped_lock lock(province->m);
+        
+        Town& town = province->town;
 
-        for (auto& [id, factory]: province->get_factories()) {
+        for (auto& factory: province->factories) {
             adjust_factory_orders(factory, town);
         }
     }
@@ -31,7 +33,9 @@ void TradingSystem::trading_tick() {
 
     for (auto prov_id: pm->get_provinces_vector()) {
         auto province = pm->get_province(prov_id);
-        auto& town = province->get_town();
-        town.mp.market_tick();
+        
+        std::scoped_lock lock(province->m);
+        auto& town = province->town;
+        town.mp.market_tick(province);
     }
 }

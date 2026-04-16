@@ -26,8 +26,8 @@ class MarketComponent {
         >
     > buy_orders;
 
-    std::optional<std::pair<CapitalComponent&, StorageComponent&>> get_capital_and_storage_components(int pos_id);
-    void finish_market_exchange(std::shared_ptr<TradeOrder> buy_order, std::shared_ptr<TradeOrder> sell_order, std::pair<CapitalComponent&, StorageComponent&> buyer, std::pair<CapitalComponent&, StorageComponent&> seller);
+    std::pair<CapitalComponent*, StorageComponent*> get_capital_and_storage_components(Province* province, int pos_id);
+    void finish_market_exchange(std::shared_ptr<TradeOrder> buy_order, std::shared_ptr<TradeOrder> sell_order, std::pair<CapitalComponent*, StorageComponent*> buyer, std::pair<CapitalComponent*, StorageComponent*> seller);
 
     public:
     
@@ -38,11 +38,14 @@ class MarketComponent {
     float get_price(int type) const;
 
     std::pair<std::vector<std::pair<int, float>>, std::vector<std::pair<int, float>>> get_market_info_plot(int type) const;
-    void market_tick();
+    
+    /// @param province The locked province that town is in
+    void market_tick(Province* province);
 
     long get_current_demand(int type) const;
     long get_current_supply(int type) const;
 
-    void sell_to_pop(BasePop& pop);
+    /// @param province The locked province that town is in
+    void sell_to_pop(Province* province, BasePop& pop);
 
 };

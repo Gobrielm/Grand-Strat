@@ -12,14 +12,19 @@ class BasePop;
 class Town;
 class Factory;
 class Station;
+class TradingSystem;
+class MarketComponent;
 enum PopTypes;
 
 using namespace godot;
 
 class Province : public Object {
     GDCLASS(Province, Object);
+    friend TradingSystem;
+    friend MarketComponent;
+    friend ProvinceManager;
 
-    mutable std::shared_mutex m;
+    mutable std::mutex m;
     mutable std::shared_mutex pops_lock;
     int province_id;
     int country_id = -1;
@@ -38,9 +43,10 @@ class Province : public Object {
 
     // Owned objects
     Town town;
-    // TODO: change to vectors with map lookups
-    std::unordered_map<int, Factory> factories;
-    std::unordered_map<int, Station> stations;
+
+    std::unordered_map<int, std::pair<int, BuildingType>> id_to_vector_position;
+    std::vector<Factory> factories;
+    std::vector<Station> stations;
 
     protected:
     static void _bind_methods();
@@ -81,7 +87,7 @@ class Province : public Object {
     Station& get_station(int pos_id);
     Town& get_town();
 
-    std::unordered_map<int, Factory>& get_factories();
+    BuildingType get_building_type(int pos_id) const;
 
 
     // void add_terminal(Vector2i tile);

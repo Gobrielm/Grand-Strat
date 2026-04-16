@@ -1,6 +1,7 @@
 #include "province_manager.hpp"
 #include "terminal_map.hpp"
 #include <src/classes/map_objects/town.hpp>
+#include "cargo_info.hpp"
 #include <godot_cpp/core/class_db.hpp>
 #include <chrono>
 
@@ -53,8 +54,12 @@ Ref<ProvinceManager> ProvinceManager::get_instance() {
 
 void ProvinceManager::create_new_if_empty(int province_id) {
     std::unique_lock lock(province_mutex);
-    if (provinces.find(province_id) == provinces.end()) {
-        provinces[province_id] = memnew(Province(province_id));
+    if (province_id_to_vector_position.find(province_id) == province_id_to_vector_position.end()) {
+        if (province_id_to_vector_position.find(province_id) == province_id_to_vector_position.end()) {
+
+        province_id_to_vector_position[province_id] = provinces.size();
+        provinces.push_back(memnew(Province(province_id)));
+        }
     }
 }
 
@@ -62,7 +67,7 @@ void ProvinceManager::add_tile_to_province(int province_id, Vector2i tile) {
     ERR_FAIL_COND(tiles_to_province_id.count(tile));
     std::unique_lock lock(province_mutex);
     tiles_to_province_id[tile] = province_id;
-    provinces[province_id]->add_tile(tile);
+    provinces[province_id_to_vector_position[province_id]]->add_tile(tile);
 }
 
 void ProvinceManager::add_many_tiles_to_province(int province_id, const Array &tiles) {
@@ -89,7 +94,7 @@ int ProvinceManager::get_population_as_level(int province_id) {
 
 int ProvinceManager::get_total_population() const {
     int total = 0;
-    for (auto &[_, prov] : provinces) {
+    for (auto &prov : provinces) {
         total += prov->get_population();
     }
     return total;
@@ -142,7 +147,7 @@ void ProvinceManager::create_pops_range(MapType::iterator start, MapType::iterat
 
 std::vector<int> ProvinceManager::get_provinces_vector() {
     std::vector<int> v;
-    for (auto &[id, _] : provinces) {
+    for (auto [id, _] : province_id_to_vector_position) {
         v.push_back(id);
     }
     return v;
@@ -150,7 +155,7 @@ std::vector<int> ProvinceManager::get_provinces_vector() {
 
 Array ProvinceManager::get_provinces() const {
     Array arr;
-    for (auto &[_, prov] : provinces) {
+    for (auto &prov : provinces) {
         arr.push_back(prov);
     }
     return arr;
@@ -179,24 +184,24 @@ int ProvinceManager::get_province_id_unsafe(Vector2i tile) const {
 
 Province* ProvinceManager::get_province_godot(int id) const {
     std::shared_lock lock(province_mutex);
-    auto it = provinces.find(id);
-    if (it == provinces.end()) return nullptr;
-    return it->second;
+    auto it = province_id_to_vector_position.find(id);
+    if (it == province_id_to_vector_position.end()) return nullptr;
+    return provinces[it->second];
 }
 
 Province* ProvinceManager::get_province(int id) const {
     std::shared_lock lock(province_mutex);
-    auto it = provinces.find(id);
-    if (it == provinces.end()) return nullptr;
-    return it->second;
+    auto it = province_id_to_vector_position.find(id);
+    if (it == province_id_to_vector_position.end()) return nullptr;
+    return provinces[it->second];
 }
 
 Province* ProvinceManager::get_province(const Vector2i& tile) const {
     std::shared_lock lock(province_mutex);
     int id = get_province_id_unsafe(tile);
-    auto it = provinces.find(id);
-    if (it == provinces.end()) return nullptr;
-    return it->second;
+    auto it = province_id_to_vector_position.find(id);
+    if (it == province_id_to_vector_position.end()) return nullptr;
+    return provinces[it->second];
 }
 
 void ProvinceManager::add_province_to_country(Province* prov, int country_id) {
@@ -257,3 +262,60 @@ std::unordered_set<int> ProvinceManager::get_country_ids() const {
 //     }
 //     return average_prices;
 // }
+
+float ProvinceManager::get_average_factory_level() const {
+    double ave = 0;
+    int count = 0;
+
+    for (auto province: provinces) {
+        std::scoped_lock(province->m);
+        for (const auto& factory: province->factories) {
+            ave += factory.recipe.get_level();
+            count++;
+        }
+
+    }
+    return ave / count;
+}
+
+float ProvinceManager::get_average_cash_of_factory() const {
+    double ave = 0;
+    int count = 0;
+
+    for (auto province: provinces) {
+        std::scoped_lock(province->m);
+        for (const auto& factory: province->factories) {
+            ave += factory.capital.get_cash();
+            count++;
+        }
+
+    }
+    return ave / count;
+}
+
+
+unsigned long ProvinceManager::get_grain_demand() const {
+    unsigned long total_demand = 0;
+
+    for (auto province: provinces) {
+        std::scoped_lock lock(province->m);
+        auto& town = province->town;
+        int num = (town.mp.get_current_demand(CargoInfo::get_instance()->get_cargo_type("grain")));
+        total_demand += num;
+    }
+    
+    return round(total_demand);
+}
+
+
+unsigned long ProvinceManager::get_grain_supply() const {
+    double total_demand = 0;
+
+    for (auto province: provinces) {
+        std::scoped_lock lock(province->m);
+        auto& town = province->town;
+        int num = (town.mp.get_current_supply(CargoInfo::get_instance()->get_cargo_type("grain")));
+        total_demand += num;
+    }
+    return round(total_demand);
+}

@@ -46,12 +46,7 @@ private:
     std::unordered_map<Vector2i, int, godot_helpers::Vector2iHasher> cargo_map_terminals;
     std::unordered_map<int, Ref<Terminal>> terminal_id_to_terminal;
 
-    // TODO Insert into, replace cargo_map_terminals
-    std::unordered_map<Vector2i, std::vector<PositionComponent>, godot_helpers::Vector2iHasher> map_objects_from_position;
-    std::unordered_map<int, PositionComponent> map_objects_from_id; 
-
-    std::unordered_map<int, Factory> factories;
-    std::unordered_map<int, Town> towns;
+    std::unordered_map<int, PositionComponent> id_to_position_component; 
 
     TerminalMapThreadPool* thread_pool = nullptr;
 
@@ -105,19 +100,6 @@ public:
     //Checkers
     int get_cargo_value_of_tile(const Vector2i &coords, int type) const;
     std::vector<int> get_available_resources_of_tile(const Vector2i &coords) const;
-    bool is_terminal(const Vector2i &coords);
-    bool is_hold(const Vector2i &coords);
-    bool is_owned_recipeless_construction_site(const Vector2i &coords);
-    bool is_building(const Vector2i &coords);
-    bool is_owned_building(const Vector2i &coords, int id);
-    bool is_owned_construction_site(const Vector2i &coords);
-    bool is_factory(const Vector2i &coords);
-    bool is_station(const Vector2i &coords);
-    bool is_road_depot(const Vector2i &coords);
-    bool is_owned_station(const Vector2i &coords, int player_id);
-    bool is_ai_station(const Vector2i &coords);
-    bool is_owned_ai_station(const Vector2i &coords, int id);
-    bool is_town(const Vector2i &coords);
 
     //Info getters
     Dictionary get_cargo_dict(const Vector2i &coords);
@@ -140,7 +122,7 @@ public:
 
     void encode_building(PositionComponent pos);
     void place_object_on_map(PositionComponent pos);
-    const PositionComponent& get_position_component(int pos_id);
+    PositionComponent get_position_component(int pos_id) const;
 
 
     template <typename T>
@@ -186,14 +168,5 @@ public:
     void remove_order_station(const Vector2i &coords, int type);
     void refresh_road_depots(const std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> &s);
 
-    //Economy Testing Functions
-    float get_average_cash_of_road_depot() const;
-    float get_average_cash_of_factory() const;
-    float get_average_factory_level() const;
-    unsigned long get_grain_demand() const;
-    unsigned long get_grain_supply() const;
-
-    template <typename T>
-    float get_average_cash_of_terminal() const;
 };
 

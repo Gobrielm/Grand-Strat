@@ -1,5 +1,6 @@
 #include "market_component.hpp"
 #include <src/singletons/terminal_map.hpp>
+#include <classes/province.hpp>
 
 MarketComponent::MarketComponent() {}
 
@@ -49,8 +50,7 @@ std::pair<std::vector<std::pair<int, float>>, std::vector<std::pair<int, float>>
     return std::make_pair(buys, sells);
 }
 
-void MarketComponent::market_tick() {
-    Ref<TerminalMap> tm = TerminalMap::get_instance();
+void MarketComponent::market_tick(Province* province) {
 
     for (auto& [type, buys]: buy_orders) {
         auto it = sell_orders[type].begin();
@@ -72,39 +72,38 @@ void MarketComponent::market_tick() {
             
             finish_market_exchange(
                 buy_order, sell_order,
-                get_capital_and_storage_components(buy_order->get_pos_id()).value(),
-                get_capital_and_storage_components(sell_order->get_pos_id()).value()
+                get_capital_and_storage_components(province, buy_order->get_pos_id()),
+                get_capital_and_storage_components(province, sell_order->get_pos_id())
             );
         }
     }
 }
 
-std::optional<std::pair<CapitalComponent&, StorageComponent&>> MarketComponent::get_capital_and_storage_components(int pos_id) {
-    Ref<TerminalMap> tm = TerminalMap::get_instance();
-    const auto& pos = tm->get_position_component(pos_id);
+std::pair<CapitalComponent*, StorageComponent*> MarketComponent::get_capital_and_storage_components(Province* province, int pos_id) {
+    if (!province->id_to_vector_position.count(pos_id)) return std::make_pair(nullptr, nullptr);
+    const auto type = province->id_to_vector_position.at(pos_id).second;
 
-    switch (pos.type) {
+    switch (type) {
         case FACTORY:
-            auto& factory = tm->get_factory(pos_id);
-            return std::make_optional<std::pair<CapitalComponent&, StorageComponent&>>({ factory.capital, factory.storage });
+            auto& factory = province->factories[province->id_to_vector_position[pos_id].first];
+            return std::pair<CapitalComponent*, StorageComponent*>({ &factory.capital, &factory.storage });
         default:
-            ERR_FAIL_MSG("Unknown Entity Tried to Trade: " + String(std::to_string(pos.type).c_str()));
-            throw std::runtime_error("Invalid type");
+            ERR_FAIL_MSG("Unknown Entity Tried to Trade: " + String(std::to_string(type).c_str()));
     }
-    return std::nullopt;
+    return std::make_pair(nullptr, nullptr);
 }
 
 void MarketComponent::finish_market_exchange(
     std::shared_ptr<TradeOrder> buy_order, 
     std::shared_ptr<TradeOrder> sell_order, 
-    std::pair<CapitalComponent&, StorageComponent&> buyer, 
-    std::pair<CapitalComponent&, StorageComponent&> seller
+    std::pair<CapitalComponent*, StorageComponent*> buyer, 
+    std::pair<CapitalComponent*, StorageComponent*> seller
 ) {
     int type = buy_order->get_type();
     float price1 = buy_order->get_price();
     float price2 = sell_order->get_price();
     float price = (price1 + price2) / 2.0f;
-    int amt = std::min(std::min(buy_order->get_amount(), sell_order->get_amount()), (unsigned) int(seller.second.get_amount(type)));
+    int amt = std::min(std::min(buy_order->get_amount(), sell_order->get_amount()), (unsigned) int(seller.second->get_amount(type)));
 
     // Seller doesn't have enough
     if (amt <= 0) {
@@ -114,15 +113,15 @@ void MarketComponent::finish_market_exchange(
     float sub_total = price * amt;
 
     // Buyer can't afford
-    if (buyer.first.get_cash() < sub_total) {
+    if (buyer.first->get_cash() < sub_total) {
         return;
     }
 
-    buyer.first.remove_cash(sub_total);
-    seller.first.add_cash(sub_total);
+    buyer.first->remove_cash(sub_total);
+    seller.first->add_cash(sub_total);
 
-    buyer.second.add_cargo(type, amt);
-    seller.second.remove_cargo(type, amt);
+    buyer.second->add_cargo(type, amt);
+    seller.second->remove_cargo(type, amt);
 }
 
 long MarketComponent::get_current_demand(int type) const {
@@ -141,7 +140,7 @@ long MarketComponent::get_current_supply(int type) const {
     return tot;
 }
 
-void MarketComponent::sell_to_pop(BasePop& pop) {
+void MarketComponent::sell_to_pop(Province* province, BasePop& pop) {
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     std::unordered_map<int, float> money_to_pay;
     std::vector<std::unique_ptr<TownCargo>> demand_to_relay; // Town Cargo just used to express price, amount, and type for convience
@@ -198,18 +197,18 @@ void MarketComponent::sell_to_pop(BasePop& pop) {
             //     break;
             // }
 
-            auto res = get_capital_and_storage_components(order->get_pos_id());
-            if (!res.has_value()) {
+            auto res = get_capital_and_storage_components(province, order->get_pos_id());
+            if (res.first == nullptr || res.second == nullptr) {
                 ERR_FAIL_MSG("order's owner is invalid");
             }
 
             float sub_total = price * amt;
-            auto& [capital, storage] = res.value();
+            auto [capital, storage] = res;
 
             
 
-            capital.add_cash(sub_total);
-            storage.remove_cargo(type, amt);
+            capital->add_cash(sub_total);
+            storage->remove_cargo(type, amt);
             pop.buy_good(type, amt, price);
         }
     }

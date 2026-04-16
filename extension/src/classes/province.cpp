@@ -1,5 +1,7 @@
 #include "../singletons/terminal_map.hpp"
 #include "../singletons/cargo_info.hpp"
+#include "../singletons/trading_system.hpp"
+
 #include "province.hpp"
 #include "base_pop.hpp"
 #include "terminal.hpp"
@@ -9,6 +11,7 @@
 #include "factory_utility/recipe.hpp"
 #include "../singletons/pop_manager.hpp"
 
+#include <classes/components/town_components/market_component.hpp>
 #include <classes/map_objects/station.hpp>
 
 void Province::_bind_methods() {
@@ -199,44 +202,53 @@ Town Province::create_town() {
 }
 
 void Province::add_factory(Factory& factory) {
-    factories[factory.position.building_id] = factory;
+    std::scoped_lock lock(m);
+    int spot = factories.size();
+    factories.push_back(factory);
+    id_to_vector_position[factory.position.building_id] = std::make_pair(spot, factory.position.type);
+
     position_components[factory.position.get_position_vector2i()].push_back(factory.position);
 }
 
 void Province::add_town(Town& p_town) {
+    std::scoped_lock lock(m);
     town = p_town;
     ERR_FAIL_COND_MSG(position_components[town.position.get_position_vector2i()].size() != 0, "Putting town in taken tile.");
     position_components[town.position.get_position_vector2i()].push_back(town.position);
 }
 
 void Province::add_station(Station& station) {
+    std::scoped_lock lock(m);
     stations[station.position.building_id] = station;
     position_components[station.position.get_position_vector2i()].push_back(station.position);
 }
 
 Factory& Province::get_factory(int pos_id) {
-    if (!factories.count(pos_id)) {
+    std::scoped_lock lock(m);
+    if (!id_to_vector_position.count(pos_id) || id_to_vector_position[pos_id].second != BuildingType::FACTORY) {
         Factory factory;
         ERR_FAIL_V_MSG(factory, "Tried to fetch invalid factory with pos: "  + String(std::to_string(pos_id).c_str()));
     }
-    return factories[pos_id];
+    return factories[id_to_vector_position[pos_id].first];
 }
 
 Station& Province::get_station(int pos_id) {
-    if (!stations.count(pos_id)) {
+    std::scoped_lock lock(m);
+    if (!id_to_vector_position.count(pos_id) || id_to_vector_position[pos_id].second != BuildingType::STATION) {
         Station station;
         ERR_FAIL_V_MSG(station, "Tried to fetch invalid station with pos: "  + String(std::to_string(pos_id).c_str()));
     }
-    return stations[pos_id];
+    return stations[id_to_vector_position[pos_id].first];
 }
 
 Town& Province::get_town() {
     return town;
 }
 
-
-std::unordered_map<int, Factory>& Province::get_factories() {
-    return factories;
+BuildingType Province::get_building_type(int pos_id) const {
+    std::scoped_lock lock(m);
+    if (!id_to_vector_position.count(pos_id)) return BuildingType::INVALID;
+    return id_to_vector_position.at(pos_id).second;
 }
 
 // void Province::add_terminal(Vector2i tile) {
