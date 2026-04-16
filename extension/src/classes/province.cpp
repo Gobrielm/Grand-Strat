@@ -7,11 +7,12 @@
 #include "terminal.hpp"
 #include "factory_template.hpp"
 #include "town.hpp"
-#include "specific_buildings/subsistence_farm.hpp"
 #include "factory_utility/recipe.hpp"
 #include "../singletons/pop_manager.hpp"
 
+#include <classes/map_objects/subsistence_farm.hpp>
 #include <classes/components/town_components/market_component.hpp>
+#include <classes/components/town_components/employer_component.hpp>
 #include <classes/map_objects/station.hpp>
 
 void Province::_bind_methods() {

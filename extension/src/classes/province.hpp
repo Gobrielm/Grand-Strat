@@ -14,6 +14,7 @@ class Factory;
 class Station;
 class TradingSystem;
 class MarketComponent;
+class EmployerComponent;
 enum PopTypes;
 
 using namespace godot;
@@ -23,6 +24,7 @@ class Province : public Object {
     friend TradingSystem;
     friend MarketComponent;
     friend ProvinceManager;
+    friend EmployerComponent;
 
     mutable std::mutex m;
     mutable std::shared_mutex pops_lock;

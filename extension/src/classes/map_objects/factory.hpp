@@ -7,6 +7,7 @@
 #include <classes/components/storage_component.hpp>
 #include <classes/components/position_component.hpp>
 #include <classes/components/construction_component.hpp>
+#include <classes/components/employer_component.hpp>
 
 #include <optional>
 
@@ -26,13 +27,13 @@ public:
     StorageComponent storage;
     StorageComponent last_month_storage;
 
-    Recipe recipe;
+    EmployerComponent employer;
     LocalPriceController lpc;
 
     std::unordered_map<int, std::shared_ptr<TradeOrder>> orders; // Active orders sent to towns to buy/sell
 
     ~Factory();
-    Factory(std::pair<int, int> p_position = {0, 0}, int p_owner = 0, Recipe p_recipe = Recipe());
+    Factory(std::pair<int, int> p_position = {0, 0}, int p_owner = 0, EmployerComponent employer_component = EmployerComponent());
 
     Factory& operator=(Factory& factory) {
         return factory;
@@ -41,11 +42,13 @@ public:
     //Construction
     void create_construction_materials();
 
+    const Recipe& get_recipe() const;
+
     // Trade
     ///@brief Gets the minimum price seller would accept
-    float get_min_price(int type, std::optional<Town&> town = std::nullopt) const; 
+    float get_min_price(int type, Town* town = nullptr) const; 
     ///@brief Gets the maximum price buyer would accept
-    float get_max_price(int type, std::optional<Town&> town = std::nullopt) const; 
+    float get_max_price(int type, Town* town = nullptr) const; 
     bool does_create(int type) const;
     bool does_accept(int type) const;
     int get_desired_cargo(int type, float price_per);

@@ -1,20 +1,26 @@
 #include "subsistence_farm.hpp"
 #include <src/singletons/recipe_info.hpp>
+#include <src/singletons/cargo_info.hpp>
+#include "town.hpp"
+
+// #include "../singletons/terminal_map.hpp"
+// #include "../singletons/pop_manager.hpp"
+// #include "../singletons/data_collector.hpp"
 
 void SubsistenceFarm::_bind_methods() {
     ClassDB::bind_method(D_METHOD("month_tick"), &SubsistenceFarm::month_tick);
     
 }
 
-SubsistenceFarm::SubsistenceFarm() {
-    recipe = RecipeInfo::convert_readable_recipe_into_recipe(
+SubsistenceFarm::SubsistenceFarm(): employer() {
+    RecipeInfo::convert_readable_recipe_into_recipe(
         {{}, 
         {{"grain", 11.0f}}}, 
         {{peasant, 10}}
     );
 }
 
-SubsistenceFarm::SubsistenceFarm(Vector2i p_location, int p_owner): position(std::make_pair<int, int>(p_location.x, p_location.y), SUBSISTENCE_FARM), owner(p_owner) {
+SubsistenceFarm::SubsistenceFarm(Vector2i p_location, int p_owner): position(std::make_pair(p_location.x, p_location.y), SUBSISTENCE_FARM), owner(p_owner) {
     recipe = RecipeInfo::convert_readable_recipe_into_recipe(
         {{}, 
         {{"grain", 11.0f}}}, 
@@ -23,92 +29,41 @@ SubsistenceFarm::SubsistenceFarm(Vector2i p_location, int p_owner): position(std
 }
 
 void SubsistenceFarm::month_tick() {
-    IsolatedBroker::month_tick();
+    SubsistenceFarm::month_tick();
 }
 
-
-#include "isolated_broker.hpp"
-#include "town.hpp"
-#include "factory_utility/recipe.hpp"
-#include "../singletons/cargo_info.hpp"
-#include "../singletons/terminal_map.hpp"
-#include "../singletons/pop_manager.hpp"
-#include "../singletons/data_collector.hpp"
-
-void IsolatedBroker::_bind_methods() {
-
-}
-
-IsolatedBroker::IsolatedBroker(): Firm(Vector2i(0, 0), 0), local_town(Vector2i(0, 0)) {
-    std::scoped_lock lock(m);
-    for (int i = 0; i < CargoInfo::get_instance()->get_number_of_goods(); i++) {
-        storage[i] = 0;
-    }
-}
-
-IsolatedBroker::IsolatedBroker(Vector2i p_location, int p_owner): Firm(p_location, p_owner), local_town(Vector2i(0, 0)) {
-    std::scoped_lock lock(m);
-    for (int i = 0; i < CargoInfo::get_instance()->get_number_of_goods(); i++) {
-        storage[i] = 0;
-    }
-}
-
-void IsolatedBroker::add_pop(BasePop* pop) {
-    {
-        std::scoped_lock lock(m);
-        recipe->add_pop(pop);
-    }
+void SubsistenceFarm::add_pop(BasePop* pop) {
+    recipe.add_pop(pop);
     
-    pop->employ(terminal_id, get_wage());
-    pop->set_location(get_location());
+    pop->employ(position.building_id, get_wage());
+    pop->set_location(position.get_position_vector2i());
     consider_upgrade();
 }
 
-std::unordered_map<int, float> IsolatedBroker::get_outputs() const {
-    std::scoped_lock lock(m);
-    return recipe->get_outputs();
-}
+float SubsistenceFarm::get_wage(const Town& town) const {
+    float gross_profit = std::min(float(get_theoretical_gross_profit(town)), capital.get_cash());
 
-std::unordered_map<int, float> IsolatedBroker::get_inputs() const {
-    std::scoped_lock lock(m);
-    return recipe->get_inputs();
-}
+    int pops_needed = recipe.get_pops_needed_num();
 
-float IsolatedBroker::get_level() const {
-    std::scoped_lock lock(m);
-    return recipe->get_level();
-}
-
-float IsolatedBroker::get_wage() const {
-    float gross_profit = std::min(float(get_theoretical_gross_profit()), get_cash());
-
-    int pops_needed = 0;
-    {
-        std::scoped_lock lock(m);
-        pops_needed = recipe->get_pops_needed_num();
-    }
-
-    if (!pops_needed) return 0;
-    
+    if (pops_needed == 0) return 0;
     return (gross_profit) / pops_needed;
 }
 
-float IsolatedBroker::get_theoretical_gross_profit() const {
+float SubsistenceFarm::get_theoretical_gross_profit(const Town& town) const {
     float available = 0;
-    Ref<Town> town = get_local_town();
-    if (town.is_null()) return 0;
-    int effective_level = std::max(get_level(), 1.0f);
-    for (const auto &[type, amount]: get_inputs()) {
-        available -= town->get_local_price(type) * amount * effective_level; // Always assume that the business will pay according to the first level
+
+    double effective_level = std::max(recipe.get_level(), 1.0);
+    for (const auto &[type, amount]: recipe.get_inputs()) {
+        available -= town.mp.get_price(type) * amount * effective_level;
     }
-    for (const auto &[type, amount]: get_outputs()) {
-        available += town->get_local_price(type) * amount * effective_level;
+    for (const auto &[type, amount]: recipe.get_outputs()) {
+        available += town.mp.get_price(type) * amount * effective_level;
     }
     available *= 30;
     return available;
 }
 
-void IsolatedBroker::pay_employees() {
+void SubsistenceFarm::pay_employees() {
     auto pop_manager = PopManager::get_instance();
     float wage = get_wage();
     std::unordered_map<int, PopTypes> employees;
@@ -122,7 +77,7 @@ void IsolatedBroker::pay_employees() {
     }
 }
 
-void IsolatedBroker::give_cargo_grain(int pop_id) {
+void SubsistenceFarm::give_cargo_grain(int pop_id) {
     bool enough_grain = false;
     int grain_type = CargoInfo::get_instance()->get_cargo_type("grain");
     int amount_to_give = BasePop::get_base_need(peasant, grain_type);
@@ -136,16 +91,16 @@ void IsolatedBroker::give_cargo_grain(int pop_id) {
     if (enough_grain) PopManager::get_instance()->give_pop_cargo(pop_id, grain_type, amount_to_give);
 }
 
-void IsolatedBroker::set_local_town(Vector2i p_town) {
+void SubsistenceFarm::set_local_town(Vector2i p_town) {
     local_town = p_town;
 }
 
-Ref<Town> IsolatedBroker::get_local_town() const {
+Ref<Town> SubsistenceFarm::get_local_town() const {
     if (local_town == Vector2i(0, 0)) return Ref<Town>(nullptr);
     return TerminalMap::get_instance()->get_town(local_town);
 }
 
-void IsolatedBroker::sell_cargo() {
+void SubsistenceFarm::sell_cargo() {
     Ref<Town> town = TerminalMap::get_instance()->get_terminal_as<Town>(local_town);
     for (const auto& [type, __]: get_outputs()) {
         sell_type(town, type, storage[type]);
@@ -153,7 +108,7 @@ void IsolatedBroker::sell_cargo() {
     
 }
 
-void IsolatedBroker::sell_type(Ref<Town> town, int type, int amount) {
+void SubsistenceFarm::sell_type(Ref<Town> town, int type, int amount) {
     float price = town->get_local_price(type);
     amount = std::min(amount, town->get_desired_cargo(type, price));
     if (amount > 0) {
@@ -165,7 +120,7 @@ void IsolatedBroker::sell_type(Ref<Town> town, int type, int amount) {
     }
 }
 
-double IsolatedBroker::get_batch_size() const {
+double SubsistenceFarm::get_batch_size() const {
     std::scoped_lock lock(m);
     double batch_size = recipe->get_level();
     for (auto& [type, amount]: recipe->get_inputs()) {
@@ -177,7 +132,7 @@ double IsolatedBroker::get_batch_size() const {
     return batch_size;
 }
 
-void IsolatedBroker::create_recipe() {
+void SubsistenceFarm::create_recipe() {
     double batch_size = get_batch_size();
     if (batch_size == 0) return;
     std::scoped_lock lock(m);
@@ -190,20 +145,20 @@ void IsolatedBroker::create_recipe() {
     }
 }
 
-void IsolatedBroker::month_tick() {
+void SubsistenceFarm::month_tick() {
     create_recipe();
     pay_employees();
     if (local_town != Vector2i(0, 0)) sell_cargo();
 }
 
-void IsolatedBroker::consider_upgrade() {
+void SubsistenceFarm::consider_upgrade() {
     std::scoped_lock lock(m);
     if (recipe->get_employment_rate() > 0.8) {
         recipe->upgrade();
     }
 }
 
-void IsolatedBroker::consider_degrade() {
+void SubsistenceFarm::consider_degrade() {
     std::scoped_lock lock(m);
     if (recipe->get_employment_rate() < 0.5) {
         recipe->upgrade();

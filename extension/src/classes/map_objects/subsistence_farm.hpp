@@ -4,6 +4,8 @@
 #include <classes/components/position_component.hpp>
 #include <classes/components/storage_component.hpp>
 #include <classes/components/owner_component.hpp>
+#include <classes/components/capital_component.hpp>
+#include <classes/components/employer_component.hpp>
 
 #include <godot_cpp/classes/ref_counted.hpp>
 
@@ -22,10 +24,9 @@ class Recipe;
 
 class SubsistenceFarm : public RefCounted {
     GDCLASS(SubsistenceFarm, RefCounted);
-
-    PositionComponent town_pos;
     
     void give_cargo_grain(int pop_id);
+    float get_theoretical_gross_profit(const Town& town) const;
 
     protected:
     
@@ -37,18 +38,14 @@ class SubsistenceFarm : public RefCounted {
     PositionComponent position;
     StorageComponent storage;
     OwnerComponent owner;
-    Recipe recipe;
+    CapitalComponent capital;
+    EmployerComponent employer;
 
     SubsistenceFarm();
     SubsistenceFarm(Vector2i p_location, int p_owner);
 
-    std::unordered_map<int, float> get_outputs() const;
-    std::unordered_map<int, float> get_inputs() const;
-    float get_level() const;
-
     void add_pop(BasePop* pop);
-    float get_wage() const;
-    float get_theoretical_gross_profit() const;
+    float get_wage(const Town& town) const;
     void pay_employees();
 
     void set_local_town(Vector2i p_town);
