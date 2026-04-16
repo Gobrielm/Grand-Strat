@@ -30,11 +30,8 @@ class Province : public Object {
     int country_id = -1;
     int population;
     std::vector<Vector2i> tiles;
-    std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> terminal_tiles;
 
-    std::vector<int> factory_ids;
-
-    std::unordered_set<int> pops;
+    std::unordered_set<int> pops; // Shift ownership eventually to province
 
 
     // New Structures
@@ -94,7 +91,6 @@ class Province : public Object {
     // void remove_terminal(Vector2i tile);
     // Array get_terminal_tiles() const;
     bool has_town() const;
-    const std::unordered_set<Vector2i, godot_helpers::Vector2iHasher>& get_terminal_tiles_set() const;
 
     void init_province();
 

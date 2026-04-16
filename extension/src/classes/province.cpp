@@ -182,7 +182,7 @@ Vector2i Province::get_random_tile() const {
     std::vector<Vector2i> tiles_copy;
     m.lock();
     for (Vector2i tile: tiles) {
-        if (!terminal_tiles.count(tile)) {
+        if (!position_components.count(tile)) {
             tiles_copy.push_back(tile);
         }
     }
@@ -283,10 +283,6 @@ BuildingType Province::get_building_type(int pos_id) const {
 
 bool Province::has_town() const {
     return true;
-}
-
-const std::unordered_set<Vector2i, godot_helpers::Vector2iHasher>& Province::get_terminal_tiles_set() const {
-    return terminal_tiles;
 }
 
 void Province::init_province() {

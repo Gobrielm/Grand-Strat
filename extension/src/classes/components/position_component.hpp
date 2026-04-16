@@ -10,6 +10,7 @@ enum BuildingType {
     TOWN = 1,
     FACTORY = 2,
     STATION = 3,
+    SUBSISTENCE_FARM = 4,
 };
 
 class PositionComponent {
