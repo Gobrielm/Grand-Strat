@@ -41,8 +41,6 @@ private:
 
     mutable std::shared_mutex cargo_map_mutex;  // Protected cargo_map_terminals and terminal_id_to_terminal exclusively
     mutable std::mutex m;                       // Protects everyhing else, mainly the different godot objects above
-    std::unordered_map<Vector2i, int, godot_helpers::Vector2iHasher> cargo_map_terminals;
-    std::unordered_map<int, Ref<Terminal>> terminal_id_to_terminal;
 
     std::unordered_map<int, PositionComponent> id_to_position_component; 
 
@@ -67,8 +65,8 @@ public:
     void _on_month_tick_timeout();
 
     //Process hook utility
-    std::vector<Ref<Terminal>> get_terminals_for_day_tick() const;
-    std::vector<Ref<Terminal>> get_terminals_for_month_tick() const;
+    // std::vector<Ref<Terminal>> get_terminals_for_day_tick() const;
+    // std::vector<Ref<Terminal>> get_terminals_for_month_tick() const;
 
     void clear();
     TileMapLayer* get_main_map() const;
@@ -108,7 +106,6 @@ public:
     // Dictionary get_local_prices(const Vector2i &coords);
     // Dictionary get_station_orders(const Vector2i &coords);
     bool is_tile_traversable(const Vector2i coords, bool is_water_untraversable = true);
-    bool is_tile_available(const Vector2i coords);
     Array get_available_primary_recipes(const Vector2i& coords) const;
 
     void encode_building(PositionComponent pos);

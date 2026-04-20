@@ -2,8 +2,19 @@
 #include "terminal_map.hpp"
 #include "province_manager.hpp"
 
+std::shared_ptr<TradingSystem> TradingSystem::singleton = std::make_shared<TradingSystem>();
+
+std::shared_ptr<TradingSystem> TradingSystem::get_instance() {
+    return singleton;
+}
+
 void TradingSystem::day_tick() {
 
+}
+
+void TradingSystem::month_tick() {
+    adjust_factory_orders();
+    trading_tick();
 }
 
 void TradingSystem::adjust_factory_orders() {

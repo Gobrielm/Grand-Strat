@@ -1,16 +1,21 @@
 #include <vector>
+#include <memory>
 #include <src/classes/map_objects/factory.hpp>
 
 
 class TradingSystem {
 
+    static std::shared_ptr<TradingSystem> singleton;
+
     void adjust_factory_orders(Factory& factory, Town& town);
 
-    public:
-    void day_tick();
-    
     void adjust_factory_orders();
-    
-
     void trading_tick();
+
+    public:
+    static std::shared_ptr<TradingSystem> get_instance();
+    void day_tick();
+    void month_tick();
+    
+    
 };

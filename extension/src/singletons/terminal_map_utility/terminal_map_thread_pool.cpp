@@ -106,17 +106,17 @@ void TerminalMapThreadPool::month_tick_check() {
 //Private helpers
 
 void TerminalMapThreadPool::day_tick_helper() {
-    for (const auto &terminal: terminal_map->get_terminals_for_day_tick()) {
-         day_tick_work.push_front(terminal);
-    }
+    // for (const auto &terminal: terminal_map->get_terminals_for_day_tick()) {
+    //      day_tick_work.push_front(terminal);
+    // }
     day_jobs = day_tick_work.size();
     new_day_work.notify_all();
 }
 
 void TerminalMapThreadPool::month_tick_helper() {
-    for (const auto &terminal: terminal_map->get_terminals_for_month_tick()) {
-        month_tick_work.push_back(terminal);
-    }
+    // for (const auto &terminal: terminal_map->get_terminals_for_month_tick()) {
+    //     month_tick_work.push_back(terminal);
+    // }
     month_jobs = month_tick_work.size();
     new_month_work.notify_all();
 }

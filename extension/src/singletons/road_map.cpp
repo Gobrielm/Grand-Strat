@@ -290,7 +290,7 @@ void RoadMap::bfs_and_connect(const Vector2i& tile1, const Vector2i& tile2) {
 void RoadMap::month_tick() {
     if (tiles_changed_this_month.size() != 0) {
         refresh_road_depots();
-        TerminalMap::get_instance()->refresh_road_depots(depots_to_refresh);
+        // TerminalMap::get_instance()->refresh_road_depots(depots_to_refresh);
         depots_to_refresh.clear();
     }
 }

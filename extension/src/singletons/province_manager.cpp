@@ -205,6 +205,15 @@ Province* ProvinceManager::get_province(const Vector2i& tile) const {
     return provinces[it->second];
 }
 
+bool ProvinceManager::is_tile_available(Vector2i coords) {
+    bool traversable = TerminalMap::get_instance()->is_tile_traversable(coords, true);
+    auto province = get_province(coords);
+    std::scoped_lock lock(province->m);
+
+    return !province->position_components.count(coords) && traversable;
+}
+
+
 void ProvinceManager::add_province_to_country(Province* prov, int country_id) {
     std::unique_lock lock(province_mutex);
     int old_id = prov->get_country_id();

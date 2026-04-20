@@ -1,6 +1,5 @@
 #pragma once
 
-#include "company_ai.hpp"
 #include "province.hpp"
 #include <unordered_map>
 #include <godot_cpp/classes/object.hpp>

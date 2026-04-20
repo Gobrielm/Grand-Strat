@@ -1,15 +1,15 @@
 #include "initial_builder.hpp"
-#include "town.hpp"
-#include "ai_factory.hpp"
-#include <algorithm>
-#include <random>
-#include <queue>
+
+#include <classes/map_objects/town.hpp>
 #include "../singletons/province_manager.hpp"
 #include "../singletons/terminal_map.hpp"
 #include "../singletons/cargo_info.hpp"
 #include "../singletons/road_map.hpp"
-#include "../singletons/factory_creator.hpp"
 #include "../singletons/recipe_info.hpp"
+
+#include <algorithm>
+#include <random>
+#include <queue>
 
 void InitialBuilder::_bind_methods() {
     ClassDB::bind_static_method(get_class_static(), D_METHOD("create", "p_country_id"), &InitialBuilder::create);
@@ -40,7 +40,7 @@ void InitialBuilder::build_initital_factories() {
         build_t2_factory_in_towns(province);
         
     }
-    build_and_connect_depots();
+    // build_and_connect_depots();
 
     auto end_time = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = end_time - start_time;
@@ -55,18 +55,22 @@ void InitialBuilder::build_factory_type(int type, Province* province) {
     int num_of_levels_to_place = get_levels_to_build(type, province);
     if (num_of_levels_to_place == 0) return;
     int levels_placed = 0;
-    Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
+    Ref<TerminalMap> tm = TerminalMap::get_instance();
 
     for (const Vector2i &tile: province->get_town_centered_tiles()) {
-        if (TerminalMap::get_instance()->is_tile_available(tile)) {
-            int cargo_val = terminal_map->get_cargo_value_of_tile(tile, type);
+        if (ProvinceManager::get_instance()->is_tile_available(tile)) {
+            int cargo_val = tm->get_cargo_value_of_tile(tile, type);
 
             if (cargo_val != 0 && rand() % 3 == 0) {
                 //Need to check if this factory will be cutoff, then check neighboors
                 if (!is_factory_placement_valid(tile)) continue;
                 int mult = std::min(rand() % cargo_val, cargo_val);
-                FactoryCreator::get_instance()->create_primary_industry_no_cargo_map_call(type, tile, owner_id, mult);
+
+                auto ec = RecipeInfo::get_instance()->get_primary_employer_component_for_type(type);
+                auto factory = Factory(std::make_pair(tile.x, tile.y), owner_id, ec.value());
+
                 factories_to_place_on_map[tile] = type;
+                tm->encode_factory_no_calls_to_cargo_map(factory, mult);
 
                 levels_placed += mult;
                 if (levels_placed > num_of_levels_to_place) {
@@ -78,14 +82,29 @@ void InitialBuilder::build_factory_type(int type, Province* province) {
 }
 
 bool InitialBuilder::is_factory_placement_valid(const Vector2i &fact_to_place) const {
-    Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
-    Array tiles = terminal_map->get_main_map()->get_surrounding_cells(fact_to_place);
+    auto tm = TerminalMap::get_instance();
+    auto pm = ProvinceManager::get_instance();
+    Array tiles = tm->get_main_map()->get_surrounding_cells(fact_to_place);
     int available_tiles = 0; //Checks to see if fact to place can place
     for (int i = 0; i < tiles.size(); i++) {
         Vector2i tile = tiles[i];
-        Ref<Broker> broker = terminal_map->get_broker(tile);
-        if (broker.is_valid() && will_factory_by_cut_off(tile)) return false; // Checks factories that will be blocked
-        if (terminal_map->is_tile_available(tile)) {
+        auto province = pm->get_province(tile);
+        bool will_cutoff_factory = false;
+
+        {
+            std::scoped_lock lock(province->m);
+            if (province->position_components.count(tile)) {
+                auto pos = province->position_components[tile][0];
+                if (pos.type == BuildingType::FACTORY) {
+                    auto& factory = province->factories[province->id_to_vector_position[pos.building_id].first];
+                    will_cutoff_factory = will_factory_by_cut_off(factory.position.get_position_vector2i());
+                }
+            }
+        }
+
+        if (will_cutoff_factory) return false; // Checks factories that will be blocked
+        
+        if (pm->is_tile_available(tile)) {
             available_tiles++;
         }
     }
@@ -93,12 +112,14 @@ bool InitialBuilder::is_factory_placement_valid(const Vector2i &fact_to_place) c
 }
 
 bool InitialBuilder::will_factory_by_cut_off(const Vector2i &factory_tile) const {
-    Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
-    Array tiles = terminal_map->get_main_map()->get_surrounding_cells(factory_tile);
+    auto tm = TerminalMap::get_instance();
+    auto pm = ProvinceManager::get_instance();
+
+    Array tiles = tm->get_main_map()->get_surrounding_cells(factory_tile);
     int free_tiles = 0;
     for (int i = 0; i < tiles.size(); i++) {
         Vector2i tile = tiles[i];
-        if (terminal_map->is_tile_available(tile)) {
+        if (pm->is_tile_available(tile)) {
             free_tiles++;
         }
     }

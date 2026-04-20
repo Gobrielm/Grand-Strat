@@ -60,7 +60,7 @@ void TerminalMap::initialize_singleton(TileMapLayer* p_map) {
     ERR_FAIL_COND_MSG(singleton_instance != nullptr, "Cannot create multiple instances of singleton!");
     singleton_instance.instantiate();
     singleton_instance -> map = p_map;
-    singleton_instance->thread_pool = new TerminalMapThreadPool;
+    // singleton_instance->thread_pool = new TerminalMapThreadPool;
     
 }
 
@@ -69,8 +69,7 @@ TerminalMap::TerminalMap() {
 
 TerminalMap::~TerminalMap() {
     //Clean up old threads
-    terminal_id_to_terminal.clear();
-    delete thread_pool;
+    // delete thread_pool;
 }
 
 bool TerminalMap::is_instance_created() {
@@ -92,45 +91,46 @@ void TerminalMap::assign_cargo_controller(Node* p_cargo_controller) {
 }
 
 void TerminalMap::_on_day_tick_timeout() {
-    thread_pool->day_tick();
+    // thread_pool->day_tick();
 }
 
 void TerminalMap::_on_month_tick_timeout() {
     // PopManager::get_instance()->month_tick();
     // AiManager::get_instance()->month_tick();
-    thread_pool->month_tick();
+    // thread_pool->month_tick();
+    TradingSystem::get_instance()->month_tick();
 }
 
-std::vector<Ref<Terminal>> TerminalMap::get_terminals_for_day_tick() const {
-    std::vector<Ref<Terminal>> v;
-    {
-        std::shared_lock lock(cargo_map_mutex);
-        for (const auto &[__, terminal]: terminal_id_to_terminal) {
-            if (terminal->has_method("day_tick")) {
-                v.push_back(terminal);
-            }
-        }
-    }
+// std::vector<Ref<Terminal>> TerminalMap::get_terminals_for_day_tick() const {
+//     std::vector<Ref<Terminal>> v;
+//     {
+//         std::shared_lock lock(cargo_map_mutex);
+//         for (const auto &[__, terminal]: terminal_id_to_terminal) {
+//             if (terminal->has_method("day_tick")) {
+//                 v.push_back(terminal);
+//             }
+//         }
+//     }
     
-    return v;
-}
+//     return v;
+// }
 
-std::vector<Ref<Terminal>> TerminalMap::get_terminals_for_month_tick() const {
-    std::vector<Ref<Terminal>> v;
-    {
-        std::shared_lock lock(cargo_map_mutex);
-        for (const auto &[__, terminal]: terminal_id_to_terminal) {
-            if (terminal->has_method("month_tick")) {
-                v.push_back(terminal);
-            }
-        }
-    }
-    return v;
-}
+// std::vector<Ref<Terminal>> TerminalMap::get_terminals_for_month_tick() const {
+//     std::vector<Ref<Terminal>> v;
+//     {
+//         std::shared_lock lock(cargo_map_mutex);
+//         for (const auto &[__, terminal]: terminal_id_to_terminal) {
+//             if (terminal->has_method("month_tick")) {
+//                 v.push_back(terminal);
+//             }
+//         }
+//     }
+//     return v;
+// }
 
 void TerminalMap::clear() {
     std::unique_lock lock(cargo_map_mutex);
-    cargo_map_terminals.clear();
+    id_to_position_component.clear();
 }
 
 TileMapLayer* TerminalMap::get_main_map() const {
@@ -426,15 +426,6 @@ bool TerminalMap::is_tile_traversable(const Vector2i coords, bool is_water_untra
     if (is_water_untraversable) s.insert(Vector2i(6, 0));
 
     return (!s.count(atlas));
-}
-
-bool TerminalMap::is_tile_available(const Vector2i coords) {
-    bool status;
-    {
-        std::shared_lock lock(cargo_map_mutex);
-        status = !cargo_map_terminals.count(coords);
-    }
-    return status && is_tile_traversable(coords, true);
 }
 
 Array TerminalMap::get_available_primary_recipes(const Vector2i& coords) const {

@@ -2,9 +2,9 @@
 #include <fstream>
 #include "../classes/factory_utility/recipe.hpp"
 #include "factory_creator.hpp"
-#include "../classes/town.hpp"
-#include "../classes/ai_factory.hpp"
-#include "../classes/construction_site.hpp"
+#include <src/classes/map_objects/factory.hpp>
+#include <src/classes/map_objects/town.hpp>
+
 #include "recipe_info.hpp"
 #include "cargo_info.hpp"
 #include "terminal_map.hpp"

@@ -61,6 +61,8 @@ public:
     Province* get_province(int province_id) const;
     Province* get_province(const Vector2i& tile) const;
 
+    bool is_tile_available(const Vector2i coords);
+
     // Country to province mapping
     void add_province_to_country(Province* prov, int country_id);
     Dictionary get_countries_provinces(int country_id) const;

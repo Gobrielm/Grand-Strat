@@ -3,7 +3,6 @@
 #include "province_manager.hpp"
 #include "../classes/province.hpp"
 #include <src/classes/map_objects/town.hpp>
-#include "../classes/investment_company.hpp"
 #include "cargo_info.hpp"
 #include "recipe_info.hpp"
 #include "terminal_map.hpp"

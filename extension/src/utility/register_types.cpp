@@ -7,17 +7,13 @@
 #include "static_registry.hpp"
 #include "../classes/province.hpp"
 #include "../classes/trade_order.hpp"
-#include "../classes/isolated_broker.hpp"
-#include "../classes/ai_base.hpp"
-#include "../classes/company_ai.hpp"
-#include "../classes/investment_company.hpp"
+// #include "../classes/ai_base.hpp"
 #include "../classes/initial_builder.hpp"
 #include "../singletons/money_controller.hpp"
 #include "../singletons/road_map.hpp"
 #include "../singletons/terminal_map.hpp"
 #include "../singletons/data_collector.hpp"
 #include "../singletons/province_manager.hpp"
-#include "../singletons/factory_creator.hpp"
 #include "../singletons/user_singletons/country_manager.hpp"
 #include "../singletons/user_singletons/country.hpp"
 
@@ -34,20 +30,14 @@ void initialize_gdextension_types(ModuleInitializationLevel p_level)
 	GDREGISTER_CLASS(MoneyController);
 	GDREGISTER_CLASS(Province);
 	GDREGISTER_CLASS(TradeOrder);
-
-	GDREGISTER_CLASS(IsolatedBroker);
 	
 	GDREGISTER_CLASS(RoadDepot);
-	GDREGISTER_CLASS(AiBase);
-	GDREGISTER_CLASS(CompanyAi);
-	GDREGISTER_CLASS(InvestmentCompany);
 	GDREGISTER_CLASS(InitialBuilder);
 	GDREGISTER_CLASS(CargoInfo);
 	GDREGISTER_CLASS(RoadMap);
 	GDREGISTER_CLASS(TerminalMap);
 	GDREGISTER_CLASS(DataCollector);
 	GDREGISTER_CLASS(ProvinceManager);
-	GDREGISTER_CLASS(FactoryCreator);
 	GDREGISTER_CLASS(Country);
 	GDREGISTER_CLASS(CountryManager);
 	StaticRegistry::initialize();
