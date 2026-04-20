@@ -4,18 +4,23 @@
 
 using namespace godot;
 
-void Town::_bind_methods() {
+Town::Town(std::pair<int, int> p_position): position(p_position, BuildingType::TOWN) {}
+
+Town::Town(std::pair<int, int> p_position): position(p_position, BuildingType::TOWN) {}
+
+Town::Town(const Town& other): position(other.position), owner(other.owner), mp(other.mp) {}
+
+Town& Town::operator=(const Town &other) {
+    if (this == &other) return *this;
+
+    mp = other.mp;
+    position = other.position;
+    owner = other.owner;
     
-}
-
-Town::Town(std::pair<int, int> p_position): position(p_position, BuildingType::TOWN) {}
-
-Town::Town(std::pair<int, int> p_position): position(p_position, BuildingType::TOWN) {}
-
-Town::Town(const Town& town): position(town.position), owner(town.owner), mp(town.mp) {}
-
-Town Town::operator=(Town &town) {
-    return Town(town);
+    internal_companies = other.internal_companies;
+    internal_factories = other.internal_factories;
+    
+    return *this;
 }
 
 void Town::add_factory(int factory_owner, int factory_id) {
@@ -35,14 +40,3 @@ std::vector<int> Town::get_factory_ids() const {
     }   
     return v;
 }
-
-//Pop stuff
-void Town::add_pop(int pop_id) {
-    ERR_FAIL_COND_MSG(town_pop_ids.count(pop_id), "Pop of id has already been created");
-    town_pop_ids.insert(pop_id);
-}
-
-int Town::get_total_pops() const {
-    return town_pop_ids.size();
-}
-

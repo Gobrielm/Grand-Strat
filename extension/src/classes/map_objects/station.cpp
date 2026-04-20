@@ -1,9 +1,5 @@
 #include "station.hpp"
 
-void Station::_bind_methods() {
-
-}
-
 Station::Station(): type(NONE), SUPPLY_DROPOFF(1), MAX_SUPPLY_DISTANCE(0) {
 
 }

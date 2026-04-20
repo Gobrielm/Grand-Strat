@@ -7,7 +7,7 @@
 #include <classes/components/capital_component.hpp>
 #include <classes/components/employer_component.hpp>
 
-#include <godot_cpp/classes/ref_counted.hpp>
+#include <godot_cpp/classes/object.hpp>
 
 using namespace godot;
 
@@ -22,16 +22,9 @@ using namespace godot;
 class Town;
 class Recipe;
 
-class SubsistenceFarm : public RefCounted {
-    GDCLASS(SubsistenceFarm, RefCounted);
-    
-    void give_cargo_grain(int pop_id);
-    float get_theoretical_gross_profit(const Town& town) const;
+class SubsistenceFarm {
 
-    protected:
-    
-    static void _bind_methods();
-    
+    std::unordered_map<int, std::shared_ptr<TradeOrder>> orders; // Active orders sent to towns to buy/sell
 
     public:
 
@@ -43,18 +36,18 @@ class SubsistenceFarm : public RefCounted {
 
     SubsistenceFarm();
     SubsistenceFarm(Vector2i p_location, int p_owner);
+    SubsistenceFarm(const SubsistenceFarm& other);
 
-    void add_pop(BasePop* pop);
-    float get_wage(const Town& town) const;
-    void pay_employees();
+    SubsistenceFarm& operator=(const SubsistenceFarm&);
 
-    void set_local_town(Vector2i p_town);
-    Ref<Town> get_local_town() const;
-    void sell_cargo();
-    void sell_type(Ref<Town> town, int type, int amount);
-    double get_batch_size() const;
+    void add_pop(Town& town, BasePop* pop);
+
+    void adjust_trade_orders(Town& town);
+    double get_batch_size();
     void create_recipe();
     void month_tick();
+
+    static EmployerComponent get_default_employer_component();
 
     void consider_upgrade();
     void consider_degrade();

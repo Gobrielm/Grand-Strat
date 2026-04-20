@@ -2,9 +2,9 @@
 
 #include <memory>
 #include <unordered_map>
-#include "../classes/base_pop.hpp"
+#include <src/classes/base_pop.hpp>
+
 #include "pop_manager_utility/pop_manager_thread_pool.hpp"
-#include "../classes/factory_template.hpp"
 
 enum PopStats {
     AveragePopWealth,
@@ -35,31 +35,38 @@ class PopManager {
     int get_pop_country_id(BasePop* pop) const;
     int get_pop_country_id_unsafe(BasePop* pop) const;
     void month_tick(std::vector<BasePop*>& pop_group);
-    void sell_to_pops(std::vector<BasePop*>& pop_group);
-    void create_pop_location_to_towns(std::vector<BasePop*>& pop_group, std::unordered_map<Vector2i, Vector2i, godot_helpers::Vector2iHasher>& location_to_nearest_town) const;
-    Vector2i get_town_tile(const BasePop* pop) const;
+    // void sell_to_pops(std::vector<BasePop*>& pop_group);
+    // void create_pop_location_to_towns(std::vector<BasePop*>& pop_group, std::unordered_map<Vector2i, Vector2i, godot_helpers::Vector2iHasher>& location_to_nearest_town) const;
+    // Vector2i get_town_tile(const BasePop* pop) const;
     void change_pop_unsafe(BasePop* pop);
     void find_employment_for_pops(std::vector<BasePop*>& pop_group);
 
     // Find Employement functions
-    using employ_type = std::unordered_map<PopTypes, std::unordered_map<int, std::set<FactoryTemplate::FactoryWageWrapper, FactoryTemplate::FactoryWageWrapper::FactoryWageCompare>>>;
-    employ_type employment_options; // PopType -> Country id -> set of available factories
+    using employ_type = std::unordered_map<
+        PopTypes, std::unordered_map<
+            int, std::set<
+                std::pair<float, int>, 
+                std::greater<std::pair<float, int>
+                >
+            >
+        >
+    >;
 
-    void employment_finder_helper(BasePop* pop, PopTypes pop_type);
+    // employ_type employment_options; // PopType -> Country id -> set of available factories
+
+    // void employment_finder_helper(BasePop* pop, PopTypes pop_type);
     /// @return Returns whether the pop is employed or not
-    bool employment_for_potential_investor(BasePop* pop, int country_id); 
+    // bool employment_for_potential_investor(BasePop* pop, int country_id); 
     /// @brief Currently Only takes into account profitabiltiy over entire country
-    int get_cargo_type_to_build(int country_id) const;
-    float get_profit_of_recipe(const Recipe* recipe, const std::unordered_map<int, float>& average_prices) const;
-    void refresh_employment_sorted_by_wage();
-    void refresh_rural_employment_sorted_by_wage();
-    void refresh_town_employment_sorted_by_wage();
-    void refresh_town_employment_sorted_by_wage_helper(int country_id, const Vector2i& tile, employ_type& local_employment_options);
-    void add_local_employment_options(employ_type& local_employment_options);
-    FactoryTemplate::FactoryWageWrapper get_first_employment_option(PopTypes pop_type, int country_id) const;
-    void remove_first_employment_option(PopTypes pop_type, int country_id, const Ref<FactoryTemplate>& double_check);
-
-    std::optional<Town&> get_town_helper(Vector2i pos) const;
+    // int get_cargo_type_to_build(int country_id) const;
+    float get_profit_of_ec(const EmployerComponent ec, const std::unordered_map<int, float>& average_prices) const;
+    // void refresh_employment_sorted_by_wage();
+    // void refresh_rural_employment_sorted_by_wage();
+    // void refresh_town_employment_sorted_by_wage();
+    // void refresh_town_employment_sorted_by_wage_helper(int country_id, const Vector2i& tile, employ_type& local_employment_options);
+    // void add_local_employment_options(employ_type& local_employment_options);
+    // FactoryTemplate::FactoryWageWrapper get_first_employment_option(PopTypes pop_type, int country_id) const;
+    // void remove_first_employment_option(PopTypes pop_type, int country_id, const Ref<FactoryTemplate>& double_check);
 
     public:
     static void create();

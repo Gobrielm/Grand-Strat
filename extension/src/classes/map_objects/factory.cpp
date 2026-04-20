@@ -2,19 +2,12 @@
 #include <classes/factory_utility/recipe.hpp>
 #include <classes/base_pop.hpp>
 
-#include "broker_utility/trade_interaction.hpp"
 #include "../singletons/cargo_info.hpp"
 #include "../singletons/terminal_map.hpp"
 #include "../singletons/pop_manager.hpp"
 #include "../singletons/data_collector.hpp"
 #include <godot_cpp/core/class_db.hpp>
 #include <algorithm>
-
-
-void Factory::_bind_methods() {
-    ClassDB::bind_method(D_METHOD("day_tick"), &Factory::day_tick);
-    ClassDB::bind_method(D_METHOD("month_tick"), &Factory::month_tick);
-}
 
 Factory::~Factory() {
 
@@ -25,6 +18,21 @@ position(p_position, BuildingType::FACTORY),
 employer(employer_component) {
     owner = OwnerComponent(p_owner);
     lpc = LocalPriceController();
+}
+
+Factory::Factory(const Factory& other): position(other.position), owner(other.owner), storage(other.storage), capital(other.capital), employer(other.employer), lpc(other.lpc) {}
+
+Factory& Factory::operator=(const Factory& other) {
+    if (this == &other) return *this;
+
+    position = other.position;
+    storage = other.storage;
+    owner = other.owner;
+    capital = other.capital;
+    employer = other.employer;
+    orders = other.orders;
+
+    return *this;
 }
 
 void Factory::create_construction_materials() {
@@ -200,40 +208,19 @@ float Factory::get_last_month_income() const {
     return capital.get_recent_change();
 }
 
-bool Factory::is_hiring() const {
-    return get_theoretical_gross_profit() > 0;
+bool Factory::is_hiring(Town& town) const {
+    return employer.get_theoretical_gross_profit(town) > 0;
 }
 
 bool Factory::is_hiring(PopTypes pop_type) const {
     return employer.is_pop_type_needed(pop_type);
 }
 
-bool Factory::is_firing() const {
-    if (get_theoretical_gross_profit() < 0) {
+bool Factory::is_firing(Town& town) const {
+    if (employer.get_theoretical_gross_profit(town) < 0) {
         return true;
     }
     return false;
-}
-
-float Factory::get_wage() const {
-    float gross_profit = std::min(float(get_theoretical_gross_profit()), capital.get_cash());
-    int pops_needed_num = employer.get_pops_needed_num();
-    if (!pops_needed_num) return 0;
-    return (gross_profit) / pops_needed_num;
-}
-
-float Factory::get_theoretical_gross_profit() const {
-    float available = 0;
-    double level = employer.get_level();
-    
-    for (const auto &[type, amount]: get_recipe().get_inputs()) {
-        available -= lpc.get_local_price(type) * amount * std::max(level, 1.0); // Always assume that the business will pay according to the first level, so hiring wont bug out
-    }
-    for (const auto &[type, amount]: get_recipe().get_outputs()) {
-        available += lpc.get_local_price(type) * amount * std::max(level, 1.0);
-    }
-    available *= 30;
-    return available;
 }
 
 float Factory::get_real_gross_profit(int months_to_average) const {
@@ -256,17 +243,21 @@ float Factory::get_real_gross_profit(int months_to_average) const {
     return total / months;
 }
 
-void Factory::employ_pop(BasePop& pop) {
+void Factory::employ_pop(Town& town, BasePop& pop) {
     PopTypes pop_type = pop.get_type();
     if (is_hiring(pop_type)) {
         float wage;
         employer.add_pop(pop_type, pop.get_pop_id());
-        wage = get_wage();
+        wage = get_wage(town);
         
         pop.employ(position.building_id, wage);
         pop.set_location(position.get_position_vector2i());
     
     }
+}
+
+float Factory::get_wage(Town& town) {
+    return employer.get_wage(town, capital.get_cash());
 }
 
 void Factory::day_tick() {
@@ -276,9 +267,6 @@ void Factory::day_tick() {
 
 void Factory::month_tick() { 
     capital.update_cash_history();
-    if (is_firing()) {
-        employer.queue_employees_to_be_fired();
-    }
     if (construction.is_finished_constructing()) {
         finish_upgrade();
     }
@@ -287,6 +275,11 @@ void Factory::month_tick() {
 }
 
 void Factory::adjust_trade_orders(Town& town) {
+
+    if (is_firing(town)) {
+        employer.queue_employees_to_be_fired();
+    }
+
     auto& recipe = get_recipe();
     for (const auto& [type, amt]: recipe.get_inputs()) {
         if (!orders.count(type)) {

@@ -4,8 +4,6 @@
 #include <unordered_set>
 #include <vector>
 
-#include <godot_cpp/classes/ref_counted.hpp>
-
 #include <classes/base_pop.hpp>
 
 #include <classes/components/capital_component.hpp>
@@ -17,15 +15,12 @@
 
 using namespace godot;
 
-class Town: public RefCounted {
-    GDCLASS(Town, RefCounted);
+class Town {
 
     std::unordered_map<int, std::vector<int>> internal_factories; // Owner id -> vector of factory_ids
     std::unordered_set<int> internal_companies; // Company ids
-    std::unordered_set<int> town_pop_ids;
 
 protected:
-    static void _bind_methods();
 
 public:
 
@@ -37,7 +32,7 @@ public:
     Town(std::pair<int, int> p_position = {0, 0});
     Town(const Town& town);
 
-    Town operator=(Town &town);
+    Town& operator=(const Town &town);
 
     void add_factory(int factory_owner, int factory_id);
     void add_company(int company_id);

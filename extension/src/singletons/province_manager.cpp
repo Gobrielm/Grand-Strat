@@ -1,6 +1,7 @@
 #include "province_manager.hpp"
 #include "terminal_map.hpp"
 #include <src/classes/map_objects/town.hpp>
+#include <src/classes/map_objects/station.hpp>
 #include "cargo_info.hpp"
 #include <godot_cpp/core/class_db.hpp>
 #include <chrono>
@@ -270,7 +271,7 @@ float ProvinceManager::get_average_factory_level() const {
     for (auto province: provinces) {
         std::scoped_lock(province->m);
         for (const auto& factory: province->factories) {
-            ave += factory.recipe.get_level();
+            ave += factory.employer.get_level();
             count++;
         }
 
@@ -286,6 +287,21 @@ float ProvinceManager::get_average_cash_of_factory() const {
         std::scoped_lock(province->m);
         for (const auto& factory: province->factories) {
             ave += factory.capital.get_cash();
+            count++;
+        }
+
+    }
+    return ave / count;
+}
+
+float ProvinceManager::get_average_cash_of_station() const {
+    double ave = 0;
+    int count = 0;
+
+    for (auto province: provinces) {
+        std::scoped_lock(province->m);
+        for (const auto& station: province->stations) {
+            ave += station.capital.get_cash();
             count++;
         }
 

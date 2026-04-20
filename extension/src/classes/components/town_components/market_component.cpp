@@ -31,6 +31,34 @@ float MarketComponent::get_price(int type) const {
     return LocalPriceController::get_base_price(type);
 }
 
+float MarketComponent::get_min_price(int type) const {
+    if (buy_orders.count(type) && !buy_orders.at(type).empty()) {
+        return (*buy_orders.at(type).end())->get_price();
+    }
+    return 0;
+}
+
+float MarketComponent::get_max_price(int type) const {
+    if (sell_orders.count(type) && !sell_orders.at(type).empty()) {
+        return (*sell_orders.at(type).end())->get_price();
+    }
+    return 10000;
+}
+
+std::unordered_map<int, float> MarketComponent::get_current_prices() const {
+    std::unordered_map<int, float> to_return;
+
+    for (const auto& [type, _]: sell_orders) {
+        to_return[type] = get_price(type);
+    }
+
+    for (const auto& [type, _]: buy_orders) {
+        to_return[type] = get_price(type);
+    }
+
+    return to_return;
+}
+
 std::pair<std::vector<std::pair<int, float>>, std::vector<std::pair<int, float>>> MarketComponent::get_market_info_plot(int type) const {
     std::vector<std::pair<int, float>> buys;
     std::vector<std::pair<int, float>> sells;

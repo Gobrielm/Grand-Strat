@@ -23,7 +23,7 @@ void TradingSystem::adjust_factory_orders() {
 }
 
 void TradingSystem::adjust_factory_orders(Factory& factory, Town& town) {
-    for (const auto& [type, _]: factory.recipe.get_outputs()) {
+    for (const auto& [type, _]: factory.employer.recipe.get_outputs()) {
         factory.adjust_trade_orders(town);
     }
 }

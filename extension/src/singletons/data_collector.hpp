@@ -11,7 +11,7 @@ class DataCollector : public Node {
 
 private:
     std::mutex m;
-    std::vector<float> road_depot_data_points;
+    std::vector<float> station_data_points;
     std::vector<float> factory_data_points;
     std::vector<float> pops_data_points;
     std::vector<float> factory_ave_level;

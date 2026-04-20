@@ -7,20 +7,7 @@
 #include "static_registry.hpp"
 #include "../classes/province.hpp"
 #include "../classes/trade_order.hpp"
-#include "../classes/terminal.hpp"
-#include "../classes/firm.hpp"
-#include "../classes/hold.hpp"
-#include "../classes/fixed_hold.hpp"
-#include "../classes/broker.hpp"
-#include "../classes/station.hpp"
-#include "../classes/town.hpp"
-#include "../classes/factory_template.hpp"
-#include "../classes/construction_site.hpp"
-#include "../classes/factory.hpp"
-#include "../classes/ai_factory.hpp"
 #include "../classes/isolated_broker.hpp"
-#include "../classes/Specific_Buildings/subsistence_farm.hpp"
-#include "../classes/road_depot.hpp"
 #include "../classes/ai_base.hpp"
 #include "../classes/company_ai.hpp"
 #include "../classes/investment_company.hpp"
@@ -47,19 +34,9 @@ void initialize_gdextension_types(ModuleInitializationLevel p_level)
 	GDREGISTER_CLASS(MoneyController);
 	GDREGISTER_CLASS(Province);
 	GDREGISTER_CLASS(TradeOrder);
-	GDREGISTER_CLASS(Terminal);
-	GDREGISTER_CLASS(Firm);
-	GDREGISTER_CLASS(Hold);
-	GDREGISTER_CLASS(FixedHold);
-	GDREGISTER_CLASS(Broker);
-	GDREGISTER_CLASS(StationWOMethods);
-	GDREGISTER_CLASS(Town);
-	GDREGISTER_CLASS(FactoryTemplate);
-	GDREGISTER_CLASS(ConstructionSite);
-	GDREGISTER_CLASS(Factory);
-	GDREGISTER_CLASS(AiFactory);
+
 	GDREGISTER_CLASS(IsolatedBroker);
-	GDREGISTER_CLASS(SubsistenceFarm);
+	
 	GDREGISTER_CLASS(RoadDepot);
 	GDREGISTER_CLASS(AiBase);
 	GDREGISTER_CLASS(CompanyAi);

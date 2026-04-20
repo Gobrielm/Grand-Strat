@@ -1,15 +1,13 @@
 #pragma once
 
-#include <godot_cpp/classes/ref_counted.hpp>
-
 #include <classes/components/owner_component.hpp>
 #include <classes/components/position_component.hpp>
+#include <classes/components/capital_component.hpp>
 
 
 using namespace godot;
 
-class Station : public RefCounted {
-    GDCLASS(Station, RefCounted);
+class Station {
 
     enum TYPE_OF_STATION {
         NONE = 0,
@@ -23,15 +21,13 @@ class Station : public RefCounted {
     int get_SUPPLY_DROPOFF();
     int get_MAX_SUPPLY_DISTANCE();
     
-    protected:
-    static void _bind_methods();
-    
 
     public:
 
     const TYPE_OF_STATION type;
     PositionComponent position;
     OwnerComponent owner;
+    CapitalComponent capital;
 
     Station();
     Station(TYPE_OF_STATION p_type, std::pair<int, int> position, int owner);

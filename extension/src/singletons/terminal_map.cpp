@@ -2,12 +2,7 @@
 #include "road_map.hpp"
 #include "recipe_info.hpp"
 #include "province_manager.hpp"
-#include "pop_manager.hpp"
-#include "ai_manager.hpp"
-#include "../classes/terminal.hpp"
-#include "../classes/broker.hpp"
-#include "../classes/ai_factory.hpp"
-#include "../classes/road_depot.hpp"
+#include "cargo_info.hpp"
 
 #include <src/classes/map_objects/factory.hpp>
 #include <src/classes/map_objects/station.hpp>
@@ -37,50 +32,28 @@ void TerminalMap::_bind_methods() {
 
     // Creators
 
-    ClassDB::bind_method(D_METHOD("create_terminal", "p_terminal"), &TerminalMap::create_terminal);
     ClassDB::bind_method(D_METHOD("encode_factory", "factory", "mult"), &TerminalMap::encode_factory);
-    ClassDB::bind_method(D_METHOD("add_connected_brokers", "p_broker"), &TerminalMap::add_connected_brokers);
-    ClassDB::bind_method(D_METHOD("create_factory", "p_location", "p_player_owner", "p_inputs", "p_outputs"), &TerminalMap::create_factory);
-    ClassDB::bind_method(D_METHOD("create_primary_factory", "p_location", "p_player_owner", "type"), &TerminalMap::create_primary_factory);
-    
+    // ClassDB::bind_method(D_METHOD("add_connected_brokers", "p_broker"), &TerminalMap::add_connected_brokers);
+    // ClassDB::bind_method(D_METHOD("create_factory", "p_location", "p_player_owner", "p_inputs", "p_outputs"), &TerminalMap::create_factory);
+    // ClassDB::bind_method(D_METHOD("create_primary_factory", "p_location", "p_player_owner", "type"), &TerminalMap::create_primary_factory);
 
-    // Checkers
-    ClassDB::bind_method(D_METHOD("is_hold", "coords"), &TerminalMap::is_hold);
-    ClassDB::bind_method(D_METHOD("is_owned_recipeless_construction_site", "coords"), &TerminalMap::is_owned_recipeless_construction_site);
-    ClassDB::bind_method(D_METHOD("is_building", "coords"), &TerminalMap::is_building);
-    ClassDB::bind_method(D_METHOD("is_owned_building", "coords", "id"), &TerminalMap::is_owned_building);
-    ClassDB::bind_method(D_METHOD("is_owned_construction_site", "coords"), &TerminalMap::is_owned_construction_site);
-    ClassDB::bind_method(D_METHOD("is_factory", "coords"), &TerminalMap::is_factory);
-    ClassDB::bind_method(D_METHOD("is_station", "coords"), &TerminalMap::is_station);
-    ClassDB::bind_method(D_METHOD("is_road_depot", "coords"), &TerminalMap::is_road_depot);
-    ClassDB::bind_method(D_METHOD("is_owned_station", "coords", "player_id"), &TerminalMap::is_owned_station);
-    ClassDB::bind_method(D_METHOD("is_ai_station", "coords"), &TerminalMap::is_ai_station);
-    ClassDB::bind_method(D_METHOD("is_owned_ai_station", "coords", "id"), &TerminalMap::is_owned_ai_station);
-    ClassDB::bind_method(D_METHOD("is_town", "coords"), &TerminalMap::is_town);
+    // // Info getters
 
-    // Info getters
-
-    ClassDB::bind_method(D_METHOD("get_cargo_dict", "coords"), &TerminalMap::get_cargo_dict);
-    ClassDB::bind_method(D_METHOD("get_construction_site_recipe", "coords"), &TerminalMap::get_construction_site_recipe);
-    ClassDB::bind_method(D_METHOD("get_construction_materials", "coords"), &TerminalMap::get_construction_materials);
-    ClassDB::bind_method(D_METHOD("get_needed_construction_materials", "coords"), &TerminalMap::get_needed_construction_materials);
+    // ClassDB::bind_method(D_METHOD("get_cargo_dict", "coords"), &TerminalMap::get_cargo_dict);
+    // ClassDB::bind_method(D_METHOD("get_construction_site_recipe", "coords"), &TerminalMap::get_construction_site_recipe);
+    // ClassDB::bind_method(D_METHOD("get_construction_materials", "coords"), &TerminalMap::get_construction_materials);
+    // ClassDB::bind_method(D_METHOD("get_needed_construction_materials", "coords"), &TerminalMap::get_needed_construction_materials);
     ClassDB::bind_method(D_METHOD("get_cash_of_firm", "coords"), &TerminalMap::get_cash_of_firm);
-    ClassDB::bind_method(D_METHOD("get_local_prices", "coords"), &TerminalMap::get_local_prices);
-    ClassDB::bind_method(D_METHOD("get_station_orders", "coords"), &TerminalMap::get_station_orders);
+    // ClassDB::bind_method(D_METHOD("get_local_prices", "coords"), &TerminalMap::get_local_prices);
+    // ClassDB::bind_method(D_METHOD("get_station_orders", "coords"), &TerminalMap::get_station_orders);
     ClassDB::bind_method(D_METHOD("get_available_primary_recipes", "coords"), &TerminalMap::get_available_primary_recipes);
-    
-
-    ClassDB::bind_method(D_METHOD("get_terminal", "coords"), &TerminalMap::get_terminal);
-    ClassDB::bind_method(D_METHOD("get_broker", "coords"), &TerminalMap::get_broker);
-    ClassDB::bind_method(D_METHOD("get_station", "coords"), &TerminalMap::get_station);
-    ClassDB::bind_method(D_METHOD("get_ai_station", "coords"), &TerminalMap::get_ai_station);
 
     // Action doers
-    ClassDB::bind_method(D_METHOD("set_construction_site_recipe", "coords", "selected_recipe"), &TerminalMap::set_construction_site_recipe_godot);
-    ClassDB::bind_method(D_METHOD("destroy_recipe", "coords"), &TerminalMap::destroy_recipe);
-    ClassDB::bind_method(D_METHOD("transform_construction_site_to_factory", "coords"), &TerminalMap::transform_construction_site_to_factory);
-    ClassDB::bind_method(D_METHOD("edit_order_station", "coords", "type", "amount", "buy", "max_price"), &TerminalMap::edit_order_station);
-    ClassDB::bind_method(D_METHOD("remove_order_station", "coords", "type"), &TerminalMap::remove_order_station);
+    // ClassDB::bind_method(D_METHOD("set_construction_site_recipe", "coords", "selected_recipe"), &TerminalMap::set_construction_site_recipe_godot);
+    // ClassDB::bind_method(D_METHOD("destroy_recipe", "coords"), &TerminalMap::destroy_recipe);
+    // ClassDB::bind_method(D_METHOD("transform_construction_site_to_factory", "coords"), &TerminalMap::transform_construction_site_to_factory);
+    // ClassDB::bind_method(D_METHOD("edit_order_station", "coords", "type", "amount", "buy", "max_price"), &TerminalMap::edit_order_station);
+    // ClassDB::bind_method(D_METHOD("remove_order_station", "coords", "type"), &TerminalMap::remove_order_station);
 }
 
 void TerminalMap::initialize_singleton(TileMapLayer* p_map) {
@@ -123,8 +96,8 @@ void TerminalMap::_on_day_tick_timeout() {
 }
 
 void TerminalMap::_on_month_tick_timeout() {
-    PopManager::get_instance()->month_tick();
-    AiManager::get_instance()->month_tick();
+    // PopManager::get_instance()->month_tick();
+    // AiManager::get_instance()->month_tick();
     thread_pool->month_tick();
 }
 
@@ -291,91 +264,91 @@ void TerminalMap::encode_factory_from_construction_site(Factory& factory) {
     cargo_map->call("call_set_tile_rpc", coords, factory.get_primary_type());
 }
 
-void TerminalMap::encode_road_depot(Ref<RoadDepot> road_depot) {
-    Ref<ProvinceManager> province_manager = ProvinceManager::get_instance();
-    Vector2i coords = road_depot->get_location();
-    Province* province = province_manager->get_province(province_manager->get_province_id(coords));
+// void TerminalMap::encode_road_depot(Ref<RoadDepot> road_depot) {
+//     Ref<ProvinceManager> province_manager = ProvinceManager::get_instance();
+//     Vector2i coords = road_depot->get_location();
+//     Province* province = province_manager->get_province(province_manager->get_province_id(coords));
     
-    create_terminal(road_depot);
-    province->add_terminal(coords);
-    RoadMap::get_instance()->place_road_depot(coords);
-}
+//     create_terminal(road_depot);
+//     province->add_terminal(coords);
+//     RoadMap::get_instance()->place_road_depot(coords);
+// }
 
-void TerminalMap::encode_construction_site(Ref<ConstructionSite> construction_site) {
-    Ref<ProvinceManager> province_manager = ProvinceManager::get_instance();
-    Vector2i coords = construction_site->get_location();
-    Province* province = province_manager->get_province(province_manager->get_province_id(coords));
+// void TerminalMap::encode_construction_site(Ref<ConstructionSite> construction_site) {
+//     Ref<ProvinceManager> province_manager = ProvinceManager::get_instance();
+//     Vector2i coords = construction_site->get_location();
+//     Province* province = province_manager->get_province(province_manager->get_province_id(coords));
     
-    create_terminal(construction_site);
-    province->add_terminal(coords);
-    cargo_map->call_deferred("place_construction_site_tile", coords);
-}
+//     create_terminal(construction_site);
+//     province->add_terminal(coords);
+//     cargo_map->call_deferred("place_construction_site_tile", coords);
+// }
 
-void TerminalMap::add_connected_brokers(Ref<Broker> p_broker) {
-    Array connected = map->get_surrounding_cells(p_broker->get_location());
-    for (int i = 0; i < connected.size(); i++) {
-        if (connected[i].get_type() != Variant::VECTOR2I) continue;
-        Vector2i tile = connected[i];
-        Ref<Broker> other = get_terminal_as<Broker>(tile);
-        if (other.is_null()) continue;
-        p_broker->add_connected_broker(other);
-        other->add_connected_broker(p_broker);
-    }
-}
+// void TerminalMap::add_connected_brokers(Ref<Broker> p_broker) {
+//     Array connected = map->get_surrounding_cells(p_broker->get_location());
+//     for (int i = 0; i < connected.size(); i++) {
+//         if (connected[i].get_type() != Variant::VECTOR2I) continue;
+//         Vector2i tile = connected[i];
+//         Ref<Broker> other = get_terminal_as<Broker>(tile);
+//         if (other.is_null()) continue;
+//         p_broker->add_connected_broker(other);
+//         other->add_connected_broker(p_broker);
+//     }
+// }
 
-void TerminalMap::add_connected_stations(Ref<RoadDepot> road_depot) {
-    Array tiles = map->get_surrounding_cells(road_depot->get_location());
-    for (int i = 0; i < tiles.size(); i++) {
-        Vector2i tile = tiles[i];
-        Ref<Broker> broker = get_broker(tile);
-        if (broker.is_valid()) {
-            broker->add_connected_station(road_depot->get_location());
-            road_depot->add_connected_broker(broker);
-        }
-    }
-}
+// void TerminalMap::add_connected_stations(Ref<RoadDepot> road_depot) {
+//     Array tiles = map->get_surrounding_cells(road_depot->get_location());
+//     for (int i = 0; i < tiles.size(); i++) {
+//         Vector2i tile = tiles[i];
+//         Ref<Broker> broker = get_broker(tile);
+//         if (broker.is_valid()) {
+//             broker->add_connected_station(road_depot->get_location());
+//             road_depot->add_connected_broker(broker);
+//         }
+//     }
+// }
 
-void TerminalMap::find_stations(Ref<Broker> broker) {
-    Array tiles = map->get_surrounding_cells(broker->get_location());
-    for (int i = 0; i < tiles.size(); i++) {
-        Vector2i tile = tiles[i];
-        Ref<RoadDepot> road_depot = get_terminal_as<RoadDepot>(tile);
-        if (road_depot.is_valid()) {
-            broker->add_connected_station(tile);
-            road_depot->add_connected_broker(broker);
-        }
-    }
-}
+// void TerminalMap::find_stations(Ref<Broker> broker) {
+//     Array tiles = map->get_surrounding_cells(broker->get_location());
+//     for (int i = 0; i < tiles.size(); i++) {
+//         Vector2i tile = tiles[i];
+//         Ref<RoadDepot> road_depot = get_terminal_as<RoadDepot>(tile);
+//         if (road_depot.is_valid()) {
+//             broker->add_connected_station(tile);
+//             road_depot->add_connected_broker(broker);
+//         }
+//     }
+// }
 
-Factory TerminalMap::create_factory(const Vector2i &p_location, int p_player_owner, const Dictionary &p_inputs, const Dictionary &p_outputs) {
-    if (p_player_owner > 0) {
-        Factory factory(std::make_pair(p_location.x, p_location.y), p_player_owner, RecipeInfo::get_instance()->get_recipe(p_inputs, p_outputs).value());
+// Factory TerminalMap::create_factory(const Vector2i &p_location, int p_player_owner, const Dictionary &p_inputs, const Dictionary &p_outputs) {
+//     if (p_player_owner > 0) {
+//         Factory factory(std::make_pair(p_location.x, p_location.y), p_player_owner, RecipeInfo::get_instance()->get_recipe(p_inputs, p_outputs).value());
 
-        return factory;
-    } else {
-        Ref<AiFactory> factory;
-        factory.instantiate();
-        factory->initialize(p_location, p_player_owner, RecipeInfo::get_instance()->get_recipe(p_inputs, p_outputs));
-        return factory;
-    }
-}
+//         return factory;
+//     } else {
+//         Ref<AiFactory> factory;
+//         factory.instantiate();
+//         factory->initialize(p_location, p_player_owner, RecipeInfo::get_instance()->get_recipe(p_inputs, p_outputs));
+//         return factory;
+//     }
+// }
 
-Factory TerminalMap::create_primary_factory(const Vector2i &p_location, int p_player_owner, int type) const {
-    if (p_player_owner > 0) {
-        Factory factory = Factory(std::make_pair(p_location.x, p_location.y), p_player_owner, RecipeInfo::get_instance()->get_primary_recipe_for_type(type).value());
-        return factory;
-    } else {
-        Ref<AiFactory> factory = Ref<AiFactory>(memnew(AiFactory(p_location, p_player_owner, RecipeInfo::get_instance()->get_primary_recipe_for_type(type))));
-        return factory;
-    }
-}
+// Factory TerminalMap::create_primary_factory(const Vector2i &p_location, int p_player_owner, int type) const {
+//     if (p_player_owner > 0) {
+//         Factory factory = Factory(std::make_pair(p_location.x, p_location.y), p_player_owner, RecipeInfo::get_instance()->get_primary_recipe_for_type(type).value());
+//         return factory;
+//     } else {
+//         Ref<AiFactory> factory = Ref<AiFactory>(memnew(AiFactory(p_location, p_player_owner, RecipeInfo::get_instance()->get_primary_recipe_for_type(type))));
+//         return factory;
+//     }
+// }
 
 //Checkers
-int TerminalMap::get_cargo_value_of_tile(const Vector2i &coords, int type) const {
+int TerminalMap::get_cargo_value_of_tile(const Vector2i coords, int type) const {
     return int(cargo_values->call("get_tile_magnitude", coords, type)) * 10;
 }
 
-std::vector<int> TerminalMap::get_available_resources_of_tile(const Vector2i &coords) const {
+std::vector<int> TerminalMap::get_available_resources_of_tile(const Vector2i coords) const {
     std::vector<int> toReturn;
     for (int type = 0; type < CargoInfo::get_instance()->get_amount_of_primary_goods(); type++) {
         toReturn.push_back(get_cargo_value_of_tile(coords, type));
@@ -384,42 +357,43 @@ std::vector<int> TerminalMap::get_available_resources_of_tile(const Vector2i &co
 }
 
 //Info getters
-Dictionary TerminalMap::get_cargo_dict(const Vector2i &coords) {
-    Dictionary d;
-    Ref<Hold> hold = get_terminal_as<Hold>(coords);
-    if (hold.is_null()) return d;
 
-    d = hold -> get_current_hold();
-    return d;
-}
+// Array TerminalMap::get_construction_site_recipe(const Vector2i &coords) {
+//     Array toReturn;
+//     Ref<ConstructionSite> construction_site = get_terminal_as<ConstructionSite>(coords);
+//     if (construction_site.is_valid()) {
+//         toReturn = construction_site->get_recipe();
+//     }
+//     return toReturn;
+// }
+
+// Dictionary TerminalMap::get_construction_materials(const Vector2i &coords) {
+//     Dictionary toReturn;
+//     if (is_owned_construction_site(coords)) {
+//         toReturn = get_terminal_as<ConstructionSite>(coords) -> get_construction_materials();
+//     }
+//     return toReturn;
+// }
+
+// Dictionary TerminalMap::get_needed_construction_materials(const Vector2i &coords) {
+//     Dictionary toReturn;
+//     if (is_owned_construction_site(coords)) {
+//         toReturn = get_terminal_as<ConstructionSite>(coords) -> get_needed_construction_materials();
+//     }
+//     return toReturn;
+// }
+
+// Dictionary TerminalMap::get_cargo_dict(const Vector2i &coords) {
+//     Dictionary d;
+//     Ref<Hold> hold = get_terminal_as<Hold>(coords);
+//     if (hold.is_null()) return d;
+
+//     d = hold -> get_current_hold();
+//     return d;
+// }
 
 
-Array TerminalMap::get_construction_site_recipe(const Vector2i &coords) {
-    Array toReturn;
-    Ref<ConstructionSite> construction_site = get_terminal_as<ConstructionSite>(coords);
-    if (construction_site.is_valid()) {
-        toReturn = construction_site->get_recipe();
-    }
-    return toReturn;
-}
-
-Dictionary TerminalMap::get_construction_materials(const Vector2i &coords) {
-    Dictionary toReturn;
-    if (is_owned_construction_site(coords)) {
-        toReturn = get_terminal_as<ConstructionSite>(coords) -> get_construction_materials();
-    }
-    return toReturn;
-}
-
-Dictionary TerminalMap::get_needed_construction_materials(const Vector2i &coords) {
-    Dictionary toReturn;
-    if (is_owned_construction_site(coords)) {
-        toReturn = get_terminal_as<ConstructionSite>(coords) -> get_needed_construction_materials();
-    }
-    return toReturn;
-}
-
-int TerminalMap::get_cash_of_firm(const Vector2i &coords) {
+int TerminalMap::get_cash_of_firm(const Vector2i coords) {
     int toReturn;
     Ref<Firm> firm = get_terminal_as<Firm>(coords);
     if (firm.is_valid()) {
@@ -428,24 +402,24 @@ int TerminalMap::get_cash_of_firm(const Vector2i &coords) {
     return toReturn;
 }
 
-Dictionary TerminalMap::get_local_prices(const Vector2i &coords) {
-    Dictionary toReturn;
-    Ref<Broker> broker = get_broker(coords);
-    if (broker.is_valid()) {
-        toReturn = broker -> get_local_prices();
-    }
-    return toReturn;
-}
+// Dictionary TerminalMap::get_local_prices(const Vector2i &coords) {
+//     Dictionary toReturn;
+//     Ref<Broker> broker = get_broker(coords);
+//     if (broker.is_valid()) {
+//         toReturn = broker -> get_local_prices();
+//     }
+//     return toReturn;
+// }
 
-Dictionary TerminalMap::get_station_orders(const Vector2i &coords) {
-    Dictionary toReturn;
-    if (is_station(coords)) {
-        toReturn = get_terminal_as<StationWOMethods>(coords) -> get_orders_dict();
-    }
-    return toReturn;
-}
+// Dictionary TerminalMap::get_station_orders(const Vector2i &coords) {
+//     Dictionary toReturn;
+//     if (is_station(coords)) {
+//         toReturn = get_terminal_as<StationWOMethods>(coords) -> get_orders_dict();
+//     }
+//     return toReturn;
+// }
 
-bool TerminalMap::is_tile_traversable(const Vector2i& coords, bool is_water_untraversable) {
+bool TerminalMap::is_tile_traversable(const Vector2i coords, bool is_water_untraversable) {
     std::scoped_lock lock(m);
     Vector2i atlas = map -> get_cell_atlas_coords(coords);
     std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> s = {Vector2i(-1, -1), Vector2i(5, 0), Vector2i(7, 0), Vector2i(3, 3)};
@@ -454,7 +428,7 @@ bool TerminalMap::is_tile_traversable(const Vector2i& coords, bool is_water_untr
     return (!s.count(atlas));
 }
 
-bool TerminalMap::is_tile_available(const Vector2i& coords) {
+bool TerminalMap::is_tile_available(const Vector2i coords) {
     bool status;
     {
         std::shared_lock lock(cargo_map_mutex);
@@ -479,21 +453,8 @@ Array TerminalMap::get_available_primary_recipes(const Vector2i& coords) const {
     return a;
 }
 
-//Internal Getters
-Ref<Terminal> TerminalMap::get_terminal(const Vector2i &coords) {
-    return get_terminal_as<Terminal>(coords);
-}
-Ref<Broker> TerminalMap::get_broker(const Vector2i &coords) {
-    return get_terminal_as<Broker>(coords);
-}
-Ref<StationWOMethods> TerminalMap::get_station(const Vector2i &coords) {
-    return get_terminal_as<StationWOMethods>(coords);
-}
-Ref<StationWOMethods> TerminalMap::get_ai_station(const Vector2i &coords) {
-    return get_terminal_as<StationWOMethods>(coords, [](const Vector2i &pos) { return TerminalMap::get_instance()->is_ai_station(pos);});
-}
-
 void TerminalMap::encode_building(PositionComponent pos) {
+    std::scoped_lock lock(m);
     id_to_position_component[pos.building_id] = pos;
 }
 
@@ -518,58 +479,58 @@ PositionComponent TerminalMap::get_position_component(int pos_id) const {
 }
 
 //Action doers
-void TerminalMap::set_construction_site_recipe(const Vector2i &coords, Recipe* selected_recipe) {
-    if (is_owned_recipeless_construction_site(coords)) {
-        get_terminal_as<ConstructionSite>(coords) -> set_recipe(selected_recipe);
-    }
-}
+// void TerminalMap::set_construction_site_recipe(const Vector2i &coords, Recipe* selected_recipe) {
+//     if (is_owned_recipeless_construction_site(coords)) {
+//         get_terminal_as<ConstructionSite>(coords) -> set_recipe(selected_recipe);
+//     }
+// }
 
-void TerminalMap::set_construction_site_recipe_godot(const Vector2i &coords, const Array &selected_recipe) {
-    if (is_owned_recipeless_construction_site(coords)) {
-        get_terminal_as<ConstructionSite>(coords) -> set_recipe(RecipeInfo::get_instance()->get_recipe(selected_recipe[0], selected_recipe[1]).value());
-    }
-}
+// void TerminalMap::set_construction_site_recipe_godot(const Vector2i &coords, const Array &selected_recipe) {
+//     if (is_owned_recipeless_construction_site(coords)) {
+//         get_terminal_as<ConstructionSite>(coords) -> set_recipe(RecipeInfo::get_instance()->get_recipe(selected_recipe[0], selected_recipe[1]).value());
+//     }
+// }
 
-void TerminalMap::destroy_recipe(const Vector2i &coords) {
-    if (is_owned_recipeless_construction_site(coords)) {
-        get_terminal_as<ConstructionSite>(coords) -> destroy_recipe();
-    }
-}
+// void TerminalMap::destroy_recipe(const Vector2i &coords) {
+//     if (is_owned_recipeless_construction_site(coords)) {
+//         get_terminal_as<ConstructionSite>(coords) -> destroy_recipe();
+//     }
+// }
 
-void TerminalMap::transform_construction_site_to_factory(const Vector2i &coords) { // Doesn't keep same id
-    if (is_owned_construction_site(coords)) {
-        Ref<ConstructionSite> old_site = get_terminal_as<ConstructionSite>(coords);
-        Factory factory = create_factory(coords, old_site->get_player_owner(), old_site->get_recipe()[0], old_site->get_recipe()[1]);
-        {
-            std::unique_lock lock(cargo_map_mutex);
-            terminal_id_to_terminal.erase(old_site->get_terminal_id());
-            cargo_map_terminals.erase(old_site->get_location());
-        }
-        encode_factory_from_construction_site(factory);
+// void TerminalMap::transform_construction_site_to_factory(const Vector2i &coords) { // Doesn't keep same id
+//     if (is_owned_construction_site(coords)) {
+//         Ref<ConstructionSite> old_site = get_terminal_as<ConstructionSite>(coords);
+//         Factory factory = create_factory(coords, old_site->get_player_owner(), old_site->get_recipe()[0], old_site->get_recipe()[1]);
+//         {
+//             std::unique_lock lock(cargo_map_mutex);
+//             terminal_id_to_terminal.erase(old_site->get_terminal_id());
+//             cargo_map_terminals.erase(old_site->get_location());
+//         }
+//         encode_factory_from_construction_site(factory);
 
-    }
-}
+//     }
+// }
 
-void TerminalMap::edit_order_station(const Vector2i &coords, int type, int amount, bool buy, float max_price) {
-    if (is_station(coords)) {
+// void TerminalMap::edit_order_station(const Vector2i &coords, int type, int amount, bool buy, float max_price) {
+//     if (is_station(coords)) {
 
-        Ref<StationWOMethods> station = get_terminal_as<StationWOMethods>(coords);
-        station -> edit_order(type, amount, buy, max_price);
+//         Ref<StationWOMethods> station = get_terminal_as<StationWOMethods>(coords);
+//         station -> edit_order(type, amount, buy, max_price);
 
-    }
-}
+//     }
+// }
 
-void TerminalMap::remove_order_station(const Vector2i &coords, int type) {
-    if (is_station(coords)) {
+// void TerminalMap::remove_order_station(const Vector2i &coords, int type) {
+//     if (is_station(coords)) {
 
-        Ref<StationWOMethods> station = get_terminal_as<StationWOMethods>(coords);
-        station -> remove_order(type);
-    }
-}
+//         Ref<StationWOMethods> station = get_terminal_as<StationWOMethods>(coords);
+//         station -> remove_order(type);
+//     }
+// }
 
-void TerminalMap::refresh_road_depots(const std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> &s) {
-    for (auto it = s.begin(); it != s.end(); it++) {
-        Ref<RoadDepot> road_depot = get_terminal_as<RoadDepot>(*it);
-        if (road_depot.is_valid()) road_depot -> refresh_other_road_depots();
-    }
-}
+// void TerminalMap::refresh_road_depots(const std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> &s) {
+//     for (auto it = s.begin(); it != s.end(); it++) {
+//         Ref<RoadDepot> road_depot = get_terminal_as<RoadDepot>(*it);
+//         if (road_depot.is_valid()) road_depot -> refresh_other_road_depots();
+//     }
+// }

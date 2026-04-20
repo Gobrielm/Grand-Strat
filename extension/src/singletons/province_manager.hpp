@@ -72,6 +72,7 @@ public:
 
     //Economy Testing Functions
     float get_average_cash_of_factory() const;
+    float get_average_cash_of_station() const;
     float get_average_factory_level() const;
     unsigned long get_grain_demand() const;
     unsigned long get_grain_supply() const;

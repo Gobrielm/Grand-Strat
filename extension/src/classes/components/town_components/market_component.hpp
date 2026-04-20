@@ -36,6 +36,10 @@ class MarketComponent {
 
     void add_order(std::shared_ptr<TradeOrder> to);
     float get_price(int type) const;
+    float get_min_price(int type) const;
+    float get_max_price(int type) const;
+
+    std::unordered_map<int, float> get_current_prices() const;
 
     std::pair<std::vector<std::pair<int, float>>, std::vector<std::pair<int, float>>> get_market_info_plot(int type) const;
     

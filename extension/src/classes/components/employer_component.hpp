@@ -2,6 +2,7 @@
 #include <classes/base_pop.hpp>
 
 class Recipe;
+class Town;
 
 class EmployerComponent {
 
@@ -21,8 +22,7 @@ class EmployerComponent {
     EmployerComponent(Recipe recipe, std::unordered_map<PopTypes, int> p_pops_needed);
     EmployerComponent(const EmployerComponent& other);
 
-    EmployerComponent operator=(const EmployerComponent& other) const;
-    EmployerComponent operator=(EmployerComponent other) const;
+    EmployerComponent& operator=(const EmployerComponent& other);
     
     void upgrade();
     void degrade();
@@ -45,4 +45,7 @@ class EmployerComponent {
     std::vector<int> get_pops_to_fire() const;
 
     void set_pops_needed(const std::unordered_map<PopTypes, int> new_pops_needed);
+
+    float get_wage(const Town& town, float current_cash) const;
+    float get_theoretical_gross_profit(const Town& town) const;
 };

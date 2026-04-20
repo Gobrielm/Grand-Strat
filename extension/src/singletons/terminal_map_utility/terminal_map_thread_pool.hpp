@@ -1,7 +1,5 @@
 #pragma once
 
-#include "../../classes/terminal.hpp"
-
 #include <vector>
 #include <list>
 #include <atomic>

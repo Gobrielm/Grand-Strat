@@ -1,6 +1,5 @@
 #pragma once
 
-#include <godot_cpp/classes/ref_counted.hpp>
 #include <classes/factory_utility/recipe.hpp>
 #include <classes/components/capital_component.hpp>
 #include <classes/components/owner_component.hpp>
@@ -13,11 +12,7 @@
 
 using namespace godot;
 
-class Factory: public RefCounted {
-    GDCLASS(Factory, RefCounted);
-
-protected:
-    static void _bind_methods();
+class Factory {
 
 public:
     PositionComponent position;
@@ -35,9 +30,8 @@ public:
     ~Factory();
     Factory(std::pair<int, int> p_position = {0, 0}, int p_owner = 0, EmployerComponent employer_component = EmployerComponent());
 
-    Factory& operator=(Factory& factory) {
-        return factory;
-    }
+    Factory(const Factory& other);
+    Factory& operator=(const Factory& other);
 
     //Construction
     void create_construction_materials();
@@ -70,18 +64,16 @@ public:
     float get_last_month_income() const;
 
     // Employment
-    bool is_hiring() const;
+    bool is_hiring(Town& town) const;
     bool is_hiring(PopTypes pop_type) const;
-    bool is_firing() const;
-    float get_wage() const;
-    float get_theoretical_gross_profit() const;
+    bool is_firing(Town& town) const;
     float get_real_gross_profit(int months_to_average) const; // 1-indexed
-    void employ_pop(BasePop& pop);
+    void employ_pop(Town& town, BasePop& pop);
+    float get_wage(Town& town);
 
     // Process Hooks
     void day_tick();
     void month_tick();
 
     void adjust_trade_orders(Town& town);
-
 };

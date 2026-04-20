@@ -1,10 +1,11 @@
 #pragma once
 
 #include <godot_cpp/classes/object.hpp>
+#include <src/utility/vector2i_hash.hpp>
+
+#include <mutex>
 #include <shared_mutex>
 #include <unordered_set>
-#include "../utility/vector2i_hash.hpp"
-#include "factory_template.hpp"
 #include <vector>
 #include <map>
 
@@ -15,6 +16,9 @@ class Station;
 class TradingSystem;
 class MarketComponent;
 class EmployerComponent;
+class SubsistenceFarm;
+class PopManager;
+class InitialBuilder;
 enum PopTypes;
 
 using namespace godot;
@@ -25,6 +29,8 @@ class Province : public Object {
     friend MarketComponent;
     friend ProvinceManager;
     friend EmployerComponent;
+    friend PopManager;
+    friend InitialBuilder;
 
     mutable std::mutex m;
     mutable std::shared_mutex pops_lock;
@@ -46,6 +52,7 @@ class Province : public Object {
     std::unordered_map<int, std::pair<int, BuildingType>> id_to_vector_position;
     std::vector<Factory> factories;
     std::vector<Station> stations;
+    std::vector<SubsistenceFarm> sub_farms;
 
     protected:
     static void _bind_methods();
@@ -81,6 +88,7 @@ class Province : public Object {
     void add_factory(Factory& factory);
     void add_town(Town& p_town);
     void add_station(Station& station);
+    void add_subsistence_farm(SubsistenceFarm& farm);
 
     Factory& get_factory(int pos_id);
     Station& get_station(int pos_id);

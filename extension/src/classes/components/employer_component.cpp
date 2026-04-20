@@ -1,5 +1,6 @@
 #include "employer_component.hpp"
 #include <classes/factory_utility/recipe.hpp>
+#include <classes/map_objects/town.hpp>
 
 EmployerComponent::EmployerComponent() {
 
@@ -18,12 +19,14 @@ EmployerComponent::EmployerComponent(const EmployerComponent& other):
     pops_needed(other.pops_needed) {
 }
 
-EmployerComponent EmployerComponent::operator=(const EmployerComponent& other) const {
-    return EmployerComponent(other);
-}
+EmployerComponent& EmployerComponent::operator=(const EmployerComponent& other) {
+    if (this == &other) return *this;
 
-EmployerComponent EmployerComponent::operator=(EmployerComponent other) const {
-    return EmployerComponent(other);
+    employees = other.employees;
+    pops_needed = other.pops_needed;
+    pops_to_fire = other.pops_to_fire;
+
+    return *this;
 }
 
 void EmployerComponent::upgrade() {
@@ -137,4 +140,27 @@ std::unordered_map<int, PopTypes> EmployerComponent::get_employee_ids() const {
 
 void EmployerComponent::set_pops_needed(const std::unordered_map<PopTypes, int> new_pops_needed) {
     pops_needed = new_pops_needed;
+}
+
+float EmployerComponent::get_wage(const Town& town, float current_cash) const {
+    float gross_profit = std::min(float(get_theoretical_gross_profit(town)), current_cash);
+
+    int pops_needed = get_pops_needed_num();
+
+    if (pops_needed == 0) return 0;
+    return (gross_profit) / pops_needed;
+}
+
+float EmployerComponent::get_theoretical_gross_profit(const Town& town) const {
+    float available = 0;
+
+    double effective_level = std::max(get_level(), 1.0);
+    for (const auto &[type, amount]: recipe.get_inputs()) {
+        available -= town.mp.get_price(type) * amount * effective_level;
+    }
+    for (const auto &[type, amount]: recipe.get_outputs()) {
+        available += town.mp.get_price(type) * amount * effective_level;
+    }
+    available *= 30;
+    return available;
 }

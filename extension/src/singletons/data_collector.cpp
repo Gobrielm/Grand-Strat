@@ -44,10 +44,10 @@ void DataCollector::month_tick() {
     if (is_collecting_data) {
         auto pops_data = (pop_manager->get_pop_statistics());
 
-        road_depot_data_points.push_back(terminal_map -> get_average_cash_of_road_depot());
-        factory_data_points.push_back(terminal_map -> get_average_cash_of_factory());
+        station_data_points.push_back(province_manager -> get_average_cash_of_station());
+        factory_data_points.push_back(province_manager -> get_average_cash_of_factory());
         pops_data_points.push_back((*pops_data)[AveragePopWealth]);
-        factory_ave_level.push_back(terminal_map -> get_average_factory_level());
+        factory_ave_level.push_back(province_manager -> get_average_factory_level());
         starving_pops.push_back((*pops_data)[NumOfStarvingPops]);
         grain_supply.push_back(0);
         grain_demand.push_back(0);
@@ -66,7 +66,7 @@ void DataCollector::month_tick() {
 void DataCollector::write_data_to_file() {
     std::ofstream file("data.xlsx");
     file << "Month,";
-    file << "Road Depot Data points,";
+    file << "Station Data points,";
     file << "Factory Data points,";
     file << "Pops average wealth,";
     file << "Factory average level,";
@@ -78,9 +78,9 @@ void DataCollector::write_data_to_file() {
     file << "Real Unemployment Rate,";
     file << "Number Of Peasants";
     file << '\n';
-    for (int i = 0; i < road_depot_data_points.size(); i++) {
+    for (int i = 0; i < station_data_points.size(); i++) {
         file << (i + 1) << ",";
-        file << road_depot_data_points[i] << ",";
+        file << station_data_points[i] << ",";
         file << factory_data_points[i] << ",";
         file << pops_data_points[i] << ",";
         file << factory_ave_level[i] << ",";

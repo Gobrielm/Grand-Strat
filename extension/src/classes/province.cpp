@@ -1,18 +1,17 @@
 #include "../singletons/terminal_map.hpp"
 #include "../singletons/cargo_info.hpp"
 #include "../singletons/trading_system.hpp"
+#include "../singletons/pop_manager.hpp"
 
 #include "province.hpp"
+#include "initial_builder.hpp"
 #include "base_pop.hpp"
-#include "terminal.hpp"
-#include "factory_template.hpp"
 #include "town.hpp"
 #include "factory_utility/recipe.hpp"
-#include "../singletons/pop_manager.hpp"
 
 #include <classes/map_objects/subsistence_farm.hpp>
 #include <classes/components/town_components/market_component.hpp>
-#include <classes/components/town_components/employer_component.hpp>
+#include <classes/components/employer_component.hpp>
 #include <classes/map_objects/station.hpp>
 
 void Province::_bind_methods() {
@@ -65,11 +64,10 @@ int Province::get_population() const {
 }
 
 float Province::get_theoretical_supply_of_grain_from_peasants() const {
-    std::unique_ptr<Recipe> peasant_recipe = SubsistenceFarm::get_recipe();
-    float grain_o = (peasant_recipe->get_outputs().begin())->second;
-    int pops_needed = peasant_recipe->get_pops_needed_num();
+    EmployerComponent peasant_ec = SubsistenceFarm::get_default_employer_component();
+    float grain_o = (peasant_ec.recipe.get_outputs().begin())->second;
+    int pops_needed = peasant_ec.get_pops_needed_num();
     auto stats = get_pop_type_statistics();
-    std::shared_lock lock(m);
     return (grain_o * stats[peasant]) / pops_needed;
 }
 
@@ -145,28 +143,20 @@ const std::vector<Vector2i> Province::get_tiles_vector() const {
 std::vector<Vector2i> Province::get_town_centered_tiles() const { //Assumes one town
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     std::vector<Vector2i> v;
-    Vector2i town_tile;
-    {
-        std::shared_lock lock(m);
-        for (Vector2i tile: terminal_tiles) {
-            if (terminal_map->is_town(tile)) {
-                town_tile = tile;
-                break;
-            }
-        }
-    }
     
-    if (town_tile == Vector2i(0, 0)) {
-        ERR_FAIL_V_MSG(v, "No town in province");
-    }
     std::priority_queue<godot_helpers::weighted_value<Vector2i>,
-    std::vector<godot_helpers::weighted_value<Vector2i>>, /*vector on backend*/
-    std::greater<godot_helpers::weighted_value<Vector2i>> /*Smallest in front*/
+        std::vector<godot_helpers::weighted_value<Vector2i>>, /*vector on backend*/
+        std::greater<godot_helpers::weighted_value<Vector2i>> /*Smallest in front*/
     > pq;
 
-    auto push = [&pq](Vector2i tile, int weight) -> void {pq.push(godot_helpers::weighted_value<Vector2i>(tile, weight));};
+    auto push = [&pq](Vector2i tile, int weight) -> void {
+        pq.push(godot_helpers::weighted_value<Vector2i>(tile, weight));
+    };
+
+    auto town_tile = town.position.get_position_vector2i();
 
     for (Vector2i tile: tiles) {
+        if (tile == town_tile) continue;
         push(tile, tile.distance_to(town_tile));
     }
 
@@ -222,6 +212,12 @@ void Province::add_station(Station& station) {
     std::scoped_lock lock(m);
     stations[station.position.building_id] = station;
     position_components[station.position.get_position_vector2i()].push_back(station.position);
+}
+
+void Province::add_subsistence_farm(SubsistenceFarm& farm) {
+    std::scoped_lock lock(m);
+    sub_farms[farm.position.building_id] = farm;
+    position_components[farm.position.get_position_vector2i()].push_back(farm.position);
 }
 
 Factory& Province::get_factory(int pos_id) {
@@ -372,16 +368,17 @@ int Province::create_town_pop(Variant culture, Vector2i p_location) {
 }
 
 std::vector<int> Province::create_buildings_for_peasants() {
-    Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
+    auto terminal_map = TerminalMap::get_instance();
     std::vector<int> subsistence_farm_ids;
+
     for (const Vector2i &tile: tiles) {
-        int temp = terminal_map->get_cargo_value_of_tile(tile, 10);
+        int temp = terminal_map->get_cargo_value_of_tile(tile, 10); // Grain id
         if (temp > 0) {
-            Ref<SubsistenceFarm> farm = Ref<SubsistenceFarm>(memnew(SubsistenceFarm(tile, 0)));
-            farm->set_local_town(town.position.get_position_vector2i());
+            SubsistenceFarm farm = SubsistenceFarm(tile, 0);
+            add_subsistence_farm(farm);
+            terminal_map->encode_building(farm.position);
             
-            terminal_map->create_isolated_terminal(farm);
-            subsistence_farm_ids.push_back(farm->get_terminal_id());
+            subsistence_farm_ids.push_back(farm.position.building_id);
         }
     }
     return subsistence_farm_ids;
@@ -403,19 +400,16 @@ void Province::employ_peasants() {
     
     {
         int i = 0;
-        std::unordered_set<int> pops_copy;
-        {
-            std::shared_lock lock(pops_lock);
-            pops_copy = pops;
-        }
+        std::scoped_lock lock(m);
 
-        for (const auto& pop_id: pops_copy) {
+        for (const auto& pop_id: pops) {
             auto pop = pop_manager->get_pop(pop_id);
             auto lock = pop_manager->lock_pop_write(pop_id);
             if (pop->get_type() != peasant) continue;
             Ref<SubsistenceFarm> farm = terminal_map->get_terminal_as<SubsistenceFarm>(farms[i]);
-            pop->set_location(farm->get_location());
-            farm->add_pop(pop);
+            
+            pop->set_location(farm->position.get_position_vector2i());
+            farm->add_pop(town, pop);
 
             i = (i + 1) % farms.size();
         }

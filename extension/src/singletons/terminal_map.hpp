@@ -12,8 +12,6 @@
 
 #include "terminal_map_utility/terminal_map_thread_pool.hpp"
 #include "../utility/vector2i_hash.hpp"
-#include "../classes/construction_site.hpp"
-#include "../classes/company_ai.hpp"
 
 #include <src/classes/map_objects/factory.hpp>
 #include <src/classes/map_objects/town.hpp>
@@ -89,36 +87,29 @@ public:
     void encode_factory(Factory& factory, int mult = 1);
     void encode_factory_no_calls_to_cargo_map(Factory& factory, int mult = 1); // used when calling this a lot to prevent deferred calls from clogging memory
     void encode_factory_from_construction_site(Factory& factory);
-    void encode_road_depot(Ref<RoadDepot> road_depot);
-    void encode_construction_site(Ref<ConstructionSite> construction_site);
-    void add_connected_brokers(Ref<Broker> p_broker);
-    void add_connected_stations(Ref<RoadDepot> road_depot);
-    void find_stations(Ref<Broker> broker);
-    Factory create_factory(const Vector2i &p_location, int p_player_owner, const Dictionary &p_inputs, const Dictionary &p_outputs);
-    Factory create_primary_factory(const Vector2i &p_location, int p_player_owner, int type) const;
+    // void encode_road_depot(Ref<RoadDepot> road_depot);
+    // void encode_construction_site(Ref<ConstructionSite> construction_site);
+    // void add_connected_brokers(Ref<Broker> p_broker);
+    // void add_connected_stations(Ref<RoadDepot> road_depot);
+    // void find_stations(Ref<Broker> broker);
+    // Factory create_factory(const Vector2i &p_location, int p_player_owner, const Dictionary &p_inputs, const Dictionary &p_outputs);
+    // Factory create_primary_factory(const Vector2i &p_location, int p_player_owner, int type) const;
     
     //Checkers
-    int get_cargo_value_of_tile(const Vector2i &coords, int type) const;
-    std::vector<int> get_available_resources_of_tile(const Vector2i &coords) const;
+    int get_cargo_value_of_tile(const Vector2i coords, int type) const;
+    std::vector<int> get_available_resources_of_tile(const Vector2i coords) const;
 
     //Info getters
-    Dictionary get_cargo_dict(const Vector2i &coords);
-    Array get_construction_site_recipe(const Vector2i &coords);
-    Dictionary get_construction_materials(const Vector2i &coords);
-    Dictionary get_needed_construction_materials(const Vector2i &coords);
-    int get_cash_of_firm(const Vector2i &coords);
-    Dictionary get_local_prices(const Vector2i &coords);
-    Dictionary get_station_orders(const Vector2i &coords);
-    bool is_tile_traversable(const Vector2i& coords, bool is_water_untraversable = true);
-    bool is_tile_available(const Vector2i& coords);
+    // Dictionary get_cargo_dict(const Vector2i &coords);
+    // Array get_construction_site_recipe(const Vector2i &coords);
+    // Dictionary get_construction_materials(const Vector2i &coords);
+    // Dictionary get_needed_construction_materials(const Vector2i &coords);
+    int get_cash_of_firm(const Vector2i coords);
+    // Dictionary get_local_prices(const Vector2i &coords);
+    // Dictionary get_station_orders(const Vector2i &coords);
+    bool is_tile_traversable(const Vector2i coords, bool is_water_untraversable = true);
+    bool is_tile_available(const Vector2i coords);
     Array get_available_primary_recipes(const Vector2i& coords) const;
-
-    //Getters
-    Ref<Terminal> get_terminal(const Vector2i &coords);
-    Ref<Broker> get_broker(const Vector2i &coords);
-    Ref<StationWOMethods> get_station(const Vector2i &coords);
-    Ref<StationWOMethods> get_ai_station(const Vector2i &coords);
-
 
     void encode_building(PositionComponent pos);
     void place_object_on_map(PositionComponent pos);
@@ -160,13 +151,13 @@ public:
     }
    
     //Action doers
-    void set_construction_site_recipe(const Vector2i &coords, Recipe* selected_recipe);
-    void set_construction_site_recipe_godot(const Vector2i &coords, const Array &selected_recipe);
-    void destroy_recipe(const Vector2i &coords);
-    void transform_construction_site_to_factory(const Vector2i &coords);
-    void edit_order_station(const Vector2i &coords, int type, int amount, bool buy, float max_price);
-    void remove_order_station(const Vector2i &coords, int type);
-    void refresh_road_depots(const std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> &s);
+    // void set_construction_site_recipe(const Vector2i &coords, Recipe* selected_recipe);
+    // void set_construction_site_recipe_godot(const Vector2i &coords, const Array &selected_recipe);
+    // void destroy_recipe(const Vector2i &coords);
+    // void transform_construction_site_to_factory(const Vector2i &coords);
+    // void edit_order_station(const Vector2i &coords, int type, int amount, bool buy, float max_price);
+    // void remove_order_station(const Vector2i &coords, int type);
+    // void refresh_road_depots(const std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> &s);
 
 };
 

@@ -24,11 +24,11 @@ class InitialBuilder: public Object {
     int get_levels_to_build(int type, Province* province) const;
     int get_levels_to_build_helper(int type, int demand) const;
     void build_t2_factory_in_towns(Province* province);
-    void build_t2_factory_in_town(Ref<Town> town, int output_type);
-    void build_and_connect_depots();
-    void place_most_connected_depot(const Vector2i &center);
-    int count_adjacent_factories(const Vector2i &center) const;
-    void place_depot(const Vector2i& tile);
+    void build_t2_factory_in_town(Town& town, int output_type);
+    // void build_and_connect_depots();
+    // void place_most_connected_depot(const Vector2i &center);
+    // int count_adjacent_factories(const Vector2i &center) const;
+    // void place_depot(const Vector2i& tile);
     bool is_tile_owned(Vector2i tile) const;
 
 protected:

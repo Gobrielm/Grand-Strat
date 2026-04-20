@@ -31,12 +31,14 @@ void InitialBuilder::build_initital_factories() {
     std::unordered_set<int> prov_ids = province_manager->get_country_provinces(country_id);
     for (const int &prov_id: prov_ids) {
         Province* province = province_manager->get_province(prov_id);
-        if (province->has_town()) {
-            build_factory_type(CargoInfo::get_instance()->get_cargo_type("grain"), province);
-            build_factory_type(CargoInfo::get_instance()->get_cargo_type("wood"), province);
-            build_factory_type(CargoInfo::get_instance()->get_cargo_type("salt"), province);
-            build_t2_factory_in_towns(province);
-        }
+
+        std::scoped_lock lock(province->m);
+
+        build_factory_type(CargoInfo::get_instance()->get_cargo_type("grain"), province);
+        build_factory_type(CargoInfo::get_instance()->get_cargo_type("wood"), province);
+        build_factory_type(CargoInfo::get_instance()->get_cargo_type("salt"), province);
+        build_t2_factory_in_towns(province);
+        
     }
     build_and_connect_depots();
 
@@ -54,6 +56,7 @@ void InitialBuilder::build_factory_type(int type, Province* province) {
     if (num_of_levels_to_place == 0) return;
     int levels_placed = 0;
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
+
     for (const Vector2i &tile: province->get_town_centered_tiles()) {
         if (TerminalMap::get_instance()->is_tile_available(tile)) {
             int cargo_val = terminal_map->get_cargo_value_of_tile(tile, type);
@@ -119,8 +122,8 @@ int InitialBuilder::get_levels_to_build(int type, Province* province) const {
 }
 
 int InitialBuilder::get_levels_to_build_helper(int type, int demand) const {
-    Recipe* recipe = RecipeInfo::get_instance()->get_primary_recipe_for_type_read_only(type);
-    float ouput_quant = recipe->get_outputs()[type];
+    auto ec = RecipeInfo::get_instance()->get_primary_employer_component_for_type(type);
+    float ouput_quant = ec.value().recipe.get_outputs()[type];
     int levels_to_build = round((demand) / (ouput_quant * 30));
     return levels_to_build;
 }
@@ -128,92 +131,94 @@ int InitialBuilder::get_levels_to_build_helper(int type, int demand) const {
 void InitialBuilder::build_t2_factory_in_towns(Province* province) {
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     Ref<CargoInfo> cargo_info = CargoInfo::get_instance();
-    for (const Vector2i &tile: province->get_town_tiles()) {
-        Ref<Town> town = terminal_map->get_town(tile);
-        build_t2_factory_in_town(town, cargo_info->get_cargo_type("lumber"));
-        build_t2_factory_in_town(town, cargo_info->get_cargo_type("bread"));
-    }
-}
 
-void InitialBuilder::build_t2_factory_in_town(Ref<Town> town, int output_type) {
-    Recipe* recipe = RecipeInfo::get_instance()->get_recipe_for_type(output_type);
-    ERR_FAIL_COND_MSG(recipe == nullptr, "Recipe is null from type: " + CargoInfo::get_instance()->get_cargo_name(output_type));
-    Ref<AiFactory> factory = Ref<AiFactory>(memnew(AiFactory(town->get_location(), 0, recipe)));
-    TerminalMap::get_instance()->create_isolated_factory_in_town(factory);
-}
-
-void InitialBuilder::build_and_connect_depots() {
-    Ref<ProvinceManager> province_manager = ProvinceManager::get_instance();
-    Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
-    std::unordered_set<int> prov_ids = province_manager->get_country_provinces(country_id);
+    Town& town = province->town;
+    build_t2_factory_in_town(town, cargo_info->get_cargo_type("lumber"));
+    build_t2_factory_in_town(town, cargo_info->get_cargo_type("bread"));
     
-    for (const int &prov_id: prov_ids) {
-        Province* province = province_manager->get_province(prov_id);
-        for (const Vector2i &tile: province->get_terminal_tiles_set()) {
-            if (CompanyAi::is_tile_adjacent_to_depot(tile)) continue;
-            Ref<FactoryTemplate> factory = terminal_map->get_terminal_as<FactoryTemplate>(tile);
-            if (factory.is_null()) continue;
+}
+
+void InitialBuilder::build_t2_factory_in_town(Town& town, int output_type) {
+    auto ec = RecipeInfo::get_instance()->get_employer_component_for_type(output_type);
+    ERR_FAIL_COND_MSG(!ec.has_value(), "Recipe is null from type: " + CargoInfo::get_instance()->get_cargo_name(output_type));
+
+    // TODO
+    // Ref<AiFactory> factory = Ref<AiFactory>(memnew(AiFactory(town->get_location(), 0, recipe)));
+    // TerminalMap::get_instance()->create_isolated_factory_in_town(factory);
+}
+
+// void InitialBuilder::build_and_connect_depots() {
+//     Ref<ProvinceManager> province_manager = ProvinceManager::get_instance();
+//     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
+//     std::unordered_set<int> prov_ids = province_manager->get_country_provinces(country_id);
+    
+//     for (const int &prov_id: prov_ids) {
+//         Province* province = province_manager->get_province(prov_id);
+//         for (const Vector2i &tile: province->get_terminal_tiles_set()) {
+//             if (CompanyAi::is_tile_adjacent_to_depot(tile)) continue;
+//             Ref<FactoryTemplate> factory = terminal_map->get_terminal_as<FactoryTemplate>(tile);
+//             if (factory.is_null()) continue;
             
-            place_most_connected_depot(tile);
-        }
-    }
-}
+//             place_most_connected_depot(tile);
+//         }
+//     }
+// }
 
-void InitialBuilder::place_most_connected_depot(const Vector2i &center) {
-    Vector2i best_cell;
-    int highest_score = 0;
+// void InitialBuilder::place_most_connected_depot(const Vector2i &center) {
+//     Vector2i best_cell;
+//     int highest_score = 0;
 
-    Array cells = TerminalMap::get_instance()->get_main_map()->get_surrounding_cells(center);
-    for (int i = 0; i < cells.size(); i++) {
-        Vector2i cell = cells[i];
-        if (!TerminalMap::get_instance()->is_tile_available(cell)) continue;
-        int count = count_adjacent_factories(cell);
-        if (count > highest_score) {
-            highest_score = count;
-            best_cell = cell;
-        }
-    }
+//     Array cells = TerminalMap::get_instance()->get_main_map()->get_surrounding_cells(center);
+//     for (int i = 0; i < cells.size(); i++) {
+//         Vector2i cell = cells[i];
+//         if (!TerminalMap::get_instance()->is_tile_available(cell)) continue;
+//         int count = count_adjacent_factories(cell);
+//         if (count > highest_score) {
+//             highest_score = count;
+//             best_cell = cell;
+//         }
+//     }
 
-    if (best_cell != Vector2i(0, 0)) {
-        place_depot(best_cell);
-        connect_road_depot(best_cell);
-    }
-}
+//     if (best_cell != Vector2i(0, 0)) {
+//         place_depot(best_cell);
+//         connect_road_depot(best_cell);
+//     }
+// }
 
-int InitialBuilder::count_adjacent_factories(const Vector2i &center) const {
-    int count = 0;
-    Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
-    Array tiles = terminal_map->get_main_map()->get_surrounding_cells(center);
-    for (int i = 0; i < tiles.size(); i++) {
-        Vector2i tile = tiles[i];
-        Ref<FactoryTemplate> factory = terminal_map->get_terminal_as<FactoryTemplate>(tile);
-        if (factory.is_valid()) count++;
-    }
-    return count;
-}
+// int InitialBuilder::count_adjacent_factories(const Vector2i &center) const {
+//     int count = 0;
+//     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
+//     Array tiles = terminal_map->get_main_map()->get_surrounding_cells(center);
+//     for (int i = 0; i < tiles.size(); i++) {
+//         Vector2i tile = tiles[i];
+//         Ref<FactoryTemplate> factory = terminal_map->get_terminal_as<FactoryTemplate>(tile);
+//         if (factory.is_valid()) count++;
+//     }
+//     return count;
+// }
 
-void InitialBuilder::connect_road_depot(const Vector2i &depot) {
-    Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
-    std::vector<Vector2i> v = bfs_to_closest(depot, [](Vector2i tile) {
-        return RoadMap::get_instance() -> get_road_value(tile) != 0 || TerminalMap::get_instance() -> is_town(tile);
-    });
-    if (v.size() == 0) return;
-    auto start = v.begin();
-    RoadMap* road_map = RoadMap::get_instance();
+// void InitialBuilder::connect_road_depot(const Vector2i &depot) {
+//     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
+//     std::vector<Vector2i> v = bfs_to_closest(depot, [](Vector2i tile) {
+//         return RoadMap::get_instance() -> get_road_value(tile) != 0 || TerminalMap::get_instance() -> is_town(tile);
+//     });
+//     if (v.size() == 0) return;
+//     auto start = v.begin();
+//     RoadMap* road_map = RoadMap::get_instance();
     
-    std::advance(start, 1);
+//     std::advance(start, 1);
 
-    for (auto it = start; it != v.end(); it++) {
-        road_map->place_road(*it);
-    }
+//     for (auto it = start; it != v.end(); it++) {
+//         road_map->place_road(*it);
+//     }
 
-    //Places depot at town
-    if (terminal_map -> is_town(v.front())) {
-        start = v.begin();
-        std::advance(start, 1);
-        if (terminal_map->is_tile_available(*start)) place_depot(*start);
-    }
-}
+//     //Places depot at town
+//     if (terminal_map -> is_town(v.front())) {
+//         start = v.begin();
+//         std::advance(start, 1);
+//         if (terminal_map->is_tile_available(*start)) place_depot(*start);
+//     }
+// }
 
 std::vector<Vector2i> InitialBuilder::bfs_to_closest(Vector2i start, bool(*f)(Vector2i)) {
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
@@ -271,10 +276,10 @@ std::vector<Vector2i> InitialBuilder::bfs_to_closest(Vector2i start, bool(*f)(Ve
     return toReturn;
 }
 
-void InitialBuilder::place_depot(const Vector2i& tile) {
-    RoadMap::get_instance()->place_road_depot(tile);
-	FactoryCreator::get_instance()->create_road_depot(tile, owner_id);
-}
+// void InitialBuilder::place_depot(const Vector2i& tile) {
+//     RoadMap::get_instance()->place_road_depot(tile);
+// 	FactoryCreator::get_instance()->create_road_depot(tile, owner_id);
+// }
 
 bool InitialBuilder::is_tile_owned(Vector2i tile) const {
     Ref<ProvinceManager> province_manager = ProvinceManager::get_instance();
