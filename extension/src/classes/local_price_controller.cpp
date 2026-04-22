@@ -1,7 +1,7 @@
 #include "local_price_controller.hpp"
 
 #include <godot_cpp/core/class_db.hpp>
-#include "../singletons/cargo_info.hpp"
+#include "singletons/cargo_info.hpp"
 
 using namespace godot;
 

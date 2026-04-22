@@ -27,20 +27,19 @@ void initialize_gdextension_types(ModuleInitializationLevel p_level)
 	}
 
 	//--verbose in godot for more details
-	GDREGISTER_CLASS(MoneyController);
-	GDREGISTER_CLASS(Province);
-	GDREGISTER_CLASS(TradeOrder);
+	// GDREGISTER_CLASS(MoneyController);
+	// GDREGISTER_CLASS(Province);
+	// GDREGISTER_CLASS(TradeOrder);
 	
-	GDREGISTER_CLASS(RoadDepot);
-	GDREGISTER_CLASS(InitialBuilder);
-	GDREGISTER_CLASS(CargoInfo);
-	GDREGISTER_CLASS(RoadMap);
-	GDREGISTER_CLASS(TerminalMap);
-	GDREGISTER_CLASS(DataCollector);
-	GDREGISTER_CLASS(ProvinceManager);
-	GDREGISTER_CLASS(Country);
-	GDREGISTER_CLASS(CountryManager);
-	StaticRegistry::initialize();
+	// GDREGISTER_CLASS(InitialBuilder);
+	// GDREGISTER_CLASS(CargoInfo);
+	// GDREGISTER_CLASS(RoadMap);
+	// GDREGISTER_CLASS(TerminalMap);
+	// GDREGISTER_CLASS(DataCollector);
+	// GDREGISTER_CLASS(ProvinceManager);
+	// GDREGISTER_CLASS(Country);
+	// GDREGISTER_CLASS(CountryManager);
+	// StaticRegistry::initialize();
 	
 }
 
@@ -49,7 +48,7 @@ void uninitialize_gdextension_types(ModuleInitializationLevel p_level) {
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
-	StaticRegistry::uninitialize();
+	// StaticRegistry::uninitialize();
 }
 
 extern "C"

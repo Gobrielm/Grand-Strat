@@ -1,7 +1,10 @@
+#pragma once
+
 #include <vector>
 #include <memory>
-#include <src/classes/map_objects/factory.hpp>
 
+class Factory;
+class Town;
 
 class TradingSystem {
 

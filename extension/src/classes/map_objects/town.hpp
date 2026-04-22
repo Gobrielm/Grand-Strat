@@ -4,14 +4,11 @@
 #include <unordered_set>
 #include <vector>
 
-#include <classes/base_pop.hpp>
+#include "classes/base_pop.hpp"
 
-#include <classes/components/capital_component.hpp>
-#include <classes/components/owner_component.hpp>
-#include <classes/components/storage_component.hpp>
-#include <classes/components/position_component.hpp>
-#include <classes/components/construction_component.hpp>
-#include <classes/components/town_components/market_component.hpp>
+#include "classes/components/town_components/market_component.hpp"
+#include "classes/components/position_component.hpp"
+#include "classes/components/owner_component.hpp"
 
 using namespace godot;
 

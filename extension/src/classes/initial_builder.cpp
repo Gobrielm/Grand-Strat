@@ -1,11 +1,11 @@
 #include "initial_builder.hpp"
 
-#include <classes/map_objects/town.hpp>
-#include "../singletons/province_manager.hpp"
-#include "../singletons/terminal_map.hpp"
-#include "../singletons/cargo_info.hpp"
-#include "../singletons/road_map.hpp"
-#include "../singletons/recipe_info.hpp"
+#include "classes/map_objects/town.hpp"
+#include "singletons/province_manager.hpp"
+#include "singletons/terminal_map.hpp"
+#include "singletons/cargo_info.hpp"
+#include "singletons/road_map.hpp"
+#include "singletons/recipe_info.hpp"
 
 #include <algorithm>
 #include <random>

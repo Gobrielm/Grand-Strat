@@ -2,6 +2,9 @@
 #include "terminal_map.hpp"
 #include "province_manager.hpp"
 
+#include "classes/map_objects/factory.hpp"
+#include "classes/map_objects/town.hpp"
+
 std::shared_ptr<TradingSystem> TradingSystem::singleton = std::make_shared<TradingSystem>();
 
 std::shared_ptr<TradingSystem> TradingSystem::get_instance() {

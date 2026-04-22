@@ -1,6 +1,8 @@
 #pragma once
 
 #include <unordered_map>
+#include <string>
+#include <vector>
 #include <godot_cpp/classes/ref_counted.hpp>
 #include <godot_cpp/variant/dictionary.hpp>
 #include <godot_cpp/variant/array.hpp>

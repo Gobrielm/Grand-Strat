@@ -2,7 +2,6 @@
 #include "../singletons/cargo_info.hpp"
 #include "../singletons/province_manager.hpp"
 #include "../singletons/terminal_map.hpp"
-#include "broker_utility/trade_interaction.hpp"
 #include "town_utility/town_local_price_controller.hpp"
 #include <godot_cpp/core/class_db.hpp>
 #include <map>

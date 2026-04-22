@@ -2,11 +2,11 @@
 
 #include <memory>
 #include <unordered_map>
-#include <src/classes/base_pop.hpp>
+#include <classes/base_pop.hpp>
 
 #include "pop_manager_utility/pop_manager_thread_pool.hpp"
 
-enum PopStats {
+enum class PopStats {
     AveragePopWealth,
     NumOfStarvingPops,
     NumOfBrokePops,
@@ -38,7 +38,7 @@ class PopManager {
     // void sell_to_pops(std::vector<BasePop*>& pop_group);
     // void create_pop_location_to_towns(std::vector<BasePop*>& pop_group, std::unordered_map<Vector2i, Vector2i, godot_helpers::Vector2iHasher>& location_to_nearest_town) const;
     // Vector2i get_town_tile(const BasePop* pop) const;
-    void change_pop_unsafe(BasePop* pop);
+    // void change_pop_unsafe(BasePop* pop);
     void find_employment_for_pops(std::vector<BasePop*>& pop_group);
 
     // Find Employement functions

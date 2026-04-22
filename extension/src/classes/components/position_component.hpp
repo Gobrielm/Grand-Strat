@@ -15,7 +15,7 @@ enum BuildingType {
 
 class PositionComponent {
     private:
-    static std::atomic<int> TOTAL_OBJECTS;
+    inline static std::atomic<int> TOTAL_OBJECTS{0};
 
     public:
     const std::pair<int, int> position;

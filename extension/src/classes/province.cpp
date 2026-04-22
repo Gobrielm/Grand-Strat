@@ -1,18 +1,23 @@
-#include "../singletons/terminal_map.hpp"
-#include "../singletons/cargo_info.hpp"
-#include "../singletons/trading_system.hpp"
-#include "../singletons/pop_manager.hpp"
+#include "singletons/terminal_map.hpp"
+#include "singletons/cargo_info.hpp"
+#include "singletons/trading_system.hpp"
+#include "singletons/pop_manager.hpp"
+#include "singletons/province_manager.hpp"
+
+#include <iostream>
+#include <queue>
 
 #include "province.hpp"
 #include "initial_builder.hpp"
 #include "base_pop.hpp"
-#include "town.hpp"
+#include "map_objects/town.hpp"
 #include "factory_utility/recipe.hpp"
 
-#include <classes/map_objects/subsistence_farm.hpp>
-#include <classes/components/town_components/market_component.hpp>
-#include <classes/components/employer_component.hpp>
-#include <classes/map_objects/station.hpp>
+#include "classes/map_objects/subsistence_farm.hpp"
+#include "classes/components/position_component.hpp"
+#include "classes/components/town_components/market_component.hpp"
+#include "classes/components/employer_component.hpp"
+#include "classes/map_objects/station.hpp"
 
 void Province::_bind_methods() {
     ClassDB::bind_static_method(get_class_static(), D_METHOD("create", "p_prov_id"), &Province::create);
@@ -51,6 +56,7 @@ Province::Province(int p_prov_id): town(create_town()) {
     population = 0;
 }
 Province::~Province() {
+    
 }
 
 void Province::add_tile(Vector2i coords) {
@@ -59,7 +65,7 @@ void Province::add_tile(Vector2i coords) {
 }
 
 int Province::get_population() const {
-    std::shared_lock lock(m);
+    std::scoped_lock lock(m);
     return population;
 }
 
@@ -68,14 +74,14 @@ float Province::get_theoretical_supply_of_grain_from_peasants() const {
     float grain_o = (peasant_ec.recipe.get_outputs().begin())->second;
     int pops_needed = peasant_ec.get_pops_needed_num();
     auto stats = get_pop_type_statistics();
-    return (grain_o * stats[peasant]) / pops_needed;
+    return (grain_o * stats[PopTypes::peasant]) / pops_needed;
 }
 
 float Province::get_demand_for_cargo(int type) const {
     auto stats = get_pop_type_statistics();
     float total_demand = 0;
     {
-        std::shared_lock lock(m);
+        std::scoped_lock lock(m);
         total_demand += stats[PopTypes::rural] * BasePop::get_base_need(PopTypes::rural, type); // Rural demand
         total_demand += stats[PopTypes::town] * BasePop::get_base_need(PopTypes::town, type); // Town demand
         total_demand += stats[PopTypes::peasant] * BasePop::get_base_need(PopTypes::peasant, type); // Peasant demand
@@ -117,7 +123,7 @@ int Province::get_province_id() const {
 }
 
 int Province::get_country_id() const {
-    std::shared_lock lock(m);
+    std::scoped_lock lock(m);
     return country_id;
 }
 
@@ -128,7 +134,7 @@ void Province::set_country_id(int p_country_id) {
 
 Array Province::get_tiles() const {
     Array a;
-    std::shared_lock lock(m);
+    std::scoped_lock lock(m);
     for (Vector2i tile: tiles) {
         a.append(tile);
     }
@@ -136,7 +142,7 @@ Array Province::get_tiles() const {
 }
 
 const std::vector<Vector2i> Province::get_tiles_vector() const {
-    std::shared_lock lock(m);
+    std::scoped_lock lock(m);
     return tiles;
 }
 
@@ -210,21 +216,26 @@ void Province::add_town(Town& p_town) {
 
 void Province::add_station(Station& station) {
     std::scoped_lock lock(m);
-    stations[station.position.building_id] = station;
+    int spot = stations.size();
+    stations.push_back(station);
+    id_to_vector_position[station.position.building_id] = std::make_pair(spot, station.position.type);
+
     position_components[station.position.get_position_vector2i()].push_back(station.position);
 }
 
 void Province::add_subsistence_farm(SubsistenceFarm& farm) {
     std::scoped_lock lock(m);
-    sub_farms[farm.position.building_id] = farm;
+    int spot = sub_farms.size();
+    sub_farms.push_back(farm);
+    id_to_vector_position[farm.position.building_id] = std::make_pair(spot, farm.position.type);
+
     position_components[farm.position.get_position_vector2i()].push_back(farm.position);
 }
 
 Factory& Province::get_factory(int pos_id) {
     std::scoped_lock lock(m);
     if (!id_to_vector_position.count(pos_id) || id_to_vector_position[pos_id].second != BuildingType::FACTORY) {
-        Factory factory;
-        ERR_FAIL_V_MSG(factory, "Tried to fetch invalid factory with pos: "  + String(std::to_string(pos_id).c_str()));
+        std::cout << "Tried to fetch invalid factory with pos: "  + std::to_string(pos_id);
     }
     return factories[id_to_vector_position[pos_id].first];
 }
@@ -232,8 +243,7 @@ Factory& Province::get_factory(int pos_id) {
 Station& Province::get_station(int pos_id) {
     std::scoped_lock lock(m);
     if (!id_to_vector_position.count(pos_id) || id_to_vector_position[pos_id].second != BuildingType::STATION) {
-        Station station;
-        ERR_FAIL_V_MSG(station, "Tried to fetch invalid station with pos: "  + String(std::to_string(pos_id).c_str()));
+        std::cout << "Tried to fetch invalid station with pos: "  + std::to_string(pos_id);
     }
     return stations[id_to_vector_position[pos_id].first];
 }
@@ -271,7 +281,7 @@ BuildingType Province::get_building_type(int pos_id) const {
 // }
 // Array Province::get_terminal_tiles() const {
 //     Array a;
-//     std::shared_lock lock(m);
+//     std::scoped_lock lock(m);
 //     for (const auto tile: terminal_tiles) {
 //         a.push_back(tile);
 //     }
@@ -334,7 +344,7 @@ void Province::create_pops() {
 }
 
 void Province::create_peasant_pop(Variant culture, Vector2i p_location) {
-    int pop_id = PopManager::get_instance()->create_pop(culture, p_location, peasant);
+    int pop_id = PopManager::get_instance()->create_pop(culture, p_location, PopTypes::peasant);
     {
         std::unique_lock lock(pops_lock);
         pops.insert(pop_id);
@@ -342,7 +352,7 @@ void Province::create_peasant_pop(Variant culture, Vector2i p_location) {
 }
 
 void Province::create_rural_pop(Variant culture, Vector2i p_location) {
-    int pop_id = PopManager::get_instance()->create_pop(culture, p_location, rural);
+    int pop_id = PopManager::get_instance()->create_pop(culture, p_location, PopTypes::rural);
     {
         std::unique_lock lock(pops_lock);
         pops.insert(pop_id);
@@ -405,11 +415,12 @@ void Province::employ_peasants() {
         for (const auto& pop_id: pops) {
             auto pop = pop_manager->get_pop(pop_id);
             auto lock = pop_manager->lock_pop_write(pop_id);
-            if (pop->get_type() != peasant) continue;
-            Ref<SubsistenceFarm> farm = terminal_map->get_terminal_as<SubsistenceFarm>(farms[i]);
+            if (pop->get_type() != PopTypes::peasant) continue;
             
-            pop->set_location(farm->position.get_position_vector2i());
-            farm->add_pop(town, pop);
+            SubsistenceFarm& farm = sub_farms[id_to_vector_position[farms[i]].first];
+            
+            pop->set_location(farm.position.get_position_vector2i());
+            farm.add_pop(town, pop);
 
             i = (i + 1) % farms.size();
         }

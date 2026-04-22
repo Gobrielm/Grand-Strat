@@ -78,8 +78,9 @@ func place_random_road_depot(middle: Vector2i) -> Vector2i:
 	return Vector2i(0, 0)
 
 func place_road_depot(tile: Vector2i, owner_id: int) -> void:
-	RoadMap.get_instance().place_road_depot(tile)
-	FactoryCreator.get_instance().create_road_depot(tile, owner_id)
+	#RoadMap.get_instance().place_road_depot(tile)
+	#FactoryCreator.get_instance().create_road_depot(tile, owner_id)
+	pass
 
 func get_most_prominent_resources(province: Province) -> Dictionary:
 	var d: Dictionary = {}

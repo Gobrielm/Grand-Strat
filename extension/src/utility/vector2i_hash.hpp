@@ -4,6 +4,7 @@
 #include <godot_cpp/variant/dictionary.hpp>
 #include <functional>
 #include <unordered_map>
+#include <string>
 
 namespace godot_helpers {
     struct Vector2iHasher {

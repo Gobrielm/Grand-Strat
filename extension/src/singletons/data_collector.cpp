@@ -46,15 +46,15 @@ void DataCollector::month_tick() {
 
         station_data_points.push_back(province_manager -> get_average_cash_of_station());
         factory_data_points.push_back(province_manager -> get_average_cash_of_factory());
-        pops_data_points.push_back((*pops_data)[AveragePopWealth]);
+        pops_data_points.push_back((*pops_data)[PopStats::AveragePopWealth]);
         factory_ave_level.push_back(province_manager -> get_average_factory_level());
-        starving_pops.push_back((*pops_data)[NumOfStarvingPops]);
+        starving_pops.push_back((*pops_data)[PopStats::NumOfStarvingPops]);
         grain_supply.push_back(0);
         grain_demand.push_back(0);
-        broke_pops.push_back((*pops_data)[NumOfBrokePops]);
-        unemployement_rate.push_back((*pops_data)[UnemploymentRate]);
-        real_unemployement_rate.push_back((*pops_data)[RealUnemploymentRate]);
-        number_of_peasants.push_back((*pops_data)[NumOfPeasants]);
+        broke_pops.push_back((*pops_data)[PopStats::NumOfBrokePops]);
+        unemployement_rate.push_back((*pops_data)[PopStats::UnemploymentRate]);
+        real_unemployement_rate.push_back((*pops_data)[PopStats::RealUnemploymentRate]);
+        number_of_peasants.push_back((*pops_data)[PopStats::NumOfPeasants]);
         write_data_to_file();
     }
 

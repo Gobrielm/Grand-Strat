@@ -1,7 +1,8 @@
 #include "recipe_info.hpp"
 #include "cargo_info.hpp"
-#include "../classes/factory_utility/recipe.hpp"
-#include <src/classes/components/employer_component.hpp>
+
+#include "classes/factory_utility/recipe.hpp"
+#include "classes/components/employer_component.hpp"
 
 RecipeInfo* RecipeInfo::singleton_instance = nullptr;
 
@@ -46,36 +47,36 @@ EmployerComponent RecipeInfo::create_employer_component(std::vector<std::unorder
 }
 
 void RecipeInfo::create_employer_components() {
-    add_employer_component({{}, {{"clay", 0.05f}}}, {{rural, 2}});
-    add_employer_component({{}, {{"sand", 0.05f}}}, {{rural, 2}});
-    add_employer_component({{}, {{"sulfur", 0.05f}}}, {{rural, 2}});
-    add_employer_component({{}, {{"lead", 0.05f}}}, {{rural, 2}});
-    add_employer_component({{}, {{"iron", 0.05f}}}, {{rural, 2}});
-    add_employer_component({{}, {{"coal", 0.05f}}}, {{rural, 2}});
-    add_employer_component({{}, {{"copper", 0.05f}}}, {{rural, 2}});
-    add_employer_component({{}, {{"zinc", 0.05f}}}, {{rural, 2}});
-    add_employer_component({{}, {{"wood", 0.1f}}}, {{rural, 2}});
-    add_employer_component({{}, {{"salt", 0.05f}}}, {{rural, 2}});
-    add_employer_component({{}, {{"grain", 0.1f}}}, {{rural, 2}});
-    add_employer_component({{}, {{"livestock", 0.1f}}}, {{rural, 2}});
-    add_employer_component({{}, {{"fish", 0.1f}}}, {{rural, 2}});
-    add_employer_component({{}, {{"fruit", 0.05f}}}, {{rural, 2}});
-    add_employer_component({{}, {{"cotton", 0.05f}}}, {{rural, 2}});
-    add_employer_component({{}, {{"silk", 0.05f}}}, {{rural, 2}});
-    add_employer_component({{}, {{"spices", 0.05f}}}, {{rural, 2}});
-    add_employer_component({{}, {{"coffee", 0.05f}}}, {{rural, 2}});
-    add_employer_component({{}, {{"tea", 0.05f}}}, {{rural, 2}});
-    add_employer_component({{}, {{"tobacco", 0.05f}}}, {{rural, 2}});
-    add_employer_component({{}, {{"gold", 0.005f}}}, {{rural, 1}});
+    add_employer_component({{}, {{"clay", 0.05f}}}, {{PopTypes::rural, 2}});
+    add_employer_component({{}, {{"sand", 0.05f}}}, {{PopTypes::rural, 2}});
+    add_employer_component({{}, {{"sulfur", 0.05f}}}, {{PopTypes::rural, 2}});
+    add_employer_component({{}, {{"lead", 0.05f}}}, {{PopTypes::rural, 2}});
+    add_employer_component({{}, {{"iron", 0.05f}}}, {{PopTypes::rural, 2}});
+    add_employer_component({{}, {{"coal", 0.05f}}}, {{PopTypes::rural, 2}});
+    add_employer_component({{}, {{"copper", 0.05f}}}, {{PopTypes::rural, 2}});
+    add_employer_component({{}, {{"zinc", 0.05f}}}, {{PopTypes::rural, 2}});
+    add_employer_component({{}, {{"wood", 0.1f}}}, {{PopTypes::rural, 2}});
+    add_employer_component({{}, {{"salt", 0.05f}}}, {{PopTypes::rural, 2}});
+    add_employer_component({{}, {{"grain", 0.1f}}}, {{PopTypes::rural, 2}});
+    add_employer_component({{}, {{"livestock", 0.1f}}}, {{PopTypes::rural, 2}});
+    add_employer_component({{}, {{"fish", 0.1f}}}, {{PopTypes::rural, 2}});
+    add_employer_component({{}, {{"fruit", 0.05f}}}, {{PopTypes::rural, 2}});
+    add_employer_component({{}, {{"cotton", 0.05f}}}, {{PopTypes::rural, 2}});
+    add_employer_component({{}, {{"silk", 0.05f}}}, {{PopTypes::rural, 2}});
+    add_employer_component({{}, {{"spices", 0.05f}}}, {{PopTypes::rural, 2}});
+    add_employer_component({{}, {{"coffee", 0.05f}}}, {{PopTypes::rural, 2}});
+    add_employer_component({{}, {{"tea", 0.05f}}}, {{PopTypes::rural, 2}});
+    add_employer_component({{}, {{"tobacco", 0.05f}}}, {{PopTypes::rural, 2}});
+    add_employer_component({{}, {{"gold", 0.005f}}}, {{PopTypes::rural, 1}});
 
     // Secondary
-    add_employer_component({{{"grain", 1.0f}, {"salt", 0.4f}}, {{"bread", 0.4f}}}, {{town, 2}});
-    add_employer_component({{{"cotton", 1.0f}}, {{"clothes", 0.2f}}}, {{town, 2}});
-    add_employer_component({{{"wood", 1.0f}}, {{"lumber", 0.3f}}}, {{town, 1}});
-    add_employer_component({{{"wood", 1.0f}}, {{"paper", 0.5f}}}, {{town, 1}});
-    add_employer_component({{{"lumber", 1.0f}}, {{"furniture", 0.3f}}}, {{town, 2}});
-    add_employer_component({{{"lumber", 1.0f}}, {{"wagons", 0.25f}}}, {{town, 2}});
-    add_employer_component({{{"lumber", 2.0f}}, {{"boats", 0.2f}}}, {{town, 3}});
+    add_employer_component({{{"grain", 1.0f}, {"salt", 0.4f}}, {{"bread", 0.4f}}}, {{PopTypes::town, 2}});
+    add_employer_component({{{"cotton", 1.0f}}, {{"clothes", 0.2f}}}, {{PopTypes::town, 2}});
+    add_employer_component({{{"wood", 1.0f}}, {{"lumber", 0.3f}}}, {{PopTypes::town, 1}});
+    add_employer_component({{{"wood", 1.0f}}, {{"paper", 0.5f}}}, {{PopTypes::town, 1}});
+    add_employer_component({{{"lumber", 1.0f}}, {{"furniture", 0.3f}}}, {{PopTypes::town, 2}});
+    add_employer_component({{{"lumber", 1.0f}}, {{"wagons", 0.25f}}}, {{PopTypes::town, 2}});
+    add_employer_component({{{"lumber", 2.0f}}, {{"boats", 0.2f}}}, {{PopTypes::town, 3}});
 }
 
 

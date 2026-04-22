@@ -1,6 +1,9 @@
 #include "market_component.hpp"
-#include <src/singletons/terminal_map.hpp>
-#include <classes/province.hpp>
+#include "singletons/terminal_map.hpp"
+#include "classes/province.hpp"
+#include "classes/base_pop.hpp"
+#include "classes/components/capital_component.hpp"
+#include "classes/components/storage_component.hpp"
 
 MarketComponent::MarketComponent() {}
 
@@ -112,11 +115,12 @@ std::pair<CapitalComponent*, StorageComponent*> MarketComponent::get_capital_and
     const auto type = province->id_to_vector_position.at(pos_id).second;
 
     switch (type) {
-        case FACTORY:
+        case FACTORY: {
             auto& factory = province->factories[province->id_to_vector_position[pos_id].first];
             return std::pair<CapitalComponent*, StorageComponent*>({ &factory.capital, &factory.storage });
+        }
         default:
-            ERR_FAIL_MSG("Unknown Entity Tried to Trade: " + String(std::to_string(type).c_str()));
+            ERR_FAIL_V_MSG(std::make_pair(nullptr, nullptr), "Unknown Entity Tried to Trade: " + String(std::to_string(type).c_str()));
     }
     return std::make_pair(nullptr, nullptr);
 }
@@ -171,7 +175,6 @@ long MarketComponent::get_current_supply(int type) const {
 void MarketComponent::sell_to_pop(Province* province, BasePop& pop) {
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     std::unordered_map<int, float> money_to_pay;
-    std::vector<std::unique_ptr<TownCargo>> demand_to_relay; // Town Cargo just used to express price, amount, and type for convience
     
     for (auto& [type, orders] : sell_orders) {
         unsigned int desired = pop.get_desired(type);
@@ -181,7 +184,6 @@ void MarketComponent::sell_to_pop(Province* province, BasePop& pop) {
         float pop_price = pop.get_buy_price(type, get_price(type));
         
         auto sell_it = orders.begin();
-        std::shared_ptr<TownCargo> sell_order;
 
         // get_local_pricer() -> add_demand(type, pop_price, desired); // Only add demand since its not part of survey_broad_market()
         // get_local_pricer() -> add_local_demand(type, desired);

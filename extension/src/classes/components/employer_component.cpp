@@ -1,6 +1,5 @@
 #include "employer_component.hpp"
-#include <classes/factory_utility/recipe.hpp>
-#include <classes/map_objects/town.hpp>
+#include "classes/map_objects/town.hpp"
 
 EmployerComponent::EmployerComponent() {
 

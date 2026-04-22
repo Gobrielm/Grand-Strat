@@ -1,6 +1,6 @@
 #include "town_local_price_controller.hpp"
-#include "../../singletons/cargo_info.hpp"
-#include "../../singletons/data_collector.hpp"
+#include "singletons/cargo_info.hpp"
+#include "singletons/data_collector.hpp"
 
 using TLPC = TownLocalPriceController;
 using ms_it = std::multiset<std::weak_ptr<TownCargo>, TownCargo::TownCargoPtrCompare>::iterator;

@@ -1,7 +1,8 @@
 #pragma once
 
 #include <unordered_map>
-#include "../base_pop.hpp"
+#include <godot_cpp/classes/object.hpp>
+#include "classes/base_pop.hpp"
 
 using namespace godot;
 

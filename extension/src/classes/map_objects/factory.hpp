@@ -1,12 +1,14 @@
 #pragma once
 
-#include <classes/factory_utility/recipe.hpp>
-#include <classes/components/capital_component.hpp>
-#include <classes/components/owner_component.hpp>
-#include <classes/components/storage_component.hpp>
-#include <classes/components/position_component.hpp>
-#include <classes/components/construction_component.hpp>
-#include <classes/components/employer_component.hpp>
+#include "classes/factory_utility/recipe.hpp"
+#include "classes/components/capital_component.hpp"
+#include "classes/components/owner_component.hpp"
+#include "classes/components/storage_component.hpp"
+#include "classes/components/position_component.hpp"
+#include "classes/components/construction_component.hpp"
+#include "classes/components/employer_component.hpp"
+
+#include "classes/trade_order.hpp"
 
 #include <optional>
 

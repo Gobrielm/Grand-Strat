@@ -1,7 +1,8 @@
 #pragma once
 
 #include <godot_cpp/classes/object.hpp>
-#include <src/utility/vector2i_hash.hpp>
+#include "utility/vector2i_hash.hpp"
+#include "classes/map_objects/town.hpp"
 
 #include <mutex>
 #include <shared_mutex>
@@ -10,7 +11,6 @@
 #include <map>
 
 class BasePop;
-class Town;
 class Factory;
 class Station;
 class TradingSystem;
@@ -19,7 +19,10 @@ class EmployerComponent;
 class SubsistenceFarm;
 class PopManager;
 class InitialBuilder;
-enum PopTypes;
+class ProvinceManager;
+class PositionComponent;
+
+enum class PopTypes: int;
 
 using namespace godot;
 

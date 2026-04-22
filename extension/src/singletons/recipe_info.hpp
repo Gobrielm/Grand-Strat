@@ -1,13 +1,14 @@
 #pragma once
 
 #include <unordered_map>
-#include <mutex>
+#include <unordered_set>
 #include <optional>
+#include <vector>
 
 #include <godot_cpp/variant/dictionary.hpp>
 #include <godot_cpp/variant/array.hpp>
 
-#include "../classes/factory_utility/recipe.hpp"
+#include "classes/factory_utility/recipe.hpp"
 
 
 class Recipe;

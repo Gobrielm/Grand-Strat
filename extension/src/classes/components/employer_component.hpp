@@ -1,5 +1,10 @@
+#pragma once
+
 #include <unordered_map>
-#include <classes/base_pop.hpp>
+#include <vector>
+
+#include "classes/base_pop.hpp"
+#include "classes/factory_utility/recipe.hpp"
 
 class Recipe;
 class Town;

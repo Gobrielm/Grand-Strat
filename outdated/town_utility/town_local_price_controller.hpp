@@ -1,5 +1,5 @@
 #pragma once
-#include "../local_price_controller.hpp"
+#include "classes/local_price_controller.hpp"
 #include "town_cargo.hpp"
 #include <memory>
 

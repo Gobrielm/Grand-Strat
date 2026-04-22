@@ -1,7 +1,5 @@
 #include "capital_component.hpp"
 
-#include "../singletons/money_controller.hpp"
-
 CapitalComponent::CapitalComponent(): cash(INITIAL_CASH) {
     for (int i = 0; i < 30; i++) {
         cash_history.push_back(0);

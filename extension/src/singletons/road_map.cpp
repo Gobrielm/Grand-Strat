@@ -1,5 +1,6 @@
 #include "road_map.hpp"
 #include "terminal_map.hpp"
+#include "classes/map_objects/station.hpp"
 #include <queue>
 
 RoadMap* RoadMap::singleton_instance = nullptr;
@@ -319,7 +320,7 @@ void RoadMap::refresh_road_depots() {
             Vector2i tile = tiles[i];
             if (!dist_tracker.count(tile) && terminal_map->is_tile_traversable(tile)) {
                 dist_tracker[tile] = dist_tracker[curr] + 1;
-                if (dist_tracker[tile] <= RoadDepot::MAX_SUPPLY_DISTANCE) {
+                if (dist_tracker[tile] <= Station::get_MAX_SUPPLY_DISTANCE(Station::TYPE_OF_STATION::RAIL)) {
                     q.push(tile);
                 }
             }

@@ -30,8 +30,8 @@ class TerminalMapThreadPool {
     // Threads
     std::vector<std::thread> day_worker_threads;
     std::vector<std::thread> month_worker_threads;
-    std::list<Ref<Terminal>> day_tick_work;
-    std::vector<Ref<Terminal>> month_tick_work;
+    // std::list<Ref<Terminal>> day_tick_work;
+    // std::vector<Ref<Terminal>> month_tick_work;
     std::condition_variable new_day_work;
     std::condition_variable new_month_work;
     std::atomic<bool> stop = false;

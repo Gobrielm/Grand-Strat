@@ -1,10 +1,8 @@
 #include "town.hpp"
-#include <src/singletons/cargo_info.hpp>
+#include "singletons/cargo_info.hpp"
 #include <godot_cpp/core/class_db.hpp>
 
 using namespace godot;
-
-Town::Town(std::pair<int, int> p_position): position(p_position, BuildingType::TOWN) {}
 
 Town::Town(std::pair<int, int> p_position): position(p_position, BuildingType::TOWN) {}
 
@@ -39,4 +37,12 @@ std::vector<int> Town::get_factory_ids() const {
         }
     }   
     return v;
+}
+
+void Town::add_pop(int pop_id) {
+
+}
+
+int Town::get_total_pops() const {
+    return 0;
 }

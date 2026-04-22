@@ -3,6 +3,8 @@
 #include <godot_cpp/classes/object.hpp>
 #include <godot_cpp/variant/array.hpp>
 
+#include <memory>
+
 namespace godot {
 
 class TradeOrder : public Object {

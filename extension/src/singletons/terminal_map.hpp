@@ -1,7 +1,7 @@
 #pragma once
+
 #include <godot_cpp/classes/ref_counted.hpp>
 #include <godot_cpp/classes/tile_map_layer.hpp>
-
 #include <godot_cpp/variant/dictionary.hpp>
 #include <godot_cpp/variant/array.hpp>
 
@@ -10,20 +10,11 @@
 #include <thread>
 #include <condition_variable>
 
-#include "terminal_map_utility/terminal_map_thread_pool.hpp"
-#include "../utility/vector2i_hash.hpp"
+#include "utility/vector2i_hash.hpp"
+#include "classes/map_objects/factory.hpp"
+#include "classes/map_objects/town.hpp"
 
-#include <src/classes/map_objects/factory.hpp>
-#include <src/classes/map_objects/town.hpp>
-#include "trading_system.hpp"
-
-class Terminal;
-class Broker;
-class Factory;
-class Town;
-class StationWOMethods;
-class RoadDepot;
-
+class TradingSystem;
 
 using namespace godot;
 
@@ -44,7 +35,7 @@ private:
 
     std::unordered_map<int, PositionComponent> id_to_position_component; 
 
-    TerminalMapThreadPool* thread_pool = nullptr;
+    // TerminalMapThreadPool* thread_pool = nullptr;
 
 protected:
     static void _bind_methods();
@@ -102,7 +93,7 @@ public:
     // Array get_construction_site_recipe(const Vector2i &coords);
     // Dictionary get_construction_materials(const Vector2i &coords);
     // Dictionary get_needed_construction_materials(const Vector2i &coords);
-    int get_cash_of_firm(const Vector2i coords);
+    // int get_cash_of_firm(const Vector2i coords);
     // Dictionary get_local_prices(const Vector2i &coords);
     // Dictionary get_station_orders(const Vector2i &coords);
     bool is_tile_traversable(const Vector2i coords, bool is_water_untraversable = true);
@@ -111,41 +102,6 @@ public:
     void encode_building(PositionComponent pos);
     void place_object_on_map(PositionComponent pos);
     PositionComponent get_position_component(int pos_id) const;
-
-
-    template <typename T>
-    Ref<T> get_terminal_as(const Vector2i &coords, const std::function<bool(const Vector2i &)> &type_check = nullptr) const {
-        Ref<T> toReturn = Ref<T>(nullptr);
-        {
-            std::shared_lock lock(cargo_map_mutex);
-            auto it = cargo_map_terminals.find(coords);
-            if (it != cargo_map_terminals.end()) {
-                auto it2 = terminal_id_to_terminal.find(it->second);
-                if (it2 != terminal_id_to_terminal.end() && (!type_check || type_check(coords))) {
-                    Ref<T> typed = it2->second;
-                    if (typed.is_valid()) {
-                        toReturn = typed;
-                    }
-                }
-            }
-        }
-        return toReturn;
-    }
-
-    template <typename T>
-    Ref<T> get_terminal_as(int terminal_id) const {
-        Ref<T> toReturn = Ref<T>(nullptr);
-        {
-            std::shared_lock lock(cargo_map_mutex);
-            if (terminal_id_to_terminal.count(terminal_id)) {
-                Ref<T> typed = terminal_id_to_terminal.at(terminal_id);
-                if (typed.is_valid()) {
-                    toReturn = typed;
-                }
-            }
-        }
-        return toReturn;
-    }
    
     //Action doers
     // void set_construction_site_recipe(const Vector2i &coords, Recipe* selected_recipe);

@@ -1,6 +1,5 @@
 #include "town_cargo.hpp"
-#include "../factory_template.hpp"
-#include "../../singletons/terminal_map.hpp"
+#include "singletons/terminal_map.hpp"
 
 TownCargo::TownCargo(const TownCargo* other) {
     type = other->type;
@@ -38,11 +37,11 @@ void TownCargo::sell_cargo(int p_amount) {
 }
 
 void TownCargo::sell_cargo(int p_amount, float p_price) {
-    Ref<FactoryTemplate> factory = TerminalMap::get_instance()->get_terminal_as<FactoryTemplate>(terminal_id);
-    if (factory.is_null()) return; 
+    // Ref<FactoryTemplate> factory = TerminalMap::get_instance()->get_terminal_as<FactoryTemplate>(terminal_id);
+    // if (factory.is_null()) return; 
     float total_price = p_amount * p_price;
     pay_fees(total_price);
-    factory->add_cash(total_price);
+    // factory->add_cash(total_price);
     remove_cargo(p_amount);
 }
 
@@ -60,7 +59,7 @@ void TownCargo::sell_cargo(int p_amount, float p_price, std::unordered_map<int, 
 void TownCargo::pay_fees(float &total_price) {
     for (auto& [terminal_id, fee]: fees_to_pay) {
         float to_pay = total_price * fee;
-        TerminalMap::get_instance()->get_terminal_as<RoadDepot>(terminal_id)->add_cash(to_pay);
+        // TerminalMap::get_instance()->get_terminal_as<RoadDepot>(terminal_id)->add_cash(to_pay);
         total_price -= to_pay;
     }
 }
@@ -73,7 +72,7 @@ void TownCargo::transfer_cargo(int p_amount) {
 void TownCargo::return_cargo() {
     Ref<FactoryTemplate> factory = TerminalMap::get_instance()->get_terminal_as<FactoryTemplate>(terminal_id);
     if (factory.is_null()) return; 
-    factory->add_cargo(type, amount);
+    // factory->add_cargo(type, amount);
     amount = 0;
 }
 

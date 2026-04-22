@@ -5,7 +5,7 @@ from methods import print_error
 
 
 libname = "Grand_Strat"
-projectdir = "game"
+projectdir = "game/"
 
 localEnv = Environment(tools=["default"], PLATFORM="")
 
@@ -33,6 +33,7 @@ Run the following command to download godot-cpp:
     sys.exit(1)
 env = SConscript("godot-cpp/SConstruct", {"env": env, "customs": customs})
 
+
 #Controls the folders
 # Controls the folders
 def find_cpp_files(path):
@@ -46,6 +47,7 @@ def find_cpp_files(path):
 src_dir = "extension/src"
 env.Append(CPPPATH=[src_dir])
 sources = find_cpp_files(src_dir)
+
 
 
 # env.Append(CPPPATH=["src/"])

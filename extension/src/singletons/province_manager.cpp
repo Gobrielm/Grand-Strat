@@ -1,10 +1,11 @@
 #include "province_manager.hpp"
 #include "terminal_map.hpp"
-#include <src/classes/map_objects/town.hpp>
-#include <src/classes/map_objects/station.hpp>
+#include "classes/map_objects/town.hpp"
+#include "classes/map_objects/station.hpp"
 #include "cargo_info.hpp"
 #include <godot_cpp/core/class_db.hpp>
 #include <chrono>
+#include <thread>
 
 using namespace godot;
 
@@ -14,6 +15,9 @@ ProvinceManager::ProvinceManager() {
 }
 
 ProvinceManager::~ProvinceManager() {
+    for (auto province: provinces) {
+        delete province;
+    }
 }
 
 void ProvinceManager::_bind_methods() {
@@ -140,9 +144,9 @@ void ProvinceManager::create_pops() {
     print_line("Pop creation took " + String::num_scientific(elapsed.count()) + " seconds");
 }
 
-void ProvinceManager::create_pops_range(MapType::iterator start, MapType::iterator end) {
+void ProvinceManager::create_pops_range(std::vector<Province*>::iterator start, std::vector<Province*>::iterator end) {
     for (auto it = start; it != end; it++) {
-        (it -> second) -> create_pops();
+        (*it) -> create_pops();
     }
 }
 

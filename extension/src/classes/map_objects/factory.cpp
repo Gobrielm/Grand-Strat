@@ -1,11 +1,11 @@
 #include "factory.hpp"
-#include <classes/factory_utility/recipe.hpp>
-#include <classes/base_pop.hpp>
+#include "classes/factory_utility/recipe.hpp"
+#include "classes/base_pop.hpp"
 
-#include "../singletons/cargo_info.hpp"
-#include "../singletons/terminal_map.hpp"
-#include "../singletons/pop_manager.hpp"
-#include "../singletons/data_collector.hpp"
+#include "singletons/cargo_info.hpp"
+#include "singletons/terminal_map.hpp"
+#include "singletons/pop_manager.hpp"
+#include "singletons/data_collector.hpp"
 #include <godot_cpp/core/class_db.hpp>
 #include <algorithm>
 

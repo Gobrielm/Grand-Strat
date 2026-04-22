@@ -4,9 +4,8 @@
 #include "province_manager.hpp"
 #include "cargo_info.hpp"
 
-#include <src/classes/map_objects/factory.hpp>
-#include <src/classes/map_objects/station.hpp>
-#include <src/classes/map_objects/town.hpp>
+#include "classes/map_objects/station.hpp"
+#include "trading_system.hpp"
 
 
 using namespace godot;
@@ -32,7 +31,6 @@ void TerminalMap::_bind_methods() {
 
     // Creators
 
-    ClassDB::bind_method(D_METHOD("encode_factory", "factory", "mult"), &TerminalMap::encode_factory);
     // ClassDB::bind_method(D_METHOD("add_connected_brokers", "p_broker"), &TerminalMap::add_connected_brokers);
     // ClassDB::bind_method(D_METHOD("create_factory", "p_location", "p_player_owner", "p_inputs", "p_outputs"), &TerminalMap::create_factory);
     // ClassDB::bind_method(D_METHOD("create_primary_factory", "p_location", "p_player_owner", "type"), &TerminalMap::create_primary_factory);
@@ -43,7 +41,7 @@ void TerminalMap::_bind_methods() {
     // ClassDB::bind_method(D_METHOD("get_construction_site_recipe", "coords"), &TerminalMap::get_construction_site_recipe);
     // ClassDB::bind_method(D_METHOD("get_construction_materials", "coords"), &TerminalMap::get_construction_materials);
     // ClassDB::bind_method(D_METHOD("get_needed_construction_materials", "coords"), &TerminalMap::get_needed_construction_materials);
-    ClassDB::bind_method(D_METHOD("get_cash_of_firm", "coords"), &TerminalMap::get_cash_of_firm);
+    // ClassDB::bind_method(D_METHOD("get_cash_of_firm", "coords"), &TerminalMap::get_cash_of_firm);
     // ClassDB::bind_method(D_METHOD("get_local_prices", "coords"), &TerminalMap::get_local_prices);
     // ClassDB::bind_method(D_METHOD("get_station_orders", "coords"), &TerminalMap::get_station_orders);
     ClassDB::bind_method(D_METHOD("get_available_primary_recipes", "coords"), &TerminalMap::get_available_primary_recipes);
@@ -393,14 +391,14 @@ std::vector<int> TerminalMap::get_available_resources_of_tile(const Vector2i coo
 // }
 
 
-int TerminalMap::get_cash_of_firm(const Vector2i coords) {
-    int toReturn;
-    Ref<Firm> firm = get_terminal_as<Firm>(coords);
-    if (firm.is_valid()) {
-        toReturn = firm->get_cash();
-    }
-    return toReturn;
-}
+// int TerminalMap::get_cash_of_firm(const Vector2i coords) {
+//     int toReturn;
+//     Ref<Firm> firm = get_terminal_as<Firm>(coords);
+//     if (firm.is_valid()) {
+//         toReturn = firm->get_cash();
+//     }
+//     return toReturn;
+// }
 
 // Dictionary TerminalMap::get_local_prices(const Vector2i &coords) {
 //     Dictionary toReturn;
@@ -454,9 +452,9 @@ void TerminalMap::place_object_on_map(PositionComponent pos) {
     switch (pos.type) {
         case BuildingType::FACTORY:
             cargo_map->call_deferred("call_set_tile_rpc", pos.get_position_vector2i(), province->get_factory(pos.building_id).get_primary_type());
-        case BuildingType::TOWN:
+        // case BuildingType::TOWN:
 
-        case BuildingType::STATION:
+        // case BuildingType::STATION:
         
         
     }

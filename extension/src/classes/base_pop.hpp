@@ -1,21 +1,18 @@
 #pragma once
 
-#include <godot_cpp/classes/object.hpp>
-#include "factory_template.hpp"
 #include <unordered_map>
-#include <mutex>
+#include <string>
+#include <godot_cpp/classes/object.hpp>
 
 using namespace godot;
 
-enum PopTypes {
+enum class PopTypes: int {
     peasant = 0,
     rural = 1,
     town = 2,
     
     none = 99
 };
-
-class FactoryTemplate;
 
 class BasePop {
     static std::unordered_map<PopTypes, int> PEOPLE_PER_POP;

@@ -1,24 +1,25 @@
 #include "base_pop.hpp"
-#include "../singletons/terminal_map.hpp"
-#include "../singletons/cargo_info.hpp"
+#include "singletons/terminal_map.hpp"
+#include "singletons/cargo_info.hpp"
 #include <godot_cpp/core/class_db.hpp>
 #include <sstream>
 #include <fstream>
+#include <iostream>
 
 std::atomic<int> BasePop::total_pops = 0;
 
 std::unordered_map<PopTypes, int> BasePop::PEOPLE_PER_POP = {
-    {rural, 1000},
-    {town, 1000},
-    {peasant, 1000},
-    {none, 0}
+    {PopTypes::rural, 1000},
+    {PopTypes::town, 1000},
+    {PopTypes::peasant, 1000},
+    {PopTypes::none, 0}
 };
 
 std::unordered_map<PopTypes, int> BasePop::INITIAL_WEALTH = {
-    {rural, 1000},
-    {town, 1000},
-    {peasant, 1000},
-    {none, 0}
+    {PopTypes::rural, 1000},
+    {PopTypes::town, 1000},
+    {PopTypes::peasant, 1000},
+    {PopTypes::none, 0}
 };
 
 std::unordered_map<PopTypes, std::unordered_map<int, float>> BasePop::base_needs;
@@ -26,16 +27,16 @@ std::unordered_map<PopTypes, std::unordered_map<int, float>> BasePop::base_needs
 std::unordered_map<PopTypes, std::unordered_map<int, float>> BasePop::specialities;
 
 BasePop* BasePop::create_rural_pop(int p_home_prov_id, Vector2i p_location, Variant p_culture) {
-    return memnew(BasePop(p_home_prov_id, p_location, p_culture, rural));
+    return memnew(BasePop(p_home_prov_id, p_location, p_culture, PopTypes::rural));
 }
 BasePop* BasePop::create_peasant_pop(int p_home_prov_id, Vector2i p_location, Variant p_culture) {
-    return memnew(BasePop(p_home_prov_id, p_location, p_culture, peasant));
+    return memnew(BasePop(p_home_prov_id, p_location, p_culture, PopTypes::peasant));
 }
 BasePop* BasePop::create_town_pop(int p_home_prov_id, Vector2i p_location, Variant p_culture) {
-    return memnew(BasePop(p_home_prov_id, p_location, p_culture, town));
+    return memnew(BasePop(p_home_prov_id, p_location, p_culture, PopTypes::town));
 }
 
-BasePop::BasePop(): BasePop(-1, Vector2i(0, 0), -1, none) {}
+BasePop::BasePop(): BasePop(-1, Vector2i(0, 0), -1, PopTypes::none) {}
 
 BasePop::BasePop(int p_home_prov_id, Vector2i p_location, Variant p_culture, PopTypes p_pop_type): pop_id(total_pops++) {
     location = p_location;
@@ -68,10 +69,10 @@ std::unordered_map<PopTypes, std::unordered_map<int, float>> BasePop::create_nee
     std::unordered_map<PopTypes, std::unordered_map<int, float>> needs_map;
 
     std::unordered_map<std::string, PopTypes> pop_type_map = {
-        {"peasant", peasant},
-        {"rural", rural},
-        {"town", town},
-        {"none", none}
+        {"peasant", PopTypes::peasant},
+        {"rural", PopTypes::rural},
+        {"town", PopTypes::town},
+        {"none", PopTypes::none}
     };
 
     std::ifstream file(file_name);
@@ -407,20 +408,20 @@ bool BasePop::will_degrade() const {
 }
 
 void BasePop::degrade() {
-    if (pop_type == rural) {
-        pop_type = peasant;
+    if (pop_type == PopTypes::rural) {
+        pop_type = PopTypes::peasant;
         reset_and_fill_storage();
         months_without_job = 0;
     }
 }
 
 bool BasePop::will_upgrade() const {
-    return (pop_type == peasant);
+    return (pop_type == PopTypes::peasant);
 }
 
 void BasePop::upgrade() {
-    if (pop_type == peasant) {
-        pop_type = rural;
+    if (pop_type == PopTypes::peasant) {
+        pop_type = PopTypes::rural;
         reset_and_fill_storage();
     }
 }

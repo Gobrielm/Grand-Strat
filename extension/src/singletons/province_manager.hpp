@@ -3,12 +3,12 @@
 #include <unordered_map>
 #include <mutex>
 #include <shared_mutex>
-#include <thread>
 #include <condition_variable>
 #include <godot_cpp/classes/ref_counted.hpp>
 #include <godot_cpp/variant/dictionary.hpp>
 #include <godot_cpp/variant/array.hpp>
-#include "../classes/province.hpp"
+
+#include "classes/province.hpp"
 
 using namespace godot;
 
@@ -48,8 +48,8 @@ public:
     int get_total_population() const;
     int get_number_of_pops_in_country(int country_id) const;
     void create_pops();
-    using MapType = std::unordered_map<int, Province*>;
-    void create_pops_range(MapType::iterator start, MapType::iterator end);
+
+    void create_pops_range(std::vector<Province*>::iterator start, std::vector<Province*>::iterator end);
 
     // Province queries
     std::vector<int> get_provinces_vector();

@@ -1,17 +1,15 @@
 #include "subsistence_farm.hpp"
 #include "town.hpp"
 
-#include <memory>
-
-#include <src/singletons/recipe_info.hpp>
-#include <src/singletons/cargo_info.hpp>
-#include <src/singletons/data_collector.hpp>
+#include "singletons/recipe_info.hpp"
+#include "singletons/cargo_info.hpp"
+#include "singletons/data_collector.hpp"
 
 SubsistenceFarm::SubsistenceFarm(): employer() {
     RecipeInfo::create_employer_component(
         {{}, 
         {{"grain", 11.0f}}}, 
-        {{peasant, 10}}
+        {{PopTypes::peasant, 10}}
     );
 }
 
@@ -19,7 +17,7 @@ SubsistenceFarm::SubsistenceFarm(Vector2i p_location, int p_owner): position(std
     employer = RecipeInfo::create_employer_component(
         {{}, 
         {{"grain", 11.0f}}}, 
-        {{peasant, 10}}
+        {{PopTypes::peasant, 10}}
     );
 }
 
@@ -36,10 +34,6 @@ SubsistenceFarm& SubsistenceFarm::operator=(const SubsistenceFarm& other) {
     orders = other.orders;
 
     return *this;
-}
-
-void SubsistenceFarm::month_tick() {
-    SubsistenceFarm::month_tick();
 }
 
 void SubsistenceFarm::add_pop(Town& town, BasePop* pop) {
@@ -99,7 +93,7 @@ EmployerComponent SubsistenceFarm::get_default_employer_component() {
     return RecipeInfo::create_employer_component(
         {{}, 
         {{"grain", 11.0f}}}, 
-        {{peasant, 10}}
+        {{PopTypes::peasant, 10}}
     );
 }
 

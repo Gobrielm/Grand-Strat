@@ -1,12 +1,14 @@
 #include "pop_manager.hpp"
 #include "terminal_map.hpp"
 #include "province_manager.hpp"
-#include "../classes/province.hpp"
-#include <src/classes/map_objects/town.hpp>
 #include "cargo_info.hpp"
 #include "recipe_info.hpp"
 #include "terminal_map.hpp"
 #include "money_controller.hpp"
+
+#include "classes/province.hpp"
+#include "classes/map_objects/town.hpp"
+
 #include <set>
 
 std::shared_ptr<PopManager> PopManager::singleton_instance = nullptr;
@@ -67,7 +69,7 @@ void PopManager::month_tick(std::vector<BasePop*>& pop_group) { // Assumes all p
         auto lock = lock_pop_write(mutex_lock_num);
         for (auto &pop: pop_group) {
             pop->month_tick();
-            change_pop_unsafe(pop);
+            // change_pop_unsafe(pop);
         }
     }
     auto time1 = std::chrono::high_resolution_clock::now();
@@ -142,7 +144,7 @@ void PopManager::find_employment_for_pops(std::vector<BasePop*>& pop_group) {
     int mutex_lock_num = get_pop_mutex_number(pop_group.front()->get_pop_id());
 
     for (auto& pop: pop_group) {
-        PopTypes pop_type = none;
+        PopTypes pop_type = PopTypes::none;
         {
             auto lock = lock_pop_read(mutex_lock_num);
             pop_type = pop->get_type(); // Don't lock since factory will double check if wrong
@@ -459,7 +461,7 @@ void PopManager::pay_pops(int num_to_pay, double for_each) { // TODO: Add thing 
     int total = pops.size();
     while (num_to_pay > 0 && it != pops.end()) {
         BasePop& pop = (it)->second;
-        int mult = pop.get_type() == town ? 50: 1; // Town pops get *50 bonus to chance
+        int mult = pop.get_type() == PopTypes::town ? 50: 1; // Town pops get *50 bonus to chance
         if ((rand() % int((float(total) / num_to_pay) / mult)) == 0) {
             auto lock = lock_pop_write(it->first);
             pop.add_wealth_no_change_to_income(for_each);
@@ -476,7 +478,7 @@ float PopManager::get_expected_wage(int pop_id) const {
     auto lock = lock_pop_read(pop_id);
     auto province = ProvinceManager::get_instance()->get_province(pop->get_location());
 
-    std::scoped_lock lock(province->m);
+    std::scoped_lock province_lock(province->m);
     auto town = province->town;
     auto prices = town.mp.get_current_prices();
 
@@ -489,21 +491,21 @@ std::shared_ptr<std::unordered_map<PopStats, float>> PopManager::get_pop_statist
     std::shared_lock lock(m);
     for (const auto& [id, pop] : pops) {
         auto lock = lock_pop_read(id);
-        if (pop.get_type() == peasant)
-            (*toReturn)[NumOfPeasants]++;
+        if (pop.get_type() == PopTypes::peasant)
+            (*toReturn)[PopStats::NumOfPeasants]++;
         if (pop.get_wealth() < 15)
-            (*toReturn)[NumOfBrokePops]++;
+            (*toReturn)[PopStats::NumOfBrokePops]++;
         if (pop.is_starving())
-            (*toReturn)[NumOfStarvingPops]++;
+            (*toReturn)[PopStats::NumOfStarvingPops]++;
         if (pop.is_seeking_employment())
-            (*toReturn)[UnemploymentRate]++;
+            (*toReturn)[PopStats::UnemploymentRate]++;
         if (pop.is_unemployed())
-            (*toReturn)[RealUnemploymentRate]++;
-        (*toReturn)[AveragePopWealth] += pop.get_wealth();
+            (*toReturn)[PopStats::RealUnemploymentRate]++;
+        (*toReturn)[PopStats::AveragePopWealth] += pop.get_wealth();
     }
-    (*toReturn)[UnemploymentRate] /= pops.size();
-    (*toReturn)[RealUnemploymentRate] /= pops.size();
-    (*toReturn)[AveragePopWealth] /= pops.size();
+    (*toReturn)[PopStats::UnemploymentRate] /= pops.size();
+    (*toReturn)[PopStats::RealUnemploymentRate] /= pops.size();
+    (*toReturn)[PopStats::AveragePopWealth] /= pops.size();
     return toReturn;
 }
 

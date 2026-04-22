@@ -1,29 +1,28 @@
 #pragma once
 
 #include "classes/local_price_controller.hpp"
-#include <classes/trade_order.hpp>
+#include "classes/trade_order.hpp"
 
 #include <set>
 #include <unordered_map>
 #include <memory>
 #include <optional>
 
+class Province;
+class CapitalComponent;
+class StorageComponent;
+class BasePop;
+
 class MarketComponent {
 
     private:
 
     std::unordered_map<int, 
-        std::set<std::shared_ptr<TradeOrder>, 
-            std::vector<std::shared_ptr<TradeOrder>>,
-            TradeOrder::TradeOrderLT()
-        >
+        std::set<std::shared_ptr<TradeOrder>, TradeOrder::TradeOrderLT>
     > sell_orders;
 
     std::unordered_map<int, 
-        std::set<std::shared_ptr<TradeOrder>, 
-            std::vector<std::shared_ptr<TradeOrder>>,
-            TradeOrder::TradeOrderGT()
-        >
+        std::set<std::shared_ptr<TradeOrder>, TradeOrder::TradeOrderGT>
     > buy_orders;
 
     std::pair<CapitalComponent*, StorageComponent*> get_capital_and_storage_components(Province* province, int pos_id);
