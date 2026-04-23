@@ -178,18 +178,12 @@ func get_depot_direction(coords: Vector2i) -> int:
 func place_road_depot() -> void:
 	var tile: Vector2i = get_cell_position()
 	if DisplayServer.window_is_focused() and Utils.is_tile_taken(tile):
-		TerminalMap.get_instance().create_terminal(RoadDepot.create(tile, unique_id))
+		#TerminalMap.get_instance().create_terminal(RoadDepot.create(tile, unique_id))
 		RoadMap.get_instance().place_road_depot(tile)
 
 #Cargo
 func is_location_valid_stop(coords: Vector2i) -> bool:
 	return map_data.get_instance().is_hold(coords) or map_data.get_instance().is_depot(coords)
-
-func get_depot_or_terminal(coords: Vector2i) -> Terminal:
-	var new_depot: Terminal = map_data.get_instance().get_depot(coords)
-	if new_depot != null:
-		return new_depot
-	return TerminalMap.get_instance().get_terminal(coords)
 
 #Trains
 @rpc("any_peer", "reliable", "call_local")
@@ -221,10 +215,10 @@ func get_trains() -> Array:
 			toReturn.push_back(child)
 	return toReturn
 
-func get_trains_in_depot(coords: Vector2i) -> Array:
-	if map_data.get_instance().is_depot(coords):
-		return map_data.get_instance().get_depot(coords).get_trains_simplified()
-	return []
+#func get_trains_in_depot(coords: Vector2i) -> Array:
+	#if map_data.get_instance().is_depot(coords):
+		#return map_data.get_instance().get_depot(coords).get_trains_simplified()
+	#return []
 
 #Rail Builder
 func record_start() -> void:

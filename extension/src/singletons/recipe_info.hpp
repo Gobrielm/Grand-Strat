@@ -5,6 +5,7 @@
 #include <optional>
 #include <vector>
 
+#include <godot_cpp/classes/ref.hpp>
 #include <godot_cpp/variant/dictionary.hpp>
 #include <godot_cpp/variant/array.hpp>
 

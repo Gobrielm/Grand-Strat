@@ -68,21 +68,22 @@ func request_current_prices(coords: Vector2i) -> void:
 
 @rpc("any_peer", "call_local", "unreliable")
 func request_current_basic_labels(coords: Vector2i) -> void:
-	var broker: Broker = TerminalMap.get_instance().get_broker(coords)
-	var _current_cash: int = TerminalMap.get_instance().get_cash_of_firm(coords)
-	var level: int = 0
-	if broker is FactoryTemplate:
-		level = (TerminalMap.get_instance().get_broker(coords) as FactoryTemplate).get_level_without_employment()
-	update_current_cash.rpc_id(multiplayer.get_remote_sender_id(), _current_cash)
-	update_current_level.rpc_id(multiplayer.get_remote_sender_id(), level)
-	update_connected_status.rpc_id(multiplayer.get_remote_sender_id(), broker.get_number_of_connected_terminals())
+	pass
+	#var broker: Broker = TerminalMap.get_instance().get_broker(coords)
+	#var _current_cash: int = TerminalMap.get_instance().get_cash_of_firm(coords)
+	#var level: int = 0
+	#if broker is FactoryTemplate:
+		#level = (TerminalMap.get_instance().get_broker(coords) as FactoryTemplate).get_level_without_employment()
+	#update_current_cash.rpc_id(multiplayer.get_remote_sender_id(), _current_cash)
+	#update_current_level.rpc_id(multiplayer.get_remote_sender_id(), level)
+	#update_connected_status.rpc_id(multiplayer.get_remote_sender_id(), broker.get_number_of_connected_terminals())
 
 @rpc("any_peer", "call_local", "unreliable")
 func request_current_level(coords: Vector2i) -> void:
-	var broker: Broker = TerminalMap.get_instance().get_broker(coords)
+	#var broker: Broker = TerminalMap.get_instance().get_broker(coords)
 	var _current_level: int = 0
-	if broker is FactoryTemplate:
-		_current_level = (TerminalMap.get_instance().get_broker(coords) as FactoryTemplate).get_level_without_employment()
+	#if broker is FactoryTemplate:
+		#_current_level = (TerminalMap.get_instance().get_broker(coords) as FactoryTemplate).get_level_without_employment()
 	update_current_level.rpc_id(multiplayer.get_remote_sender_id(), _current_level)
 
 @rpc("authority", "call_local", "unreliable")
@@ -162,11 +163,11 @@ func _on_cargo_info_pop_up_popup_requested() -> void:
 func populate_info_window(type: int, p_location: Vector2i) -> void:
 	var info: Dictionary = {}
 	var terminal_map: TerminalMap = TerminalMap.get_instance()
-	var factory: Factory = terminal_map.get_factory(p_location)
+	#var factory: Factory = terminal_map.get_factory(p_location)
 	info.type = CargoInfo.get_instance().get_cargo_name(type)
-	info.price = "$" + str(Utils.round(factory.get_local_price(type), 2))
-	info.amount = "Amount: " + str(Utils.round(factory.get_cargo_amount(type), 2))
-	info.market_info = "Supply: " + str(Utils.round(factory.get_last_month_supply()[type], 2)) + '\n' + "Demand: " + str(Utils.round(factory.get_last_month_demand()[type], 2))
+	#info.price = "$" + str(Utils.round(factory.get_local_price(type), 2))
+	#info.amount = "Amount: " + str(Utils.round(factory.get_cargo_amount(type), 2))
+	#info.market_info = "Supply: " + str(Utils.round(factory.get_last_month_supply()[type], 2)) + '\n' + "Demand: " + str(Utils.round(factory.get_last_month_demand()[type], 2))
 	pop_up_info_window.rpc_id(multiplayer.get_remote_sender_id(), info)
 
 @rpc("authority", "call_local", "unreliable")

@@ -36,6 +36,8 @@ void Province::_bind_methods() {
 
     ClassDB::bind_method(D_METHOD("create_pops"), &Province::create_pops);
     ClassDB::bind_method(D_METHOD("count_pops"), &Province::count_pops);
+
+    ClassDB::bind_method(D_METHOD("get_town_tile"), &Province::get_town_tile);
 }
     
 Province* Province::create(int p_prov_id) {
@@ -290,6 +292,10 @@ BuildingType Province::get_building_type(int pos_id) const {
 
 bool Province::has_town() const {
     return true;
+}
+
+Vector2i Province::get_town_tile() const {
+    return town.position.get_position_vector2i();
 }
 
 void Province::init_province() {

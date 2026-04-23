@@ -104,6 +104,7 @@ class Province : public Object {
     // void remove_terminal(Vector2i tile);
     // Array get_terminal_tiles() const;
     bool has_town() const;
+    Vector2i get_town_tile() const;
 
     void init_province();
 

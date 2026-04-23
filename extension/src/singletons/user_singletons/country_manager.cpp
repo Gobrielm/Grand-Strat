@@ -1,4 +1,8 @@
 #include "country_manager.hpp"
+#include "country.hpp"
+
+
+Ref<CountryManager> CountryManager::singleton_instance;
 
 void CountryManager::_bind_methods() {
     ClassDB::bind_static_method(get_class_static(), D_METHOD("get_instance"), &CountryManager::get_instance);
@@ -7,8 +11,6 @@ void CountryManager::_bind_methods() {
     ClassDB::bind_method(D_METHOD("assign_country_to_player_id", "country_id", "player_id"), &CountryManager::assign_country_to_player_id);
     ClassDB::bind_method(D_METHOD("month_tick"), &CountryManager::month_tick);
 }
-
-Ref<CountryManager> CountryManager::singleton_instance = Ref<CountryManager>(nullptr);
 
 CountryManager::CountryManager() {
 }

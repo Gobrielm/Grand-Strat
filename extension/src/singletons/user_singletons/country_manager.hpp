@@ -1,22 +1,23 @@
 #pragma once
 
-#include "country.hpp"
-
 #include <unordered_map>
 #include <mutex>
 #include <godot_cpp/classes/ref_counted.hpp>
 #include <godot_cpp/variant/dictionary.hpp>
 #include <godot_cpp/variant/array.hpp>
+#include <godot_cpp/classes/ref.hpp>
+
+class Country;
 
 using namespace godot;
 
 class CountryManager : public RefCounted {
     GDCLASS(CountryManager, RefCounted);
 
-private:
     mutable std::mutex m;
-    std::unordered_map<int, Ref<Country>> countries;
     static Ref<CountryManager> singleton_instance;
+    std::unordered_map<int, Ref<Country>> countries;
+    
 
 protected:
     static void _bind_methods();
