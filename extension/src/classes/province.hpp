@@ -62,6 +62,12 @@ class Province : public Object {
     std::vector<Station> stations;
     std::vector<SubsistenceFarm> sub_farms;
 
+    // private helper functions
+    Factory& get_factory_unsafe(int pos_id);
+    Station& get_station_unsafe(int pos_id);
+    PositionComponent get_visible_position_component_unsafe(Vector2i tile) const;
+
+
     protected:
     static void _bind_methods();
 

@@ -51,7 +51,6 @@ void ProvinceManager::_bind_methods() {
     ClassDB::bind_method(D_METHOD("is_factory", "tile"), &ProvinceManager::is_factory);
     ClassDB::bind_method(D_METHOD("is_town", "tile"), &ProvinceManager::is_town);
     ClassDB::bind_method(D_METHOD("is_station", "tile"), &ProvinceManager::is_station);
-    
 }
 
 void ProvinceManager::create() {

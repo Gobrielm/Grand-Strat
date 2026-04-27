@@ -10,6 +10,9 @@
 void MapObjectInfo::_bind_methods() {
     ClassDB::bind_static_method(get_class_static(), D_METHOD("get_town_factories", "town_tile"), &MapObjectInfo::get_town_factories);
     ClassDB::bind_static_method(get_class_static(), D_METHOD("get_town_prices", "town_tile"), &MapObjectInfo::get_town_prices);
+
+    ClassDB::bind_method(D_METHOD("get_cargo_dict", "coords"), &MapObjectInfo::get_factory_cargo_dictionary);
+    ClassDB::bind_method(D_METHOD("get_cash_of_factory", "coords"), &MapObjectInfo::get_cash_of_factory);
 }
 
 MapObjectInfo::MapObjectInfo() {
@@ -26,8 +29,11 @@ Array MapObjectInfo::get_town_factories(Vector2i town_tile) {
 
     Array a;
     for (auto id: ids) {
-        Factory& factory = province->get_factory(id);
+        std::scoped_lock lock(province->m);
+        Factory& factory = province->get_factory_unsafe(id);
+        
         Dictionary d;
+        
         d["level"] = factory.employer.get_level_without_employment();
         d["cash"] = factory.capital.get_cash();
         d["recipe"] = factory.get_recipe().get_recipe_as_string();
@@ -59,4 +65,32 @@ Dictionary MapObjectInfo::get_town_prices(Vector2i town_tile) {
     }
 
     return d;
+}
+
+Dictionary MapObjectInfo::get_factory_cargo_dictionary(const Vector2i coords) {
+    auto pm = ProvinceManager::get_instance();
+    auto province = pm->get_province(coords);
+    if (province == nullptr) return Dictionary();
+
+    std::scoped_lock lock(province->m);
+    PositionComponent pos = province->get_visible_position_component_unsafe(coords);
+    if (pos.get_type() == BuildingType::FACTORY) {
+        return province->get_factory_unsafe(pos.get_building_id()).storage.dictionary();
+    }
+
+    return Dictionary();
+}
+
+int16_t MapObjectInfo::get_cash_of_factory(const Vector2i coords) {
+    auto pm = ProvinceManager::get_instance();
+    auto province = pm->get_province(coords);
+    if (province == nullptr) return 0;
+
+    std::scoped_lock lock(province->m);
+    PositionComponent pos = province->get_visible_position_component_unsafe(coords);
+    if (pos.get_type() == BuildingType::FACTORY) {
+        return round(province->get_factory_unsafe(pos.get_building_id()).capital.get_cash());
+    }
+
+    return 0;
 }

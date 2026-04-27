@@ -261,6 +261,7 @@ void Province::add_subsistence_farm(SubsistenceFarm& farm) {
 }
 
 Factory& Province::get_factory(int pos_id) {
+    std::scoped_lock(m);
     if (!id_to_vector_position.count(pos_id) || id_to_vector_position[pos_id].second != BuildingType::FACTORY) {
         std::cout << "Tried to fetch invalid factory with pos: "  + std::to_string(pos_id);
     }
@@ -268,6 +269,7 @@ Factory& Province::get_factory(int pos_id) {
 }
 
 Station& Province::get_station(int pos_id) {
+    std::scoped_lock(m);
     if (!id_to_vector_position.count(pos_id) || id_to_vector_position[pos_id].second != BuildingType::STATION) {
         std::cout << "Tried to fetch invalid station with pos: "  + std::to_string(pos_id);
     }
@@ -297,14 +299,16 @@ BuildingType Province::get_building_type(int pos_id) const {
 }
 
 BuildingType Province::get_visible_building_type(Vector2i tile) const {
-    if (is_building_at_pos(tile)) {
+    std::scoped_lock lock(m);
+    if (position_components.count(tile)) {
         return position_components.at(tile).get_type();
     }
     return BuildingType::INVALID;
 }
 
 PositionComponent Province::get_visible_position_component(Vector2i tile) const {
-    if (is_building_at_pos(tile)) {
+    std::scoped_lock lock(m);
+    if (position_components.count(tile)) {
         return position_components.at(tile);
     }
     return PositionComponent();
@@ -505,4 +509,25 @@ void Province::employ_peasants() {
 int Province::count_pops() const {
     std::shared_lock lock(pops_lock);
     return pops.size();
+}
+
+Factory& Province::get_factory_unsafe(int pos_id) {
+    if (!id_to_vector_position.count(pos_id) || id_to_vector_position[pos_id].second != BuildingType::FACTORY) {
+        std::cout << "Tried to fetch invalid factory with pos: "  + std::to_string(pos_id);
+    }
+    return factories[id_to_vector_position[pos_id].first];
+}
+
+Station& Province::get_station_unsafe(int pos_id) {
+    if (!id_to_vector_position.count(pos_id) || id_to_vector_position[pos_id].second != BuildingType::STATION) {
+        std::cout << "Tried to fetch invalid station with pos: "  + std::to_string(pos_id);
+    }
+    return stations[id_to_vector_position[pos_id].first];
+}
+
+PositionComponent Province::get_visible_position_component_unsafe(Vector2i tile) const {
+    if (position_components.count(tile)) {
+        return position_components.at(tile);
+    }
+    return PositionComponent();
 }

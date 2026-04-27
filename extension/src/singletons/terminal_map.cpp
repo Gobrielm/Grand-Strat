@@ -37,7 +37,6 @@ void TerminalMap::_bind_methods() {
 
     // // Info getters
 
-    ClassDB::bind_method(D_METHOD("get_cargo_dict", "coords"), &TerminalMap::get_cargo_dict);
     // ClassDB::bind_method(D_METHOD("get_construction_site_recipe", "coords"), &TerminalMap::get_construction_site_recipe);
     // ClassDB::bind_method(D_METHOD("get_construction_materials", "coords"), &TerminalMap::get_construction_materials);
     // ClassDB::bind_method(D_METHOD("get_needed_construction_materials", "coords"), &TerminalMap::get_needed_construction_materials);
@@ -380,19 +379,6 @@ std::vector<int> TerminalMap::get_available_resources_of_tile(const Vector2i coo
 //     }
 //     return toReturn;
 // }
-
-Dictionary TerminalMap::get_cargo_dict(const Vector2i &coords) {
-    Dictionary d;
-    auto pm = ProvinceManager::get_instance();
-    if (!pm->is_factory(coords)) return d;
-    auto province = pm->get_province(coords);
-    if (province == nullptr) return d;
-    
-
-    d = province->get_factory(province->get_visible_position_component(coords).get_building_id()).storage.dictionary();
-    return d;
-}
-
 
 // int TerminalMap::get_cash_of_firm(const Vector2i coords) {
 //     int toReturn;

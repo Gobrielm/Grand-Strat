@@ -89,7 +89,6 @@ public:
     std::vector<int> get_available_resources_of_tile(const Vector2i coords) const;
 
     //Info getters
-    Dictionary get_cargo_dict(const Vector2i &coords);
     // Array get_construction_site_recipe(const Vector2i &coords);
     // Dictionary get_construction_materials(const Vector2i &coords);
     // Dictionary get_needed_construction_materials(const Vector2i &coords);
