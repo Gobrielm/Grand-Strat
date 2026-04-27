@@ -41,12 +41,13 @@ class MarketComponent {
     std::unordered_map<int, float> get_current_prices() const;
 
     std::pair<std::vector<std::pair<int, float>>, std::vector<std::pair<int, float>>> get_market_info_plot(int type) const;
+    Array get_market_info_plot_godot(int type) const;
     
     /// @param province The locked province that town is in
     void market_tick(Province* province);
 
-    long get_current_demand(int type) const;
-    long get_current_supply(int type) const;
+    int32_t get_current_demand(int type) const;
+    int32_t get_current_supply(int type) const;
 
     /// @param province The locked province that town is in
     void sell_to_pop(Province* province, BasePop& pop);

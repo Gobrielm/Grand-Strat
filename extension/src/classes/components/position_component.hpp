@@ -5,24 +5,25 @@
 
 using namespace godot;
 
-enum BuildingType {
+enum class BuildingType: int {
     INVALID = -1,
     TOWN = 1,
     FACTORY = 2,
     STATION = 3,
-    SUBSISTENCE_FARM = 4,
+    SUBSISTENCE_FARM = 4
 };
 
 class PositionComponent {
     private:
-    inline static std::atomic<int> TOTAL_OBJECTS{0};
+    inline static std::atomic<int> TOTAL_OBJECTS = 0;
+    std::pair<int, int> position;
+    int building_id;
+    BuildingType type;
 
     public:
-    const std::pair<int, int> position;
-    const int building_id;
-    const BuildingType type;
+    
 
-    PositionComponent(): building_id(-1), type(INVALID), position({0, 0}) {}
+    PositionComponent(): building_id(-1), type(BuildingType::INVALID), position({0, 0}) {}
 
     PositionComponent(const PositionComponent& other): building_id(other.building_id), type(other.type), position(other.position) {}
 
@@ -30,8 +31,24 @@ class PositionComponent {
 
     PositionComponent(std::pair<int, int> p_position, BuildingType p_type): building_id(TOTAL_OBJECTS++), type(p_type), position(p_position) {}
 
-    PositionComponent operator=(const PositionComponent& other) {
-        return PositionComponent(other);
+    PositionComponent& operator=(const PositionComponent& other) {
+        if (this == &other) {
+            return *this;
+        }
+
+        position = other.position;
+        building_id = other.building_id;
+        type = other.type;
+        
+        return *this;
+    }
+
+    int get_building_id() const {
+        return building_id;
+    }
+
+    BuildingType get_type() const {
+        return type;
     }
 
     Vector2i get_position_vector2i() const {

@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <random>
 #include <queue>
+#include <unistd.h>
 
 void InitialBuilder::_bind_methods() {
     ClassDB::bind_static_method(get_class_static(), D_METHOD("create", "p_country_id"), &InitialBuilder::create);
@@ -28,12 +29,14 @@ void InitialBuilder::build_initital_factories() {
     auto start_time = std::chrono::high_resolution_clock::now();
     Ref<ProvinceManager> province_manager = ProvinceManager::get_instance();
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
+
     std::unordered_set<int> prov_ids = province_manager->get_country_provinces(country_id);
     for (const int &prov_id: prov_ids) {
         Province* province = province_manager->get_province(prov_id);
-
-        std::scoped_lock lock(province->m);
-
+        if (province == nullptr) {
+            print_error("Null Province should not appear here.");
+            continue;
+        }
         build_factory_type(CargoInfo::get_instance()->get_cargo_type("grain"), province);
         build_factory_type(CargoInfo::get_instance()->get_cargo_type("wood"), province);
         build_factory_type(CargoInfo::get_instance()->get_cargo_type("salt"), province);
@@ -52,26 +55,28 @@ void InitialBuilder::build_initital_factories() {
 
 void InitialBuilder::build_factory_type(int type, Province* province) {
     int tile_count = province->get_tiles_vector().size();
-    int num_of_levels_to_place = get_levels_to_build(type, province);
+    int num_of_levels_to_place = 5;
+    // int num_of_levels_to_place = get_levels_to_build(type, province);
     if (num_of_levels_to_place == 0) return;
     int levels_placed = 0;
     Ref<TerminalMap> tm = TerminalMap::get_instance();
-
     for (const Vector2i &tile: province->get_town_centered_tiles()) {
         if (ProvinceManager::get_instance()->is_tile_available(tile)) {
-            int cargo_val = tm->get_cargo_value_of_tile(tile, type);
+            int cargo_val = 5;
+            // int cargo_val = tm->get_cargo_value_of_tile(tile, type);
 
             if (cargo_val != 0 && rand() % 3 == 0) {
                 //Need to check if this factory will be cutoff, then check neighboors
                 if (!is_factory_placement_valid(tile)) continue;
-                int mult = std::min(rand() % cargo_val, cargo_val);
-
+                int mult = rand() % cargo_val;
                 auto ec = RecipeInfo::get_instance()->get_primary_employer_component_for_type(type);
+                if (!ec) {
+                    print_error("No EC found.");
+                    return;
+                }
                 auto factory = Factory(std::make_pair(tile.x, tile.y), owner_id, ec.value());
-
                 factories_to_place_on_map[tile] = type;
                 tm->encode_factory_no_calls_to_cargo_map(factory, mult);
-
                 levels_placed += mult;
                 if (levels_placed > num_of_levels_to_place) {
                     break;
@@ -81,25 +86,32 @@ void InitialBuilder::build_factory_type(int type, Province* province) {
     }
 }
 
-bool InitialBuilder::is_factory_placement_valid(const Vector2i &fact_to_place) const {
+bool InitialBuilder::is_factory_placement_valid(const Vector2i fact_to_place) const {
     auto tm = TerminalMap::get_instance();
     auto pm = ProvinceManager::get_instance();
+
     Array tiles = tm->get_main_map()->get_surrounding_cells(fact_to_place);
     int available_tiles = 0; //Checks to see if fact to place can place
+    
     for (int i = 0; i < tiles.size(); i++) {
         Vector2i tile = tiles[i];
         auto province = pm->get_province(tile);
-        bool will_cutoff_factory = false;
+        // Map edge
+        if (province == nullptr) {
+            continue;
+        }
 
-        {
-            std::scoped_lock lock(province->m);
-            if (province->position_components.count(tile)) {
-                auto pos = province->position_components[tile][0];
-                if (pos.type == BuildingType::FACTORY) {
-                    auto& factory = province->factories[province->id_to_vector_position[pos.building_id].first];
-                    will_cutoff_factory = will_factory_by_cut_off(factory.position.get_position_vector2i());
-                }
-            }
+        BuildingType building_type = BuildingType::INVALID;
+        
+        if (province->is_building_at_pos(tile)) {
+            // std::scoped_lock lock(province->m);
+            building_type = province->position_components[tile].get_type();
+        }
+        
+
+        bool will_cutoff_factory = false;
+        if (building_type == BuildingType::FACTORY) {
+            will_cutoff_factory = will_factory_by_cut_off(tile);
         }
 
         if (will_cutoff_factory) return false; // Checks factories that will be blocked
@@ -107,11 +119,12 @@ bool InitialBuilder::is_factory_placement_valid(const Vector2i &fact_to_place) c
         if (pm->is_tile_available(tile)) {
             available_tiles++;
         }
+
     }
     return available_tiles > 0;
 }
 
-bool InitialBuilder::will_factory_by_cut_off(const Vector2i &factory_tile) const {
+bool InitialBuilder::will_factory_by_cut_off(const Vector2i factory_tile) const {
     auto tm = TerminalMap::get_instance();
     auto pm = ProvinceManager::get_instance();
 
@@ -144,8 +157,13 @@ int InitialBuilder::get_levels_to_build(int type, Province* province) const {
 
 int InitialBuilder::get_levels_to_build_helper(int type, int demand) const {
     auto ec = RecipeInfo::get_instance()->get_primary_employer_component_for_type(type);
-    float ouput_quant = ec.value().recipe.get_outputs()[type];
-    int levels_to_build = round((demand) / (ouput_quant * 30));
+    ERR_FAIL_COND_V_MSG(!ec, 0, "Recipe is null from type: " + CargoInfo::get_instance()->get_cargo_name(type));
+    float output_quant = ec.value().recipe.get_outputs()[type];
+    if (output_quant == 0) {
+        ERR_PRINT("Type not found in outputs: " + CargoInfo::get_instance()->get_cargo_name(type));
+        return 0;
+    }
+    int levels_to_build = round((demand) / (output_quant * 30));
     return levels_to_build;
 }
 
@@ -156,12 +174,11 @@ void InitialBuilder::build_t2_factory_in_towns(Province* province) {
     Town& town = province->town;
     build_t2_factory_in_town(town, cargo_info->get_cargo_type("lumber"));
     build_t2_factory_in_town(town, cargo_info->get_cargo_type("bread"));
-    
 }
 
 void InitialBuilder::build_t2_factory_in_town(Town& town, int output_type) {
     auto ec = RecipeInfo::get_instance()->get_employer_component_for_type(output_type);
-    ERR_FAIL_COND_MSG(!ec.has_value(), "Recipe is null from type: " + CargoInfo::get_instance()->get_cargo_name(output_type));
+    ERR_FAIL_COND_MSG(!ec, "Recipe is null from type: " + CargoInfo::get_instance()->get_cargo_name(output_type));
 
     // TODO
     // Ref<AiFactory> factory = Ref<AiFactory>(memnew(AiFactory(town->get_location(), 0, recipe)));

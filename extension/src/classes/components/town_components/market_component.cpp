@@ -81,6 +81,30 @@ std::pair<std::vector<std::pair<int, float>>, std::vector<std::pair<int, float>>
     return std::make_pair(buys, sells);
 }
 
+Array MarketComponent::get_market_info_plot_godot(int type) const {
+    Array buys;
+    Array sells;
+
+
+    for (auto it = buy_orders.at(type).begin(); it != buy_orders.at(type).end(); it++) {
+        auto& ptr = (*it);
+        if (ptr->get_type() != type) continue;
+        Vector2 v(ptr->get_amount(), ptr->get_price());
+        buys.push_back(v);
+    }
+
+    for (auto it = sell_orders.at(type).begin(); it != sell_orders.at(type).end(); it++) {
+        auto& ptr = (*it);
+        if (ptr->get_type() != type) continue;
+        Vector2 v(ptr->get_amount(), ptr->get_price());
+        buys.push_back(v);
+    }
+    Array a;
+    a.push_back(buys);
+    a.push_back(sells);
+    return a;
+}
+
 void MarketComponent::market_tick(Province* province) {
 
     for (auto& [type, buys]: buy_orders) {
@@ -115,12 +139,12 @@ std::pair<CapitalComponent*, StorageComponent*> MarketComponent::get_capital_and
     const auto type = province->id_to_vector_position.at(pos_id).second;
 
     switch (type) {
-        case FACTORY: {
+        case BuildingType::FACTORY: {
             auto& factory = province->factories[province->id_to_vector_position[pos_id].first];
             return std::pair<CapitalComponent*, StorageComponent*>({ &factory.capital, &factory.storage });
         }
         default:
-            ERR_FAIL_V_MSG(std::make_pair(nullptr, nullptr), "Unknown Entity Tried to Trade: " + String(std::to_string(type).c_str()));
+            ERR_FAIL_V_MSG(std::make_pair(nullptr, nullptr), "Unknown Entity Tried to Trade: " + String(std::to_string(static_cast<int>(type)).c_str()));
     }
     return std::make_pair(nullptr, nullptr);
 }
@@ -156,16 +180,16 @@ void MarketComponent::finish_market_exchange(
     seller.second->remove_cargo(type, amt);
 }
 
-long MarketComponent::get_current_demand(int type) const {
-    long tot;
+int32_t MarketComponent::get_current_demand(int type) const {
+    int32_t tot;
     for (const auto& [amt, price]: get_market_info_plot(type).first) {
         tot += amt;
     }
     return tot;
 }
 
-long MarketComponent::get_current_supply(int type) const {
-    long tot;
+int32_t MarketComponent::get_current_supply(int type) const {
+    int32_t tot;
     for (const auto& [amt, price]: get_market_info_plot(type).second) {
         tot += amt;
     }

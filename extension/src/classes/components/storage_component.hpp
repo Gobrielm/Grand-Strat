@@ -24,4 +24,5 @@ class StorageComponent {
     float add_cargo(int type, float amount);
     void remove_cargo(int type, float amount);
 
+    godot::Dictionary dictionary() const;
 };

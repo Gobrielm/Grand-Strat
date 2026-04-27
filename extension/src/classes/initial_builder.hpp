@@ -15,11 +15,11 @@ class InitialBuilder: public Object {
 
     std::unordered_map<Vector2i, int, godot_helpers::Vector2iHasher> factories_to_place_on_map; // Tile -> type, if type is negitive, place road_depot
 
-    void connect_road_depot(const Vector2i &depot);
+    // void connect_road_depot(const Vector2i &depot);
     std::vector<Vector2i> bfs_to_closest(Vector2i start, bool(*f)(Vector2i));
     void build_factory_type(int type, Province* province);
-    bool is_factory_placement_valid(const Vector2i &fact_to_place) const;
-    bool will_factory_by_cut_off(const Vector2i &factory_tile) const;
+    bool is_factory_placement_valid(const Vector2i fact_to_place) const;
+    bool will_factory_by_cut_off(const Vector2i factory_tile) const;
     int get_levels_to_build(int type, Province* province) const;
     int get_levels_to_build_helper(int type, int demand) const;
     void build_t2_factory_in_towns(Province* province);

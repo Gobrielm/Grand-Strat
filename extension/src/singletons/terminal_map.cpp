@@ -37,7 +37,7 @@ void TerminalMap::_bind_methods() {
 
     // // Info getters
 
-    // ClassDB::bind_method(D_METHOD("get_cargo_dict", "coords"), &TerminalMap::get_cargo_dict);
+    ClassDB::bind_method(D_METHOD("get_cargo_dict", "coords"), &TerminalMap::get_cargo_dict);
     // ClassDB::bind_method(D_METHOD("get_construction_site_recipe", "coords"), &TerminalMap::get_construction_site_recipe);
     // ClassDB::bind_method(D_METHOD("get_construction_materials", "coords"), &TerminalMap::get_construction_materials);
     // ClassDB::bind_method(D_METHOD("get_needed_construction_materials", "coords"), &TerminalMap::get_needed_construction_materials);
@@ -226,7 +226,7 @@ void TerminalMap::encode_factory(Factory& factory, int mult) {
     }
     {
         std::scoped_lock lock(m);
-        id_to_position_component[factory.position.building_id] = factory.position;
+        id_to_position_component[factory.position.get_building_id()] = factory.position;
     }
     
     province->add_factory(factory); // Adds to province
@@ -239,7 +239,7 @@ void TerminalMap::encode_factory_no_calls_to_cargo_map(Factory& factory, int mul
     }
     Ref<ProvinceManager> province_manager = ProvinceManager::get_instance();
     Vector2i coords = factory.position.get_position_vector2i();
-    Province* province = province_manager->get_province(province_manager->get_province_id(coords));
+    Province* province = province_manager->get_province(coords);
     if (province == nullptr) {
         print_error("Province not found with tile : " + coords);
         return;
@@ -247,7 +247,7 @@ void TerminalMap::encode_factory_no_calls_to_cargo_map(Factory& factory, int mul
     
     {
         std::scoped_lock lock(m);
-        id_to_position_component[factory.position.building_id] = factory.position;
+        id_to_position_component[factory.position.get_building_id()] = factory.position;
     }
 
     province->add_factory(factory); // Adds to province
@@ -257,7 +257,7 @@ void TerminalMap::encode_factory_from_construction_site(Factory& factory) {
     Vector2i coords = factory.position.get_position_vector2i();
     {
         std::scoped_lock lock(m);
-        id_to_position_component[factory.position.building_id] = factory.position;
+        id_to_position_component[factory.position.get_building_id()] = factory.position;
     }
     cargo_map->call("call_set_tile_rpc", coords, factory.get_primary_type());
 }
@@ -381,14 +381,17 @@ std::vector<int> TerminalMap::get_available_resources_of_tile(const Vector2i coo
 //     return toReturn;
 // }
 
-// Dictionary TerminalMap::get_cargo_dict(const Vector2i &coords) {
-//     Dictionary d;
-//     Ref<Hold> hold = get_terminal_as<Hold>(coords);
-//     if (hold.is_null()) return d;
+Dictionary TerminalMap::get_cargo_dict(const Vector2i &coords) {
+    Dictionary d;
+    auto pm = ProvinceManager::get_instance();
+    if (!pm->is_factory(coords)) return d;
+    auto province = pm->get_province(coords);
+    if (province == nullptr) return d;
+    
 
-//     d = hold -> get_current_hold();
-//     return d;
-// }
+    d = province->get_factory(province->get_visible_position_component(coords).get_building_id()).storage.dictionary();
+    return d;
+}
 
 
 // int TerminalMap::get_cash_of_firm(const Vector2i coords) {
@@ -444,14 +447,14 @@ Array TerminalMap::get_available_primary_recipes(const Vector2i& coords) const {
 
 void TerminalMap::encode_building(PositionComponent pos) {
     std::scoped_lock lock(m);
-    id_to_position_component[pos.building_id] = pos;
+    id_to_position_component[pos.get_building_id()] = pos;
 }
 
 void TerminalMap::place_object_on_map(PositionComponent pos) {
     auto province = ProvinceManager::get_instance()->get_province(pos.get_position_vector2i());
-    switch (pos.type) {
+    switch (pos.get_type()) {
         case BuildingType::FACTORY:
-            cargo_map->call_deferred("call_set_tile_rpc", pos.get_position_vector2i(), province->get_factory(pos.building_id).get_primary_type());
+            cargo_map->call_deferred("call_set_tile_rpc", pos.get_position_vector2i(), province->get_factory(pos.get_building_id()).get_primary_type());
         // case BuildingType::TOWN:
 
         // case BuildingType::STATION:

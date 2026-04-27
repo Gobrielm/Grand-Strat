@@ -19,6 +19,8 @@
 #include "classes/components/employer_component.hpp"
 #include "classes/map_objects/station.hpp"
 
+#include "utility/map_object_info.hpp"
+
 void Province::_bind_methods() {
     ClassDB::bind_static_method(get_class_static(), D_METHOD("create", "p_prov_id"), &Province::create);
 
@@ -53,7 +55,7 @@ Province::Province() {
     province_id = -1;
     population = 0;
 }
-Province::Province(int p_prov_id): town(create_town()) {
+Province::Province(int p_prov_id) {
     province_id = p_prov_id;
     population = 0;
 }
@@ -93,7 +95,7 @@ float Province::get_demand_for_cargo(int type) const {
 
 std::unordered_map<int, float> Province::get_demand_for_needed_goods() const {
     std::unordered_map<int, float> toReturn;
-    std::unordered_map<PopTypes, size_t> pop_size = get_pop_type_statistics();;
+    std::unordered_map<PopTypes, size_t> pop_size = get_pop_type_statistics();
     
     for (const auto& [type, amount]: BasePop::get_base_needs(PopTypes::rural)) {
         toReturn[type] += amount * pop_size[PopTypes::rural];   
@@ -144,12 +146,10 @@ Array Province::get_tiles() const {
 }
 
 const std::vector<Vector2i> Province::get_tiles_vector() const {
-    std::scoped_lock lock(m);
     return tiles;
 }
 
 std::vector<Vector2i> Province::get_town_centered_tiles() const { //Assumes one town
-    Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     std::vector<Vector2i> v;
     
     std::priority_queue<godot_helpers::weighted_value<Vector2i>,
@@ -179,63 +179,88 @@ std::vector<Vector2i> Province::get_town_centered_tiles() const { //Assumes one 
 //Used to pick a place for random industries, don't pick places with industries
 Vector2i Province::get_random_tile() const {
     std::vector<Vector2i> tiles_copy;
-    m.lock();
-    for (Vector2i tile: tiles) {
-        if (!position_components.count(tile)) {
-            tiles_copy.push_back(tile);
+    {
+        std::scoped_lock lock(m);
+        for (Vector2i tile: tiles) {
+            if (!position_components.count(tile)) {
+                tiles_copy.push_back(tile);
+            }
         }
     }
-    m.unlock();
+    
     if (tiles_copy.size() == 0) {
         return Vector2i(0, 0);
     } else if (tiles_copy.size() == 1) {
         return tiles_copy.at(0);
     }
-    return tiles_copy.at(rand() % (tiles_copy.size() - 1));
+    return tiles_copy.at(rand() % tiles_copy.size());
 }
 
-Town Province::create_town() {
+void Province::create_town() {
+    std::scoped_lock lock(m);
     // Create Town
-    Vector2i town_tile = tiles[rand() % tiles.size()];
-    return Town(std::make_pair(town_tile.x, town_tile.y));
+    // if (tiles.size() <= 2) {
+    //     print_error("Province is too small.");
+    // }
+    Vector2i town_tile = tiles.at(rand() % tiles.size());
+    town = Town(std::pair<int, int>(int(town_tile.x), int(town_tile.y)));
+
+    id_to_vector_position[town.position.get_building_id()] = std::make_pair(0, town.position.get_type());
+    position_components.emplace(town.position.get_position_vector2i(), town.position);
 }
 
 void Province::add_factory(Factory& factory) {
+    if (is_building_at_pos(factory.position.get_position_vector2i()) != 0) {
+        print_error("Factory being placed in taken tile.");
+        return;
+    }
+
     std::scoped_lock lock(m);
     int spot = factories.size();
     factories.push_back(factory);
-    id_to_vector_position[factory.position.building_id] = std::make_pair(spot, factory.position.type);
+    id_to_vector_position[factory.position.get_building_id()] = std::make_pair(spot, factory.position.get_type());
 
-    position_components[factory.position.get_position_vector2i()].push_back(factory.position);
+    position_components.emplace(factory.position.get_position_vector2i(), factory.position);
 }
 
-void Province::add_town(Town& p_town) {
+void Province::add_hidden_factory(Factory& factory) {
+    if (is_building_at_pos(factory.position.get_position_vector2i()) == 0) {
+        print_error("Placing Hidden Factory beneath nothing.");
+        return;
+    }
+
     std::scoped_lock lock(m);
-    town = p_town;
-    ERR_FAIL_COND_MSG(position_components[town.position.get_position_vector2i()].size() != 0, "Putting town in taken tile.");
-    position_components[town.position.get_position_vector2i()].push_back(town.position);
+    int spot = factories.size();
+    factories.push_back(factory);
+    id_to_vector_position[factory.position.get_building_id()] = std::make_pair(spot, factory.position.get_type());
+
+    hidden_position_components[factory.position.get_position_vector2i()].push_back(factory.position);
 }
 
 void Province::add_station(Station& station) {
+    if (is_building_at_pos(station.position.get_position_vector2i()) != 0) {
+        print_error("Station being placed in taken tile.");
+        return;
+    }
+
     std::scoped_lock lock(m);
     int spot = stations.size();
     stations.push_back(station);
-    id_to_vector_position[station.position.building_id] = std::make_pair(spot, station.position.type);
+    id_to_vector_position[station.position.get_building_id()] = std::make_pair(spot, station.position.get_type());
 
-    position_components[station.position.get_position_vector2i()].push_back(station.position);
+    position_components.emplace(station.position.get_position_vector2i(), station.position);
 }
 
 void Province::add_subsistence_farm(SubsistenceFarm& farm) {
     std::scoped_lock lock(m);
     int spot = sub_farms.size();
     sub_farms.push_back(farm);
-    id_to_vector_position[farm.position.building_id] = std::make_pair(spot, farm.position.type);
+    id_to_vector_position[farm.position.get_building_id()] = std::make_pair(spot, farm.position.get_type());
 
-    position_components[farm.position.get_position_vector2i()].push_back(farm.position);
+    hidden_position_components[farm.position.get_position_vector2i()].push_back(farm.position);
 }
 
 Factory& Province::get_factory(int pos_id) {
-    std::scoped_lock lock(m);
     if (!id_to_vector_position.count(pos_id) || id_to_vector_position[pos_id].second != BuildingType::FACTORY) {
         std::cout << "Tried to fetch invalid factory with pos: "  + std::to_string(pos_id);
     }
@@ -243,7 +268,6 @@ Factory& Province::get_factory(int pos_id) {
 }
 
 Station& Province::get_station(int pos_id) {
-    std::scoped_lock lock(m);
     if (!id_to_vector_position.count(pos_id) || id_to_vector_position[pos_id].second != BuildingType::STATION) {
         std::cout << "Tried to fetch invalid station with pos: "  + std::to_string(pos_id);
     }
@@ -254,10 +278,36 @@ Town& Province::get_town() {
     return town;
 }
 
-BuildingType Province::get_building_type(int pos_id) const {
+bool Province::is_building_at_pos(Vector2i pos) const {
     std::scoped_lock lock(m);
+    return position_components.count(pos);
+}
+
+int Province::get_hidden_buildings_at_pos(Vector2i pos) const {
+    std::scoped_lock lock(m);
+    if (hidden_position_components.count(pos)) {
+        return hidden_position_components.at(pos).size();
+    }
+    return 0;
+}
+
+BuildingType Province::get_building_type(int pos_id) const {
     if (!id_to_vector_position.count(pos_id)) return BuildingType::INVALID;
     return id_to_vector_position.at(pos_id).second;
+}
+
+BuildingType Province::get_visible_building_type(Vector2i tile) const {
+    if (is_building_at_pos(tile)) {
+        return position_components.at(tile).get_type();
+    }
+    return BuildingType::INVALID;
+}
+
+PositionComponent Province::get_visible_position_component(Vector2i tile) const {
+    if (is_building_at_pos(tile)) {
+        return position_components.at(tile);
+    }
+    return PositionComponent();
 }
 
 // void Province::add_terminal(Vector2i tile) {
@@ -335,14 +385,29 @@ void Province::create_pops() {
     int number_of_peasant_pops = floor(population * 0.9 / BasePop::get_people_per_pop(PopTypes::peasant));
     int number_of_rural_pops = floor(population * 0.08 / BasePop::get_people_per_pop(PopTypes::rural));
 	int number_of_city_pops = floor(population * 0.02 / BasePop::get_people_per_pop(PopTypes::town));
-    for (int i = 0; i < number_of_peasant_pops; i++) {
-        create_peasant_pop(0, tiles[rand() % tiles.size()]);
+
+    if (tiles.size() == 0) {
+        print_error("No Tiles in Province.");
+        return;
     }
-    
+
+    for (int i = 0; i < number_of_peasant_pops; i++) {
+        Vector2i rand_tile = tiles[rand() % tiles.size()];
+        if (rand_tile == Vector2i(0, 0)) {
+            print_error("Broken Tile in Province.");
+            return;
+        }
+        create_peasant_pop(0, rand_tile);
+    }
     employ_peasants(); // Employ peasants before any other pops added to just look at peasants
 
 	for (int i = 0; i < number_of_rural_pops; i++) {
-        create_rural_pop(0, tiles[rand() % tiles.size()]);
+        Vector2i rand_tile = tiles[rand() % tiles.size()];
+        if (rand_tile == Vector2i(0, 0)) {
+            print_error("Broken Tile in Province.");
+            return;
+        }
+        create_rural_pop(0, rand_tile);
     }
 	
 	//If no cities, then turn rest of population into peasant pops
@@ -368,9 +433,10 @@ void Province::create_rural_pop(Variant culture, Vector2i p_location) {
 void Province::create_town_pops(int amount) {
     int index = 0;
 
+    Vector2i town_pos = town.position.get_position_vector2i();
 	for (int i = 0; i < amount; i++) {
-        int pop_id = create_town_pop(0, town.position.get_position_vector2i());
-        town.add_pop(pop_id);
+        int pop_id = create_town_pop(0, town_pos);
+        pops.insert(pop_id);
     }
 }
 
@@ -394,7 +460,7 @@ std::vector<int> Province::create_buildings_for_peasants() {
             add_subsistence_farm(farm);
             terminal_map->encode_building(farm.position);
             
-            subsistence_farm_ids.push_back(farm.position.building_id);
+            subsistence_farm_ids.push_back(farm.position.get_building_id());
         }
     }
     return subsistence_farm_ids;
@@ -407,7 +473,10 @@ void Province::employ_peasants() {
 
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     auto pop_manager = PopManager::get_instance();
+    
     std::vector<int> farms = create_buildings_for_peasants();
+
+
     if (farms.size() == 0) {
         // print_line(tiles.front());
         // print_error("No possible peasant buildings");
@@ -425,8 +494,7 @@ void Province::employ_peasants() {
             
             SubsistenceFarm& farm = sub_farms[id_to_vector_position[farms[i]].first];
             
-            pop->set_location(farm.position.get_position_vector2i());
-            farm.add_pop(town, pop);
+            farm.add_pop(town, pop);          
 
             i = (i + 1) % farms.size();
         }

@@ -13,7 +13,7 @@ SubsistenceFarm::SubsistenceFarm(): employer() {
     );
 }
 
-SubsistenceFarm::SubsistenceFarm(Vector2i p_location, int p_owner): position(std::make_pair(p_location.x, p_location.y), SUBSISTENCE_FARM), owner(p_owner) {
+SubsistenceFarm::SubsistenceFarm(Vector2i p_location, int p_owner): position(std::make_pair(p_location.x, p_location.y), BuildingType::SUBSISTENCE_FARM), owner(p_owner) {
     employer = RecipeInfo::create_employer_component(
         {{}, 
         {{"grain", 11.0f}}}, 
@@ -25,7 +25,7 @@ SubsistenceFarm::SubsistenceFarm(const SubsistenceFarm& other): position(other.p
 
 SubsistenceFarm& SubsistenceFarm::operator=(const SubsistenceFarm& other) {
     if (this == &other) return *this;
-
+    
     position = other.position;
     storage = other.storage;
     owner = other.owner;
@@ -39,7 +39,7 @@ SubsistenceFarm& SubsistenceFarm::operator=(const SubsistenceFarm& other) {
 void SubsistenceFarm::add_pop(Town& town, BasePop* pop) {
     employer.add_pop(pop);
     
-    pop->employ(position.building_id, employer.get_wage(town, capital.get_cash()));
+    pop->employ(position.get_building_id(), employer.get_wage(town, capital.get_cash()));
     pop->set_location(position.get_position_vector2i());
     consider_upgrade();
 }
@@ -50,7 +50,7 @@ void SubsistenceFarm::adjust_trade_orders(Town& town) {
 
     for (const auto& [type, amt]: recipe.get_outputs()) {
         if (!orders.count(type)) {
-            orders[type] = std::make_shared<TradeOrder>(position.building_id, type, amt, true, town.mp.get_price(type), town.mp.get_min_price(type));
+            orders[type] = std::make_shared<TradeOrder>(position.get_building_id(), type, amt, true, town.mp.get_price(type), town.mp.get_min_price(type));
             town.mp.add_order(orders[type]);
         }
 

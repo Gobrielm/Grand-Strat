@@ -5,7 +5,7 @@ Station::Station(): type(TYPE_OF_STATION::NONE), SUPPLY_DROPOFF(1), MAX_SUPPLY_D
 }
 
 Station::Station(TYPE_OF_STATION p_type, std::pair<int, int> p_position, int p_owner): 
-    type(p_type), position(p_position, STATION), 
+    type(p_type), position(p_position, BuildingType::STATION), 
     SUPPLY_DROPOFF(get_SUPPLY_DROPOFF()), 
     MAX_SUPPLY_DISTANCE(get_MAX_SUPPLY_DISTANCE()
 ) {

@@ -24,7 +24,7 @@ class ProvinceManager : public RefCounted {
     std::unordered_map<Vector2i, int, godot_helpers::Vector2iHasher> tiles_to_province_id; 
     std::unordered_map<int, std::unordered_set<int>> country_id_to_province_ids;
 
-    
+    Province* get_province_private(int province_id);
 
 protected:
     static void _bind_methods();
@@ -39,6 +39,7 @@ public:
     void create_new_if_empty(int province_id);
     void add_tile_to_province(int province_id, Vector2i tile);
     void add_many_tiles_to_province(int province_id, const Array& tiles);
+    void finish_province_creation(int province_id);
 
     // Population handling
     void add_population_to_province(Vector2i tile, int pop);
@@ -71,6 +72,11 @@ public:
 
     //Stats Stuff
     // std::unordered_map<int, float> get_average_country_prices(int country_id) const;
+
+    // Godot Map Object Functions
+    bool is_factory(Vector2i tile);
+    bool is_town(Vector2i tile);
+    bool is_station(Vector2i tile);
 
     //Economy Testing Functions
     float get_average_cash_of_factory() const;

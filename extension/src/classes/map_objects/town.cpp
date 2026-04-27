@@ -39,10 +39,6 @@ std::vector<int> Town::get_factory_ids() const {
     return v;
 }
 
-void Town::add_pop(int pop_id) {
-
-}
-
 int Town::get_total_pops() const {
     return 0;
 }

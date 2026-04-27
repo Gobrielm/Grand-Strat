@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="MapObjectInfo" inherits="Object">
+	<brief_description>
+		Provides function classes to safely get info from map objects.
+	</brief_description>
+
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="get_town_factories">
+			<return type="Array" />
+			<description>
+				Returns Array of Dictonaries:
+					Dictionary:
+						"level": Level of factory
+						"cash": Current cash
+						"recipe": Recipe of factory as String
+			</description>
+		</method>
+
+		<method name="get_town_prices">
+			<return type="Dictionary" />
+			<description>
+				Returns Dictionary [type(int), Dictionary]:
+					Dictionary:
+						"price": Price
+						"supply": Supply
+						"demand": Demand
+						"plot": Array of 2 Arrays representing [demand, supply]:
+							demand/supply: Vector2 (amount, price)
+			</description>
+		</method>
+	</methods>
+	<members>
+	</members>
+	<signals>
+	</signals>
+	<constants>
+	</constants>
+</class>

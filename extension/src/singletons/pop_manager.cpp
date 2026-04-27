@@ -28,9 +28,9 @@ PopManager::PopManager() {
     // thread_pool->set_work_function([this] (std::vector<BasePop*>& pops) {
     //     month_tick(pops); // use PopManager’s pipeline
     // });
-    // for (int i = 0; i < NUMBER_OF_POP_LOCKS; i++) {
-    //     pop_locks.push_back(new std::shared_mutex);  // constructs a new shared_mutex directly in the vector
-    // }
+    for (int i = 0; i < NUMBER_OF_POP_LOCKS; i++) {
+        pop_locks.push_back(new std::shared_mutex);  // constructs a new shared_mutex directly in the vector
+    }
 }
 
 PopManager::~PopManager() {
@@ -419,7 +419,7 @@ void PopManager::set_pop_location(int pop_id, const Vector2i& location) {
     get_pop(pop_id)->set_location(location);
 }
 
-int PopManager::create_pop(Variant culture, const Vector2i& p_location, PopTypes p_pop_type) {
+int PopManager::create_pop(Variant culture, const Vector2i p_location, PopTypes p_pop_type) {
     int home_prov_id = ProvinceManager::get_instance()->get_province_id(p_location);
     auto pop = BasePop(home_prov_id, p_location, culture, p_pop_type);
     int id = pop.get_pop_id();

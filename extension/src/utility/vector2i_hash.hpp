@@ -15,6 +15,12 @@ namespace godot_helpers {
         }
     };
 
+    struct Vector2iEqual {
+        bool operator()(const godot::Vector2i& a, const godot::Vector2i& b) const {
+            return a.x == b.x && a.y == b.y;
+        }
+    };
+
     struct StringHasher {
         size_t operator()(const godot::String& v) const {
             std::string utf8 = std::string(v.utf8().get_data());

@@ -21,6 +21,7 @@ class PopManager;
 class InitialBuilder;
 class ProvinceManager;
 class PositionComponent;
+class MapObjectInfo;
 
 enum class PopTypes: int;
 
@@ -34,6 +35,7 @@ class Province : public Object {
     friend EmployerComponent;
     friend PopManager;
     friend InitialBuilder;
+    friend MapObjectInfo;
 
     mutable std::mutex m;
     mutable std::shared_mutex pops_lock;
@@ -46,8 +48,11 @@ class Province : public Object {
 
 
     // New Structures
-    // never pass these by reference
-    std::unordered_map<Vector2i, std::vector<PositionComponent>, godot_helpers::Vector2iHasher> position_components;
+    
+    // Used to access the top level building on each tile
+    std::unordered_map<Vector2i, PositionComponent, godot_helpers::Vector2iHasher, godot_helpers::Vector2iEqual> position_components;
+    // Used to access the hidden buildings at each tile, ie sub. farms or town factories
+    std::unordered_map<Vector2i, std::vector<PositionComponent>, godot_helpers::Vector2iHasher, godot_helpers::Vector2iEqual> hidden_position_components;
 
     // Owned objects
     Town town;
@@ -86,10 +91,10 @@ class Province : public Object {
     std::vector<Vector2i> get_town_centered_tiles() const;
     Vector2i get_random_tile() const;
 
-    Town create_town();
+    void create_town();
 
     void add_factory(Factory& factory);
-    void add_town(Town& p_town);
+    void add_hidden_factory(Factory& factory);
     void add_station(Station& station);
     void add_subsistence_farm(SubsistenceFarm& farm);
 
@@ -97,7 +102,13 @@ class Province : public Object {
     Station& get_station(int pos_id);
     Town& get_town();
 
+    bool is_building_at_pos(Vector2i pos) const;
+    int get_hidden_buildings_at_pos(Vector2i pos) const;
+
     BuildingType get_building_type(int pos_id) const;
+    BuildingType get_visible_building_type(Vector2i tile) const;
+
+    PositionComponent get_visible_position_component(Vector2i tile) const;
 
 
     // void add_terminal(Vector2i tile);

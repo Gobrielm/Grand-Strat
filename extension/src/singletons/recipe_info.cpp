@@ -100,7 +100,7 @@ void RecipeInfo::add_employer_component(EmployerComponent employer_component) {
 
 std::optional<EmployerComponent> RecipeInfo::get_primary_employer_component_for_type(int output_type) const {
     for (int i = 0; i < employer_components.size(); i++) {
-        auto ec = employer_components[i];
+        const auto &ec = employer_components[i];
         if (ec.recipe.is_primary() && ec.recipe.does_create(output_type)) {
             return ec;
         }
@@ -110,7 +110,7 @@ std::optional<EmployerComponent> RecipeInfo::get_primary_employer_component_for_
 
 std::optional<EmployerComponent> RecipeInfo::get_employer_component_for_type(int output_type) const {
     for (int i = 0; i < employer_components.size(); i++) {
-        auto ec = employer_components[i];
+        const auto &ec = employer_components[i];
         if (ec.recipe.does_create(output_type)) {
             return ec;
         }
@@ -120,7 +120,7 @@ std::optional<EmployerComponent> RecipeInfo::get_employer_component_for_type(int
 
 std::optional<EmployerComponent> RecipeInfo::get_employer_component(std::unordered_set<std::string> inputs, std::unordered_set<std::string> outputs) {
     for (int i = 0; i < employer_components.size(); i++) {
-        auto ec = employer_components[i];
+        const auto &ec = employer_components[i];
         if (map_and_set_match(inputs, ec.recipe.get_inputs()) && map_and_set_match(outputs, ec.recipe.get_outputs())) {
             return ec;
         }
@@ -130,7 +130,7 @@ std::optional<EmployerComponent> RecipeInfo::get_employer_component(std::unorder
 
 std::optional<EmployerComponent> RecipeInfo::get_employer_component(Dictionary inputs, Dictionary outputs) {
     for (int i = 0; i < employer_components.size(); i++) {
-        auto ec = employer_components[i];
+        const auto &ec = employer_components[i];
         if (map_and_dict_match(inputs, ec.recipe.get_inputs()) && map_and_dict_match(outputs, ec.recipe.get_outputs())) {
             return ec;
         }

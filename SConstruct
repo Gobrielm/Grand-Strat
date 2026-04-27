@@ -48,8 +48,6 @@ src_dir = "extension/src"
 env.Append(CPPPATH=[src_dir])
 sources = find_cpp_files(src_dir)
 
-
-
 # env.Append(CPPPATH=["src/"])
 # sources = Glob("src/*.cpp")
 

@@ -1,4 +1,5 @@
 #include "storage_component.hpp"
+#include "utility/vector2i_hash.hpp"
 
 StorageComponent::StorageComponent(): MAX_STORAGE(INITIAL_MAX_STORAGE) {}
 
@@ -24,4 +25,8 @@ void StorageComponent::remove_cargo(int type, float amount) {
         storage[type] -= amount;
         ERR_FAIL_COND_MSG(storage[type] < 0, "Storage went below 0.");
     }
+}
+
+godot::Dictionary StorageComponent::dictionary() const {
+   return godot_helpers::convert_map_to_dictionary<int, float>(storage);
 }

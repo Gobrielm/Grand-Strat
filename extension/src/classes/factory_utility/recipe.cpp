@@ -1,4 +1,5 @@
 #include "recipe.hpp"
+#include "singletons/cargo_info.hpp"
 
 Recipe::Recipe() {
     level = 1;
@@ -70,4 +71,23 @@ void Recipe::set_inputs(const std::unordered_map<int, float> new_inputs) {
 
 void Recipe::set_outputs(const std::unordered_map<int, float> new_outputs) {
     outputs = new_outputs;
+}
+
+String Recipe::get_recipe_as_string() const {
+    Ref<CargoInfo> cargo_info = CargoInfo::get_instance();
+    String x;
+    int i = 0;
+    for (const auto& [type, amount]: inputs) {
+        x += String::num(amount) + " " + cargo_info->get_cargo_name(type);
+        if (i < inputs.size() - 1) x += ", " ;
+        i++;
+    }
+    if (inputs.size() != 0) x += " -> ";
+    i = 0;
+    for (const auto& [type, amount]: outputs) {
+        x += String::num(amount) + " " + cargo_info->get_cargo_name(type);
+        if (i < outputs.size() - 1) x += ", " ;
+        i++;
+    }
+    return x;
 }

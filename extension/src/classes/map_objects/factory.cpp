@@ -250,7 +250,7 @@ void Factory::employ_pop(Town& town, BasePop& pop) {
         employer.add_pop(pop_type, pop.get_pop_id());
         wage = get_wage(town);
         
-        pop.employ(position.building_id, wage);
+        pop.employ(position.get_building_id(), wage);
         pop.set_location(position.get_position_vector2i());
     
     }
@@ -283,7 +283,7 @@ void Factory::adjust_trade_orders(Town& town) {
     auto& recipe = get_recipe();
     for (const auto& [type, amt]: recipe.get_inputs()) {
         if (!orders.count(type)) {
-            orders[type] = std::make_shared<TradeOrder>(position.building_id, type, amt, true, town.mp.get_price(type), get_max_price(type, &town));
+            orders[type] = std::make_shared<TradeOrder>(position.get_building_id(), type, amt, true, town.mp.get_price(type), get_max_price(type, &town));
             town.mp.add_order(orders[type]);
         }
 
@@ -298,7 +298,7 @@ void Factory::adjust_trade_orders(Town& town) {
     }
     for (const auto& [type, amt]: recipe.get_outputs()) {
         if (!orders.count(type)) {
-            orders[type] = std::make_shared<TradeOrder>(position.building_id, type, amt, false, town.mp.get_price(type), get_min_price(type, &town));
+            orders[type] = std::make_shared<TradeOrder>(position.get_building_id(), type, amt, false, town.mp.get_price(type), get_min_price(type, &town));
             town.mp.add_order(orders[type]);
         }
 

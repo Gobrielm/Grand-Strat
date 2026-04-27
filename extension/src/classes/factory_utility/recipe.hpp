@@ -40,4 +40,6 @@ class Recipe {
     // Setters
     void set_inputs(const std::unordered_map<int, float> new_inputs);
     void set_outputs(const std::unordered_map<int, float> new_outputs);
+
+    String get_recipe_as_string() const;
 };

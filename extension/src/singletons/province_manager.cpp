@@ -28,6 +28,7 @@ void ProvinceManager::_bind_methods() {
     ClassDB::bind_method(D_METHOD("create_new_if_empty", "province_id"), &ProvinceManager::create_new_if_empty);
     ClassDB::bind_method(D_METHOD("add_tile_to_province", "province_id", "tile"), &ProvinceManager::add_tile_to_province);
     ClassDB::bind_method(D_METHOD("add_many_tiles_to_province", "province_id", "tiles"), &ProvinceManager::add_many_tiles_to_province);
+    ClassDB::bind_method(D_METHOD("finish_province_creation", "province_id"), &ProvinceManager::finish_province_creation);
 
     // Population handling
     ClassDB::bind_method(D_METHOD("add_population_to_province", "tile", "pop"), &ProvinceManager::add_population_to_province);
@@ -46,6 +47,11 @@ void ProvinceManager::_bind_methods() {
     // Country to province mapping
     ClassDB::bind_method(D_METHOD("add_province_to_country", "province", "country_id"), &ProvinceManager::add_province_to_country);
     ClassDB::bind_method(D_METHOD("get_countries_provinces", "country_id"), &ProvinceManager::get_countries_provinces);
+
+    ClassDB::bind_method(D_METHOD("is_factory", "tile"), &ProvinceManager::is_factory);
+    ClassDB::bind_method(D_METHOD("is_town", "tile"), &ProvinceManager::is_town);
+    ClassDB::bind_method(D_METHOD("is_station", "tile"), &ProvinceManager::is_station);
+    
 }
 
 void ProvinceManager::create() {
@@ -54,17 +60,21 @@ void ProvinceManager::create() {
 }
 
 Ref<ProvinceManager> ProvinceManager::get_instance() {
+    if (singleton_instance.is_null()) {
+        ERR_FAIL_V_EDMSG(nullptr, "Province Manager is null.");
+    }
     return singleton_instance;
+}
+
+Province* ProvinceManager::get_province_private(int province_id) {
+    return provinces[province_id_to_vector_position[province_id]];
 }
 
 void ProvinceManager::create_new_if_empty(int province_id) {
     std::unique_lock lock(province_mutex);
-    if (province_id_to_vector_position.find(province_id) == province_id_to_vector_position.end()) {
-        if (province_id_to_vector_position.find(province_id) == province_id_to_vector_position.end()) {
-
+    if (!province_id_to_vector_position.count(province_id)) {
         province_id_to_vector_position[province_id] = provinces.size();
         provinces.push_back(memnew(Province(province_id)));
-        }
     }
 }
 
@@ -79,6 +89,11 @@ void ProvinceManager::add_many_tiles_to_province(int province_id, const Array &t
     for (int i = 0; i < tiles.size(); i++) {
         add_tile_to_province(province_id, tiles[i]);
     }
+}
+
+void ProvinceManager::finish_province_creation(int province_id) {
+    get_province_private(province_id)->create_town();
+    get_province_private(province_id)->init_province();
 }
 
 void ProvinceManager::add_population_to_province(Vector2i tile, int pop) {
@@ -118,7 +133,6 @@ void ProvinceManager::create_pops() {
     auto start_time = std::chrono::high_resolution_clock::now();
     std::vector<std::thread> pop_threads;
     auto start = provinces.begin();
-
 
     const int NUMBER_OF_THREADS = 4;
     const int chunk_size = provinces.size() / NUMBER_OF_THREADS;
@@ -212,9 +226,10 @@ Province* ProvinceManager::get_province(const Vector2i& tile) const {
 bool ProvinceManager::is_tile_available(Vector2i coords) {
     bool traversable = TerminalMap::get_instance()->is_tile_traversable(coords, true);
     auto province = get_province(coords);
-    std::scoped_lock lock(province->m);
+    if (province == nullptr) return false;
+    bool taken = province->is_building_at_pos(coords);
 
-    return !province->position_components.count(coords) && traversable;
+    return traversable && !taken;
 }
 
 
@@ -276,6 +291,24 @@ std::unordered_set<int> ProvinceManager::get_country_ids() const {
 //     }
 //     return average_prices;
 // }
+
+bool ProvinceManager::is_factory(Vector2i tile) {
+    auto province = get_province(tile);
+    if (province == nullptr) return false;
+    return BuildingType::FACTORY == province->get_visible_building_type(tile);
+}
+
+bool ProvinceManager::is_town(Vector2i tile) {
+    auto province = get_province(tile);
+    if (province == nullptr) return false;
+    return province->get_town_tile() == tile;
+}
+
+bool ProvinceManager::is_station(Vector2i tile) {
+    auto province = get_province(tile);
+    if (province == nullptr) return false;
+    return BuildingType::STATION == province->get_visible_building_type(tile);
+}
 
 float ProvinceManager::get_average_factory_level() const {
     double ave = 0;

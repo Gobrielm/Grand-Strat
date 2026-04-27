@@ -79,7 +79,7 @@ class PopManager {
 
     /// Returns with pop id
     void set_pop_location(int pop_id, const Vector2i& location);
-    int create_pop(Variant culture, const Vector2i& p_location, PopTypes p_pop_type);
+    int create_pop(Variant culture, const Vector2i p_location, PopTypes p_pop_type);
     void pay_pop(int pop_id, float wage);
     void fire_pop(int pop_id);
     void sell_cargo_to_pop(int pop_id, int type, int amount, float price);

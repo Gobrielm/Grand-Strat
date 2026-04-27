@@ -36,6 +36,5 @@ public:
     std::vector<int> get_factory_ids() const;
 
     //Pop stuff
-    void add_pop(int pop_id);
     int get_total_pops() const;
 };
