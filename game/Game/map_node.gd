@@ -42,8 +42,8 @@ func update_map_creation_progress(progress: float) -> void:
 
 func set_up() -> void:
 	#Singleton Creation
-	train_manager.new()
-	ai_manager.new()
+	#train_manager.new()
+	#ai_manager.new()
 	TerminalMap.get_instance().assign_cargo_map(cargo_map)
 	cargo_map.cargo_values.create_magnitude_layers()
 
@@ -97,30 +97,40 @@ func _input(event: InputEvent) -> void:
 		elif state_machine.is_building_road_depot():
 			main_map.place_road_depot()
 	elif event.is_action_released("click"):
-		if state_machine.is_controlling_camera() and TerminalMap.get_instance().is_road_depot(cell_position):
-			pass
-		elif state_machine.is_controlling_camera() and TerminalMap.get_instance().is_owned_station(cell_position, unique_id):
-			station_window.open_window(cell_position)
-		elif state_machine.is_controlling_camera() and TerminalMap.get_instance().is_station(cell_position):
-			viewer_station_window.open_window(cell_position)
-		elif state_machine.is_controlling_camera() and TerminalMap.get_instance().is_owned_recipeless_construction_site(cell_position):
-			factory_recipe_window.open_window(cell_position)
-		elif state_machine.is_controlling_camera() and TerminalMap.get_instance().is_owned_construction_site(cell_position):
-			factory_construction_window.open_window(cell_position)
-		elif state_machine.is_controlling_camera() and TerminalMap.get_instance().is_factory(cell_position):
-			factory_window.open_window(cell_position)
-		elif state_machine.is_controlling_camera() and TerminalMap.get_instance().is_town(cell_position):
-			town_window.open_window(cell_position)
-		elif state_machine.is_controlling_camera() and map_data.get_instance().is_owned_depot(cell_position, unique_id):
-			factory_window.open_window(cell_position)
-			#depot_window.open_window(cell_position)
+		if state_machine.is_controlling_camera():
+			var pm: ProvinceManager = ProvinceManager.get_instance()
+			
+			if pm.is_factory(cell_position):
+				factory_window.open_window(cell_position)
+			elif pm.is_town(cell_position):
+				town_window.open_window(cell_position)
+			elif pm.is_station(cell_position):
+				station_window.open_window(cell_position)
+			
+			main_map.open_tile_window(cell_position)
 		elif state_machine.is_building_many_rails():
 			main_map.place_rail_to_start()
 		elif state_machine.is_building_roads():
 			main_map.place_road_to_start()
-		elif state_machine.is_controlling_camera():
-			main_map.open_tile_window(cell_position)
 		main_map.reset_start()
+		
+		#if state_machine.is_controlling_camera() and TerminalMap.get_instance().is_road_depot(cell_position):
+			#pass
+		#elif state_machine.is_controlling_camera() and TerminalMap.get_instance().is_owned_station(cell_position, unique_id):
+			#station_window.open_window(cell_position)
+		#elif state_machine.is_controlling_camera() and TerminalMap.get_instance().is_station(cell_position):
+			#viewer_station_window.open_window(cell_position)
+		#elif state_machine.is_controlling_camera() and TerminalMap.get_instance().is_owned_recipeless_construction_site(cell_position):
+			#factory_recipe_window.open_window(cell_position)
+		#elif state_machine.is_controlling_camera() and TerminalMap.get_instance().is_owned_construction_site(cell_position):
+			#factory_construction_window.open_window(cell_position)
+		#elif state_machine.is_controlling_camera() and TerminalMap.get_instance().is_factory(cell_position):
+			#factory_window.open_window(cell_position)
+		#elif state_machine.is_controlling_camera() and TerminalMap.get_instance().is_town(cell_position):
+			#town_window.open_window(cell_position)
+		#elif state_machine.is_controlling_camera() and map_data.get_instance().is_owned_depot(cell_position, unique_id):
+			#factory_window.open_window(cell_position)
+			#depot_window.open_window(cell_position)
 	elif event.is_action_pressed("deselect"):
 		main_map.clear_all_temps()
 		if !state_machine.is_picking_nation() and !state_machine.is_selecting_unit():

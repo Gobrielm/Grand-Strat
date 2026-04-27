@@ -231,6 +231,9 @@ func refresh_territories() -> void:
 			#provinces.add_tile_to_province(tile, colors_to_province_id[color])
 			province_manager.create_new_if_empty(colors_to_province_id[color])
 			province_manager.add_tile_to_province(colors_to_province_id[color], tile)
+			
+	for province_id: int in colors_to_province_id.values():
+		province_manager.finish_province_creation(province_id)
 
 	var new_image: Image = Image.create(1920, 919, false, Image.FORMAT_RGBA8)
 	for real_x: int in range(-609, 671):

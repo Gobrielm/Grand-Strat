@@ -59,7 +59,8 @@ func get_game_speed() -> int:
 	return clock_singleton.get_instance().get_game_speed()
 
 func day_tick() -> void:
-	TerminalMap.get_instance()._on_day_tick_timeout()
+	pass
+	#TerminalMap.get_instance()._on_day_tick_timeout()
 	clock.iterate_day()
 	if clock.is_next_month():
 		var time_taken: float = (Time.get_ticks_msec() - start) / 1000
@@ -71,19 +72,20 @@ func day_tick() -> void:
 var start: float = 0.0
 
 func _on_month_tick_timeout() -> void:
-	CountryManager.get_instance().month_tick()
-	DataCollector.get_instance().month_tick()
-	RoadMap.get_instance().month_tick()
-	TerminalMap.get_instance()._on_month_tick_timeout()
-	Utils.unit_map._on_month_tick_timeout()
+	pass
+	#CountryManager.get_instance().month_tick()
+	#DataCollector.get_instance().month_tick()
+	#RoadMap.get_instance().month_tick()
+	#TerminalMap.get_instance()._on_month_tick_timeout()
+	#Utils.unit_map._on_month_tick_timeout()
 
 func _process(delta: float) -> void:
 	if paused:
 		return
 	ticks += delta * (game_speed * 6) # * 6
 	
-	if train_manager.has_instance():
-		train_manager.get_instance().process(delta)
+	#if train_manager.has_instance():
+		#train_manager.get_instance().process(delta)
 	
 	if ticks >= SECONDS_IN_DAY:
 		day_tick()

@@ -64,16 +64,8 @@ func request_current_pops(coords: Vector2i) -> void:
 
 @rpc("any_peer", "call_local", "unreliable")
 func request_factories(coords: Vector2i) -> void:
-	var toUpdate: Array[Array] = []
-	var town: Town = TerminalMap.get_instance().get_town(coords)
-	if town != null:
-		for fact: FactoryTemplate in town.get_factories():
-			var details: Array = []
-			details.append(fact.get_level_without_employment())#[0]
-			details.append(fact.get_cash())					   #[1]
-			details.append(fact.get_recipe_as_string())		   #[2]
-			toUpdate.push_back(details)
-	update_factories.rpc_id(multiplayer.get_remote_sender_id(), toUpdate)
+	var factories: Array = MapObjectInfo.get_town_factories(coords)
+	update_factories.rpc_id(multiplayer.get_remote_sender_id(), factories)
 
 @rpc("authority", "call_local", "unreliable")
 func update_current_name(new_name: String) -> void:
@@ -96,12 +88,12 @@ func update_current_pops(new_pops: int) -> void:
 	$Pops.text = "Pops: " + str(current_pops)
 
 @rpc("authority", "call_local", "unreliable")
-func update_factories(info: Array[Array]) -> void:
+func update_factories(info: Array) -> void:
 	var fact_list: ItemList = $Factory_Node/Factory_List
 	var num: int = 0
-	for fact: Array in info:
-		var text: String = fact[2] + "\n"
-		text += "Level: " + str(fact[0]) + " , Cash: " + str(fact[1])
+	for fact: Dictionary in info:
+		var text: String = fact.recipe + "\n"
+		text += "Level: " + str(fact.level) + " , Cash: " + str(fact.cash)
 		
 		if num < fact_list.item_count:
 			fact_list.set_item_text(num, text)
@@ -157,14 +149,13 @@ func _on_cargo_info_pop_up_popup_requested() -> void:
 
 @rpc("any_peer", "call_local", "unreliable")
 func populate_info_window(type: int, p_location: Vector2i) -> void:
-	var info: Dictionary = {}
-	var terminal_map: TerminalMap = TerminalMap.get_instance()
-	var town: Town = terminal_map.get_town(p_location)
-	info.type = CargoInfo.get_instance().get_cargo_name(type)
+	var info: Dictionary = MapObjectInfo.get_town_prices(p_location)[type]
 	
-	info.price = "$" + str(Utils.round(town.get_local_price(type), 2))
-	info.amount = "Amount: " + str(Utils.round(town.get_cargo_amount(type), 2))
-	info.market_info = "Supply: " + str(town.get_last_month_supply()[type]) + '\n' + "Demand: " + str(town.get_last_month_demand()[type])
+	info.type = CargoInfo.get_instance().get_cargo_name(type)
+	info.price = "$" + info["price"]
+	info.amount = "Amount: " + info["supply"]
+	info.market_info = "Demand: " + info["demand"]
+	
 	pop_up_info_window.rpc_id(multiplayer.get_remote_sender_id(), info)
 
 @rpc("authority", "call_local", "unreliable")
