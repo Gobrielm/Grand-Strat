@@ -116,3 +116,7 @@ shift={
 [native_extensions]
 
 paths=["res://bin/Grand_Strat.gdextension"]
+
+[rendering]
+
+textures/canvas_textures/default_texture_filter=0

@@ -17,7 +17,7 @@ func remove_terminal_from_province(coords: Vector2i) -> void:
 	#set_tile.rpc(coords, Vector2i(4, 1))
 	#add_terminal_to_province(TerminalMap.get_instance().get_terminal(coords))
 
-func place_random_industries() -> void:
+func add_tiles_to_towns() -> void:
 	var town_tiles_to_place: Array[Vector2i] = []
 	for prov: Province in ProvinceManager.get_instance().get_provinces():
 		var tile: Vector2i = prov.get_town_tile()
@@ -60,6 +60,7 @@ func add_industries_to_towns() -> void:
 		var other: InitialBuilder = InitialBuilder.create(country_id)
 		other.build_initital_factories()
 		other.free()
+	add_tiles_to_towns()
 
 func place_random_road_depot(middle: Vector2i) -> Vector2i:
 	var tiles: Array = Utils.world_map.thread_get_surrounding_cells(middle)
@@ -130,10 +131,6 @@ func set_tile(coords: Vector2i, atlas: Vector2i) -> void:
 	set_cell(coords, 0, atlas)
 	mutex.unlock()
 	Utils.world_map.make_cell_invisible(coords)
-
-func _on_cargo_values_finished_created_map_resources() -> void:
-	if !Utils.world_map.is_testing():
-		place_random_industries()
 
 #func test() -> void:
 	#FactoryCreator.get_instance().create_primary_industry(10, Vector2i(101, -117), 0, 1)

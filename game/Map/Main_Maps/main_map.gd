@@ -192,7 +192,8 @@ func create_train(coords: Vector2i) -> void:
 	if !caller:
 		caller = 1
 	if unique_id == 1:
-		train_manager.get_instance().create_train(coords, caller)
+		pass
+		#train_manager.get_instance().create_train(coords, caller)
 	else:
 		var train_obj: Sprite2D = train_scene_client.instantiate()
 		train_obj.name = "Train" + str(get_number_of_trains())
@@ -202,17 +203,17 @@ func create_train(coords: Vector2i) -> void:
 func get_number_of_trains() -> int:
 	var children: Array = get_children()
 	var count: int = 0
-	for child: Node in children:
-		if child is train:
-			count += 1
+	#for child: Node in children:
+		#if child is train:
+			#count += 1
 	return count
 
 func get_trains() -> Array:
 	var children: Array = get_children()
 	var toReturn: Array = []
-	for child: Node in children:
-		if child is train:
-			toReturn.push_back(child)
+	#for child: Node in children:
+		#if child is train:
+			#toReturn.push_back(child)
 	return toReturn
 
 #func get_trains_in_depot(coords: Vector2i) -> Array:
