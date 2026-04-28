@@ -5,6 +5,7 @@
 #include "recipe_info.hpp"
 #include "terminal_map.hpp"
 #include "money_controller.hpp"
+#include "pop_manager_utility/pop_manager_thread_pool.hpp"
 
 #include "classes/province.hpp"
 #include "classes/map_objects/town.hpp"
@@ -23,11 +24,11 @@ void PopManager::cleanup() {
 }
 
 PopManager::PopManager() {
-    // thread_pool = new PopManagerThreadPool(8, [this]() { return thread_month_tick_loader(); });
+    thread_pool = new PopManagerThreadPool(8, [this]() { return thread_month_tick_loader(); });
+    
+    std::function<void(int)> f = [this](int province_id) { this->thread_month_tick(province_id); };
+    thread_pool->set_work_function(f);
 
-    // thread_pool->set_work_function([this] (std::vector<BasePop*>& pops) {
-    //     month_tick(pops); // use PopManager’s pipeline
-    // });
     for (int i = 0; i < NUMBER_OF_POP_LOCKS; i++) {
         pop_locks.push_back(new std::shared_mutex);  // constructs a new shared_mutex directly in the vector
     }
@@ -48,41 +49,49 @@ std::shared_ptr<PopManager> PopManager::get_instance() {
 
 int PopManager::thread_month_tick_loader() {
     // refresh_employment_sorted_by_wage();
-    {
-        std::scoped_lock sp_pops_lock(m);
-        for (auto& [id, pop]: pops) {
-            thread_pool->add_work((&pop), pop.get_pop_id() % NUMBER_OF_POP_LOCKS);
-        }
-    }
-    return pops.size();
+    auto pm = ProvinceManager::get_instance();
+    
+    thread_pool->provinces_to_process = pm->get_provinces_vector();
+    return thread_pool->provinces_to_process.size();
 }
 
 void PopManager::month_tick() {
     thread_pool->month_tick();
 }
 // If full month tick takes a while, all pop group ticks take a while
-void PopManager::month_tick(std::vector<BasePop*>& pop_group) { // Assumes all pops are part of same mutex block
+void PopManager::thread_month_tick(int province_id) { // Assumes all pops are part of same mutex block
     auto start_time = std::chrono::high_resolution_clock::now();
-    int mutex_lock_num = get_pop_mutex_number(pop_group.front()->get_pop_id());
-    {
-        // If Pops are never fired or payed, then they will have an inflated wage
-        auto lock = lock_pop_write(mutex_lock_num);
-        for (auto &pop: pop_group) {
-            pop->month_tick();
-            // change_pop_unsafe(pop);
-        }
+
+    auto pm = ProvinceManager::get_instance();
+    auto province = pm->get_province(province_id);
+    std::scoped_lock lock(province->m);
+
+    for (auto pop_id: province->pops) {
+        pops[pop_id].month_tick();
     }
+        
+    // int mutex_lock_num = get_pop_mutex_number(pop_group.front()->get_pop_id());
+    // {
+    //     // If Pops are never fired or payed, then they will have an inflated wage
+    //     auto lock = lock_pop_write(mutex_lock_num);
+    //     for (auto &pop: pop_group) {
+    //         pop->month_tick();
+    //         // change_pop_unsafe(pop);
+    //     }
+    // }
     auto time1 = std::chrono::high_resolution_clock::now();
     
-    // sell_to_pops(pop_group);
-    // auto time2 = std::chrono::high_resolution_clock::now();
-    find_employment_for_pops(pop_group);
+    sell_to_pops(province, province->pops);
+    auto time2 = std::chrono::high_resolution_clock::now();
+    find_employment_for_pops(province->pops);
     auto time3 = std::chrono::high_resolution_clock::now();
 
     String x;
     std::chrono::duration<double> elapsed1 = time1 - start_time;
-    // std::chrono::duration<double> elapsed2 = time2 - time1;
-    std::chrono::duration<double> elapsed3 = time3 - time1;
+    std::chrono::duration<double> elapsed2 = time2 - time1;
+    std::chrono::duration<double> elapsed3 = time3 - time2;
+
+
     if (elapsed1 > elapsed3) {
         x = "Month Tick";
     } else {
@@ -91,24 +100,33 @@ void PopManager::month_tick(std::vector<BasePop*>& pop_group) { // Assumes all p
 
     std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - start_time;
     if (elapsed.count() > 0.5) {
-        print_line("Pop group " + x + " tick took " + String::num_scientific(elapsed.count()) + " seconds");
+        print_line("Pop group month tick took " + String::num_scientific(elapsed1.count()) + " seconds");
+        print_line("Pop group market tick took " + String::num_scientific(elapsed2.count()) + " seconds");
+        print_line("Pop group employment tick took " + String::num_scientific(elapsed3.count()) + " seconds");
+        print_line("Total: " + String::num_scientific(elapsed.count()) + " seconds");
     }
 }
 
 
-// void PopManager::sell_to_pops(std::vector<BasePop*>& pop_group) {
-//     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
-//     std::unordered_map<Vector2i, Vector2i, godot_helpers::Vector2iHasher> location_to_nearest_town;
-//     create_pop_location_to_towns(pop_group, location_to_nearest_town);
-//     // Get closest town and then use town functions to sell to those pops
+void PopManager::sell_to_pops(Province* province, std::unordered_set<int>& pops_to_sell_to) {
+    Town& town = province->town;
+    for (int pop_id: pops_to_sell_to) {
+        auto& pop = pops[pop_id];
+        town.mp.sell_to_pop(province, pop);
+    }
+
+    // Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
+    // std::unordered_map<Vector2i, Vector2i, godot_helpers::Vector2iHasher> location_to_nearest_town;
+    // create_pop_location_to_towns(pop_group, location_to_nearest_town);
+    // // Get closest town and then use town functions to sell to those pops
     
-//     for (auto& pop: pop_group) {
-//         auto loc = location_to_nearest_town[pop->get_location()];
-//         auto& list_of_pos = terminal_map->get_position_components(loc);
-//         Town& town = terminal_map->get_town(list_of_pos[0].building_id);
-//         town.mp.sell_to_pop(*pop);
-//     }
-// }
+    // for (auto& pop: pop_group) {
+    //     auto loc = location_to_nearest_town[pop->get_location()];
+    //     auto& list_of_pos = terminal_map->get_position_components(loc);
+    //     Town& town = terminal_map->get_town(list_of_pos[0].building_id);
+    //     town.mp.sell_to_pop(*pop);
+    // }
+}
 
 // void PopManager::create_pop_location_to_towns(std::vector<BasePop*>& pop_group, std::unordered_map<Vector2i, Vector2i, godot_helpers::Vector2iHasher>& location_to_nearest_town) const { 
 //     auto province_manager = ProvinceManager::get_instance(); // Get closest town and then use town functions to sell to those pops 
@@ -140,19 +158,19 @@ void PopManager::month_tick(std::vector<BasePop*>& pop_group) { // Assumes all p
 //     }
 // }
 
-void PopManager::find_employment_for_pops(std::vector<BasePop*>& pop_group) {
-    int mutex_lock_num = get_pop_mutex_number(pop_group.front()->get_pop_id());
+void PopManager::find_employment_for_pops(std::unordered_set<int>& pops_to_employ) {
+    // int mutex_lock_num = get_pop_mutex_number(pop_group.front()->get_pop_id());
 
-    for (auto& pop: pop_group) {
-        PopTypes pop_type = PopTypes::none;
-        {
-            auto lock = lock_pop_read(mutex_lock_num);
-            pop_type = pop->get_type(); // Don't lock since factory will double check if wrong
-            if (!pop->is_seeking_employment()) continue;
-        }
+    // for (auto& pop: pop_group) {
+    //     PopTypes pop_type = PopTypes::none;
+    //     {
+    //         auto lock = lock_pop_read(mutex_lock_num);
+    //         pop_type = pop->get_type(); // Don't lock since factory will double check if wrong
+    //         if (!pop->is_seeking_employment()) continue;
+    //     }
         
 
-    }
+    // }
 }
 
 // void PopManager::find_employment_for_pops(std::vector<BasePop*>& pop_group) {

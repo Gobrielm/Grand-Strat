@@ -78,6 +78,12 @@ public:
     bool is_town(Vector2i tile);
     bool is_station(Vector2i tile);
 
+    Array get_town_factories(Vector2i town_tile);
+    Dictionary get_town_prices(Vector2i town_tile);
+
+    Dictionary get_factory_cargo_dictionary(Vector2i coords);
+    int16_t get_cash_of_factory(Vector2i coords);
+
     //Economy Testing Functions
     float get_average_cash_of_factory() const;
     float get_average_cash_of_station() const;

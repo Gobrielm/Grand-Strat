@@ -51,6 +51,11 @@ void ProvinceManager::_bind_methods() {
     ClassDB::bind_method(D_METHOD("is_factory", "tile"), &ProvinceManager::is_factory);
     ClassDB::bind_method(D_METHOD("is_town", "tile"), &ProvinceManager::is_town);
     ClassDB::bind_method(D_METHOD("is_station", "tile"), &ProvinceManager::is_station);
+
+    ClassDB::bind_method(D_METHOD("get_town_factories", "town_tile"), &ProvinceManager::get_town_factories);
+    ClassDB::bind_method(D_METHOD("get_town_prices", "town_tile"), &ProvinceManager::get_town_prices);
+    ClassDB::bind_method(D_METHOD("get_factory_cargo_dictionary", "coords"), &ProvinceManager::get_factory_cargo_dictionary);
+    ClassDB::bind_method(D_METHOD("get_cash_of_factory", "coords"), &ProvinceManager::get_cash_of_factory);
 }
 
 void ProvinceManager::create() {
@@ -307,6 +312,80 @@ bool ProvinceManager::is_station(Vector2i tile) {
     auto province = get_province(tile);
     if (province == nullptr) return false;
     return BuildingType::STATION == province->get_visible_building_type(tile);
+}
+
+Array ProvinceManager::get_town_factories(Vector2i town_tile) {
+    auto province = get_province(town_tile);
+    if (province == nullptr) return Array();
+
+    std::scoped_lock lock(province->m);
+
+    auto ids = province->town.get_factory_ids();
+
+    Array a;
+    for (auto id: ids) {
+        std::scoped_lock lock(province->m);
+        Factory& factory = province->get_factory_unsafe(id);
+        
+        Dictionary d;
+        
+        d["level"] = factory.employer.get_level_without_employment();
+        d["cash"] = factory.capital.get_cash();
+        d["recipe"] = factory.get_recipe().get_recipe_as_string();
+        a.push_back(d);
+    }
+
+    return a;
+}
+
+Dictionary ProvinceManager::get_town_prices(Vector2i town_tile) {
+    auto province = get_province(town_tile);
+    if (province == nullptr) return Dictionary();
+
+    std::scoped_lock lock(province->m);
+
+    Town& town = province->town;
+    Dictionary d;
+    auto price_map = town.mp.get_current_prices();
+
+    for (auto [type, price]: price_map) {
+        Dictionary inner_info;
+
+        inner_info["price"] = price;
+        inner_info["supply"] = town.mp.get_current_supply(type);
+        inner_info["demand"] = town.mp.get_current_demand(type);
+        inner_info["plot"] = town.mp.get_market_info_plot_godot(type);
+
+        d[type] = inner_info;
+    }
+
+    return d;
+}
+
+Dictionary ProvinceManager::get_factory_cargo_dictionary(const Vector2i coords) {
+    auto province = get_province(coords);
+    if (province == nullptr) return Dictionary();
+
+    std::scoped_lock lock(province->m);
+    PositionComponent pos = province->get_visible_position_component_unsafe(coords);
+    if (pos.get_type() == BuildingType::FACTORY) {
+        return province->get_factory_unsafe(pos.get_building_id()).storage.dictionary();
+    }
+
+    return Dictionary();
+}
+
+int16_t ProvinceManager::get_cash_of_factory(const Vector2i coords) {
+    auto province = get_province(coords);
+    if (province == nullptr) return 0;
+
+    std::scoped_lock lock(province->m);
+    PositionComponent pos = province->get_visible_position_component_unsafe(coords);
+    if (pos.get_type() == BuildingType::FACTORY) {
+        return round(province->get_factory_unsafe(pos.get_building_id()).capital.get_cash());
+    }
+
+    return 0;
 }
 
 float ProvinceManager::get_average_factory_level() const {

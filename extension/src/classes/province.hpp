@@ -99,10 +99,10 @@ class Province : public Object {
 
     void create_town();
 
-    void add_factory(Factory& factory);
-    void add_hidden_factory(Factory& factory);
-    void add_station(Station& station);
-    void add_subsistence_farm(SubsistenceFarm& farm);
+    Factory& add_factory(Factory& factory);
+    Factory& add_hidden_factory(Factory& factory);
+    Station& add_station(Station& station);
+    SubsistenceFarm& add_subsistence_farm(SubsistenceFarm& farm);
 
     Factory& get_factory(int pos_id);
     Station& get_station(int pos_id);

@@ -212,7 +212,7 @@ void TerminalMap::unpause_time() {
 //     }
 // }
 
-void TerminalMap::encode_factory(Factory& factory, int mult) {
+Factory& TerminalMap::encode_factory(Factory& factory, int mult) {
     for (int i = 1; i < mult; i++) {
         factory.admin_upgrade();
     }
@@ -228,11 +228,12 @@ void TerminalMap::encode_factory(Factory& factory, int mult) {
         id_to_position_component[factory.position.get_building_id()] = factory.position;
     }
     
-    province->add_factory(factory); // Adds to province
+    auto &factory_rt = province->add_factory(factory); // Adds to province
     cargo_map->call_deferred("call_set_tile_rpc", coords, factory.get_primary_type()); // Will result in lots of memory when used extensively
+    return factory_rt;
 }
 
-void TerminalMap::encode_factory_no_calls_to_cargo_map(Factory& factory, int mult) {
+Factory& TerminalMap::encode_factory_no_calls_to_cargo_map(Factory& factory, int mult) {
     for (int i = 1; i < mult; i++) {
         factory.admin_upgrade();
     }
@@ -249,7 +250,7 @@ void TerminalMap::encode_factory_no_calls_to_cargo_map(Factory& factory, int mul
         id_to_position_component[factory.position.get_building_id()] = factory.position;
     }
 
-    province->add_factory(factory); // Adds to province
+    return province->add_factory(factory); // Adds to province
 }
 
 void TerminalMap::encode_factory_from_construction_site(Factory& factory) {

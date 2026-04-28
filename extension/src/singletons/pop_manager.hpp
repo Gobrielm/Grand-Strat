@@ -4,8 +4,6 @@
 #include <unordered_map>
 #include <classes/base_pop.hpp>
 
-#include "pop_manager_utility/pop_manager_thread_pool.hpp"
-
 enum class PopStats {
     AveragePopWealth,
     NumOfStarvingPops,
@@ -23,7 +21,7 @@ class PopManager {
     std::unordered_map<int, BasePop> pops;
     static int constexpr NUMBER_OF_POP_LOCKS = 4096;
     mutable std::vector<std::shared_mutex*> pop_locks; // Deals with individual pops
-    PopManagerThreadPool* thread_pool = nullptr;
+    class PopManagerThreadPool* thread_pool = nullptr;
 
     int thread_month_tick_loader();
     int get_pop_mutex_number(int pop_id) const;
@@ -34,12 +32,12 @@ class PopManager {
     BasePop* get_pop(int pop_id);
     int get_pop_country_id(BasePop* pop) const;
     int get_pop_country_id_unsafe(BasePop* pop) const;
-    void month_tick(std::vector<BasePop*>& pop_group);
-    // void sell_to_pops(std::vector<BasePop*>& pop_group);
+    void thread_month_tick(int province_id);
+    void sell_to_pops(Province* province, std::unordered_set<int>& pops_to_sell_to);
     // void create_pop_location_to_towns(std::vector<BasePop*>& pop_group, std::unordered_map<Vector2i, Vector2i, godot_helpers::Vector2iHasher>& location_to_nearest_town) const;
     // Vector2i get_town_tile(const BasePop* pop) const;
     // void change_pop_unsafe(BasePop* pop);
-    void find_employment_for_pops(std::vector<BasePop*>& pop_group);
+    void find_employment_for_pops(std::unordered_set<int>& pops_to_employ);
 
     // Find Employement functions
     using employ_type = std::unordered_map<

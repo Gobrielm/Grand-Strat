@@ -5,7 +5,6 @@
 #include <godot_cpp/godot.hpp>
 
 #include "static_registry.hpp"
-#include "map_object_info.hpp"
 #include "../classes/province.hpp"
 #include "../classes/trade_order.hpp"
 // #include "../classes/ai_base.hpp"
@@ -29,7 +28,6 @@ void initialize_gdextension_types(ModuleInitializationLevel p_level)
 
 	
 	//--verbose in godot for more details
-	GDREGISTER_CLASS(MapObjectInfo);
 	GDREGISTER_CLASS(MoneyController);
 	GDREGISTER_CLASS(Province);
 	GDREGISTER_CLASS(TradeOrder);

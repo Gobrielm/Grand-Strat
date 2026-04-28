@@ -19,8 +19,6 @@
 #include "classes/components/employer_component.hpp"
 #include "classes/map_objects/station.hpp"
 
-#include "utility/map_object_info.hpp"
-
 void Province::_bind_methods() {
     ClassDB::bind_static_method(get_class_static(), D_METHOD("create", "p_prov_id"), &Province::create);
 
@@ -209,7 +207,7 @@ void Province::create_town() {
     position_components.emplace(town.position.get_position_vector2i(), town.position);
 }
 
-void Province::add_factory(Factory& factory) {
+Factory& Province::add_factory(Factory& factory) {
     if (is_building_at_pos(factory.position.get_position_vector2i()) != 0) {
         print_error("Factory being placed in taken tile.");
         return;
@@ -221,9 +219,10 @@ void Province::add_factory(Factory& factory) {
     id_to_vector_position[factory.position.get_building_id()] = std::make_pair(spot, factory.position.get_type());
 
     position_components.emplace(factory.position.get_position_vector2i(), factory.position);
+    return factories.back();
 }
 
-void Province::add_hidden_factory(Factory& factory) {
+Factory& Province::add_hidden_factory(Factory& factory) {
     if (is_building_at_pos(factory.position.get_position_vector2i()) == 0) {
         print_error("Placing Hidden Factory beneath nothing.");
         return;
@@ -235,9 +234,10 @@ void Province::add_hidden_factory(Factory& factory) {
     id_to_vector_position[factory.position.get_building_id()] = std::make_pair(spot, factory.position.get_type());
 
     hidden_position_components[factory.position.get_position_vector2i()].push_back(factory.position);
+    return factories.back();
 }
 
-void Province::add_station(Station& station) {
+Station& Province::add_station(Station& station) {
     if (is_building_at_pos(station.position.get_position_vector2i()) != 0) {
         print_error("Station being placed in taken tile.");
         return;
@@ -249,15 +249,17 @@ void Province::add_station(Station& station) {
     id_to_vector_position[station.position.get_building_id()] = std::make_pair(spot, station.position.get_type());
 
     position_components.emplace(station.position.get_position_vector2i(), station.position);
+    return stations.back();
 }
 
-void Province::add_subsistence_farm(SubsistenceFarm& farm) {
+SubsistenceFarm& Province::add_subsistence_farm(SubsistenceFarm& farm) {
     std::scoped_lock lock(m);
     int spot = sub_farms.size();
     sub_farms.push_back(farm);
     id_to_vector_position[farm.position.get_building_id()] = std::make_pair(spot, farm.position.get_type());
 
     hidden_position_components[farm.position.get_position_vector2i()].push_back(farm.position);
+    return sub_farms.back();
 }
 
 Factory& Province::get_factory(int pos_id) {
