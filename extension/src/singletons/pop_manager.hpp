@@ -1,7 +1,11 @@
 #pragma once
 
+#include <vector>
+#include <shared_mutex>
 #include <memory>
 #include <unordered_map>
+#include <set>
+#include <unordered_set>
 #include <classes/base_pop.hpp>
 
 enum class PopStats {
@@ -13,8 +17,11 @@ enum class PopStats {
     RealUnemploymentRate,
 };
 
+class EmployerComponent;
+class Province;
+
 class PopManager {
-    friend class Province;
+    friend Province;
     static std::shared_ptr<PopManager> singleton_instance;
     mutable std::shared_mutex m; // Deals with datastructures
     mutable std::shared_mutex employment_mutex; // Deals with employment_options mutex

@@ -9,8 +9,10 @@
 
 #include "classes/province.hpp"
 #include "classes/map_objects/town.hpp"
+#include "classes/components/employer_component.hpp"
 
 #include <set>
+#include <godot_cpp/classes/ref.hpp>
 
 std::shared_ptr<PopManager> PopManager::singleton_instance = nullptr;
 

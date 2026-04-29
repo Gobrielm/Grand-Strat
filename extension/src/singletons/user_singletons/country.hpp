@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <mutex>
 #include <godot_cpp/classes/ref_counted.hpp>
+#include <godot_cpp/classes/ref.hpp>
 
 using namespace godot;
 

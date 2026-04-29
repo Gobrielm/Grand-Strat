@@ -69,7 +69,7 @@ void PopManagerThreadPool::thread_processor() {
 }
 
 
-PopManagerThreadPool::PopManagerThreadPool(int num_of_threads = 2, std::function<int()> p_work_adder_function = [](){ return 0; }) {
+PopManagerThreadPool::PopManagerThreadPool(int num_of_threads, std::function<int()> p_work_adder_function) {
     work_adder_function = std::move(p_work_adder_function);
     for (int i = 0; i < num_of_threads; i++) {
         worker_threads.emplace_back(&PopManagerThreadPool::thread_processor, this);

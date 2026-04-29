@@ -210,7 +210,7 @@ void Province::create_town() {
 Factory& Province::add_factory(Factory& factory) {
     if (is_building_at_pos(factory.position.get_position_vector2i()) != 0) {
         print_error("Factory being placed in taken tile.");
-        return;
+        return factory;
     }
 
     std::scoped_lock lock(m);
@@ -225,7 +225,7 @@ Factory& Province::add_factory(Factory& factory) {
 Factory& Province::add_hidden_factory(Factory& factory) {
     if (is_building_at_pos(factory.position.get_position_vector2i()) == 0) {
         print_error("Placing Hidden Factory beneath nothing.");
-        return;
+        return factory;
     }
 
     std::scoped_lock lock(m);
@@ -240,7 +240,7 @@ Factory& Province::add_hidden_factory(Factory& factory) {
 Station& Province::add_station(Station& station) {
     if (is_building_at_pos(station.position.get_position_vector2i()) != 0) {
         print_error("Station being placed in taken tile.");
-        return;
+        return station;
     }
 
     std::scoped_lock lock(m);

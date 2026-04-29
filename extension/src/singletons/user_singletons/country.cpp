@@ -2,6 +2,7 @@
 #include "../money_controller.hpp"
 #include "../pop_manager.hpp"
 
+
 void Country::_bind_methods() {
 
 }
