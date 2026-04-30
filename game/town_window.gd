@@ -64,7 +64,7 @@ func request_current_pops(coords: Vector2i) -> void:
 
 @rpc("any_peer", "call_local", "unreliable")
 func request_factories(coords: Vector2i) -> void:
-	var factories: Array = MapObjectInfo.get_town_factories(coords)
+	var factories: Array = ProvinceManager.get_instance().get_town_factories(coords)
 	update_factories.rpc_id(multiplayer.get_remote_sender_id(), factories)
 
 @rpc("authority", "call_local", "unreliable")
@@ -149,7 +149,7 @@ func _on_cargo_info_pop_up_popup_requested() -> void:
 
 @rpc("any_peer", "call_local", "unreliable")
 func populate_info_window(type: int, p_location: Vector2i) -> void:
-	var info: Dictionary = MapObjectInfo.get_town_prices(p_location)[type]
+	var info: Dictionary = ProvinceManager.get_instance().get_town_prices(p_location)[type]
 	
 	info.type = CargoInfo.get_instance().get_cargo_name(type)
 	info.price = "$" + info["price"]
