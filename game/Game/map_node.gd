@@ -106,8 +106,8 @@ func _input(event: InputEvent) -> void:
 				town_window.open_window(cell_position)
 			elif pm.is_station(cell_position):
 				station_window.open_window(cell_position)
-			
-			main_map.open_tile_window(cell_position)
+			else:
+				main_map.open_tile_window(cell_position)
 		elif state_machine.is_building_many_rails():
 			main_map.place_rail_to_start()
 		elif state_machine.is_building_roads():

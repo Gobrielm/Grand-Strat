@@ -53,7 +53,7 @@ func start_hovering_type(type: int) -> void:
 
 @rpc("any_peer", "call_local", "unreliable")
 func request_current_cargo(coords: Vector2i) -> void:
-	var dict: Dictionary = TerminalMap.get_instance().get_cargo_dict(coords)
+	var dict: Dictionary = ProvinceManager.get_instance().get_factory_cargo_dictionary(coords)
 	update_current_cargo.rpc_id(multiplayer.get_remote_sender_id(), dict)
 
 @rpc("any_peer", "call_local", "unreliable")
@@ -63,7 +63,7 @@ func request_current_name(coords: Vector2i) -> void:
 
 @rpc("any_peer", "call_local", "unreliable")
 func request_current_prices(coords: Vector2i) -> void:
-	var dict: Dictionary = TerminalMap.get_instance().get_local_prices(coords)
+	var dict: Dictionary = ProvinceManager.get_instance().get_town_prices(coords)
 	update_current_prices.rpc_id(multiplayer.get_remote_sender_id(), dict)
 
 @rpc("any_peer", "call_local", "unreliable")

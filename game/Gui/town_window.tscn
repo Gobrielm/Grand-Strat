@@ -1,14 +1,15 @@
-[gd_scene load_steps=3 format=3 uid="uid://nsjr55rm7j51"]
+[gd_scene format=3 uid="uid://nsjr55rm7j51"]
 
 [ext_resource type="Script" uid="uid://fr52bfla55vf" path="res://town_window.gd" id="1_6vqjj"]
 [ext_resource type="PackedScene" uid="uid://b7bmwfo2vrstf" path="res://Gui/cargo_info_pop_up.tscn" id="2_6vqjj"]
 
-[node name="town_window" type="Window"]
+[node name="town_window" type="Window" unique_id=682905866]
+oversampling_override = 1.0
 initial_position = 1
 size = Vector2i(700, 400)
 script = ExtResource("1_6vqjj")
 
-[node name="Price_Node" type="Control" parent="."]
+[node name="Price_Node" type="Control" parent="." unique_id=1743637053]
 layout_mode = 3
 anchors_preset = 8
 anchor_left = 0.5
@@ -22,25 +23,25 @@ offset_bottom = 200.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Price_List" type="ItemList" parent="Price_Node"]
+[node name="Price_List" type="ItemList" parent="Price_Node" unique_id=1734694182]
 layout_mode = 0
 offset_right = 200.0
 offset_bottom = 300.0
 focus_mode = 0
 
-[node name="ColorRect" type="ColorRect" parent="Price_Node"]
+[node name="ColorRect" type="ColorRect" parent="Price_Node" unique_id=393186429]
 layout_mode = 0
 offset_top = -40.0
 offset_right = 200.0
 color = Color(0.18359, 0.18359, 0.18359, 1)
 
-[node name="Label" type="Label" parent="Price_Node/ColorRect"]
+[node name="Label" type="Label" parent="Price_Node/ColorRect" unique_id=1530206753]
 layout_mode = 0
 offset_right = 40.0
 offset_bottom = 23.0
 text = "Local Prices:"
 
-[node name="Factory_Node" type="Control" parent="."]
+[node name="Factory_Node" type="Control" parent="." unique_id=171573334]
 layout_mode = 3
 anchors_preset = 8
 anchor_left = 0.5
@@ -54,7 +55,7 @@ offset_bottom = 180.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Factory_List" type="ItemList" parent="Factory_Node"]
+[node name="Factory_List" type="ItemList" parent="Factory_Node" unique_id=158363877]
 layout_mode = 0
 offset_right = 200.0
 offset_bottom = 300.0
@@ -63,38 +64,32 @@ max_text_lines = 2
 auto_height = true
 icon_mode = 0
 
-[node name="ColorRect" type="ColorRect" parent="Factory_Node"]
+[node name="ColorRect" type="ColorRect" parent="Factory_Node" unique_id=1704859239]
 layout_mode = 0
 offset_top = -40.0
 offset_right = 200.0
 color = Color(0.18359, 0.18359, 0.18359, 1)
 
-[node name="Label" type="Label" parent="Factory_Node/ColorRect"]
+[node name="Label" type="Label" parent="Factory_Node/ColorRect" unique_id=1576474803]
 layout_mode = 0
 offset_right = 40.0
 offset_bottom = 23.0
 text = "Factories:"
 
-[node name="Cash" type="Label" parent="."]
-offset_left = 17.0
-offset_top = 5.0
-offset_right = 57.0
-offset_bottom = 28.0
-
-[node name="Pops" type="Label" parent="."]
+[node name="Pops" type="Label" parent="." unique_id=1321075060]
 offset_left = 536.0
 offset_top = 8.0
 offset_right = 585.0
 offset_bottom = 31.0
 text = "Pops: "
 
-[node name="Name" type="RichTextLabel" parent="."]
+[node name="Name" type="RichTextLabel" parent="." unique_id=979996886]
 offset_right = 750.0
 offset_bottom = 40.0
 bbcode_enabled = true
 scroll_active = false
 
-[node name="CargoInfoPopUp" parent="." instance=ExtResource("2_6vqjj")]
+[node name="CargoInfoPopUp" parent="." unique_id=1041868281 instance=ExtResource("2_6vqjj")]
 visible = false
 
 [connection signal="close_requested" from="." to="." method="_on_close_requested"]

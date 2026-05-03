@@ -3,7 +3,6 @@ var location: Variant = null
 var hold_name: String
 var current_cargo: Dictionary
 var current_prices: Dictionary
-var current_cash: int
 var current_pops: int
 var type_hovered: int = -1
 var inside_price_list: bool = false
@@ -38,8 +37,7 @@ func refresh_window() -> void:
 	if location != null:
 		request_current_name.rpc_id(1, location)
 		request_current_prices.rpc_id(1, location)
-		request_current_cash.rpc_id(1, location)
-		request_current_pops.rpc_id(1, location)
+		#request_current_pops.rpc_id(1, location)
 		request_factories.rpc_id(1, location)
 
 @rpc("any_peer", "call_local", "unreliable")
@@ -49,16 +47,12 @@ func request_current_name(coords: Vector2i) -> void:
 
 @rpc("any_peer", "call_local", "unreliable")
 func request_current_prices(coords: Vector2i) -> void:
-	var dict: Dictionary = TerminalMap.get_instance().get_local_prices(coords)
+	var dict: Dictionary = ProvinceManager.get_instance().get_town_prices(coords)
 	update_current_prices.rpc_id(multiplayer.get_remote_sender_id(), dict)
 
 @rpc("any_peer", "call_local", "unreliable")
-func request_current_cash(coords: Vector2i) -> void:
-	var _current_cash: int = TerminalMap.get_instance().get_cash_of_firm(coords)
-	update_current_cash.rpc_id(multiplayer.get_remote_sender_id(), _current_cash)
-
-@rpc("any_peer", "call_local", "unreliable")
 func request_current_pops(coords: Vector2i) -> void:
+	
 	var _current_pops: int = (TerminalMap.get_instance().get_town(coords)).get_total_pops()
 	update_current_pops.rpc_id(multiplayer.get_remote_sender_id(), _current_pops)
 
@@ -71,11 +65,6 @@ func request_factories(coords: Vector2i) -> void:
 func update_current_name(new_name: String) -> void:
 	hold_name = new_name
 	$Name.text = "[center][font_size=30]" + hold_name + "[/font_size][/center]"
-
-@rpc("authority", "call_local", "unreliable")
-func update_current_cash(new_cash: int) -> void:
-	current_cash = new_cash
-	$Cash.text = "$" + str(current_cash)
 
 @rpc("authority", "call_local", "unreliable")
 func update_current_prices(new_prices: Dictionary) -> void:
