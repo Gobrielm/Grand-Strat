@@ -328,10 +328,11 @@ Array ProvinceManager::get_town_factories(Vector2i town_tile) {
         Factory& factory = province->get_factory_unsafe(id);
         
         Dictionary d;
-        
-        d["level"] = factory.employer.get_level_without_employment();
-        d["cash"] = factory.capital.get_cash();
-        d["recipe"] = factory.get_recipe().get_recipe_as_string();
+
+        d.set("level", factory.employer.get_level_without_employment());
+        d.set("cash", factory.capital.get_cash());
+        d.set("recipe", factory.get_recipe().get_recipe_as_string());
+
         a.push_back(d);
     }
 
@@ -351,12 +352,12 @@ Dictionary ProvinceManager::get_town_prices(Vector2i town_tile) {
     for (auto [type, price]: price_map) {
         Dictionary inner_info;
 
-        inner_info["price"] = price;
-        inner_info["supply"] = town.mp.get_current_supply(type);
-        inner_info["demand"] = town.mp.get_current_demand(type);
-        inner_info["plot"] = town.mp.get_market_info_plot_godot(type);
+        inner_info.set("price", price);
+        inner_info.set("supply", town.mp.get_current_supply(type));
+        inner_info.set("demand", town.mp.get_current_demand(type));
+        inner_info.set("plot", town.mp.get_market_info_plot_godot(type));
 
-        d[type] = inner_info;
+        d.set(type, inner_info);
     }
 
     return d;

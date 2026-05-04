@@ -66,6 +66,9 @@ std::pair<std::vector<std::pair<int, float>>, std::vector<std::pair<int, float>>
     std::vector<std::pair<int, float>> buys;
     std::vector<std::pair<int, float>> sells;
 
+    if (buy_orders.count(type) != 0 || sell_orders.count(type) != 0) {
+        return std::make_pair(buys, sells);
+    }
 
     for (auto it = buy_orders.at(type).begin(); it != buy_orders.at(type).end(); it++) {
         auto& ptr = (*it);
@@ -85,6 +88,9 @@ Array MarketComponent::get_market_info_plot_godot(int type) const {
     Array buys;
     Array sells;
 
+    if (buy_orders.count(type) != 0 || sell_orders.count(type) != 0) {
+        return Array();
+    }
 
     for (auto it = buy_orders.at(type).begin(); it != buy_orders.at(type).end(); it++) {
         auto& ptr = (*it);
@@ -97,7 +103,7 @@ Array MarketComponent::get_market_info_plot_godot(int type) const {
         auto& ptr = (*it);
         if (ptr->get_type() != type) continue;
         Vector2 v(ptr->get_amount(), ptr->get_price());
-        buys.push_back(v);
+        sells.push_back(v);
     }
     Array a;
     a.push_back(buys);
@@ -181,7 +187,7 @@ void MarketComponent::finish_market_exchange(
 }
 
 int32_t MarketComponent::get_current_demand(int type) const {
-    int32_t tot;
+    int32_t tot = 0;
     for (const auto& [amt, price]: get_market_info_plot(type).first) {
         tot += amt;
     }
@@ -189,7 +195,7 @@ int32_t MarketComponent::get_current_demand(int type) const {
 }
 
 int32_t MarketComponent::get_current_supply(int type) const {
-    int32_t tot;
+    int32_t tot = 0;
     for (const auto& [amt, price]: get_market_info_plot(type).second) {
         tot += amt;
     }

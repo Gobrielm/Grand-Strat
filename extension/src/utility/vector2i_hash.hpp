@@ -70,7 +70,7 @@ namespace godot_helpers {
     godot::Dictionary convert_map_to_dictionary(std::unordered_map<Key, Val, Compare> m) {
         godot::Dictionary d;
         for (const auto& [key, val]: m) {
-            d[key] = val;
+            d.set(key, val);
         }
         return d;
     }

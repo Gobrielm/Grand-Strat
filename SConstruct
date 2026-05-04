@@ -33,6 +33,9 @@ Run the following command to download godot-cpp:
     sys.exit(1)
 env = SConscript("godot-cpp/SConstruct", {"env": env, "customs": customs})
 
+if env["target"] == "template_debug":
+    env.Append(CCFLAGS=["-g", "-O0"])
+
 
 #Controls the folders
 # Controls the folders
