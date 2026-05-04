@@ -9,6 +9,7 @@ var ticks: float = 0.0
 var game_speed: int = 1
 var m: Mutex = Mutex.new()
 var threads_request_pause: int = 0
+var thread: Thread = Thread.new()
 
 @export var SECONDS_IN_DAY: int = 1
 
@@ -71,11 +72,18 @@ func day_tick() -> void:
 var start: float = 0.0
 
 func _on_month_tick_timeout() -> void:
+	if thread.is_started():
+		thread.wait_to_finish()
+	thread.start(call_month_tick.bind())
+	change_pause(true)
+
+func call_month_tick() -> void:
 	CountryManager.get_instance().month_tick()
 	DataCollector.get_instance().month_tick()
 	RoadMap.get_instance().month_tick()
 	TerminalMap.get_instance()._on_month_tick_timeout()
 	Utils.unit_map._on_month_tick_timeout()
+	change_pause(false)
 
 func _process(delta: float) -> void:
 	if paused:

@@ -2,7 +2,10 @@ extends Window
 var location: Variant = null
 var hold_name: String
 var current_cargo: Dictionary
+
 var current_prices: Dictionary
+var ind_to_type: Array = []
+
 var current_pops: int
 var type_hovered: int = -1
 var inside_price_list: bool = false
@@ -52,7 +55,6 @@ func request_current_prices(coords: Vector2i) -> void:
 
 @rpc("any_peer", "call_local", "unreliable")
 func request_current_pops(coords: Vector2i) -> void:
-	
 	var _current_pops: int = (TerminalMap.get_instance().get_town(coords)).get_total_pops()
 	update_current_pops.rpc_id(multiplayer.get_remote_sender_id(), _current_pops)
 
@@ -95,7 +97,9 @@ func display_current_prices() -> void:
 	var price_list: ItemList = $Price_Node/Price_List
 	var names: Array = CargoInfo.get_instance().get_cargo_array()
 	var num: int = 0
+	ind_to_type.clear()
 	for type: int in current_prices:
+		ind_to_type.push_back(type)
 		var text: String = names[type] + ": " + str(current_prices[type])
 		if num < price_list.item_count:
 			var prev: String = price_list.get_item_text(num).trim_prefix(names[type] + ": ")
@@ -103,7 +107,7 @@ func display_current_prices() -> void:
 			var prev_price: float = 0.0
 			if prev.is_valid_float():
 				prev_price = float(prev)
-			set_color(num, current_prices[type], prev_price)
+			set_color(num, current_prices[type].price, prev_price)
 		else:
 			price_list.add_item(text, null, false)
 			$Price_Node/Price_List.set_item_tooltip_enabled(num, false)
@@ -122,9 +126,10 @@ func set_color(num: int, price: float, prev_price: float = 0.0) -> void:
 func refresh_hover() -> void:
 	if inside_price_list:
 		var local_pos: Vector2 = $Price_Node/Price_List.get_local_mouse_position()
-		var type: int = $Price_Node/Price_List.get_item_at_position(local_pos, true)
+		var ind: int = $Price_Node/Price_List.get_item_at_position(local_pos, true)
 		
-		start_hovering_type(type)
+		
+		start_hovering_type(ind_to_type[ind])
 	else:
 		$CargoInfoPopUp.hide()
 
@@ -134,16 +139,17 @@ func start_hovering_type(type: int) -> void:
 		type_hovered = type
 
 func _on_cargo_info_pop_up_popup_requested() -> void:
-	populate_info_window.rpc_id(1, type_hovered, location)
+	populate_info_window.rpc_id(1, type_hovered)
 
 @rpc("any_peer", "call_local", "unreliable")
-func populate_info_window(type: int, p_location: Vector2i) -> void:
-	var info: Dictionary = ProvinceManager.get_instance().get_town_prices(p_location)[type]
+func populate_info_window(type: int) -> void:
+	var info: Dictionary = current_prices[type]
 	
 	info.type = CargoInfo.get_instance().get_cargo_name(type)
-	info.price = "$" + info["price"]
-	info.amount = "Amount: " + info["supply"]
-	info.market_info = "Demand: " + info["demand"]
+	
+	info.price = "$" + str(Utils.round(info["price"], 2))
+	info.amount = "Amount: " + str(info["supply"])
+	info.market_info = "Demand: " + str(info["demand"])
 	
 	pop_up_info_window.rpc_id(multiplayer.get_remote_sender_id(), info)
 
