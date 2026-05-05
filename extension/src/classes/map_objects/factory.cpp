@@ -303,6 +303,8 @@ void Factory::adjust_trade_orders(Town& town) {
             town.mp.add_order(orders[type]);
         }
 
+        orders[type]->change_amount(amt);
+
         float price = orders[type]->get_limit_price();
         orders[type]->set_max_price(get_max_price(type));
         if (last_month_storage.get_amount(type) < amt) {

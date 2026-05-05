@@ -54,6 +54,7 @@ void SubsistenceFarm::adjust_trade_orders(Town& town) {
             town.mp.add_order(orders[type]);
         }
 
+        orders[type]->change_amount(storage.get_amount(type));
         orders[type]->set_max_price(town.mp.get_min_price(type));
         orders[type]->set_price(town.mp.get_price(type));
     }

@@ -25,6 +25,8 @@ class MarketComponent {
         std::set<std::shared_ptr<TradeOrder>, TradeOrder::TradeOrderGT>
     > buy_orders;
 
+    std::unordered_map<int, std::pair<std::vector<std::pair<int, float>>, std::vector<std::pair<int, float>>>> last_month_plot;
+
     std::pair<CapitalComponent*, StorageComponent*> get_capital_and_storage_components(Province* province, int pos_id);
     void finish_market_exchange(std::shared_ptr<TradeOrder> buy_order, std::shared_ptr<TradeOrder> sell_order, std::pair<CapitalComponent*, StorageComponent*> buyer, std::pair<CapitalComponent*, StorageComponent*> seller);
 
@@ -52,4 +54,5 @@ class MarketComponent {
     /// @param province The locked province that town is in
     void sell_to_pop(Province* province, BasePop& pop);
 
+    void update_last_month_plot();
 };
