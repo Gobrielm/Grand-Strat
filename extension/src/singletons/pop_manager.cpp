@@ -13,6 +13,8 @@
 
 #include <godot_cpp/classes/ref.hpp>
 
+#include <queue>
+
 std::shared_ptr<PopManager> PopManager::singleton_instance = nullptr;
 
 void PopManager::create() {
@@ -84,7 +86,7 @@ void PopManager::thread_month_tick(int province_id) { // Assumes all pops are pa
     
     sell_to_pops(province, province->pops);
     auto time2 = std::chrono::high_resolution_clock::now();
-    find_employment_for_pops(province->pops);
+    find_employment_for_pops(province, province->pops);
     auto time3 = std::chrono::high_resolution_clock::now();
 
     String x;
@@ -159,19 +161,34 @@ void PopManager::sell_to_pops(Province* province, std::unordered_set<int>& pops_
 //     }
 // }
 
-void PopManager::find_employment_for_pops(std::unordered_set<int>& pops_to_employ) {
-    // int mutex_lock_num = get_pop_mutex_number(pop_group.front()->get_pop_id());
+void PopManager::find_employment_for_pops(Province* province, std::unordered_set<int>& pops_to_employ) {
+    if (pops_to_employ.size() == 0) return;
 
-    // for (auto& pop: pop_group) {
-    //     PopTypes pop_type = PopTypes::none;
-    //     {
-    //         auto lock = lock_pop_read(mutex_lock_num);
-    //         pop_type = pop->get_type(); // Don't lock since factory will double check if wrong
-    //         if (!pop->is_seeking_employment()) continue;
-    //     }
+    Town& town = province->town;
+    // Create employment queue
+    std::priority_queue<std::pair<float, int>> employement_queue;
+    for (auto& fact: province->factories) {
+        employement_queue.push(std::make_pair(fact.get_wage(town), fact.position.get_building_id()));
+    }
+
+    // Employ Pops
+    for (int pop_id: pops_to_employ) {
+        auto& pop = pops[pop_id];
+        auto pop_type = pop.get_type();
+        if (!pop.is_seeking_employment()) continue;
         
+        while (employement_queue.size() != 0) {
+            int building_id = employement_queue.top().second;
+            auto& factory = province->get_factory_unsafe(building_id);
+            if (!factory.is_hiring(pop_type)) {
+                employement_queue.pop();
+                continue;
+            }
 
-    // }
+            factory.employ_pop(town, pop);
+        }
+
+    }
 }
 
 // void PopManager::find_employment_for_pops(std::vector<BasePop*>& pop_group) {
