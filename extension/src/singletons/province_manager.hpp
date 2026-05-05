@@ -90,4 +90,7 @@ public:
     float get_average_factory_level() const;
     unsigned long get_grain_demand() const;
     unsigned long get_grain_supply() const;
+
+    // Deals with necessary month ticks that must be run before simulations
+    void month_tick();
 };

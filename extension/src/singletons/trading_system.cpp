@@ -2,6 +2,7 @@
 #include "terminal_map.hpp"
 #include "province_manager.hpp"
 
+#include "classes/map_objects/subsistence_farm.hpp"
 #include "classes/map_objects/factory.hpp"
 #include "classes/map_objects/town.hpp"
 
@@ -31,14 +32,11 @@ void TradingSystem::adjust_factory_orders() {
         Town& town = province->town;
 
         for (auto& factory: province->factories) {
-            adjust_factory_orders(factory, town);
+            factory.adjust_trade_orders(town);
         }
-    }
-}
-
-void TradingSystem::adjust_factory_orders(Factory& factory, Town& town) {
-    for (const auto& [type, _]: factory.employer.recipe.get_outputs()) {
-        factory.adjust_trade_orders(town);
+        for (auto& farm: province->sub_farms) {
+            farm.adjust_trade_orders(town);
+        }
     }
 }
 

@@ -401,7 +401,7 @@ float ProvinceManager::get_average_factory_level() const {
     for (auto province: provinces) {
         std::scoped_lock(province->m);
         for (const auto& factory: province->factories) {
-            ave += factory.employer.get_level();
+            ave += factory.employer.get_level_without_employment();
             count++;
         }
 
@@ -464,4 +464,12 @@ unsigned long ProvinceManager::get_grain_supply() const {
         total_demand += num;
     }
     return round(total_demand);
+}
+
+void ProvinceManager::month_tick() {
+    for (auto province: provinces) {
+        std::scoped_lock lock(province->m);
+        auto& town = province->town;
+        town.mp.update_last_month_plot();
+    }
 }

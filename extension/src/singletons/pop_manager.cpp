@@ -5,6 +5,7 @@
 #include "recipe_info.hpp"
 #include "terminal_map.hpp"
 #include "money_controller.hpp"
+#include "data_collector.hpp"
 #include "pop_manager_utility/pop_manager_thread_pool.hpp"
 
 #include "classes/province.hpp"
@@ -86,7 +87,7 @@ void PopManager::thread_month_tick(int province_id) { // Assumes all pops are pa
     
     sell_to_pops(province, province->pops);
     auto time2 = std::chrono::high_resolution_clock::now();
-    find_employment_for_pops(province, province->pops);
+    // find_employment_for_pops(province, province->pops);
     auto time3 = std::chrono::high_resolution_clock::now();
 
     String x;
@@ -116,6 +117,8 @@ void PopManager::sell_to_pops(Province* province, std::unordered_set<int>& pops_
     for (int pop_id: pops_to_sell_to) {
         auto& pop = pops[pop_id];
         town.mp.sell_to_pop(province, pop);
+
+        DataCollector::get_instance()->add_supply(10, pop.get_desired(10));
     }
 
     // Ref<TerminalMap> terminal_map = TerminalMap::get_instance();

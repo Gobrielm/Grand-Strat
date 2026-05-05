@@ -88,23 +88,26 @@ Array MarketComponent::get_market_info_plot_godot(int type) const {
     Array buys;
     Array sells;
 
-    if (buy_orders.count(type) != 0 || sell_orders.count(type) != 0) {
+    if (last_month_plot.count(type) != 0) {
         return Array();
     }
 
-    for (auto it = buy_orders.at(type).begin(); it != buy_orders.at(type).end(); it++) {
-        auto& ptr = (*it);
-        if (ptr->get_type() != type) continue;
-        Vector2 v(ptr->get_amount(), ptr->get_price());
+    const auto& orders = last_month_plot.at(type);
+
+    const auto& last_month_buy_orders = orders.first;
+    const auto& last_month_sell_orders = orders.second;
+    
+    for (const auto& amt_price: last_month_buy_orders) {
+        Vector2 v(amt_price.first, amt_price.second);
         buys.push_back(v);
     }
 
-    for (auto it = sell_orders.at(type).begin(); it != sell_orders.at(type).end(); it++) {
-        auto& ptr = (*it);
-        if (ptr->get_type() != type) continue;
-        Vector2 v(ptr->get_amount(), ptr->get_price());
+    for (const auto& amt_price: last_month_sell_orders) {
+        Vector2 v(amt_price.first, amt_price.second);
         sells.push_back(v);
     }
+    
+
     Array a;
     a.push_back(buys);
     a.push_back(sells);
@@ -114,6 +117,7 @@ Array MarketComponent::get_market_info_plot_godot(int type) const {
 void MarketComponent::market_tick(Province* province) {
 
     for (auto& [type, buys]: buy_orders) {
+
         auto it = sell_orders[type].begin();
         if (it == sell_orders[type].end()) continue;
 
@@ -188,7 +192,8 @@ void MarketComponent::finish_market_exchange(
 
 int32_t MarketComponent::get_current_demand(int type) const {
     int32_t tot = 0;
-    for (const auto& [amt, price]: get_market_info_plot(type).first) {
+    if (!last_month_plot.count(type)) return 0;
+    for (const auto& [amt, price]: last_month_plot.at(type).first) {
         tot += amt;
     }
     return tot;
@@ -196,7 +201,8 @@ int32_t MarketComponent::get_current_demand(int type) const {
 
 int32_t MarketComponent::get_current_supply(int type) const {
     int32_t tot = 0;
-    for (const auto& [amt, price]: get_market_info_plot(type).second) {
+    if (!last_month_plot.count(type)) return 0;
+    for (const auto& [amt, price]: last_month_plot.at(type).second) {
         tot += amt;
     }
     return tot;
@@ -265,8 +271,6 @@ void MarketComponent::sell_to_pop(Province* province, BasePop& pop) {
             float sub_total = price * amt;
             auto [capital, storage] = res;
 
-            
-
             capital->add_cash(sub_total);
             storage->remove_cargo(type, amt);
             pop.buy_good(type, amt, price);
@@ -287,4 +291,12 @@ void MarketComponent::sell_to_pop(Province* province, BasePop& pop) {
     
     //     broker->add_surveyed_demand(demand_cargo->type, demand_cargo->price, demand_cargo->amount);
     // }
+}
+
+void MarketComponent::update_last_month_plot() {
+    last_month_plot.clear();
+    
+    for (auto& [type, _]: buy_orders) {
+        last_month_plot[type] = get_market_info_plot(type);
+    }
 }

@@ -3,14 +3,13 @@
 #include <vector>
 #include <memory>
 
+class SubsistenceFarm;
 class Factory;
 class Town;
 
 class TradingSystem {
 
     static std::shared_ptr<TradingSystem> singleton;
-
-    void adjust_factory_orders(Factory& factory, Town& town);
 
     void adjust_factory_orders();
     void trading_tick();
