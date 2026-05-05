@@ -51,7 +51,7 @@ func request_current_name(coords: Vector2i) -> void:
 
 @rpc("any_peer", "call_local", "unreliable")
 func request_current_prices(coords: Vector2i) -> void:
-	var dict: Dictionary = ProvinceManager.get_instance().get_town_prices(coords)
+	var dict: Dictionary = ProvinceManager.get_instance().get_town_pdps(coords)
 	update_current_prices.rpc_id(multiplayer.get_remote_sender_id(), dict)
 
 @rpc("any_peer", "call_local", "unreliable")
@@ -100,15 +100,16 @@ func display_current_prices() -> void:
 	var num: int = 0
 	ind_to_type.clear()
 	for type: int in town_info:
+		var pdp: PDP = town_info[type]
 		ind_to_type.push_back(type)
-		var text: String = names[type] + ": " + str(town_info[type])
+		var text: String = names[type] + ": " + pdp.to_string()
 		if num < price_list.item_count:
 			var prev: String = price_list.get_item_text(num).trim_prefix(names[type] + ": ")
 			price_list.set_item_text(num, text)
 			var prev_price: float = 0.0
 			if prev.is_valid_float():
 				prev_price = float(prev)
-			set_color(num, town_info[type].price, prev_price)
+			set_color(num, pdp.price, prev_price)
 		else:
 			price_list.add_item(text, null, false)
 			$Price_Node/Price_List.set_item_tooltip_enabled(num, false)
@@ -128,7 +129,8 @@ func refresh_hover() -> void:
 	if inside_price_list:
 		var local_pos: Vector2 = $Price_Node/Price_List.get_local_mouse_position()
 		var ind: int = $Price_Node/Price_List.get_item_at_position(local_pos, true)
-		
+		if ind == -1:
+			return
 		
 		start_hovering_type(ind_to_type[ind])
 	else:
@@ -144,13 +146,14 @@ func _on_cargo_info_pop_up_popup_requested() -> void:
 
 @rpc("any_peer", "call_local", "unreliable")
 func populate_info_window(type: int) -> void:
-	var info: Dictionary = town_info[type]
+	var info: Dictionary = {}
+	var pdp: PDP = town_info[type]
 	
 	info.type = CargoInfo.get_instance().get_cargo_name(type)
 	
-	info.price = "$" + str(Utils.round(info["price"], 2))
-	info.supply = "Supply: " + str(info["supply"])
-	info.demand = "Demand: " + str(info["demand"])
+	info.price = "$" + str(Utils.round(pdp.price, 2))
+	info.supply = "Supply: " + str(pdp.supply)
+	info.demand = "Demand: " + str(pdp.demand)
 	
 	pop_up_info_window.rpc_id(multiplayer.get_remote_sender_id(), info)
 
@@ -163,8 +166,56 @@ func create_graph() -> void:
 	if type_selected == -1:
 		return
 	
-	#var info: Dictionary = town_info[type_selected]
-	#for info.plot
+	var price_bounds: Vector2 = Vector2(INF, 0)
+	var amount_bounds: Vector2 = Vector2(INF, 0)
+	
+	var pdp: PDP = town_info[type_selected]
+	for vec: Vector2 in pdp.buy_orders:
+		var amt: float = vec.x
+		var price: float = vec.y
+		amount_bounds.x = min(amount_bounds.x, amt)
+		amount_bounds.y = max(amount_bounds.y, amt)
+		price_bounds.x = min(price_bounds.x, price)
+		
+	for vec: Vector2 in pdp.sell_orders:
+		var amt: float = vec.x
+		var price: float = vec.y
+		amount_bounds.x = min(amount_bounds.x, amt)
+		amount_bounds.y = max(amount_bounds.y, amt)
+		price_bounds.y = max(price_bounds.y, price)
+	
+	amount_bounds.x *= 0.8
+	price_bounds.x *= 0.8
+	
+	amount_bounds.y *= 1.25
+	price_bounds.y *= 1.25
+	
+	print(amount_bounds)
+	print(price_bounds)
+	
+	for vec: Vector2 in pdp.buy_orders:
+		create_point(vec, true, price_bounds, amount_bounds)
+	
+	for vec: Vector2 in pdp.sell_orders:
+		create_point(vec, false, price_bounds, amount_bounds)
+
+func create_point(point: Vector2, buy: bool, price_bounds: Vector2, amount_bounds: Vector2) -> void:
+	var graph: ColorRect = $Graph
+	var graph_size: Vector2 = graph.size
+	#var graph_bl_point: Vector2 = graph.position - Vector2(0, graph_size.y)
+	
+	var point_texture: ColorRect = ColorRect.new()
+	point_texture.size = Vector2(6, 6)
+	
+	point_texture.position -= point_texture.size / 2
+	point_texture.position.y += graph_size.y
+	
+	point_texture.position.x += (point.x - amount_bounds.x) / (amount_bounds.y - amount_bounds.x) * graph_size.x
+	point_texture.position.y -= (point.y - price_bounds.x) / (price_bounds.y - price_bounds.x) * graph_size.y
+	
+	point_texture.color = Color.GREEN if buy else Color.RED
+	
+	graph.add_child(point_texture)
 
 @rpc("authority", "call_local", "unreliable")
 func pop_up_info_window(info: Dictionary) -> void:
@@ -180,4 +231,8 @@ func _on_price_list_mouse_exited() -> void:
 	type_hovered = -1
 
 func _on_price_list_item_clicked(index: int, _at_position: Vector2, _mouse_button_index: int) -> void:
+	var diff: bool = type_selected != ind_to_type[index]
 	type_selected = ind_to_type[index]
+	if diff:
+		create_graph()
+	
