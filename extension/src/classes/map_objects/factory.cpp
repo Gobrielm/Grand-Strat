@@ -83,6 +83,13 @@ float Factory::get_max_price(int type, Town* town) const {
     return std::min(available / recipe.get_input(type), 0.0f);
 }
 
+float Factory::get_current_price(int type) const {
+    if (orders.count(type)) {
+        return orders.at(type)->get_price();
+    }
+    return 0;
+}
+
 bool Factory::does_create(int type) const {
     return employer.recipe.get_output(type) != 0;
 }
@@ -184,6 +191,16 @@ int Factory::get_primary_type() const {
         }
         return primary_type;
     }
+}
+
+int Factory::get_demand(int type) const {
+    int delta = storage.get_amount(type) - last_month_storage.get_amount(type);
+    int amt = get_recipe().get_output(type);
+    if (amt == 0) return 0;
+
+    int demand = std::max(delta - amt, 0);
+
+    return demand;
 }
 
 void Factory::upgrade() {

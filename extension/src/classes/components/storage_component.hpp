@@ -18,11 +18,13 @@ class StorageComponent {
 
     float get_desired_cargo(int type, float pricePer);
 
-    float get_amount(int type);
+    float get_amount(int type) const;
 
     /// @return The amount of cargo not added to local storage
     float add_cargo(int type, float amount);
     void remove_cargo(int type, float amount);
+
+    std::unordered_map<int, float> get_storage();
 
     godot::Dictionary dictionary() const;
 };
