@@ -75,7 +75,7 @@ func _on_month_tick_timeout() -> void:
 	if thread.is_started():
 		thread.wait_to_finish()
 	thread.start(call_month_tick.bind())
-	change_pause(true)
+	backend_pause()
 
 func call_month_tick() -> void:
 	CountryManager.get_instance().month_tick()
@@ -83,7 +83,7 @@ func call_month_tick() -> void:
 	RoadMap.get_instance().month_tick()
 	TerminalMap.get_instance()._on_month_tick_timeout()
 	Utils.unit_map._on_month_tick_timeout()
-	change_pause(false)
+	backend_unpause()
 
 func _process(delta: float) -> void:
 	if paused:

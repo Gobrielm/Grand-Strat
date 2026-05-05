@@ -1,8 +1,10 @@
 extends Window
 var location: Variant = null
 var hold_name: String
+
 var current_cargo: Dictionary
-var current_prices: Dictionary
+var town_pdps: Dictionary
+
 var current_cash: int
 var current_level: int
 var type_hovering: int = -1
@@ -63,7 +65,7 @@ func request_current_name(coords: Vector2i) -> void:
 
 @rpc("any_peer", "call_local", "unreliable")
 func request_current_prices(coords: Vector2i) -> void:
-	var dict: Dictionary = ProvinceManager.get_instance().get_town_prices(coords)
+	var dict: Dictionary = ProvinceManager.get_instance().get_town_pdps(coords)
 	update_current_prices.rpc_id(multiplayer.get_remote_sender_id(), dict)
 
 @rpc("any_peer", "call_local", "unreliable")
@@ -103,7 +105,7 @@ func update_current_cash(new_cash: int) -> void:
 
 @rpc("authority", "call_local", "unreliable")
 func update_current_prices(new_prices: Dictionary) -> void:
-	current_prices = new_prices
+	town_pdps = new_prices
 	display_current_prices()
 
 @rpc("authority", "call_local", "unreliable")
@@ -133,8 +135,9 @@ func display_current_prices() -> void:
 	var price_list: ItemList = $Price_Node/Price_List
 	price_list.clear()
 	var names: Array = CargoInfo.get_instance().get_cargo_array()
-	for type: int in current_prices:
-		price_list.add_item(names[type] + ": " + str(current_prices[type]))
+	for type: int in town_pdps:
+		var pdp: PDP = town_pdps[type]
+		price_list.add_item(names[type] + ": " + str(pdp.to_string()))
 
 func get_selected_name() -> String:
 	var cargo_list: ItemList = $Cargo_Node/Cargo_List
