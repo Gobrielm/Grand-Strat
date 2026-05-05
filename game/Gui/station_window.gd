@@ -46,7 +46,7 @@ func request_current_name(coords: Vector2i) -> void:
 
 @rpc("any_peer", "call_local", "unreliable")
 func request_station_cargo(coords: Vector2i) -> void:
-	var good_dict: Dictionary = ProvinceManager.get_instance().get_factory_cargo_dictionary(coords)
+	var good_dict: Dictionary = ProvinceManager.get_instance().get_factory_info(coords)
 	update_current_cargo.rpc_id(multiplayer.get_remote_sender_id(), good_dict)
 
 @rpc("any_peer", "call_local", "unreliable")

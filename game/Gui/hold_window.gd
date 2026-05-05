@@ -37,7 +37,7 @@ func request_current_name(coords: Vector2i):
 
 @rpc("any_peer", "call_local", "unreliable")
 func request_current_cargo(coords: Vector2i):
-	var dict: Dictionary = ProvinceManager.get_instance().get_factory_cargo_dictionary(coords)
+	var dict: Dictionary = ProvinceManager.get_instance().get_factory_info(coords)
 	update_current_cargo.rpc_id(multiplayer.get_remote_sender_id(), dict)
 
 @rpc("authority", "call_local", "unreliable")

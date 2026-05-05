@@ -6,7 +6,7 @@
 [node name="town_window" type="Window" unique_id=682905866]
 oversampling_override = 1.0
 initial_position = 1
-size = Vector2i(700, 400)
+size = Vector2i(900, 600)
 script = ExtResource("1_6vqjj")
 
 [node name="Price_Node" type="Control" parent="." unique_id=1743637053]
@@ -16,10 +16,10 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -87.0
-offset_top = -120.0
-offset_right = 113.0
-offset_bottom = 200.0
+offset_left = -135.23999
+offset_top = -227.5
+offset_right = 64.7594
+offset_bottom = 92.5
 grow_horizontal = 2
 grow_vertical = 2
 
@@ -48,10 +48,10 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -325.0
-offset_top = -120.0
-offset_right = -129.0
-offset_bottom = 180.0
+offset_left = -375.0
+offset_top = -225.0
+offset_right = -179.0
+offset_bottom = 75.0
 grow_horizontal = 2
 grow_vertical = 2
 
@@ -92,7 +92,21 @@ scroll_active = false
 [node name="CargoInfoPopUp" parent="." unique_id=1041868281 instance=ExtResource("2_6vqjj")]
 visible = false
 
+[node name="Graph" type="ColorRect" parent="." unique_id=233509544]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 99.0
+offset_top = -255.0
+offset_right = 427.0
+offset_bottom = 67.0
+grow_horizontal = 2
+grow_vertical = 2
+
 [connection signal="close_requested" from="." to="." method="_on_close_requested"]
+[connection signal="item_clicked" from="Price_Node/Price_List" to="." method="_on_price_list_item_clicked"]
 [connection signal="mouse_entered" from="Price_Node/Price_List" to="." method="_on_price_list_mouse_entered"]
 [connection signal="mouse_exited" from="Price_Node/Price_List" to="." method="_on_price_list_mouse_exited"]
 [connection signal="popup_requested" from="CargoInfoPopUp" to="." method="_on_cargo_info_pop_up_popup_requested"]

@@ -53,7 +53,7 @@ func start_hovering_type(type: int) -> void:
 
 @rpc("any_peer", "call_local", "unreliable")
 func request_current_cargo(coords: Vector2i) -> void:
-	var dict: Dictionary = ProvinceManager.get_instance().get_factory_cargo_dictionary(coords)
+	var dict: Dictionary = ProvinceManager.get_instance().get_factory_info(coords)
 	update_current_cargo.rpc_id(multiplayer.get_remote_sender_id(), dict)
 
 @rpc("any_peer", "call_local", "unreliable")
@@ -161,13 +161,15 @@ func _on_cargo_info_pop_up_popup_requested() -> void:
 
 @rpc("any_peer", "call_local", "unreliable")
 func populate_info_window(type: int, p_location: Vector2i) -> void:
+	var unformatted_info: Dictionary = ProvinceManager.get_instance().get_factory_info(p_location)
+	if (!unformatted_info.has(type)): return
+	
 	var info: Dictionary = {}
-	var terminal_map: TerminalMap = TerminalMap.get_instance()
-	#var factory: Factory = terminal_map.get_factory(p_location)
 	info.type = CargoInfo.get_instance().get_cargo_name(type)
-	#info.price = "$" + str(Utils.round(factory.get_local_price(type), 2))
-	#info.amount = "Amount: " + str(Utils.round(factory.get_cargo_amount(type), 2))
-	#info.market_info = "Supply: " + str(Utils.round(factory.get_last_month_supply()[type], 2)) + '\n' + "Demand: " + str(Utils.round(factory.get_last_month_demand()[type], 2))
+	info.price = "$" + str(Utils.round(unformatted_info[type].price, 2))
+	info.supply = "Supply: " + str(unformatted_info[type].supply)
+	info.demand = "Demand: " + str(unformatted_info[type].demand)
+	
 	pop_up_info_window.rpc_id(multiplayer.get_remote_sender_id(), info)
 
 @rpc("authority", "call_local", "unreliable")

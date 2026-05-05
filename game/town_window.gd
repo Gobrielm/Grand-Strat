@@ -3,11 +3,12 @@ var location: Variant = null
 var hold_name: String
 var current_cargo: Dictionary
 
-var current_prices: Dictionary
+var town_info: Dictionary
 var ind_to_type: Array = []
 
 var current_pops: int
 var type_hovered: int = -1
+var type_selected: int = -1
 var inside_price_list: bool = false
 
 const time_every_update: int = 1
@@ -70,7 +71,7 @@ func update_current_name(new_name: String) -> void:
 
 @rpc("authority", "call_local", "unreliable")
 func update_current_prices(new_prices: Dictionary) -> void:
-	current_prices = new_prices
+	town_info = new_prices
 	display_current_prices()
 
 @rpc("authority", "call_local", "unreliable")
@@ -98,16 +99,16 @@ func display_current_prices() -> void:
 	var names: Array = CargoInfo.get_instance().get_cargo_array()
 	var num: int = 0
 	ind_to_type.clear()
-	for type: int in current_prices:
+	for type: int in town_info:
 		ind_to_type.push_back(type)
-		var text: String = names[type] + ": " + str(current_prices[type])
+		var text: String = names[type] + ": " + str(town_info[type])
 		if num < price_list.item_count:
 			var prev: String = price_list.get_item_text(num).trim_prefix(names[type] + ": ")
 			price_list.set_item_text(num, text)
 			var prev_price: float = 0.0
 			if prev.is_valid_float():
 				prev_price = float(prev)
-			set_color(num, current_prices[type].price, prev_price)
+			set_color(num, town_info[type].price, prev_price)
 		else:
 			price_list.add_item(text, null, false)
 			$Price_Node/Price_List.set_item_tooltip_enabled(num, false)
@@ -143,15 +144,27 @@ func _on_cargo_info_pop_up_popup_requested() -> void:
 
 @rpc("any_peer", "call_local", "unreliable")
 func populate_info_window(type: int) -> void:
-	var info: Dictionary = current_prices[type]
+	var info: Dictionary = town_info[type]
 	
 	info.type = CargoInfo.get_instance().get_cargo_name(type)
 	
 	info.price = "$" + str(Utils.round(info["price"], 2))
-	info.amount = "Amount: " + str(info["supply"])
-	info.market_info = "Demand: " + str(info["demand"])
+	info.supply = "Supply: " + str(info["supply"])
+	info.demand = "Demand: " + str(info["demand"])
 	
 	pop_up_info_window.rpc_id(multiplayer.get_remote_sender_id(), info)
+
+func create_graph() -> void:
+	var graph: ColorRect = $Graph
+	for child: Node in graph.get_children():
+		graph.remove_child(child)
+		child.free()
+	
+	if type_selected == -1:
+		return
+	
+	#var info: Dictionary = town_info[type_selected]
+	#for info.plot
 
 @rpc("authority", "call_local", "unreliable")
 func pop_up_info_window(info: Dictionary) -> void:
@@ -165,3 +178,6 @@ func _on_price_list_mouse_exited() -> void:
 	inside_price_list = false
 	$CargoInfoPopUp.stop_hover()
 	type_hovered = -1
+
+func _on_price_list_item_clicked(index: int, _at_position: Vector2, _mouse_button_index: int) -> void:
+	type_selected = ind_to_type[index]
