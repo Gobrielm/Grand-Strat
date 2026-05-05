@@ -263,9 +263,8 @@ float Factory::get_real_gross_profit(int months_to_average) const {
 void Factory::employ_pop(Town& town, BasePop& pop) {
     PopTypes pop_type = pop.get_type();
     if (is_hiring(pop_type)) {
-        float wage;
+        float wage = get_wage(town);
         employer.add_pop(pop_type, pop.get_pop_id());
-        wage = get_wage(town);
         
         pop.employ(position.get_building_id(), wage);
         pop.set_location(position.get_position_vector2i());

@@ -17,12 +17,12 @@ class PDP: public RefCounted {
     float supply = 0;
     float demand = 0;
 
-    Dictionary buy_orders;
-    Dictionary sell_orders;
+    Array buy_orders;
+    Array sell_orders;
 
     PDP() {}
 
-    PDP(float p_price, float p_supply, float p_demand, Dictionary p_buy_orders, Dictionary p_sell_orders) {
+    PDP(float p_price, float p_supply, float p_demand, Array p_buy_orders, Array p_sell_orders) {
         price = p_price;
         supply = p_supply;
         demand = p_demand;
@@ -31,25 +31,31 @@ class PDP: public RefCounted {
     }
 
     PDP(float p_price, float p_supply, float p_demand, Array p_orders) {
-        ERR_FAIL_COND_MSG(p_orders.size() != 2, "Orders is not size 2.");
         price = p_price;
         supply = p_supply;
         demand = p_demand;
-        buy_orders = p_orders[0];
-        sell_orders = p_orders[1];
+        if (p_orders.size() == 2) {
+            buy_orders = p_orders[0];
+            sell_orders = p_orders[1];
+        }
+        
+    }
+
+    String to_string() {
+        return String::num(price, 2) + " --- " + String::num_int64(supply) + " / " + String::num_int64(demand);
     }
 
     // Getters
     float get_price() const;
     float get_supply() const;
     float get_demand() const;
-    Dictionary get_buy_orders() const;
-    Dictionary get_sell_orders() const;
+    Array get_buy_orders() const;
+    Array get_sell_orders() const;
 
     // Setters
     void set_price(float p_price);
     void set_supply(float p_supply);
     void set_demand(float p_demand);
-    void set_buy_orders(Dictionary p_buy_orders);
-    void set_sell_orders(Dictionary p_sell_orders);
+    void set_buy_orders(Array p_buy_orders);
+    void set_sell_orders(Array p_sell_orders);
 };

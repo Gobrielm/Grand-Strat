@@ -46,7 +46,7 @@ class PopManager {
     // void create_pop_location_to_towns(std::vector<BasePop*>& pop_group, std::unordered_map<Vector2i, Vector2i, godot_helpers::Vector2iHasher>& location_to_nearest_town) const;
     // Vector2i get_town_tile(const BasePop* pop) const;
     // void change_pop_unsafe(BasePop* pop);
-    void find_employment_for_pops(std::unordered_set<int>& pops_to_employ);
+    void find_employment_for_pops(Province* province, std::unordered_set<int>& pops_to_employ);
 
     // Find Employement functions
     using employ_type = std::unordered_map<
