@@ -160,6 +160,5 @@ float EmployerComponent::get_theoretical_gross_profit(const Town& town) const {
     for (const auto &[type, amount]: recipe.get_outputs()) {
         available += town.mp.get_price(type) * amount * effective_level;
     }
-    available *= 30;
     return available;
 }

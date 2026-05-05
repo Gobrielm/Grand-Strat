@@ -45,6 +45,7 @@ public:
     float get_min_price(int type, Town* town = nullptr) const; 
     ///@brief Gets the maximum price buyer would accept
     float get_max_price(int type, Town* town = nullptr) const; 
+    float get_current_price(int type) const;
     bool does_create(int type) const;
     bool does_accept(int type) const;
     int get_desired_cargo(int type, float price_per);
@@ -57,6 +58,7 @@ public:
     void add_outputs(double batch_size);
     String get_recipe_as_string() const;
     int get_primary_type() const;
+    int get_demand(int type) const;
 
     // Level & Upgrades
     void upgrade();

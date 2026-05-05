@@ -3,27 +3,27 @@
 
 using namespace godot;
 
-void TradeOrder::_bind_methods() {
-    ClassDB::bind_static_method(get_class_static(), D_METHOD("create", "p_type", "p_amount", "p_buy", "p_limit_price"), &TradeOrder::create);
-    ClassDB::bind_static_method(get_class_static(), D_METHOD("create_buy_order", "p_type", "p_amount", "p_max_price"), &TradeOrder::create_buy_order);
-    ClassDB::bind_static_method(get_class_static(), D_METHOD("create_sell_order", "p_type", "p_amount", "p_max_price"), &TradeOrder::create_sell_order);
+// void TradeOrder::_bind_methods() {
+//     ClassDB::bind_static_method(get_class_static(), D_METHOD("create", "p_type", "p_amount", "p_buy", "p_limit_price"), &TradeOrder::create);
+//     ClassDB::bind_static_method(get_class_static(), D_METHOD("create_buy_order", "p_type", "p_amount", "p_max_price"), &TradeOrder::create_buy_order);
+//     ClassDB::bind_static_method(get_class_static(), D_METHOD("create_sell_order", "p_type", "p_amount", "p_max_price"), &TradeOrder::create_sell_order);
 
-    ClassDB::bind_method(D_METHOD("is_buy_order"), &TradeOrder::is_buy_order);
-    ClassDB::bind_method(D_METHOD("is_sell_order"), &TradeOrder::is_sell_order);
-    ClassDB::bind_method(D_METHOD("change_buy", "_buy"), &TradeOrder::change_buy);
+//     ClassDB::bind_method(D_METHOD("is_buy_order"), &TradeOrder::is_buy_order);
+//     ClassDB::bind_method(D_METHOD("is_sell_order"), &TradeOrder::is_sell_order);
+//     ClassDB::bind_method(D_METHOD("change_buy", "_buy"), &TradeOrder::change_buy);
 
-    ClassDB::bind_method(D_METHOD("get_type"), &TradeOrder::get_type);
-    ClassDB::bind_method(D_METHOD("change_amount", "p_amount"), &TradeOrder::change_amount);
-    ClassDB::bind_method(D_METHOD("get_amount"), &TradeOrder::get_amount);
+//     ClassDB::bind_method(D_METHOD("get_type"), &TradeOrder::get_type);
+//     ClassDB::bind_method(D_METHOD("change_amount", "p_amount"), &TradeOrder::change_amount);
+//     ClassDB::bind_method(D_METHOD("get_amount"), &TradeOrder::get_amount);
 
-    ClassDB::bind_method(D_METHOD("get_limit_price"), &TradeOrder::get_limit_price);
-    ClassDB::bind_method(D_METHOD("set_max_price", "p_max_price"), &TradeOrder::set_max_price);
+//     ClassDB::bind_method(D_METHOD("get_limit_price"), &TradeOrder::get_limit_price);
+//     ClassDB::bind_method(D_METHOD("set_max_price", "p_max_price"), &TradeOrder::set_max_price);
 
-    ClassDB::bind_method(D_METHOD("convert_to_array"), &TradeOrder::convert_to_array);
-    ClassDB::bind_method(D_METHOD("is_price_acceptable", "price"), &TradeOrder::is_price_acceptable);
+//     ClassDB::bind_method(D_METHOD("convert_to_array"), &TradeOrder::convert_to_array);
+//     ClassDB::bind_method(D_METHOD("is_price_acceptable", "price"), &TradeOrder::is_price_acceptable);
 
-    ClassDB::bind_static_method("TradeOrder", D_METHOD("construct_from_array", "array"), &TradeOrder::construct_from_array);
-}
+//     ClassDB::bind_static_method("TradeOrder", D_METHOD("construct_from_array", "array"), &TradeOrder::construct_from_array);
+// }
 
 TradeOrder::TradeOrder() {}
 

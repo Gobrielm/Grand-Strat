@@ -3,6 +3,7 @@
 #include "classes/map_objects/town.hpp"
 #include "classes/map_objects/station.hpp"
 #include "cargo_info.hpp"
+#include "classes/godot_wrappers/pdp.hpp"
 #include <godot_cpp/core/class_db.hpp>
 #include <chrono>
 #include <thread>
@@ -53,8 +54,8 @@ void ProvinceManager::_bind_methods() {
     ClassDB::bind_method(D_METHOD("is_station", "tile"), &ProvinceManager::is_station);
 
     ClassDB::bind_method(D_METHOD("get_town_factories", "town_tile"), &ProvinceManager::get_town_factories);
-    ClassDB::bind_method(D_METHOD("get_town_prices", "town_tile"), &ProvinceManager::get_town_prices);
-    ClassDB::bind_method(D_METHOD("get_factory_cargo_dictionary", "coords"), &ProvinceManager::get_factory_cargo_dictionary);
+    ClassDB::bind_method(D_METHOD("get_town_pdps", "town_tile"), &ProvinceManager::get_town_pdps);
+    ClassDB::bind_method(D_METHOD("get_factory_info", "coords"), &ProvinceManager::get_factory_info);
     ClassDB::bind_method(D_METHOD("get_cash_of_factory", "coords"), &ProvinceManager::get_cash_of_factory);
 }
 
@@ -328,17 +329,18 @@ Array ProvinceManager::get_town_factories(Vector2i town_tile) {
         Factory& factory = province->get_factory_unsafe(id);
         
         Dictionary d;
-        
-        d["level"] = factory.employer.get_level_without_employment();
-        d["cash"] = factory.capital.get_cash();
-        d["recipe"] = factory.get_recipe().get_recipe_as_string();
+
+        d.set("level", factory.employer.get_level_without_employment());
+        d.set("cash", factory.capital.get_cash());
+        d.set("recipe", factory.get_recipe().get_recipe_as_string());
+
         a.push_back(d);
     }
 
     return a;
 }
 
-Dictionary ProvinceManager::get_town_prices(Vector2i town_tile) {
+Dictionary ProvinceManager::get_town_pdps(Vector2i town_tile) {
     auto province = get_province(town_tile);
     if (province == nullptr) return Dictionary();
 
@@ -349,30 +351,34 @@ Dictionary ProvinceManager::get_town_prices(Vector2i town_tile) {
     auto price_map = town.mp.get_current_prices();
 
     for (auto [type, price]: price_map) {
-        Dictionary inner_info;
+        Ref<PDP> pdp = memnew(PDP(price, town.mp.get_current_demand(type), town.mp.get_current_supply(type), town.mp.get_market_info_plot_godot(type)));
 
-        inner_info["price"] = price;
-        inner_info["supply"] = town.mp.get_current_supply(type);
-        inner_info["demand"] = town.mp.get_current_demand(type);
-        inner_info["plot"] = town.mp.get_market_info_plot_godot(type);
-
-        d[type] = inner_info;
+        d[type] = pdp;
     }
 
     return d;
 }
 
-Dictionary ProvinceManager::get_factory_cargo_dictionary(const Vector2i coords) {
+Dictionary ProvinceManager::get_factory_info(const Vector2i coords) {
     auto province = get_province(coords);
     if (province == nullptr) return Dictionary();
 
     std::scoped_lock lock(province->m);
     PositionComponent pos = province->get_visible_position_component_unsafe(coords);
+    Dictionary outer_dict;
     if (pos.get_type() == BuildingType::FACTORY) {
-        return province->get_factory_unsafe(pos.get_building_id()).storage.dictionary();
+        auto& factory = province->get_factory_unsafe(pos.get_building_id());
+
+        for (const auto [type, amount]: factory.storage.get_storage()) {
+            Dictionary d;
+            d["amount"] = amount;
+            d["supply"] = factory.get_current_price(type);
+            d["demand"] = factory.get_demand(type);
+            outer_dict[type] = d;
+        }
     }
 
-    return Dictionary();
+    return outer_dict;
 }
 
 int16_t ProvinceManager::get_cash_of_factory(const Vector2i coords) {

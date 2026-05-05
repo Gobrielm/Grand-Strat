@@ -7,8 +7,11 @@ float StorageComponent::get_desired_cargo(int type, float pricePer) {
     return MAX_STORAGE - storage[type];
 }
 
-float StorageComponent::get_amount(int type) {
-    return storage[type];
+float StorageComponent::get_amount(int type) const {
+    if (!storage.count(type)) {
+        return 0;
+    }
+    return storage.at(type);
 }
 
 float StorageComponent::add_cargo(int type, float amount) {
@@ -25,6 +28,10 @@ void StorageComponent::remove_cargo(int type, float amount) {
         storage[type] -= amount;
         ERR_FAIL_COND_MSG(storage[type] < 0, "Storage went below 0.");
     }
+}
+
+std::unordered_map<int, float> StorageComponent::get_storage() {
+    return storage;
 }
 
 godot::Dictionary StorageComponent::dictionary() const {

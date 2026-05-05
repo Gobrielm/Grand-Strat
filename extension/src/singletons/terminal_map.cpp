@@ -6,6 +6,7 @@
 
 #include "classes/map_objects/station.hpp"
 #include "trading_system.hpp"
+#include "pop_manager.hpp"
 
 
 using namespace godot;
@@ -92,7 +93,7 @@ void TerminalMap::_on_day_tick_timeout() {
 }
 
 void TerminalMap::_on_month_tick_timeout() {
-    // PopManager::get_instance()->month_tick();
+    PopManager::get_instance()->month_tick();
     // AiManager::get_instance()->month_tick();
     // thread_pool->month_tick();
     TradingSystem::get_instance()->month_tick();

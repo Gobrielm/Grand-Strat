@@ -7,8 +7,7 @@
 
 namespace godot {
 
-class TradeOrder : public Object {
-    GDCLASS(TradeOrder, Object);
+class TradeOrder {
 
 private:
     int type = 0;
@@ -22,9 +21,6 @@ private:
     bool active = true;
 
     void initialize(int p_type, int p_amount, bool p_buy, double p_limit_price);
-
-protected:
-    static void _bind_methods();
 
 public:
     TradeOrder();
