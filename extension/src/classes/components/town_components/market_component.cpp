@@ -23,15 +23,8 @@ void MarketComponent::add_order(std::shared_ptr<TradeOrder> to) {
 }
 
 float MarketComponent::get_price(int type) const {
-    if (sell_orders.count(type) && !sell_orders.at(type).empty()) {
-        if (buy_orders.count(type) && !buy_orders.at(type).empty()) {
-            return ((*sell_orders.at(type).begin())->get_price() + (*buy_orders.at(type).begin())->get_price()) / 2.0f;
-        } else {
-            return (*sell_orders.at(type).begin())->get_price();
-        }
-    }
-    if (buy_orders.count(type) && !buy_orders.at(type).empty()) {
-        return (*buy_orders.at(type).begin())->get_price();
+    if (equilibrium_prices.count(type)) {
+        return equilibrium_prices.at(type);
     }
     return LocalPriceController::get_base_price(type);
 }
@@ -282,36 +275,60 @@ void MarketComponent::sell_to_pop(Province* province, BasePop& pop) {
 
 void MarketComponent::update_last_month_plot() {
     last_month_plot.clear();
+    equilibrium_prices.clear();
     
     for (auto& [type, _]: buy_orders) {
         last_month_plot[type] = get_market_info_plot(type);
+        equilibrium_prices[type] = find_market_price_equilibrium(type);
     }
 }
 
 float MarketComponent::find_market_price_equilibrium(int type) const {
     if (!last_month_plot.count(type)) return 0;
-
-
-    int supply_included = 0;
-    float current_price = 0;
-    auto lowest_price_included = last_month_plot.at(type).first.cend() - 1;
-    auto lowest_price_limit = last_month_plot.at(type).first.cbegin() - 1;
-
-    for (const auto& [amt, price]: last_month_plot.at(type).first) {
-        supply_included += amt;
-        current_price = std::min(current_price, price);
-    }
+    if (last_month_plot.at(type).first.empty() || last_month_plot.at(type).second.empty()) return 0;
 
     int demand_included = 0;
+    
+    const auto& buys  = last_month_plot.at(type).first;
+    const auto& sells = last_month_plot.at(type).second;
 
-    for (const auto& [amt, price]: last_month_plot.at(type).second) {
+    int buy_i = 0;
+    int sell_i = 0;
 
+    int demand = buys.at(0).first;
+    int supply = sells.at(0).first;
 
-        while (lowest_price_limit != lowest_price_included, lowest_price_included->second < price) {
-            supply_included -= lowest_price_included->first;
-            lowest_price_included--;
+    float current_price = 0;
+
+    while (buy_i < buys.size() && sell_i < sells.size()) {
+        
+        float best_buy_price = buys.at(buy_i).second;
+        float best_sell_price = sells.at(sell_i).second;
+
+        if (best_sell_price > best_buy_price) {
+            break;
         }
+
+        int traded = std::min(supply, demand);
+
+        supply -= traded;
+        demand -= traded;
+
+        current_price = (best_buy_price + best_sell_price) / 2.0f;
+
+        if (supply == 0) {
+            sell_i++;
+            if (sell_i < sells.size()) {
+                supply = sells.at(sell_i).first;
+            }
+        }
+        if (demand == 0) {
+            buy_i++;
+            if (buy_i < buys.size()) {
+                demand = buys.at(buy_i).first;
+            }
+        }        
     }
 
-    return 0;
+    return current_price;
 }

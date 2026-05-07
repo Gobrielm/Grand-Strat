@@ -17,18 +17,20 @@ class MarketComponent {
 
     private:
 
-    // Greatest price first
+    // Descending Order
     std::unordered_map<int, 
         std::set<std::shared_ptr<TradeOrder>, TradeOrder::TradeOrderGT>
     > buy_orders;
 
-    // Smallest price first
+    // Ascending Order
     std::unordered_map<int, 
         std::set<std::shared_ptr<TradeOrder>, TradeOrder::TradeOrderLT>
     > sell_orders;
 
     // <amount, price>
     std::unordered_map<int, std::pair<std::vector<std::pair<int, float>>, std::vector<std::pair<int, float>>>> last_month_plot;
+    std::unordered_map<int, float> equilibrium_prices;
+
 
     void finish_market_exchange(std::shared_ptr<TradeOrder> buy_order, std::shared_ptr<TradeOrder> sell_order, std::pair<CapitalComponent*, StorageComponent*> buyer, std::pair<CapitalComponent*, StorageComponent*> seller);
 
