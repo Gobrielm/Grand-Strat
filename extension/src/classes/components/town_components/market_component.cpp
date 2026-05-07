@@ -137,26 +137,11 @@ void MarketComponent::market_tick(Province* province) {
             
             finish_market_exchange(
                 buy_order, sell_order,
-                get_capital_and_storage_components(province, buy_order->get_pos_id()),
-                get_capital_and_storage_components(province, sell_order->get_pos_id())
+                province->get_capital_and_storage_components_unsafe(buy_order),
+                province->get_capital_and_storage_components_unsafe(sell_order)
             );
         }
     }
-}
-
-std::pair<CapitalComponent*, StorageComponent*> MarketComponent::get_capital_and_storage_components(Province* province, int pos_id) {
-    if (!province->id_to_vector_position.count(pos_id)) return std::make_pair(nullptr, nullptr);
-    const auto type = province->id_to_vector_position.at(pos_id).second;
-
-    switch (type) {
-        case BuildingType::FACTORY: {
-            auto& factory = province->factories[province->id_to_vector_position[pos_id].first];
-            return std::pair<CapitalComponent*, StorageComponent*>({ &factory.capital, &factory.storage });
-        }
-        default:
-            ERR_FAIL_V_MSG(std::make_pair(nullptr, nullptr), "Unknown Entity Tried to Trade: " + String(std::to_string(static_cast<int>(type)).c_str()));
-    }
-    return std::make_pair(nullptr, nullptr);
 }
 
 void MarketComponent::finish_market_exchange(
@@ -218,8 +203,6 @@ void MarketComponent::sell_to_pop(Province* province, BasePop& pop) {
             continue;
         }
         float pop_price = pop.get_buy_price(type, get_price(type));
-        
-        
 
         // get_local_pricer() -> add_demand(type, pop_price, desired); // Only add demand since its not part of survey_broad_market()
         // get_local_pricer() -> add_local_demand(type, desired);
@@ -261,9 +244,9 @@ void MarketComponent::sell_to_pop(Province* province, BasePop& pop) {
             //     sell_it = get_local_pricer()->delete_town_cargo(sell_it);
             // } else {
             //     break;
-            // }
+            // }get_source_id
 
-            auto res = get_capital_and_storage_components(province, order->get_pos_id());
+            auto res = province->get_capital_and_storage_components_unsafe(order);
             if (res.first == nullptr || res.second == nullptr) {
                 ERR_FAIL_MSG("order's owner is invalid");
             }

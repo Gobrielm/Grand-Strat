@@ -93,10 +93,19 @@ void TerminalMap::_on_day_tick_timeout() {
 }
 
 void TerminalMap::_on_month_tick_timeout() {
-    PopManager::get_instance()->month_tick();
+    // Order Stage
+    TradingSystem::get_instance()->order_tick();
+    PopManager::get_instance()->adjust_pop_orders();
+
+    // Bookkeeping Stage
+
+
     // AiManager::get_instance()->month_tick();
     // thread_pool->month_tick();
-    TradingSystem::get_instance()->month_tick();
+    
+    // Trading Stage
+    PopManager::get_instance()->pop_tick();
+    TradingSystem::get_instance()->trading_tick();
 
     // Must be run last after all month sim
     ProvinceManager::get_instance()->month_tick();

@@ -30,6 +30,10 @@ void StorageComponent::remove_cargo(int type, float amount) {
     }
 }
 
+void StorageComponent::set_cargo(int type, float amount) {
+    storage[type] = amount;
+}
+
 std::unordered_map<int, float> StorageComponent::get_storage() {
     return storage;
 }

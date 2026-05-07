@@ -533,3 +533,51 @@ PositionComponent Province::get_visible_position_component_unsafe(Vector2i tile)
     }
     return PositionComponent();
 }
+
+std::pair<CapitalComponent*, StorageComponent*> Province::get_capital_and_storage_components_unsafe(std::shared_ptr<TradeOrder> order) {
+    int source_id = order->get_source_id();
+
+    auto get_components_factory = [&] () {
+        if (!id_to_vector_position.count(source_id)) return std::pair<CapitalComponent*, StorageComponent*>(nullptr, nullptr);
+        const auto type = id_to_vector_position.at(source_id).second;
+
+        switch (type) {
+            case BuildingType::FACTORY: {
+                auto& factory = factories[id_to_vector_position[source_id].first];
+                return std::pair<CapitalComponent*, StorageComponent*>({ &factory.capital, &factory.storage });
+            }
+            default:
+                auto v = std::pair<CapitalComponent*, StorageComponent*>(nullptr, nullptr);
+                ERR_FAIL_V_MSG(v, "Unknown Entity Tried to Trade: " + String(std::to_string(static_cast<int>(type)).c_str()));
+        }
+        return std::pair<CapitalComponent*, StorageComponent*>(nullptr, nullptr);
+    };
+
+    auto get_components_pop = [&] () {
+        if (pops.count(source_id)) {
+            auto pm = PopManager::get_instance();
+            BasePop* pop = pm->get_pop(source_id); // TODO: Could result in deadlock, fixed when changing ownership to provinces
+
+            return std::pair<CapitalComponent*, StorageComponent*>(&pop->capital, &pop->storage);
+        } else {
+            print_error("Unowned pop is being accessed in province: " + String::num(province_id));
+        }
+
+        return std::pair<CapitalComponent*, StorageComponent*>(nullptr, nullptr);
+    };
+
+
+    switch (order->get_owner_type()) {
+
+        case TradeOrderOwner::BUILDING:
+            return get_components_factory();
+        
+        case TradeOrderOwner::POP:
+            return get_components_pop();
+
+        default:
+            print_error("Accessing capital/storage of unknown order owner: " + String::num(int(order->get_owner_type())));
+            
+    }   
+    return std::make_pair(nullptr, nullptr);
+}

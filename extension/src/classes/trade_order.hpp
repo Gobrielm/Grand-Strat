@@ -5,11 +5,18 @@
 
 #include <memory>
 
-namespace godot {
+using namespace godot;
+
+enum class TradeOrderOwner: int {
+    INVALID = -1,
+    POP = 1,
+    BUILDING = 2,
+    COMPANY = 3,
+};
 
 class TradeOrder {
 
-private:
+    private:
     int type = 0;
     int amount = 0;
     bool buy = true;
@@ -17,15 +24,20 @@ private:
     double price = 0.0;
     double limit_price = 0.0;
 
-    int pos_id = -1;
+    int source_id = -1;
+    TradeOrderOwner owner_type;
     bool active = true;
+    
 
     void initialize(int p_type, int p_amount, bool p_buy, double p_limit_price);
 
 public:
+
+
     TradeOrder();
     TradeOrder(int p_type, int p_amount, bool p_buy, double p_limit_price);
-    TradeOrder(int p_pos_id, int p_type, int p_amount, bool p_buy, double p_price, double p_limit_price);
+    TradeOrder(class PositionComponent pos, int p_type, int p_amount, bool p_buy, double p_price, double p_limit_price);
+    TradeOrder(int p_source_id, TradeOrderOwner p_owner_type, int p_type, int p_amount, bool b_buy, double p_price, double p_limit_price);
 
     struct TradeOrderGT {
         bool operator()(const std::shared_ptr<TradeOrder> order1, const std::shared_ptr<TradeOrder> order2) const {
@@ -58,14 +70,14 @@ public:
 
     void set_price(double p_price);
 
+    TradeOrderOwner get_owner_type() const;
+
     Array convert_to_array() const;
     bool is_price_acceptable(double price) const;
 
-    int get_pos_id() const;
+    int get_source_id() const;
 
     static TradeOrder* construct_from_array(const Array& array);
 
     void cancel_order();
 };
-
-}

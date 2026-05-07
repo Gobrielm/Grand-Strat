@@ -17,6 +17,7 @@ class CapitalComponent {
 
     int get_amount_can_buy(const float amount_per) const;
     void add_cash(float amount);
+    void set_cash(float amount);
     void remove_cash(float amount);
     float get_cash() const;
     float transfer_cash(float amount);

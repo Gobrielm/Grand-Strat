@@ -1,7 +1,11 @@
 #pragma once
 
+#include "classes/components/capital_component.hpp"
+#include "classes/components/storage_component.hpp"
+
 #include <unordered_map>
 #include <string>
+#include <memory>
 #include <godot_cpp/classes/object.hpp>
 
 using namespace godot;
@@ -20,11 +24,10 @@ class BasePop {
     static std::atomic<int> total_pops;
     static std::unordered_map<PopTypes, std::unordered_map<int, float>> base_needs;
     static std::unordered_map<PopTypes, std::unordered_map<int, float>> specialities;
-    
+
     Vector2i location;
     const int pop_id;
     int education_level;
-    float wealth;
     int home_prov_id;
     Variant culture;
     float income;
@@ -32,8 +35,9 @@ class BasePop {
     int months_starving = 0;
     int months_without_job = 0;
 
+    std::unordered_map<int, std::shared_ptr<class TradeOrder>> orders; // Active orders sent to towns to buy/sell
+
     PopTypes pop_type;
-    std::unordered_map<int, float> internal_storage;
     
     protected:
     String _to_string() const;
@@ -45,6 +49,9 @@ class BasePop {
     
 
     public:
+
+    CapitalComponent capital;
+    StorageComponent storage;
 
     // Constructors
     static BasePop* create_rural_pop(int p_home_prov_id, Vector2i p_location, Variant p_culture);
@@ -102,6 +109,7 @@ class BasePop {
     float get_wealth() const;
     float transfer_wealth();
     Variant get_culture() const;
+    float get_fulfillment(int type) const;
     float get_average_fulfillment() const;
 
     //Changing Pop Type
@@ -110,6 +118,8 @@ class BasePop {
     bool will_upgrade() const;
     void upgrade();
     void reset_and_fill_storage(); // Fills storage with needs, but just instaiates wants
+
+    void adjust_pop_orders(class Town& town);
 
     void month_tick();
 

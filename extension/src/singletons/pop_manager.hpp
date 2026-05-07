@@ -41,7 +41,10 @@ class PopManager {
     BasePop* get_pop(int pop_id);
     int get_pop_country_id(BasePop* pop) const;
     int get_pop_country_id_unsafe(BasePop* pop) const;
-    void thread_month_tick(int province_id);
+
+    void thread_order_tick(int province_id);
+    void thread_trading_tick(int province_id);
+
     void sell_to_pops(Province* province, std::unordered_set<int>& pops_to_sell_to);
     // void create_pop_location_to_towns(std::vector<BasePop*>& pop_group, std::unordered_map<Vector2i, Vector2i, godot_helpers::Vector2iHasher>& location_to_nearest_town) const;
     // Vector2i get_town_tile(const BasePop* pop) const;
@@ -82,7 +85,10 @@ class PopManager {
     ~PopManager();
     static std::shared_ptr<PopManager> get_instance();
 
-    void month_tick();
+    // order phase
+    void adjust_pop_orders();
+    // trading phase
+    void pop_tick();
 
     /// Returns with pop id
     void set_pop_location(int pop_id, const Vector2i& location);

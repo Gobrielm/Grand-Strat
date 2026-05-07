@@ -15,6 +15,10 @@ void CapitalComponent::add_cash(float amount) {
     cash_history.back() += amount;
 }
 
+void CapitalComponent::set_cash(float amount) {
+    cash = amount;
+}
+
 void CapitalComponent::remove_cash(float amount) {
     cash -= amount;
     cash_history.back() -= amount;

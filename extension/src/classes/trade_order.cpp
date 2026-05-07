@@ -1,4 +1,5 @@
 #include "trade_order.hpp"
+#include "classes/components/position_component.hpp"
 #include <godot_cpp/core/class_db.hpp>
 
 using namespace godot;
@@ -31,8 +32,15 @@ TradeOrder::TradeOrder(int p_type, int p_amount, bool p_buy, double p_limit_pric
     initialize(p_type, p_amount, p_buy, p_limit_price);
 }
 
-TradeOrder::TradeOrder(int p_pos_id, int p_type, int p_amount, bool p_buy, double p_price, double p_limit_price): TradeOrder(p_type, p_amount, p_buy, p_limit_price) {
-    pos_id = p_pos_id;
+TradeOrder::TradeOrder(PositionComponent pos, int p_type, int p_amount, bool p_buy, double p_price, double p_limit_price): TradeOrder(p_type, p_amount, p_buy, p_limit_price) {
+    source_id = pos.get_building_id();
+    owner_type = TradeOrderOwner::BUILDING;
+    price = p_price;
+}
+
+TradeOrder::TradeOrder(int p_source_id, TradeOrderOwner p_owner_type, int p_type, int p_amount, bool p_buy, double p_price, double p_limit_price): TradeOrder(p_type, p_amount, p_buy, p_limit_price) {
+    source_id = p_source_id;
+    owner_type = p_owner_type;
     price = p_price;
 }
 
@@ -95,6 +103,10 @@ void TradeOrder::set_price(double p_price) {
     price = p_price;
 }
 
+TradeOrderOwner TradeOrder::get_owner_type() const {
+    return owner_type;
+}
+
 Array TradeOrder::convert_to_array() const {
     Array arr;
     arr.push_back(type);
@@ -108,8 +120,8 @@ bool TradeOrder::is_price_acceptable(double price) const {
     return buy ? price <= limit_price : price >= limit_price;
 }
 
-int TradeOrder::get_pos_id() const {
-    return pos_id;
+int TradeOrder::get_source_id() const {
+    return source_id;
 }
 
 TradeOrder* TradeOrder::construct_from_array(const Array& array) {

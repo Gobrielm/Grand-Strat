@@ -40,24 +40,25 @@ void PopManagerThreadPool::month_tick_helper() {
 void PopManagerThreadPool::thread_processor() {
     while (!stop) {
         int province_to_process;
-        {
-            std::unique_lock<std::mutex> lock(work_to_process_mutex);
-            condition.wait(lock, [this]() {
-                return !provinces_to_process.empty() || stop;
-            });
+        
+        std::unique_lock<std::mutex> lock(work_to_process_mutex);
+        condition.wait(lock, [this]() {
+            return !provinces_to_process.empty() || stop;
+        });
 
-            if (stop && provinces_to_process.empty()) {
-                return; // Exit thread
-            }
-
-            // Get one province to process
-            province_to_process = provinces_to_process.back();
-            provinces_to_process.pop_back();
-            
+        if (stop) {
+            return; // Exit thread
         }
-        work_function(province_to_process);
-        jobs_remaining -= 1;
 
+        // Get one province to process
+        province_to_process = provinces_to_process.back();
+        provinces_to_process.pop_back();
+            
+        lock.unlock();
+        work_function(province_to_process);
+
+        lock.lock();
+        jobs_remaining -= 1;
         if (jobs_remaining == 0) {
             std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - start_time;
             if (elapsed.count() > 15) {
@@ -65,6 +66,7 @@ void PopManagerThreadPool::thread_processor() {
             }
             jobs_done_cv.notify_one();  // Wake main thread
         }
+        lock.unlock();
     }
 }
 

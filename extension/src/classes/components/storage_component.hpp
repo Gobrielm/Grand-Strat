@@ -23,6 +23,7 @@ class StorageComponent {
     /// @return The amount of cargo not added to local storage
     float add_cargo(int type, float amount);
     void remove_cargo(int type, float amount);
+    void set_cargo(int type, float amount);
 
     std::unordered_map<int, float> get_storage();
 

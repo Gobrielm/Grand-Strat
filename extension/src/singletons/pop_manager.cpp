@@ -29,9 +29,6 @@ void PopManager::cleanup() {
 
 PopManager::PopManager() {
     thread_pool = new PopManagerThreadPool(8, [this]() { return thread_month_tick_loader(); });
-    
-    std::function<void(int)> f = [this](int province_id) { this->thread_month_tick(province_id); };
-    thread_pool->set_work_function(f);
 
     for (int i = 0; i < NUMBER_OF_POP_LOCKS; i++) {
         pop_locks.push_back(new std::shared_mutex);  // constructs a new shared_mutex directly in the vector
@@ -59,11 +56,33 @@ int PopManager::thread_month_tick_loader() {
     return thread_pool->provinces_to_process.size();
 }
 
-void PopManager::month_tick() {
+void PopManager::adjust_pop_orders() {
+    std::function<void(int)> f = [this](int province_id) { this->thread_order_tick(province_id); };
+    thread_pool->set_work_function(f);
     thread_pool->month_tick();
 }
+
+void PopManager::pop_tick() {
+    std::function<void(int)> f = [this](int province_id) { this->thread_trading_tick(province_id); };
+    thread_pool->set_work_function(f);
+    thread_pool->month_tick();
+}
+
+void PopManager::thread_order_tick(int province_id) {
+    auto pm = ProvinceManager::get_instance();
+    auto province = pm->get_province(province_id);
+    
+    std::scoped_lock lock(province->m);
+
+    Town& town = province->town;
+    for (int pop_id: province->pops) {
+        auto& pop = pops[pop_id];
+        pop.adjust_pop_orders(town);
+    }
+}
+
 // If full month tick takes a while, all pop group ticks take a while
-void PopManager::thread_month_tick(int province_id) { // Assumes all pops are part of same mutex block
+void PopManager::thread_trading_tick(int province_id) { // Assumes all pops are part of same mutex block
     auto start_time = std::chrono::high_resolution_clock::now();
 
     auto pm = ProvinceManager::get_instance();
@@ -77,8 +96,8 @@ void PopManager::thread_month_tick(int province_id) { // Assumes all pops are pa
         
 
     auto time1 = std::chrono::high_resolution_clock::now();
-    
-    sell_to_pops(province, province->pops);
+    // TODO: Should become uneccessary due to pops creating orders
+    // sell_to_pops(province, province->pops);
     auto time2 = std::chrono::high_resolution_clock::now();
     // find_employment_for_pops(province, province->pops);
     auto time3 = std::chrono::high_resolution_clock::now();
@@ -110,8 +129,6 @@ void PopManager::sell_to_pops(Province* province, std::unordered_set<int>& pops_
     for (int pop_id: pops_to_sell_to) {
         auto& pop = pops[pop_id];
         town.mp.sell_to_pop(province, pop);
-
-        DataCollector::get_instance()->add_supply(10, pop.get_desired(10));
     }
 
     // Ref<TerminalMap> terminal_map = TerminalMap::get_instance();

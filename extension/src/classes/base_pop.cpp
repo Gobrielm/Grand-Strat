@@ -1,6 +1,9 @@
 #include "base_pop.hpp"
+#include "classes/trade_order.hpp"
+#include "classes/map_objects/town.hpp"
 #include "singletons/terminal_map.hpp"
 #include "singletons/cargo_info.hpp"
+#include "singletons/data_collector.hpp"
 #include <godot_cpp/core/class_db.hpp>
 #include <sstream>
 #include <fstream>
@@ -44,7 +47,7 @@ BasePop::BasePop(int p_home_prov_id, Vector2i p_location, Variant p_culture, Pop
     culture = p_culture;
     pop_type = p_pop_type;
     
-    wealth = INITIAL_WEALTH.at(pop_type);
+    capital.set_cash(INITIAL_WEALTH.at(pop_type));
     income = 0.0;
     education_level = 0;
     reset_and_fill_storage();
@@ -190,7 +193,7 @@ void BasePop::pay_wage(float wage) {
         ERR_FAIL_MSG("NaN wage detected");
     }
     
-    wealth += wage;
+    capital.add_cash(wage);
     income = wage;
 }
 
@@ -226,12 +229,12 @@ float BasePop::get_sol() const {
 }
 
 void BasePop::add_wealth(double amount) {
-    wealth += amount;
+    capital.add_cash(amount);
     income += amount;
 }
 
 void BasePop::add_wealth_no_change_to_income(double amount) {
-    wealth += amount;
+    capital.add_cash(amount);
 }
 
 bool BasePop::is_starving() const {
@@ -271,7 +274,7 @@ float BasePop::get_buy_price_for_needed_good(int type, float current_price) cons
     if (needed == 0) return 0;
 
     float mult = (needed == 1) ? (1 + ((rand() % 5) / 100.0)): 1;
-    float available_money = std::min(std::max(income, current_price * mult), wealth); // Highest will go
+    float available_money = std::min(std::max(income, current_price * mult), capital.get_cash()); // Highest will go
 
     float price = available_money;
     if (price > current_price) {
@@ -313,8 +316,8 @@ float BasePop::get_buy_price_for_wanted_good(int type, float current_price) cons
 }
 
 bool BasePop::are_needs_met() const {
-    for (const auto &[type, amount]: internal_storage) {
-        if (!(is_need_met(type))) {
+    for (const auto &[type, amount_needed]: base_needs.at(pop_type)) {
+        if (storage.get_amount(type) < amount_needed) {
             return false;
         }
     }
@@ -322,18 +325,18 @@ bool BasePop::are_needs_met() const {
 }
 
 bool BasePop::is_need_met(int type) const {
-    return (internal_storage.at(type) >= get_base_need(type));
+    return (storage.get_amount(type) >= get_base_need(type));
 }
 
 bool BasePop::is_want_met(int type) const {
-    return (internal_storage.at(type) >= (get_base_need(type) + get_base_want(type)));
+    return (storage.get_amount(type) >= (get_base_need(type) + get_base_want(type)));
 }
 
 unsigned int BasePop::get_desired(int type) const {
-    if (!internal_storage.count(type)) {
+    if (!base_needs.at(pop_type).count(type) && !specialities.at(pop_type).count(type)) {
         return 0;
     }
-    int amount = std::max(int(get_max_storage(type) - internal_storage.at(type)), 0);
+    int amount = std::max(int(get_max_storage(type) - storage.get_amount(type)), 0);
     if (income == 0 && !get_base_needs().count(type)) { // Don't buy if not neccessary and no job
         return 0; 
     }
@@ -343,8 +346,8 @@ unsigned int BasePop::get_desired(int type) const {
 
 unsigned int BasePop::get_desired(int type, float price) const {
     ERR_FAIL_COND_V_MSG(price < 0, 0, "Price is below 0.");
-    int amount_can_buy = int(wealth / price);
-    int amount_can_store = int(get_max_storage(type) - internal_storage.at(type));
+    int amount_can_buy = int(capital.get_cash() / price);
+    int amount_can_store = int(get_max_storage(type) - storage.get_amount(type));
     int amount = std::min(amount_can_buy, amount_can_store);
 
     if (income == 0.0 && !get_base_needs().count(type)) {
@@ -361,16 +364,17 @@ void BasePop::buy_good(int type, int amount, float price) {
     if (amount < 0) {
         ERR_FAIL_MSG("Amount is negitive");
     }
-    wealth -= amount * price;
-    internal_storage[type] += amount;
-	if (wealth < 0) { //TODO, uh-oh
+    capital.remove_cash(amount * price);
+    storage.add_cargo(type, amount);
+
+	if (capital.get_cash() < 0) { //TODO, uh-oh
         ERR_FAIL_MSG("Not enough money to buy good as pop");
-        wealth = 0;
+        capital.set_cash(0);
     }
 }
 
 void BasePop::add_cargo(int type, int amount) {
-    internal_storage[type] += amount;
+    storage.add_cargo(type, amount);
 }
 
 int BasePop::get_max_storage(int type) const {
@@ -386,12 +390,12 @@ int BasePop::get_education_level() const {
 }
 
 float BasePop::get_wealth() const {
-    return wealth;
+    return capital.get_cash();
 }
 
 float BasePop::transfer_wealth() {
     float toReturn = get_wealth() * 0.5;
-	wealth -= toReturn;
+	capital.remove_cash(toReturn);
 	return toReturn;
 }
 
@@ -399,8 +403,15 @@ Variant BasePop::get_culture() const {
     return culture;
 }
 
+float BasePop::get_fulfillment(int type) const {
+    int tot = get_base_need(type) + get_base_want(type);
+    if (tot == 0) return 1;
+
+    return std::fmin(storage.get_amount(type) / tot, 1.0);
+}
+
 float BasePop::get_average_fulfillment() const {
-    return std::fmin((internal_storage.at(10) / get_base_needs().at(10)), 1.0);
+    return std::fmin((storage.get_amount(10) / get_base_needs().at(10)), 1.0);
 }
 
 bool BasePop::will_degrade() const {
@@ -427,21 +438,66 @@ void BasePop::upgrade() {
 }
 
 void BasePop::reset_and_fill_storage() {
-    internal_storage.clear();
+    storage = StorageComponent();
     for (const auto &[type, __]: base_needs[pop_type]) {
-        internal_storage[type] = get_max_storage(type);
+        storage.set_cargo(type, get_max_storage(type));
     }
     for (const auto &[type, __]: specialities[pop_type]) {
-        internal_storage[type] = 0;
+        storage.set_cargo(type, 0);
+    }
+}
+
+void BasePop::adjust_pop_orders(Town& town) {
+    for (const auto& [type, amt]: get_base_wants(pop_type)) {
+        if (!orders.count(type)) {
+            orders[type] = std::make_shared<TradeOrder>(pop_id, TradeOrderOwner::POP, type, amt, true, town.mp.get_price(type), get_buy_price_for_wanted_good(type, town.mp.get_price(type)));
+            town.mp.add_order(orders[type]);
+        }
+
+        orders[type]->change_amount(get_desired(type));
+
+        float price = orders[type]->get_limit_price();
+        orders[type]->set_max_price(get_buy_price_for_wanted_good(type, town.mp.get_price(type)));
+
+        if (get_fulfillment(type) < 0.75) {
+            float new_price = std::min(orders[type]->get_limit_price(), price + 0.05);
+            orders[type]->set_price(new_price);
+        } else {
+            orders[type]->set_price(price -= 0.05f);
+        }
+    }
+
+    for (const auto& [type, amt]: get_base_needs(pop_type)) {
+        if (!orders.count(type)) {
+            orders[type] = std::make_shared<TradeOrder>(pop_id, TradeOrderOwner::POP, type, amt, true, town.mp.get_price(type), get_buy_price_for_needed_good(type, town.mp.get_price(type)));
+            town.mp.add_order(orders[type]);
+        }
+
+        orders[type]->change_amount(get_desired(type));
+
+        float price = orders[type]->get_limit_price();
+        orders[type]->set_max_price(get_buy_price_for_needed_good(type, town.mp.get_price(type)));
+
+        if (get_fulfillment(type) < 0.75) {
+            float new_price = std::min(orders[type]->get_limit_price(), price + 0.05);
+            orders[type]->set_price(new_price);
+        } else {
+            orders[type]->set_price(price -= 0.05f);
+        }
+    }
+    
+    if (orders.count(10)) {
+        DataCollector::get_instance()->add_supply(10, orders[10]->get_amount());
     }
 }
 
 void BasePop::month_tick() {
-    for (const auto& [type, __]: internal_storage) {
-        internal_storage[type] -= (get_base_need(type) + get_base_want(type));
-        if (internal_storage[type] < 0) {
+    for (const auto& [type, __]: storage.get_storage()) {
+        storage.remove_cargo(type, get_base_need(type) + get_base_want(type));
+        
+        if (storage.get_amount(type) < 0) {
             // DO something
-            internal_storage[type] = 0;
+            storage.set_cargo(type, 0);
             if (type == 10) {
                 months_starving++;
             }

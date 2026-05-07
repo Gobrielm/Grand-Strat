@@ -12,16 +12,7 @@ std::shared_ptr<TradingSystem> TradingSystem::get_instance() {
     return singleton;
 }
 
-void TradingSystem::day_tick() {
-
-}
-
-void TradingSystem::month_tick() {
-    adjust_factory_orders();
-    trading_tick();
-}
-
-void TradingSystem::adjust_factory_orders() {
+void TradingSystem::order_tick() {
     auto pm = ProvinceManager::get_instance();
 
     for (auto prov_id: pm->get_provinces_vector()) {
