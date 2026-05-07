@@ -98,7 +98,7 @@ void TerminalMap::_on_month_tick_timeout() {
     PopManager::get_instance()->adjust_pop_orders();
 
     // Bookkeeping Stage
-
+    ProvinceManager::get_instance()->bookkeeping_tick();
 
     // AiManager::get_instance()->month_tick();
     // thread_pool->month_tick();
@@ -106,9 +106,7 @@ void TerminalMap::_on_month_tick_timeout() {
     // Trading Stage
     PopManager::get_instance()->pop_tick();
     TradingSystem::get_instance()->trading_tick();
-
-    // Must be run last after all month sim
-    ProvinceManager::get_instance()->month_tick();
+    
 }
 
 // std::vector<Ref<Terminal>> TerminalMap::get_terminals_for_day_tick() const {

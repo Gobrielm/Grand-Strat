@@ -17,17 +17,18 @@ class MarketComponent {
 
     private:
 
-    std::unordered_map<int, 
-        std::set<std::shared_ptr<TradeOrder>, TradeOrder::TradeOrderLT>
-    > sell_orders;
-
+    // Greatest price first
     std::unordered_map<int, 
         std::set<std::shared_ptr<TradeOrder>, TradeOrder::TradeOrderGT>
     > buy_orders;
 
+    // Smallest price first
+    std::unordered_map<int, 
+        std::set<std::shared_ptr<TradeOrder>, TradeOrder::TradeOrderLT>
+    > sell_orders;
+
     // <amount, price>
     std::unordered_map<int, std::pair<std::vector<std::pair<int, float>>, std::vector<std::pair<int, float>>>> last_month_plot;
-    std::unordered_map<int, std::vector<std::pair<int, float>>> population_demand;
 
     void finish_market_exchange(std::shared_ptr<TradeOrder> buy_order, std::shared_ptr<TradeOrder> sell_order, std::pair<CapitalComponent*, StorageComponent*> buyer, std::pair<CapitalComponent*, StorageComponent*> seller);
 
@@ -56,4 +57,5 @@ class MarketComponent {
     void sell_to_pop(Province* province, BasePop& pop);
 
     void update_last_month_plot();
+    float find_market_price_equilibrium(int type) const;
 };

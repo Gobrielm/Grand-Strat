@@ -1,3 +1,5 @@
+#include <deque>
+
 #include "market_component.hpp"
 #include "singletons/terminal_map.hpp"
 #include "classes/province.hpp"
@@ -259,8 +261,6 @@ void MarketComponent::sell_to_pop(Province* province, BasePop& pop) {
             capital->add_cash(sub_total);
             storage->remove_cargo(type, amt);
             pop.buy_good(type, amt, price);
-
-            population_demand[type].push_back(std::make_pair(amt, price));
         }
     }
     
@@ -285,9 +285,33 @@ void MarketComponent::update_last_month_plot() {
     
     for (auto& [type, _]: buy_orders) {
         last_month_plot[type] = get_market_info_plot(type);
-
-        //TODO add population_demand to last_month_plot
-        
-        population_demand[type].clear();
     }
+}
+
+float MarketComponent::find_market_price_equilibrium(int type) const {
+    if (!last_month_plot.count(type)) return 0;
+
+
+    int supply_included = 0;
+    float current_price = 0;
+    auto lowest_price_included = last_month_plot.at(type).first.cend() - 1;
+    auto lowest_price_limit = last_month_plot.at(type).first.cbegin() - 1;
+
+    for (const auto& [amt, price]: last_month_plot.at(type).first) {
+        supply_included += amt;
+        current_price = std::min(current_price, price);
+    }
+
+    int demand_included = 0;
+
+    for (const auto& [amt, price]: last_month_plot.at(type).second) {
+
+
+        while (lowest_price_limit != lowest_price_included, lowest_price_included->second < price) {
+            supply_included -= lowest_price_included->first;
+            lowest_price_included--;
+        }
+    }
+
+    return 0;
 }

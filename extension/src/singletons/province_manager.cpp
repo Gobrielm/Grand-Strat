@@ -466,7 +466,7 @@ unsigned long ProvinceManager::get_grain_supply() const {
     return round(total_demand);
 }
 
-void ProvinceManager::month_tick() {
+void ProvinceManager::bookkeeping_tick() {
     for (auto province: provinces) {
         std::scoped_lock lock(province->m);
         auto& town = province->town;
