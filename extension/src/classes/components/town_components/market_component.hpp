@@ -25,7 +25,9 @@ class MarketComponent {
         std::set<std::shared_ptr<TradeOrder>, TradeOrder::TradeOrderGT>
     > buy_orders;
 
+    // <amount, price>
     std::unordered_map<int, std::pair<std::vector<std::pair<int, float>>, std::vector<std::pair<int, float>>>> last_month_plot;
+    std::unordered_map<int, std::vector<std::pair<int, float>>> population_demand;
 
     std::pair<CapitalComponent*, StorageComponent*> get_capital_and_storage_components(Province* province, int pos_id);
     void finish_market_exchange(std::shared_ptr<TradeOrder> buy_order, std::shared_ptr<TradeOrder> sell_order, std::pair<CapitalComponent*, StorageComponent*> buyer, std::pair<CapitalComponent*, StorageComponent*> seller);

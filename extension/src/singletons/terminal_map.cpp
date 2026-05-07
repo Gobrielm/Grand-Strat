@@ -93,13 +93,13 @@ void TerminalMap::_on_day_tick_timeout() {
 }
 
 void TerminalMap::_on_month_tick_timeout() {
-    // Must be run first sequentially
-    ProvinceManager::get_instance()->month_tick();
-
     PopManager::get_instance()->month_tick();
     // AiManager::get_instance()->month_tick();
     // thread_pool->month_tick();
     TradingSystem::get_instance()->month_tick();
+
+    // Must be run last after all month sim
+    ProvinceManager::get_instance()->month_tick();
 }
 
 // std::vector<Ref<Terminal>> TerminalMap::get_terminals_for_day_tick() const {

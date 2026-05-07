@@ -68,21 +68,14 @@ void PopManager::thread_month_tick(int province_id) { // Assumes all pops are pa
 
     auto pm = ProvinceManager::get_instance();
     auto province = pm->get_province(province_id);
+    
     std::scoped_lock lock(province->m);
 
     for (auto pop_id: province->pops) {
         pops[pop_id].month_tick();
     }
         
-    // int mutex_lock_num = get_pop_mutex_number(pop_group.front()->get_pop_id());
-    // {
-    //     // If Pops are never fired or payed, then they will have an inflated wage
-    //     auto lock = lock_pop_write(mutex_lock_num);
-    //     for (auto &pop: pop_group) {
-    //         pop->month_tick();
-    //         // change_pop_unsafe(pop);
-    //     }
-    // }
+
     auto time1 = std::chrono::high_resolution_clock::now();
     
     sell_to_pops(province, province->pops);

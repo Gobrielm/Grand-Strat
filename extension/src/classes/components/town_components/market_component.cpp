@@ -72,13 +72,13 @@ std::pair<std::vector<std::pair<int, float>>, std::vector<std::pair<int, float>>
 
     for (auto it = buy_orders.at(type).begin(); it != buy_orders.at(type).end(); it++) {
         auto& ptr = (*it);
-        if (ptr->get_type() != type) continue;
+        if (ptr->get_type() != type || ptr->get_amount() == 0) continue;
         buys.push_back(std::make_pair(ptr->get_amount(), ptr->get_price()));
     }
 
     for (auto it = sell_orders.at(type).begin(); it != sell_orders.at(type).end(); it++) {
         auto& ptr = (*it);
-        if (ptr->get_type() != type) continue;
+        if (ptr->get_type() != type || ptr->get_amount() == 0) continue;
         buys.push_back(std::make_pair(ptr->get_amount(), ptr->get_price()));
     }
     return std::make_pair(buys, sells);
@@ -210,21 +210,21 @@ int32_t MarketComponent::get_current_supply(int type) const {
 
 void MarketComponent::sell_to_pop(Province* province, BasePop& pop) {
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
-    std::unordered_map<int, float> money_to_pay;
+    // std::unordered_map<int, float> money_to_pay;
     
-    for (auto& [type, orders] : sell_orders) {
+    for (auto& [type, orders]: sell_orders) {
         unsigned int desired = pop.get_desired(type);
         if (desired == 0) {
             continue;
         }
         float pop_price = pop.get_buy_price(type, get_price(type));
         
-        auto sell_it = orders.begin();
+        
 
         // get_local_pricer() -> add_demand(type, pop_price, desired); // Only add demand since its not part of survey_broad_market()
         // get_local_pricer() -> add_local_demand(type, desired);
 
-        for (; sell_it != orders.end(); sell_it++) {
+        for (auto sell_it = orders.begin(); sell_it != orders.end(); sell_it++) {
             auto& order = *sell_it;
             if (order->get_amount() == 0) continue;
 
@@ -251,7 +251,7 @@ void MarketComponent::sell_to_pop(Province* province, BasePop& pop) {
             }
 
             unsigned int amt = std::min(pop.get_desired(type, price), order->get_amount());
-            if (amt <= 0) break;
+            if (amt == 0) break; 
 
             // get_local_pricer()->report_sale(type, price, amount);
             // sell_order->sell_cargo(amount, price, money_to_pay); // Calls with money_to_pay
@@ -267,13 +267,17 @@ void MarketComponent::sell_to_pop(Province* province, BasePop& pop) {
             if (res.first == nullptr || res.second == nullptr) {
                 ERR_FAIL_MSG("order's owner is invalid");
             }
+            auto [capital, storage] = res;
+            amt = std::min(amt, (unsigned) floor(storage->get_amount(type)));
+            if (amt == 0) continue;
 
             float sub_total = price * amt;
-            auto [capital, storage] = res;
 
             capital->add_cash(sub_total);
             storage->remove_cargo(type, amt);
             pop.buy_good(type, amt, price);
+
+            population_demand[type].push_back(std::make_pair(amt, price));
         }
     }
     
@@ -298,5 +302,9 @@ void MarketComponent::update_last_month_plot() {
     
     for (auto& [type, _]: buy_orders) {
         last_month_plot[type] = get_market_info_plot(type);
+
+        //TODO add population_demand to last_month_plot
+        
+        population_demand[type].clear();
     }
 }
