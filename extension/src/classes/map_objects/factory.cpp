@@ -308,10 +308,10 @@ void Factory::adjust_trade_orders(Town& town) {
         float price = orders[type]->get_limit_price();
         orders[type]->set_max_price(get_max_price(type));
         if (last_month_storage.get_amount(type) < amt) {
-            float new_price = std::min(get_max_price(type), price + 0.05f);
+            float new_price = std::min(get_max_price(type), price * 1.01f);
             orders[type]->set_price(new_price);
         } else {
-            orders[type]->set_price(price -= 0.05f);
+            orders[type]->set_price(price / 1.01);
         }
     }
     for (const auto& [type, amt]: recipe.get_outputs()) {
@@ -323,10 +323,10 @@ void Factory::adjust_trade_orders(Town& town) {
         float price = orders[type]->get_limit_price();
         orders[type]->set_max_price(get_min_price(type));
         if (last_month_storage.get_amount(type) > 1) {
-            float new_price = std::max(get_min_price(type), price - 0.05f);
+            float new_price = std::max(get_min_price(type), price / 1.01f);
             orders[type]->set_price(new_price);
         } else {
-            orders[type]->set_price(price += 0.05f);
+            orders[type]->set_price(price * 1.01);
         }
     }
     last_month_storage = storage;

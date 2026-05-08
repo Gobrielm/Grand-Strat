@@ -460,10 +460,10 @@ void BasePop::adjust_pop_orders(Town& town) {
         orders[type]->set_max_price(get_buy_price_for_wanted_good(type, town.mp.get_price(type)));
 
         if (get_fulfillment(type) < 0.75) {
-            float new_price = std::min(orders[type]->get_limit_price(), price + 0.05);
+            float new_price = std::min(orders[type]->get_limit_price(), price * 1.01);
             orders[type]->set_price(new_price);
         } else {
-            orders[type]->set_price(price -= 0.05f);
+            orders[type]->set_price(price / 1.01);
         }
     }
 
@@ -479,10 +479,10 @@ void BasePop::adjust_pop_orders(Town& town) {
         orders[type]->set_max_price(get_buy_price_for_needed_good(type, town.mp.get_price(type)));
 
         if (get_fulfillment(type) < 0.75) {
-            float new_price = std::min(orders[type]->get_limit_price(), price + 0.05);
+            float new_price = std::min(orders[type]->get_limit_price(), price * 1.01);
             orders[type]->set_price(new_price);
         } else {
-            orders[type]->set_price(price -= 0.05f);
+            orders[type]->set_price(price / 1.01);
         }
     }
     
