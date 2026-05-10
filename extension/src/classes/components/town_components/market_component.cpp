@@ -14,6 +14,19 @@ MarketComponent::MarketComponent(const MarketComponent& other):
     buy_orders(other.buy_orders)
 {}
 
+std::vector<int> MarketComponent::get_types_among_orders() const {
+    std::vector<int> v;
+    for (const auto& [type, _]: buy_orders) {
+        v.push_back(type);
+    }
+    for (const auto& [type, _]: sell_orders) {
+        if (!buy_orders.count(type)) {
+            v.push_back(type);
+        }
+    }
+    return v;
+}
+
 void MarketComponent::add_order(std::shared_ptr<TradeOrder> to) {
     if (to->is_buy_order()) {
         buy_orders[to->get_type()].insert(to);
@@ -33,7 +46,7 @@ float MarketComponent::get_min_price(int type) const {
     if (buy_orders.count(type) && !buy_orders.at(type).empty()) {
         return (*buy_orders.at(type).end())->get_price();
     }
-    return 0;
+    return 0.1;
 }
 
 float MarketComponent::get_max_price(int type) const {
@@ -46,11 +59,7 @@ float MarketComponent::get_max_price(int type) const {
 std::unordered_map<int, float> MarketComponent::get_current_prices() const {
     std::unordered_map<int, float> to_return;
 
-    for (const auto& [type, _]: sell_orders) {
-        to_return[type] = get_price(type);
-    }
-
-    for (const auto& [type, _]: buy_orders) {
+    for (const auto& type: get_types_among_orders()) {
         to_return[type] = get_price(type);
     }
 
@@ -64,7 +73,7 @@ std::pair<std::vector<std::pair<int, float>>, std::vector<std::pair<int, float>>
     if (buy_orders.count(type)) {
         for (auto it = buy_orders.at(type).begin(); it != buy_orders.at(type).end(); it++) {
             auto& ptr = (*it);
-            if (ptr->get_type() != type || ptr->get_amount() == 0) continue;
+            if (ptr->get_amount() == 0) continue;
             buys.push_back(std::make_pair(ptr->get_amount(), ptr->get_price()));
         }
     }
@@ -72,7 +81,7 @@ std::pair<std::vector<std::pair<int, float>>, std::vector<std::pair<int, float>>
     if (sell_orders.count(type)) {
         for (auto it = sell_orders.at(type).begin(); it != sell_orders.at(type).end(); it++) {
             auto& ptr = (*it);
-            if (ptr->get_type() != type || ptr->get_amount() == 0) continue;
+            if (ptr->get_amount() == 0) continue;
             buys.push_back(std::make_pair(ptr->get_amount(), ptr->get_price()));
         }
     }
@@ -111,16 +120,11 @@ Array MarketComponent::get_market_info_plot_godot(int type) const {
 
 void MarketComponent::market_tick(Province* province) {
     
-    // print_line(buy_orders.size());
     for (auto& [type, buys]: buy_orders) {
-
-        
 
         auto it = sell_orders[type].begin();
         auto end = sell_orders[type].end();
         if (it == end) continue;
-
-        // print_line(sell_orders.at(type).size());
 
         for (auto& buy_order: buys) {
             while (it != end && (*it)->get_amount() == 0) {
@@ -180,7 +184,7 @@ void MarketComponent::finish_market_exchange(
 
 int32_t MarketComponent::get_current_demand(int type) const {
     int32_t tot = 0;
-    if (!last_month_plot.count(type)) return 0;
+    if (!last_month_plot.count(type)) return tot;
     for (const auto& [amt, price]: last_month_plot.at(type).first) {
         tot += amt;
     }
@@ -189,7 +193,7 @@ int32_t MarketComponent::get_current_demand(int type) const {
 
 int32_t MarketComponent::get_current_supply(int type) const {
     int32_t tot = 0;
-    if (!last_month_plot.count(type)) return 0;
+    if (!last_month_plot.count(type)) return tot;
     for (const auto& [amt, price]: last_month_plot.at(type).second) {
         tot += amt;
     }
@@ -285,7 +289,7 @@ void MarketComponent::update_last_month_plot() {
     last_month_plot.clear();
     equilibrium_prices.clear();
     
-    for (auto& [type, _]: buy_orders) {
+    for (auto& type: get_types_among_orders()) {
         last_month_plot[type] = get_market_info_plot(type);
         equilibrium_prices[type] = find_market_price_equilibrium(type);
     }

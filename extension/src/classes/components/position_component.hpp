@@ -29,7 +29,7 @@ class PositionComponent {
 
     PositionComponent(const PositionComponent* other): building_id(other->building_id), type(other->type), position(other->position) {}
 
-    PositionComponent(std::pair<int, int> p_position, BuildingType p_type): building_id(TOTAL_OBJECTS++), type(p_type), position(p_position) {}
+    PositionComponent(std::pair<int, int> p_position, BuildingType p_type): building_id(TOTAL_OBJECTS.fetch_add(1)), type(p_type), position(p_position) {}
 
     PositionComponent& operator=(const PositionComponent& other) {
         if (this == &other) {

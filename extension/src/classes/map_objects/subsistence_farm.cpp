@@ -5,13 +5,7 @@
 #include "singletons/cargo_info.hpp"
 #include "singletons/data_collector.hpp"
 
-SubsistenceFarm::SubsistenceFarm(): employer() {
-    RecipeInfo::create_employer_component(
-        {{}, 
-        {{"grain", 11.0f}}}, 
-        {{PopTypes::peasant, 10}}
-    );
-}
+SubsistenceFarm::SubsistenceFarm(): employer() {}
 
 SubsistenceFarm::SubsistenceFarm(Vector2i p_location, int p_owner): position(std::make_pair(p_location.x, p_location.y), BuildingType::SUBSISTENCE_FARM), owner(p_owner) {
     employer = RecipeInfo::create_employer_component(
@@ -72,8 +66,9 @@ void SubsistenceFarm::create_recipe() {
     double batch_size = get_batch_size();
     if (batch_size == 0) return;
     for (const auto& [type, amount]: employer.recipe.get_outputs()) {
-        storage.add_cargo(type, amount * batch_size);
-        DataCollector::get_instance()->add_supply(type, amount * batch_size);
+        float amt = amount * batch_size;
+        storage.add_cargo(type, amt);
+        DataCollector::get_instance()->add_supply(type, amt);
     }
 }
 

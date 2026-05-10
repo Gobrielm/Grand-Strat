@@ -487,7 +487,7 @@ void BasePop::adjust_pop_orders(Town& town) {
     }
     
     if (orders.count(10)) {
-        DataCollector::get_instance()->add_supply(10, orders[10]->get_amount());
+        DataCollector::get_instance()->add_demand(10, orders[10]->get_amount());
     }
 }
 

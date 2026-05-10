@@ -136,7 +136,7 @@ class Province : public Object {
     void create_rural_pop(Variant culture, Vector2i p_location);
     void create_town_pops(int amount);
     int create_town_pop(Variant culture, Vector2i p_location);
-    std::vector<int> create_buildings_for_peasants();
+    void create_buildings_for_peasants();
     void employ_peasants();
     int count_pops() const;
     

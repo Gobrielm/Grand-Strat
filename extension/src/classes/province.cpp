@@ -405,6 +405,7 @@ void Province::create_pops() {
         }
         create_peasant_pop(0, rand_tile);
     }
+
     employ_peasants(); // Employ peasants before any other pops added to just look at peasants
 
 	for (int i = 0; i < number_of_rural_pops; i++) {
@@ -416,7 +417,6 @@ void Province::create_pops() {
         create_rural_pop(0, rand_tile);
     }
 	
-	//If no cities, then turn rest of population into peasant pops
     create_town_pops(number_of_city_pops);
 }
 
@@ -455,21 +455,17 @@ int Province::create_town_pop(Variant culture, Vector2i p_location) {
     return pop_id;
 }
 
-std::vector<int> Province::create_buildings_for_peasants() {
+void Province::create_buildings_for_peasants() {
     auto terminal_map = TerminalMap::get_instance();
-    std::vector<int> subsistence_farm_ids;
 
     for (const Vector2i &tile: tiles) {
         int temp = terminal_map->get_cargo_value_of_tile(tile, 10); // Grain id
         if (temp > 0) {
-            SubsistenceFarm farm = SubsistenceFarm(tile, 0);
-            add_subsistence_farm(farm);
+            SubsistenceFarm farm(tile, 0);
+            farm = add_subsistence_farm(farm);
             terminal_map->encode_building(farm.position);
-            
-            subsistence_farm_ids.push_back(farm.position.get_building_id());
         }
     }
-    return subsistence_farm_ids;
 }
 
 void Province::employ_peasants() {
@@ -480,31 +476,30 @@ void Province::employ_peasants() {
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     auto pop_manager = PopManager::get_instance();
     
-    std::vector<int> farms = create_buildings_for_peasants();
-
-
-    if (farms.size() == 0) {
+    
+    std::scoped_lock(m);
+    create_buildings_for_peasants();
+    
+    if (sub_farms.size() == 0) {
         // print_line(tiles.front());
         // print_error("No possible peasant buildings");
         return;
     }
     
-    {
-        int i = 0;
-        std::scoped_lock lock(m);
+    int i = 0;
 
-        for (const auto& pop_id: pops) {
-            auto pop = pop_manager->get_pop(pop_id);
-            auto lock = pop_manager->lock_pop_write(pop_id);
-            if (pop->get_type() != PopTypes::peasant) continue;
-            
-            SubsistenceFarm& farm = sub_farms[id_to_vector_position[farms[i]].first];
-            
-            farm.add_pop(town, pop);          
+    for (const auto& pop_id: pops) {
+        auto pop = pop_manager->get_pop(pop_id);
+        auto lock = pop_manager->lock_pop_write(pop_id);
+        if (pop->get_type() != PopTypes::peasant) continue;
+        
+        SubsistenceFarm& farm = sub_farms[i];
+        
+        farm.add_pop(town, pop);          
 
-            i = (i + 1) % farms.size();
-        }
+        i = (i + 1) % sub_farms.size();
     }
+    
     
 }
 
