@@ -37,7 +37,7 @@ void EmployerComponent::upgrade() {
 
 void EmployerComponent::degrade() {
     if (recipe.level == 1) {
-        print_error("Downgrading a building a level 1");
+        print_error("Downgrading a building at level 1");
         return;
     }
     int level = --recipe.level;

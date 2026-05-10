@@ -61,20 +61,20 @@ std::pair<std::vector<std::pair<int, float>>, std::vector<std::pair<int, float>>
     std::vector<std::pair<int, float>> buys;
     std::vector<std::pair<int, float>> sells;
 
-    if (buy_orders.count(type) != 0 || sell_orders.count(type) != 0) {
-        return std::make_pair(buys, sells);
+    if (buy_orders.count(type)) {
+        for (auto it = buy_orders.at(type).begin(); it != buy_orders.at(type).end(); it++) {
+            auto& ptr = (*it);
+            if (ptr->get_type() != type || ptr->get_amount() == 0) continue;
+            buys.push_back(std::make_pair(ptr->get_amount(), ptr->get_price()));
+        }
     }
 
-    for (auto it = buy_orders.at(type).begin(); it != buy_orders.at(type).end(); it++) {
-        auto& ptr = (*it);
-        if (ptr->get_type() != type || ptr->get_amount() == 0) continue;
-        buys.push_back(std::make_pair(ptr->get_amount(), ptr->get_price()));
-    }
-
-    for (auto it = sell_orders.at(type).begin(); it != sell_orders.at(type).end(); it++) {
-        auto& ptr = (*it);
-        if (ptr->get_type() != type || ptr->get_amount() == 0) continue;
-        buys.push_back(std::make_pair(ptr->get_amount(), ptr->get_price()));
+    if (sell_orders.count(type)) {
+        for (auto it = sell_orders.at(type).begin(); it != sell_orders.at(type).end(); it++) {
+            auto& ptr = (*it);
+            if (ptr->get_type() != type || ptr->get_amount() == 0) continue;
+            buys.push_back(std::make_pair(ptr->get_amount(), ptr->get_price()));
+        }
     }
     return std::make_pair(buys, sells);
 }
@@ -83,7 +83,7 @@ Array MarketComponent::get_market_info_plot_godot(int type) const {
     Array buys;
     Array sells;
 
-    if (last_month_plot.count(type) != 0) {
+    if (!last_month_plot.count(type)) {
         return Array();
     }
 
@@ -92,13 +92,13 @@ Array MarketComponent::get_market_info_plot_godot(int type) const {
     const auto& last_month_buy_orders = orders.first;
     const auto& last_month_sell_orders = orders.second;
     
-    for (const auto& amt_price: last_month_buy_orders) {
-        Vector2 v(amt_price.first, amt_price.second);
+    for (const auto& [amt, price]: last_month_buy_orders) {
+        Vector2 v(amt, price);
         buys.push_back(v);
     }
 
-    for (const auto& amt_price: last_month_sell_orders) {
-        Vector2 v(amt_price.first, amt_price.second);
+    for (const auto& [amt, price]: last_month_sell_orders) {
+        Vector2 v(amt, price);
         sells.push_back(v);
     }
     
@@ -110,16 +110,24 @@ Array MarketComponent::get_market_info_plot_godot(int type) const {
 }
 
 void MarketComponent::market_tick(Province* province) {
-
+    
+    // print_line(buy_orders.size());
     for (auto& [type, buys]: buy_orders) {
 
+        
+
         auto it = sell_orders[type].begin();
-        if (it == sell_orders[type].end()) continue;
+        auto end = sell_orders[type].end();
+        if (it == end) continue;
+
+        // print_line(sell_orders.at(type).size());
 
         for (auto& buy_order: buys) {
-            while (it != sell_orders[type].end() && (*it)->get_amount() == 0) {
+            while (it != end && (*it)->get_amount() == 0) {
                 it++;
             }
+            if (it == end) break;
+            
             auto& sell_order = *it;
 
             float price1 = buy_order->get_price();
@@ -155,14 +163,14 @@ void MarketComponent::finish_market_exchange(
     if (amt <= 0) {
         return;
     }
-
+    
     float sub_total = price * amt;
-
+    
     // Buyer can't afford
     if (buyer.first->get_cash() < sub_total) {
         return;
     }
-
+    
     buyer.first->remove_cash(sub_total);
     seller.first->add_cash(sub_total);
 

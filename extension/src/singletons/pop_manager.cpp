@@ -114,13 +114,13 @@ void PopManager::thread_trading_tick(int province_id) { // Assumes all pops are 
         x = "Employment";
     }
 
-    std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - start_time;
-    if (elapsed.count() > 0.5) {
-        print_line("Pop group month tick took " + String::num_scientific(elapsed1.count()) + " seconds");
-        print_line("Pop group market tick took " + String::num_scientific(elapsed2.count()) + " seconds");
-        print_line("Pop group employment tick took " + String::num_scientific(elapsed3.count()) + " seconds");
-        print_line("Total: " + String::num_scientific(elapsed.count()) + " seconds");
-    }
+    // std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - start_time;
+    // if (elapsed.count() > 0.5) {
+    //     print_line("Pop group month tick took " + String::num_scientific(elapsed1.count()) + " seconds");
+    //     print_line("Pop group market tick took " + String::num_scientific(elapsed2.count()) + " seconds");
+    //     print_line("Pop group employment tick took " + String::num_scientific(elapsed3.count()) + " seconds");
+    //     print_line("Total: " + String::num_scientific(elapsed.count()) + " seconds");
+    // }
 }
 
 

@@ -93,6 +93,9 @@ void TerminalMap::_on_day_tick_timeout() {
 }
 
 void TerminalMap::_on_month_tick_timeout() {
+    // Simulation
+    ProvinceManager::get_instance()->simulation_tick();
+
     // Order Stage
     TradingSystem::get_instance()->order_tick();
     PopManager::get_instance()->adjust_pop_orders();

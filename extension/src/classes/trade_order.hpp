@@ -41,12 +41,18 @@ public:
 
     struct TradeOrderGT {
         bool operator()(const std::shared_ptr<TradeOrder> order1, const std::shared_ptr<TradeOrder> order2) const {
+            if (order1->price == order2->price) {
+                return order1.get() > order2.get();
+            }
             return order1->price > order2->price;
         }
     };
 
     struct TradeOrderLT {
         bool operator()(const std::shared_ptr<TradeOrder> order1, const std::shared_ptr<TradeOrder> order2) const {
+            if (order1->price == order2->price) {
+                return order1.get() < order2.get();
+            }
             return order1->price < order2->price;
         }
     };

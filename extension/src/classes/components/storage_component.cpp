@@ -26,7 +26,7 @@ float StorageComponent::add_cargo(int type, float amount) {
 void StorageComponent::remove_cargo(int type, float amount) {
     if (amount >= 0) {
         storage[type] -= amount;
-        ERR_FAIL_COND_MSG(storage[type] < 0, "Storage went below 0.");
+        ERR_FAIL_COND_MSG(storage[type] < 0, "Storage went below 0. Removed amount: " + String::num(amount) + ", Storage: " + String::num(storage[type]));
     }
 }
 
