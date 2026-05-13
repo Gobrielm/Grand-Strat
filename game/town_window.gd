@@ -160,11 +160,14 @@ func populate_info_window(type: int) -> void:
 func create_graph() -> void:
 	var graph: ColorRect = $Graph
 	for child: Node in graph.get_children():
-		graph.remove_child(child)
-		child.free()
+		if (child is ColorRect):
+			graph.remove_child(child)
+			child.free()
 	
 	if type_selected == -1:
 		return
+	
+	graph.get_node("TypeLabel").text = CargoInfo.get_instance().get_cargo_name(type_selected)
 	
 	var price_bounds: Vector2 = Vector2(INF, 0)
 	var amount_bounds: Vector2 = Vector2(INF, 0)
@@ -176,12 +179,14 @@ func create_graph() -> void:
 		amount_bounds.x = min(amount_bounds.x, amt)
 		amount_bounds.y = max(amount_bounds.y, amt)
 		price_bounds.x = min(price_bounds.x, price)
+		price_bounds.y = max(price_bounds.y, price)
 		
 	for vec: Vector2 in pdp.sell_orders:
 		var amt: float = vec.x
 		var price: float = vec.y
 		amount_bounds.x = min(amount_bounds.x, amt)
 		amount_bounds.y = max(amount_bounds.y, amt)
+		price_bounds.x = min(price_bounds.x, price)
 		price_bounds.y = max(price_bounds.y, price)
 	
 	amount_bounds.x *= 0.8
@@ -189,9 +194,6 @@ func create_graph() -> void:
 	
 	amount_bounds.y *= 1.25
 	price_bounds.y *= 1.25
-	
-	print(amount_bounds)
-	print(price_bounds)
 	
 	for vec: Vector2 in pdp.buy_orders:
 		create_point(vec, true, price_bounds, amount_bounds)
