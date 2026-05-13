@@ -17,15 +17,18 @@ class MarketComponent {
 
     private:
 
-    // Descending Order
-    std::unordered_map<int, 
-        std::set<std::shared_ptr<TradeOrder>, TradeOrder::TradeOrderGT>
-    > buy_orders;
+    std::vector<std::shared_ptr<TradeOrder>> buy_orders;
+    std::vector<std::shared_ptr<TradeOrder>> sell_orders;
 
-    // Ascending Order
+    // Descending Orders
     std::unordered_map<int, 
-        std::set<std::shared_ptr<TradeOrder>, TradeOrder::TradeOrderLT>
-    > sell_orders;
+        std::set<TradeOrder, TradeOrder::TradeOrderGT>
+    > sorted_buy_orders;
+
+    // Ascending Orders
+    std::unordered_map<int, 
+        std::set<TradeOrder, TradeOrder::TradeOrderLT>
+    > sorted_sell_orders;
 
     // <amount, price>
     std::unordered_map<int, std::pair<std::vector<std::pair<int, float>>, std::vector<std::pair<int, float>>>> last_month_plot;
@@ -53,11 +56,13 @@ class MarketComponent {
     /// @param province The locked province that town is in
     void market_tick(Province* province);
 
+    /// @param province The locked province that town is in
+    // void sell_to_pop(Province* province, BasePop& pop);
+
     int32_t get_current_demand(int type) const;
     int32_t get_current_supply(int type) const;
 
-    /// @param province The locked province that town is in
-    void sell_to_pop(Province* province, BasePop& pop);
+    
 
     void update_last_month_plot();
     float find_market_price_equilibrium(int type) const;

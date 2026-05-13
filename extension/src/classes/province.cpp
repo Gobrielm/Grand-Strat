@@ -539,13 +539,13 @@ std::pair<CapitalComponent*, StorageComponent*> Province::get_capital_and_storag
         switch (type) {
             case BuildingType::FACTORY: {
                 auto& factory = factories[id_to_vector_position[source_id].first];
-                return std::pair<CapitalComponent*, StorageComponent*>({ &factory.capital, &factory.storage });
+                return std::pair<CapitalComponent*, StorageComponent*>(&factory.capital, &factory.storage);
             }
-            default:
-                auto v = std::pair<CapitalComponent*, StorageComponent*>(nullptr, nullptr);
-                ERR_FAIL_V_MSG(v, "Unknown Entity Tried to Trade: " + String(std::to_string(static_cast<int>(type)).c_str()));
+            default: {
+                print_error("Unknown Entity Tried to Trade: " + String::num(static_cast<int>(type)));
+                return std::pair<CapitalComponent*, StorageComponent*>(nullptr, nullptr);
+            }
         }
-        return std::pair<CapitalComponent*, StorageComponent*>(nullptr, nullptr);
     };
 
     auto get_components_pop = [&] () {
@@ -556,9 +556,8 @@ std::pair<CapitalComponent*, StorageComponent*> Province::get_capital_and_storag
             return std::pair<CapitalComponent*, StorageComponent*>(&pop->capital, &pop->storage);
         } else {
             print_error("Unowned pop is being accessed in province: " + String::num(province_id));
+            return std::pair<CapitalComponent*, StorageComponent*>(nullptr, nullptr);
         }
-
-        return std::pair<CapitalComponent*, StorageComponent*>(nullptr, nullptr);
     };
 
 

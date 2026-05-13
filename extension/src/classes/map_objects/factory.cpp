@@ -292,9 +292,10 @@ void Factory::month_tick() {
 
 void Factory::adjust_trade_orders(Town& town) {
 
-    if (is_firing(town)) {
-        employer.queue_employees_to_be_fired();
-    }
+    // TODO: Add Back firing
+    // if (is_firing(town)) {
+    //     employer.queue_employees_to_be_fired();
+    // }
 
     auto& recipe = get_recipe();
     for (const auto& [type, amt]: recipe.get_inputs()) {
@@ -314,6 +315,7 @@ void Factory::adjust_trade_orders(Town& town) {
             orders[type]->set_price(price / 1.01);
         }
     }
+    
     for (const auto& [type, amt]: recipe.get_outputs()) {
         if (!orders.count(type)) {
             orders[type] = std::make_shared<TradeOrder>(position, type, amt, false, town.mp.get_price(type), get_min_price(type, &town));

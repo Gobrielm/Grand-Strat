@@ -93,21 +93,28 @@ void TerminalMap::_on_day_tick_timeout() {
 }
 
 void TerminalMap::_on_month_tick_timeout() {
+    print_line("Sim");
     // Simulation
     ProvinceManager::get_instance()->simulation_tick();
+    // TODO: Pay Wages
 
+    print_line("Orders");
     // Order Stage
     TradingSystem::get_instance()->order_tick();
+    print_line("A");
     PopManager::get_instance()->adjust_pop_orders();
 
+    print_line("Bookkeeping");
     // Bookkeeping Stage
     ProvinceManager::get_instance()->bookkeeping_tick();
 
     // AiManager::get_instance()->month_tick();
     // thread_pool->month_tick();
     
+    print_line("Trading");
     // Trading Stage
     PopManager::get_instance()->pop_tick();
+    print_line("B");
     TradingSystem::get_instance()->trading_tick();
     
 }
