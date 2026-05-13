@@ -1,5 +1,6 @@
 #include "province_manager.hpp"
 #include "terminal_map.hpp"
+#include "classes/map_objects/subsistence_farm.hpp"
 #include "classes/map_objects/town.hpp"
 #include "classes/map_objects/station.hpp"
 #include "cargo_info.hpp"
@@ -347,12 +348,11 @@ Dictionary ProvinceManager::get_town_pdps(Vector2i town_tile) {
     std::scoped_lock lock(province->m);
 
     Town& town = province->town;
+
     Dictionary d;
     auto price_map = town.mp.get_current_prices();
-
     for (auto [type, price]: price_map) {
         Ref<PDP> pdp = memnew(PDP(price, town.mp.get_current_demand(type), town.mp.get_current_supply(type), town.mp.get_market_info_plot_godot(type)));
-
         d[type] = pdp;
     }
 
@@ -471,5 +471,19 @@ void ProvinceManager::bookkeeping_tick() {
         std::scoped_lock lock(province->m);
         auto& town = province->town;
         town.mp.update_last_month_plot();
+    }
+}
+
+void ProvinceManager::simulation_tick() {
+    for (auto province: provinces) {
+        std::scoped_lock lock(province->m);
+
+        for (auto& factory: province->factories) {
+            factory.month_tick();
+        }
+
+        for (auto& farm: province->sub_farms) {
+            farm.month_tick();
+        }
     }
 }

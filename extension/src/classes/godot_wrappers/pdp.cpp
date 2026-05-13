@@ -16,9 +16,9 @@ void PDP::_bind_methods() {
     ClassDB::bind_method(D_METHOD("set_buy_orders", "buy_orders"), &PDP::set_buy_orders);
     ClassDB::bind_method(D_METHOD("set_sell_orders", "sell_orders"), &PDP::set_sell_orders);
 
-    ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "price"), "set_price", "get_price");
-    ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "supply"), "set_supply", "get_supply");
-    ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "demand"), "set_demand", "get_demand");
+    ADD_PROPERTY(PropertyInfo(Variant::INT, "price"), "set_price", "get_price");
+    ADD_PROPERTY(PropertyInfo(Variant::INT, "supply"), "set_supply", "get_supply");
+    ADD_PROPERTY(PropertyInfo(Variant::INT, "demand"), "set_demand", "get_demand");
 
     ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "buy_orders"), "set_buy_orders", "get_buy_orders");
     ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "sell_orders"), "set_sell_orders", "get_sell_orders");
@@ -29,11 +29,11 @@ float PDP::get_price() const {
     return price;
 }
 
-float PDP::get_supply() const {
+int32_t PDP::get_supply() const {
     return supply;
 }
 
-float PDP::get_demand() const {
+int32_t PDP::get_demand() const {
     return demand;
 }
 
@@ -49,11 +49,11 @@ void PDP::set_price(float p_price) {
     price = p_price;
 }
 
-void PDP::set_supply(float p_supply) {
+void PDP::set_supply(int32_t p_supply) {
     supply = p_supply;
 }
 
-void PDP::set_demand(float p_demand) {
+void PDP::set_demand(int32_t p_demand) {
     demand = p_demand;
 }
 

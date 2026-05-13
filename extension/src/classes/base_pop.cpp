@@ -487,17 +487,17 @@ void BasePop::adjust_pop_orders(Town& town) {
     }
     
     if (orders.count(10)) {
-        DataCollector::get_instance()->add_supply(10, orders[10]->get_amount());
+        DataCollector::get_instance()->add_demand(10, orders[10]->get_amount());
     }
 }
 
 void BasePop::month_tick() {
-    for (const auto& [type, __]: storage.get_storage()) {
-        storage.remove_cargo(type, get_base_need(type) + get_base_want(type));
+    for (const auto& [type, amt]: storage.get_storage()) {
+        float to_use = get_base_need(type) + get_base_want(type);
+        storage.remove_cargo(type, std::min(amt, to_use));
         
-        if (storage.get_amount(type) < 0) {
+        if (amt < to_use) {
             // DO something
-            storage.set_cargo(type, 0);
             if (type == 10) {
                 months_starving++;
             }

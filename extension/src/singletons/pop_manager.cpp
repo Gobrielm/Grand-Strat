@@ -95,32 +95,32 @@ void PopManager::thread_trading_tick(int province_id) { // Assumes all pops are 
     }
         
 
-    auto time1 = std::chrono::high_resolution_clock::now();
+    // auto time1 = std::chrono::high_resolution_clock::now();
     // TODO: Should become uneccessary due to pops creating orders
     // sell_to_pops(province, province->pops);
-    auto time2 = std::chrono::high_resolution_clock::now();
+    // auto time2 = std::chrono::high_resolution_clock::now();
     // find_employment_for_pops(province, province->pops);
-    auto time3 = std::chrono::high_resolution_clock::now();
+    // auto time3 = std::chrono::high_resolution_clock::now();
 
-    String x;
-    std::chrono::duration<double> elapsed1 = time1 - start_time;
-    std::chrono::duration<double> elapsed2 = time2 - time1;
-    std::chrono::duration<double> elapsed3 = time3 - time2;
+    // String x;
+    // std::chrono::duration<double> elapsed1 = time1 - start_time;
+    // std::chrono::duration<double> elapsed2 = time2 - time1;
+    // std::chrono::duration<double> elapsed3 = time3 - time2;
 
 
-    if (elapsed1 > elapsed3) {
-        x = "Month Tick";
-    } else {
-        x = "Employment";
-    }
+    // if (elapsed1 > elapsed3) {
+    //     x = "Month Tick";
+    // } else {
+    //     x = "Employment";
+    // }
 
-    std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - start_time;
-    if (elapsed.count() > 0.5) {
-        print_line("Pop group month tick took " + String::num_scientific(elapsed1.count()) + " seconds");
-        print_line("Pop group market tick took " + String::num_scientific(elapsed2.count()) + " seconds");
-        print_line("Pop group employment tick took " + String::num_scientific(elapsed3.count()) + " seconds");
-        print_line("Total: " + String::num_scientific(elapsed.count()) + " seconds");
-    }
+    // std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - start_time;
+    // if (elapsed.count() > 0.5) {
+    //     print_line("Pop group month tick took " + String::num_scientific(elapsed1.count()) + " seconds");
+    //     print_line("Pop group market tick took " + String::num_scientific(elapsed2.count()) + " seconds");
+    //     print_line("Pop group employment tick took " + String::num_scientific(elapsed3.count()) + " seconds");
+    //     print_line("Total: " + String::num_scientific(elapsed.count()) + " seconds");
+    // }
 }
 
 

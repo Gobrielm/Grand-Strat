@@ -14,15 +14,15 @@ class PDP: public RefCounted {
     public:
 
     float price = 0;
-    float supply = 0;
-    float demand = 0;
+    int32_t supply = 0;
+    int32_t demand = 0;
 
     Array buy_orders;
     Array sell_orders;
 
     PDP() {}
 
-    PDP(float p_price, float p_supply, float p_demand, Array p_buy_orders, Array p_sell_orders) {
+    PDP(float p_price, int32_t p_supply, int32_t p_demand, Array p_buy_orders, Array p_sell_orders) {
         price = p_price;
         supply = p_supply;
         demand = p_demand;
@@ -30,7 +30,7 @@ class PDP: public RefCounted {
         sell_orders = p_sell_orders;
     }
 
-    PDP(float p_price, float p_supply, float p_demand, Array p_orders) {
+    PDP(float p_price, int32_t p_supply, int32_t p_demand, Array p_orders) {
         price = p_price;
         supply = p_supply;
         demand = p_demand;
@@ -47,15 +47,15 @@ class PDP: public RefCounted {
 
     // Getters
     float get_price() const;
-    float get_supply() const;
-    float get_demand() const;
+    int32_t get_supply() const;
+    int32_t get_demand() const;
     Array get_buy_orders() const;
     Array get_sell_orders() const;
 
     // Setters
     void set_price(float p_price);
-    void set_supply(float p_supply);
-    void set_demand(float p_demand);
+    void set_supply(int32_t p_supply);
+    void set_demand(int32_t p_demand);
     void set_buy_orders(Array p_buy_orders);
     void set_sell_orders(Array p_sell_orders);
 };

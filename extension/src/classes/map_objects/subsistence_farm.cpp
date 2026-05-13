@@ -5,13 +5,7 @@
 #include "singletons/cargo_info.hpp"
 #include "singletons/data_collector.hpp"
 
-SubsistenceFarm::SubsistenceFarm(): employer() {
-    RecipeInfo::create_employer_component(
-        {{}, 
-        {{"grain", 11.0f}}}, 
-        {{PopTypes::peasant, 10}}
-    );
-}
+SubsistenceFarm::SubsistenceFarm(): employer() {}
 
 SubsistenceFarm::SubsistenceFarm(Vector2i p_location, int p_owner): position(std::make_pair(p_location.x, p_location.y), BuildingType::SUBSISTENCE_FARM), owner(p_owner) {
     employer = RecipeInfo::create_employer_component(
@@ -50,7 +44,7 @@ void SubsistenceFarm::adjust_trade_orders(Town& town) {
 
     for (const auto& [type, amt]: recipe.get_outputs()) {
         if (!orders.count(type)) {
-            orders[type] = std::make_shared<TradeOrder>(position, type, amt, true, town.mp.get_price(type), town.mp.get_min_price(type));
+            orders[type] = std::make_shared<TradeOrder>(position, type, amt, false, town.mp.get_price(type), town.mp.get_min_price(type));
             town.mp.add_order(orders[type]);
         }
 
@@ -62,9 +56,6 @@ void SubsistenceFarm::adjust_trade_orders(Town& town) {
 
 double SubsistenceFarm::get_batch_size() {
     double batch_size = employer.get_level();
-    for (auto& [type, amount]: employer.recipe.get_inputs()) {
-        batch_size = std::min(storage.get_amount(type) / double(amount), batch_size);
-    }
     for (auto& [type, amount]: employer.recipe.get_outputs()) {
         batch_size = std::min((double(storage.MAX_STORAGE) - storage.get_amount(type)) / amount, batch_size);
     }
@@ -74,13 +65,10 @@ double SubsistenceFarm::get_batch_size() {
 void SubsistenceFarm::create_recipe() {
     double batch_size = get_batch_size();
     if (batch_size == 0) return;
-
     for (const auto& [type, amount]: employer.recipe.get_outputs()) {
-        storage.add_cargo(type, amount * batch_size);
-        DataCollector::get_instance()->add_supply(type, amount * batch_size);
-    }
-    for (const auto& [type, amount]: employer.recipe.get_inputs()) {
-        storage.remove_cargo(type, amount * batch_size);
+        float amt = amount * batch_size;
+        storage.add_cargo(type, amt);
+        DataCollector::get_instance()->add_supply(type, amt);
     }
 }
 
@@ -105,7 +93,7 @@ void SubsistenceFarm::consider_upgrade() {
 }
 
 void SubsistenceFarm::consider_degrade() {
-    if (employer.get_employment_rate() < 0.5) {
+    if (employer.get_employment_rate() < 0.5 && employer.get_level_without_employment() > 1) {
         employer.degrade();
     }
 }

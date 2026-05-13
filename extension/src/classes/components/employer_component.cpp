@@ -21,6 +21,7 @@ EmployerComponent::EmployerComponent(const EmployerComponent& other):
 EmployerComponent& EmployerComponent::operator=(const EmployerComponent& other) {
     if (this == &other) return *this;
 
+    recipe = other.recipe;
     employees = other.employees;
     pops_needed = other.pops_needed;
     pops_to_fire = other.pops_to_fire;
@@ -37,7 +38,7 @@ void EmployerComponent::upgrade() {
 
 void EmployerComponent::degrade() {
     if (recipe.level == 1) {
-        print_error("Downgrading a building a level 1");
+        print_error("Downgrading a building at level 1");
         return;
     }
     int level = --recipe.level;
@@ -90,7 +91,7 @@ int EmployerComponent::get_pops_needed_num() const {
 }
 
 float EmployerComponent::get_employment_rate() const {
-    int employement = get_employement(); // Seperated because both lock, idk
+    int employement = get_employement();
     return employement / float(get_pops_needed_num());
 }
 
@@ -116,7 +117,7 @@ double EmployerComponent::get_level() const {
 	if (employment == 0) {
         return 0;
     }
-	return get_level_without_employment() * double(employment) / get_pops_needed_num();
+	return double(employment) / get_pops_needed_num();
 }
 
 int EmployerComponent::get_level_without_employment() const {

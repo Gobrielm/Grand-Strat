@@ -93,4 +93,7 @@ public:
 
     // Bookkeeping
     void bookkeeping_tick();
+
+    // Simulation
+    void simulation_tick();
 };

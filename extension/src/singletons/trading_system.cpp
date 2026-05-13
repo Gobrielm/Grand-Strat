@@ -21,14 +21,17 @@ void TradingSystem::order_tick() {
         std::scoped_lock lock(province->m);
         
         Town& town = province->town;
-
         for (auto& factory: province->factories) {
             factory.adjust_trade_orders(town);
         }
-        for (auto& farm: province->sub_farms) {
-            farm.adjust_trade_orders(town);
+        if (temp_flag) {
+            for (auto& farm: province->sub_farms) {
+                farm.adjust_trade_orders(town);
+            }
         }
+        
     }
+    temp_flag = false;
 }
 
 void TradingSystem::trading_tick() {
