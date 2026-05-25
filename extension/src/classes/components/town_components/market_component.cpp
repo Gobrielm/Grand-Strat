@@ -72,19 +72,19 @@ std::pair<std::vector<std::pair<int, float>>, std::vector<std::pair<int, float>>
     std::vector<std::pair<int, float>> buys;
     std::vector<std::pair<int, float>> sells;
 
-    if (buy_orders.count(type)) {
-        for (auto it = buy_orders.at(type).begin(); it != buy_orders.at(type).end(); it++) {
-            auto& ptr = (*it);
-            if (ptr->get_amount() == 0) continue;
-            buys.push_back(std::make_pair(ptr->get_amount(), ptr->get_price()));
+    if (sorted_buy_orders.count(type)) {
+        const auto& orders = sorted_buy_orders.at(type);
+        for (auto& order: orders) {
+            if (order.get_amount() == 0) continue;
+            buys.push_back(std::make_pair(order.get_amount(), order.get_price()));
         }
     }
 
-    if (sell_orders.count(type)) {
-        for (auto it = sell_orders.at(type).begin(); it != sell_orders.at(type).end(); it++) {
-            auto& ptr = (*it);
-            if (ptr->get_amount() == 0) continue;
-            buys.push_back(std::make_pair(ptr->get_amount(), ptr->get_price()));
+    if (sorted_sell_orders.count(type)) {
+        const auto& orders = sorted_buy_orders.at(type);
+        for (auto& order: orders) {
+            if (order.get_amount() == 0) continue;
+            buys.push_back(std::make_pair(order.get_amount(), order.get_price()));
         }
     }
     return std::make_pair(buys, sells);
@@ -121,27 +121,29 @@ Array MarketComponent::get_market_info_plot_godot(int type) const {
 }
 
 void MarketComponent::market_tick(Province* province) {
+    // sort orders
+    sort_orders();
     
-    for (auto& [type, buys]: buy_orders) {
+    for (auto& [type, buys]: sorted_buy_orders) {
 
-        auto it = sell_orders[type].begin();
-        auto end = sell_orders[type].end();
+        auto it = sorted_sell_orders[type].begin();
+        auto end = sorted_sell_orders[type].end();
         if (it == end) continue;
 
         for (auto buy_order: buys) {
-            if (buy_order->get_amount() == 0) continue;
+            if (buy_order.get_amount() == 0) continue;
 
-            while (it != end && (*it)->get_amount() == 0) {
+            while (it != end && (*it).get_amount() == 0) {
                 it++;
             }
             if (it == end) break;
             auto sell_order = *it;
 
-            float price1 = buy_order->get_price();
-            float price2 = sell_order->get_price();
+            float price1 = buy_order.get_price();
+            float price2 = sell_order.get_price();
             float avg = (price1 + price2) / 2.0f;
 
-            if (!buy_order->is_price_acceptable(avg) || !sell_order->is_price_acceptable(avg)) {
+            if (!buy_order.is_price_acceptable(avg) || !sell_order.is_price_acceptable(avg)) {
                 continue;
             }
             
@@ -154,9 +156,31 @@ void MarketComponent::market_tick(Province* province) {
     }
 }
 
+void MarketComponent::sort_orders() {
+    sorted_buy_orders.clear();
+    sorted_sell_orders.clear();
+    
+    for (auto& order: buy_orders) {
+        int type = order->get_type();
+        sorted_buy_orders[type].push_back(*order);
+    }
+
+    for (auto& order: sell_orders) {
+        int type = order->get_type();
+        sorted_sell_orders[type].push_back(*order);
+    }
+
+    for (auto& [type, orders]: sorted_buy_orders) {
+        std::sort(orders.begin(), orders.end(), TradeOrder::TradeOrderGT());
+    }
+    for (auto& [type, orders]: sorted_sell_orders) {
+        std::sort(orders.begin(), orders.end(), TradeOrder::TradeOrderLT());
+    }
+}
+
 void MarketComponent::finish_market_exchange(
-    std::shared_ptr<TradeOrder> buy_order, 
-    std::shared_ptr<TradeOrder> sell_order, 
+    const TradeOrder& buy_order, 
+    const TradeOrder& sell_order, 
     std::pair<CapitalComponent*, StorageComponent*> buyer, 
     std::pair<CapitalComponent*, StorageComponent*> seller
 ) {
@@ -165,11 +189,11 @@ void MarketComponent::finish_market_exchange(
         return;
     }
     print_line("B");
-    int type = buy_order->get_type();
-    float price1 = buy_order->get_price();
-    float price2 = sell_order->get_price();
+    int type = buy_order.get_type();
+    float price1 = buy_order.get_price();
+    float price2 = sell_order.get_price();
     float price = (price1 + price2) / 2.0f;
-    int amt = std::min(std::min(buy_order->get_amount(), sell_order->get_amount()), (unsigned) int(seller.second->get_amount(type)));
+    int amt = std::min(std::min(buy_order.get_amount(), sell_order.get_amount()), (unsigned) int(seller.second->get_amount(type)));
 
     // Seller doesn't have enough
     if (amt <= 0) {

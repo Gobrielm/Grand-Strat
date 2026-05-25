@@ -529,8 +529,8 @@ PositionComponent Province::get_visible_position_component_unsafe(Vector2i tile)
     return PositionComponent();
 }
 
-std::pair<CapitalComponent*, StorageComponent*> Province::get_capital_and_storage_components_unsafe(std::shared_ptr<TradeOrder> order) {
-    int source_id = order->get_source_id();
+std::pair<CapitalComponent*, StorageComponent*> Province::get_capital_and_storage_components_unsafe(const TradeOrder& order) {
+    int source_id = order.get_source_id();
 
     auto get_components_factory = [&] () {
         if (!id_to_vector_position.count(source_id)) return std::pair<CapitalComponent*, StorageComponent*>(nullptr, nullptr);
@@ -561,7 +561,7 @@ std::pair<CapitalComponent*, StorageComponent*> Province::get_capital_and_storag
     };
 
 
-    switch (order->get_owner_type()) {
+    switch (order.get_owner_type()) {
 
         case TradeOrderOwner::BUILDING:
             return get_components_factory();
@@ -570,7 +570,7 @@ std::pair<CapitalComponent*, StorageComponent*> Province::get_capital_and_storag
             return get_components_pop();
 
         default:
-            print_error("Accessing capital/storage of unknown order owner: " + String::num(int(order->get_owner_type())));
+            print_error("Accessing capital/storage of unknown order owner: " + String::num(int(order.get_owner_type())));
             
     }   
     return std::make_pair(nullptr, nullptr);

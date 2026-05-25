@@ -22,12 +22,12 @@ class MarketComponent {
 
     // Descending Orders
     std::unordered_map<int, 
-        std::set<TradeOrder, TradeOrder::TradeOrderGT>
+        std::vector<TradeOrder>
     > sorted_buy_orders;
 
     // Ascending Orders
     std::unordered_map<int, 
-        std::set<TradeOrder, TradeOrder::TradeOrderLT>
+        std::vector<TradeOrder>
     > sorted_sell_orders;
 
     // <amount, price>
@@ -36,7 +36,10 @@ class MarketComponent {
 
     std::vector<int> get_types_among_orders() const;
 
-    void finish_market_exchange(std::shared_ptr<TradeOrder> buy_order, std::shared_ptr<TradeOrder> sell_order, std::pair<CapitalComponent*, StorageComponent*> buyer, std::pair<CapitalComponent*, StorageComponent*> seller);
+    void finish_market_exchange(const TradeOrder& buy_order, const TradeOrder& sell_order, std::pair<CapitalComponent*, StorageComponent*> buyer, std::pair<CapitalComponent*, StorageComponent*> seller);
+
+    std::pair<std::vector<std::pair<int, float>>, std::vector<std::pair<int, float>>> get_market_info_plot(int type) const;
+    void sort_orders();
 
     public:
     
@@ -49,8 +52,6 @@ class MarketComponent {
     float get_max_price(int type) const;
 
     std::unordered_map<int, float> get_current_prices() const;
-
-    std::pair<std::vector<std::pair<int, float>>, std::vector<std::pair<int, float>>> get_market_info_plot(int type) const;
     Array get_market_info_plot_godot(int type) const;
     
     /// @param province The locked province that town is in
@@ -61,8 +62,6 @@ class MarketComponent {
 
     int32_t get_current_demand(int type) const;
     int32_t get_current_supply(int type) const;
-
-    
 
     void update_last_month_plot();
     float find_market_price_equilibrium(int type) const;

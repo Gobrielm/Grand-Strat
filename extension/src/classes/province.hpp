@@ -66,7 +66,7 @@ class Province : public Object {
     Factory& get_factory_unsafe(int pos_id);
     Station& get_station_unsafe(int pos_id);
     PositionComponent get_visible_position_component_unsafe(Vector2i tile) const;
-    std::pair<CapitalComponent*, StorageComponent*> get_capital_and_storage_components_unsafe(std::shared_ptr<TradeOrder> order);
+    std::pair<CapitalComponent*, StorageComponent*> get_capital_and_storage_components_unsafe(const TradeOrder& order);
 
     protected:
     static void _bind_methods();
