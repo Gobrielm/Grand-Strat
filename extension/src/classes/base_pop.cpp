@@ -447,7 +447,7 @@ void BasePop::reset_and_fill_storage() {
     }
 }
 
-void BasePop::adjust_pop_orders(Town& town) {
+void BasePop::adjust_pop_orders(Town& town) { // Remove pop orders, super dumb
 
     auto adjust_pop_want_orders = [&] () {
         for (const auto& [type, amt]: get_base_wants(pop_type)) {

@@ -2,6 +2,7 @@
 
 #include "market_component.hpp"
 #include "singletons/terminal_map.hpp"
+#include "singletons/data_collector.hpp"
 #include "classes/province.hpp"
 #include "classes/base_pop.hpp"
 #include "classes/components/capital_component.hpp"
@@ -84,7 +85,7 @@ std::pair<std::vector<std::pair<int, float>>, std::vector<std::pair<int, float>>
         const auto& orders = sorted_sell_orders.at(type);
         for (auto& order: orders) {
             if (order.get_amount() == 0) continue;
-            buys.push_back(std::make_pair(order.get_amount(), order.get_price()));
+            sells.push_back(std::make_pair(order.get_amount(), order.get_price()));
         }
     }
     return std::make_pair(buys, sells);
@@ -214,74 +215,73 @@ void MarketComponent::finish_market_exchange(
     seller.second->remove_cargo(type, amt);
 }
 
-// void MarketComponent::sell_to_pop(Province* province, BasePop& pop) {
-//     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
-//     // std::unordered_map<int, float> money_to_pay;
+void MarketComponent::sell_to_pop(Province* province, BasePop& pop) {
+    Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
+    // std::unordered_map<int, float> money_to_pay;
     
-//     for (auto& [type, orders]: sell_orders) {
-//         unsigned int desired = pop.get_desired(type);
-//         if (desired == 0) {
-//             continue;
-//         }
-//         float pop_price = pop.get_buy_price(type, get_price(type));
+    for (auto& [type, orders]: sorted_sell_orders) {
+        if (pop.get_desired(type) == 0) {
+            continue;
+        }
 
-//         // get_local_pricer() -> add_demand(type, pop_price, desired); // Only add demand since its not part of survey_broad_market()
-//         // get_local_pricer() -> add_local_demand(type, desired);
+        int grain_type = CargoInfo::get_instance()->get_cargo_type("grain");
+        if (type == grain_type) {
+            DataCollector::get_instance()->add_demand(grain_type, pop.get_desired(type));
+        }
 
-//         for (auto sell_it = orders.begin(); sell_it != orders.end(); sell_it++) {
-//             auto& order = *sell_it;
-//             if (order->get_amount() == 0) continue;
+        for (auto& sell_order: orders) {
+            if (sell_order.get_amount() == 0) continue;
 
-//             // demand_to_relay.push_back(std::unique_ptr<TownCargo>(new TownCargo(type, desired, pop_price, sell_order->terminal_id)));
+            // demand_to_relay.push_back(std::unique_ptr<TownCargo>(new TownCargo(type, desired, pop_price, sell_order->terminal_id)));
 
-//             const float seller_price = order->get_price();
-//             const float buyer_price = pop.get_buy_price(type, seller_price);
+            const float seller_price = sell_order.get_price();
+            const float buyer_price = pop.get_buy_price(type, seller_price);
 
-//             if (std::isnan(seller_price)) {
-//                 ERR_FAIL_MSG("seller price is nan");
-//             }
-//             if (std::isnan(buyer_price)) {
-//                 ERR_FAIL_MSG("buyer_price is nan");
-//             }
+            if (std::isnan(seller_price)) {
+                ERR_FAIL_MSG("seller price is nan");
+            }
+            if (std::isnan(buyer_price)) {
+                ERR_FAIL_MSG("buyer_price is nan");
+            }
 
-//             float price = (buyer_price + seller_price) / 2.0f; // Price average
+            float price = (buyer_price + seller_price) / 2.0f; // Price average
 
-//             if (((price / buyer_price)) > 1.15) { // Too high for buyer no deal
-//                 break;
-//             }
+            if (((price / buyer_price)) > 1.15) { // Too high for buyer no deal
+                break;
+            }
             
-//             if (!order->is_price_acceptable(price)) { // Too low for seller no deal
-//                 break;
-//             }
+            if (!sell_order.is_price_acceptable(price)) { // Too low for seller no deal
+                break;
+            }
 
-//             unsigned int amt = std::min(pop.get_desired(type, price), order->get_amount());
-//             if (amt == 0) break; 
+            unsigned int amt = std::min(pop.get_desired(type, price), sell_order.get_amount());
+            if (amt == 0) break; 
 
-//             // get_local_pricer()->report_sale(type, price, amount);
-//             // sell_order->sell_cargo(amount, price, money_to_pay); // Calls with money_to_pay
-//             // pop.buy_good(type, amount, price);
+            // get_local_pricer()->report_sale(type, price, amount);
+            // sell_order->sell_cargo(amount, price, money_to_pay); // Calls with money_to_pay
+            // pop.buy_good(type, amount, price);
 
-//             // if (sell_order->amount == 0) {
-//             //     sell_it = get_local_pricer()->delete_town_cargo(sell_it);
-//             // } else {
-//             //     break;
-//             // }get_source_id
+            // if (sell_order->amount == 0) {
+            //     sell_it = get_local_pricer()->delete_town_cargo(sell_it);
+            // } else {
+            //     break;
+            // }get_source_id
 
-//             auto res = province->get_capital_and_storage_components_unsafe(order);
-//             if (res.first == nullptr || res.second == nullptr) {
-//                 ERR_FAIL_MSG("order's owner is invalid");
-//             }
-//             auto [capital, storage] = res;
-//             amt = std::min(amt, (unsigned) floor(storage->get_amount(type)));
-//             if (amt == 0) continue;
+            auto res = province->get_capital_and_storage_components_unsafe(sell_order);
+            if (res.first == nullptr || res.second == nullptr) {
+                ERR_FAIL_MSG("order's owner is invalid");
+            }
+            auto [capital, storage] = res;
+            amt = std::min(amt, (unsigned) floor(storage->get_amount(type)));
+            if (amt == 0) continue;
 
-//             float sub_total = price * amt;
+            float sub_total = price * amt;
 
-//             capital->add_cash(sub_total);
-//             storage->remove_cargo(type, amt);
-//             pop.buy_good(type, amt, price);
-//         }
-//     }
+            capital->add_cash(sub_total);
+            storage->remove_cargo(type, amt);
+            pop.buy_good(type, amt, price);
+        }
+    }
     
 
     // for (const auto &[terminal_id, to_pay]: money_to_pay) {
@@ -297,7 +297,7 @@ void MarketComponent::finish_market_exchange(
     
     //     broker->add_surveyed_demand(demand_cargo->type, demand_cargo->price, demand_cargo->amount);
     // }
-// }
+}
 
 int32_t MarketComponent::get_current_demand(int type) const {
     int32_t tot = 0;
@@ -329,7 +329,8 @@ void MarketComponent::update_last_month_plot() {
 
 float MarketComponent::find_market_price_equilibrium(int type) const {
     if (!last_month_plot.count(type)) return 0;
-    if (last_month_plot.at(type).first.empty() || last_month_plot.at(type).second.empty()) return 0;
+    if (last_month_plot.at(type).second.empty()) return 0;
+    if (last_month_plot.at(type).first.empty()) return last_month_plot.at(type).first.begin()->second;
 
     int demand_included = 0;
     

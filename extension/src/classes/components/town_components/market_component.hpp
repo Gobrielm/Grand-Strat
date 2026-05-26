@@ -30,7 +30,7 @@ class MarketComponent {
         std::vector<TradeOrder>
     > sorted_sell_orders;
 
-    // <amount, price>
+    // <amount, price>, buys sorted decreasing, sells sorted increasing
     std::unordered_map<int, std::pair<std::vector<std::pair<int, float>>, std::vector<std::pair<int, float>>>> last_month_plot;
     std::unordered_map<int, float> equilibrium_prices;
 
@@ -58,7 +58,7 @@ class MarketComponent {
     void market_tick(Province* province);
 
     /// @param province The locked province that town is in
-    // void sell_to_pop(Province* province, BasePop& pop);
+    void sell_to_pop(Province* province, BasePop& pop);
 
     int32_t get_current_demand(int type) const;
     int32_t get_current_supply(int type) const;

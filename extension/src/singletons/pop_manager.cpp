@@ -138,25 +138,13 @@ void PopManager::thread_trading_tick(int province_id) { // Assumes all pops are 
 }
 
 
-// void PopManager::sell_to_pops(Province* province, std::unordered_set<int>& pops_to_sell_to) {
-//     Town& town = province->town;
-//     for (int pop_id: pops_to_sell_to) {
-//         auto& pop = pops[pop_id];
-//         town.mp.sell_to_pop(province, pop);
-//     }
-
-    // Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
-    // std::unordered_map<Vector2i, Vector2i, godot_helpers::Vector2iHasher> location_to_nearest_town;
-    // create_pop_location_to_towns(pop_group, location_to_nearest_town);
-    // // Get closest town and then use town functions to sell to those pops
-    
-    // for (auto& pop: pop_group) {
-    //     auto loc = location_to_nearest_town[pop->get_location()];
-    //     auto& list_of_pos = terminal_map->get_position_components(loc);
-    //     Town& town = terminal_map->get_town(list_of_pos[0].building_id);
-    //     town.mp.sell_to_pop(*pop);
-    // }
-// }
+void PopManager::sell_to_pops(Province* province, std::unordered_set<int>& pops_to_sell_to) {
+    Town& town = province->town;
+    for (int pop_id: pops_to_sell_to) {
+        auto& pop = pops[pop_id];
+        town.mp.sell_to_pop(province, pop);
+    }
+}
 
 // void PopManager::create_pop_location_to_towns(std::vector<BasePop*>& pop_group, std::unordered_map<Vector2i, Vector2i, godot_helpers::Vector2iHasher>& location_to_nearest_town) const { 
 //     auto province_manager = ProvinceManager::get_instance(); // Get closest town and then use town functions to sell to those pops 
