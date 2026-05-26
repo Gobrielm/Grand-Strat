@@ -81,7 +81,7 @@ std::pair<std::vector<std::pair<int, float>>, std::vector<std::pair<int, float>>
     }
 
     if (sorted_sell_orders.count(type)) {
-        const auto& orders = sorted_buy_orders.at(type);
+        const auto& orders = sorted_sell_orders.at(type);
         for (auto& order: orders) {
             if (order.get_amount() == 0) continue;
             buys.push_back(std::make_pair(order.get_amount(), order.get_price()));
@@ -125,19 +125,19 @@ void MarketComponent::market_tick(Province* province) {
     sort_orders();
     
     for (auto& [type, buys]: sorted_buy_orders) {
+        auto& sell_orders_vec = sorted_sell_orders[type];
 
-        auto it = sorted_sell_orders[type].begin();
-        auto end = sorted_sell_orders[type].end();
-        if (it == end) continue;
+        int i = 0;
+        if (sell_orders_vec.empty()) continue;
 
-        for (auto buy_order: buys) {
+        for (auto& buy_order: buys) {
             if (buy_order.get_amount() == 0) continue;
 
-            while (it != end && (*it).get_amount() == 0) {
-                it++;
+            while (i < sell_orders_vec.size() && (sell_orders_vec[i]).get_amount() == 0) {
+                i++;
             }
-            if (it == end) break;
-            auto sell_order = *it;
+            if (i >= sell_orders_vec.size()) break;
+            auto& sell_order = sell_orders_vec[i];
 
             float price1 = buy_order.get_price();
             float price2 = sell_order.get_price();
@@ -188,7 +188,7 @@ void MarketComponent::finish_market_exchange(
         print_error("Null Capital or Storage comp");
         return;
     }
-    print_line("B");
+    print_line("T");
     int type = buy_order.get_type();
     float price1 = buy_order.get_price();
     float price2 = sell_order.get_price();
