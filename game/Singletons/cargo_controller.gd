@@ -31,9 +31,7 @@ func change_speed(p_speed: int) -> void:
 	m.unlock()
 
 func change_pause(p_pause: bool) -> void:
-	m.lock()
 	paused = p_pause
-	m.unlock()
 
 func frontend_pause(p_pause: bool) -> void:
 	if p_pause:
@@ -44,17 +42,16 @@ func frontend_pause(p_pause: bool) -> void:
 func backend_pause() -> void:
 	m.lock()
 	threads_request_pause += 1
-	m.unlock()
 	change_pause(true)
+	m.unlock()
 
 func backend_unpause() -> void:
 	m.lock()
 	threads_request_pause -= 1
-	var status: bool = threads_request_pause == 0
 	if threads_request_pause < 0: push_error("Backend Pause requests are unsynced")
-	m.unlock()
-	if status:
+	if threads_request_pause == 0:
 		change_pause(false)
+	m.unlock()
 
 func get_game_speed() -> int:
 	return clock_singleton.get_instance().get_game_speed()
@@ -75,9 +72,9 @@ func _on_month_tick_timeout() -> void:
 	if thread.is_started():
 		thread.wait_to_finish()
 	thread.start(call_month_tick.bind())
-	backend_pause()
 
 func call_month_tick() -> void:
+	backend_pause()
 	CountryManager.get_instance().month_tick()
 	DataCollector.get_instance().month_tick()
 	RoadMap.get_instance().month_tick()
