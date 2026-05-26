@@ -60,12 +60,26 @@ void PopManager::adjust_pop_orders() {
     std::function<void(int)> f = [this](int province_id) { this->thread_order_tick(province_id); };
     thread_pool->set_work_function(f);
     thread_pool->month_tick();
+
+    print_line("Gah1");
+    std::unique_lock<std::mutex> lock(thread_pool->jobs_done_mutex);
+    thread_pool->jobs_done_cv.wait(lock, [this] { // Sleeps and waits for jobs to be done 
+        return thread_pool->jobs_remaining == 0; 
+    });
+    print_line("Gah1");
 }
 
 void PopManager::pop_tick() {
     std::function<void(int)> f = [this](int province_id) { this->thread_trading_tick(province_id); };
     thread_pool->set_work_function(f);
     thread_pool->month_tick();
+
+    print_line("Gah2");
+    std::unique_lock<std::mutex> lock(thread_pool->jobs_done_mutex);
+    thread_pool->jobs_done_cv.wait(lock, [this] { // Sleeps and waits for jobs to be done 
+        return thread_pool->jobs_remaining == 0; 
+    });
+    print_line("Gah2");
 }
 
 void PopManager::thread_order_tick(int province_id) {

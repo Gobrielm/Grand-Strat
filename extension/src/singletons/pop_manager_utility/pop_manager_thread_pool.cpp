@@ -64,7 +64,8 @@ void PopManagerThreadPool::thread_processor() {
             if (elapsed.count() > 15) {
                 print_line("Pop Manager Month Tick took " + String::num_scientific(elapsed.count()) + " seconds");
             }
-            jobs_done_cv.notify_one();  // Wake main thread
+            print_line("Notify");
+            jobs_done_cv.notify_all();  // Wake main thread
         }
         lock.unlock();
     }

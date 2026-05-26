@@ -3,15 +3,18 @@
 #include <godot_cpp/classes/object.hpp>
 #include <godot_cpp/variant/array.hpp>
 
+#include <singletons/cargo_info.hpp>
 #include <memory>
 
 using namespace godot;
+
+
 
 enum class TradeOrderOwner: int {
     INVALID = -1,
     POP = 1,
     BUILDING = 2,
-    COMPANY = 3,
+    COMPANY = 3, // If changing here, change get_order_id()
 };
 
 class TradeOrder {
@@ -31,6 +34,11 @@ class TradeOrder {
 
     void initialize(int p_type, int p_amount, bool p_buy, double p_limit_price);
 
+    // Assumes, one order of type from owner
+    int32_t get_order_id() const {
+        return (source_id * CargoInfo::get_instance()->get_number_of_goods() * 4 + type * 4 + int(owner_type));
+    }
+
 public:
 
 
@@ -42,14 +50,14 @@ public:
     struct TradeOrderGT {
         bool operator()(const std::shared_ptr<TradeOrder> order1, const std::shared_ptr<TradeOrder> order2) const {
             if (order1->price == order2->price) {
-                return order1.get() < order2.get();
+                return order1->get_order_id() < order2->get_order_id();
             }
             return order1->price > order2->price;
         }
 
         bool operator()(const TradeOrder& order1, const TradeOrder& order2) const {
             if (order1.price == order2.price) {
-                return &order1 < &order2;
+                return order1.get_order_id() < order2.get_order_id();
             }
             return order1.price > order2.price;
         }
@@ -58,14 +66,14 @@ public:
     struct TradeOrderLT {
         bool operator()(const std::shared_ptr<TradeOrder> order1, const std::shared_ptr<TradeOrder> order2) const {
             if (order1->price == order2->price) {
-                return order1.get() < order2.get();
+                return order1->get_order_id() < order2->get_order_id();
             }
             return order1->price < order2->price;
         }
 
         bool operator()(const TradeOrder& order1, const TradeOrder& order2) const {
             if (order1.price == order2.price) {
-                return &order1 < &order2;
+                return order1.get_order_id() < order2.get_order_id();
             }
             return order1.price < order2.price;
         }

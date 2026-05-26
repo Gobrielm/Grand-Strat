@@ -1,5 +1,6 @@
 #include "province_manager.hpp"
 #include "terminal_map.hpp"
+#include "province_manager_thread_pool.hpp"
 #include "classes/map_objects/subsistence_farm.hpp"
 #include "classes/map_objects/town.hpp"
 #include "classes/map_objects/station.hpp"
@@ -14,9 +15,17 @@ using namespace godot;
 Ref<ProvinceManager> ProvinceManager::singleton_instance = nullptr;
 
 ProvinceManager::ProvinceManager() {
+    std::function f = [this] () {
+        return get_provinces_vector();
+    };
+    thread_pool = new ProvinceManagerThreadPool(4, f);
 }
 
 ProvinceManager::~ProvinceManager() {
+    if (thread_pool != nullptr) {
+        delete thread_pool;
+    }
+    
     for (auto province: provinces) {
         delete province;
     }
@@ -467,11 +476,23 @@ unsigned long ProvinceManager::get_grain_supply() const {
 }
 
 void ProvinceManager::bookkeeping_tick() {
-    for (auto province: provinces) {
+
+    std::function<void(int)> f = [this](int province_id) { 
+        auto province = provinces[province_id];
         std::scoped_lock lock(province->m);
         auto& town = province->town;
         town.mp.update_last_month_plot();
-    }
+    };
+    print_line("Goo");
+    thread_pool->set_work_function(f);
+    thread_pool->month_tick();
+    print_line("Goo");
+
+    // for (auto province: provinces) {
+    //     std::scoped_lock lock(province->m);
+    //     auto& town = province->town;
+    //     town.mp.update_last_month_plot();
+    // }
 }
 
 void ProvinceManager::simulation_tick() {

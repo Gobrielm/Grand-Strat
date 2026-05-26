@@ -116,7 +116,7 @@ void TerminalMap::_on_month_tick_timeout() {
     PopManager::get_instance()->pop_tick();
     print_line("B");
     TradingSystem::get_instance()->trading_tick();
-    
+    print_line("C");
 }
 
 // std::vector<Ref<Terminal>> TerminalMap::get_terminals_for_day_tick() const {
