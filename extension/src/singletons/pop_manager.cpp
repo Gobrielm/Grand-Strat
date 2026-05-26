@@ -62,7 +62,7 @@ void PopManager::adjust_pop_orders() {
     thread_pool->month_tick();
 
     print_line("Gah1");
-    std::unique_lock<std::mutex> lock(thread_pool->jobs_done_mutex);
+    std::unique_lock<std::mutex> lock(thread_pool->work_to_process_mutex);
     thread_pool->jobs_done_cv.wait(lock, [this] { // Sleeps and waits for jobs to be done 
         return thread_pool->jobs_remaining == 0; 
     });
@@ -75,7 +75,7 @@ void PopManager::pop_tick() {
     thread_pool->month_tick();
 
     print_line("Gah2");
-    std::unique_lock<std::mutex> lock(thread_pool->jobs_done_mutex);
+    std::unique_lock<std::mutex> lock(thread_pool->work_to_process_mutex);
     thread_pool->jobs_done_cv.wait(lock, [this] { // Sleeps and waits for jobs to be done 
         return thread_pool->jobs_remaining == 0; 
     });

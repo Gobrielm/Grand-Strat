@@ -14,7 +14,7 @@ class EmployerComponent {
     std::unordered_map<PopTypes, std::vector<int>> employees;
     std::unordered_map<PopTypes, int> pops_needed;
 
-    std::vector<int> pops_to_fire;
+    
 
     bool does_need_pop_type(PopTypes pop_type) const;
     void remove_pop(int pop_id, PopTypes pop_type);
@@ -22,6 +22,7 @@ class EmployerComponent {
     public:
 
     Recipe recipe;
+    std::vector<int> pops_to_fire;
 
     EmployerComponent();
     EmployerComponent(Recipe recipe, std::unordered_map<PopTypes, int> p_pops_needed);

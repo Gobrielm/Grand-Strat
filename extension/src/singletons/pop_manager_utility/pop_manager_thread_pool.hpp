@@ -27,7 +27,6 @@ class PopManagerThreadPool {
 
     std::atomic<int> jobs_remaining = 0;
     std::condition_variable jobs_done_cv;
-    std::mutex jobs_done_mutex;
 
     std::vector<int> provinces_to_process;
 

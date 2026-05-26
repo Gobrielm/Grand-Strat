@@ -95,9 +95,17 @@ public:
     unsigned long get_grain_demand() const;
     unsigned long get_grain_supply() const;
 
+    // Simulation
+    void simulation_tick();
+
+    // Orders
+    void order_tick();
+
     // Bookkeeping
     void bookkeeping_tick();
 
-    // Simulation
-    void simulation_tick();
+    
+
+    // Trading
+    void trading_tick();
 };

@@ -1,5 +1,6 @@
 #include "province_manager.hpp"
 #include "terminal_map.hpp"
+#include "pop_manager.hpp"
 #include "province_manager_thread_pool.hpp"
 #include "classes/map_objects/subsistence_farm.hpp"
 #include "classes/map_objects/town.hpp"
@@ -475,8 +476,53 @@ unsigned long ProvinceManager::get_grain_supply() const {
     return round(total_demand);
 }
 
-void ProvinceManager::bookkeeping_tick() {
+void ProvinceManager::simulation_tick() {
+    auto popMan = PopManager::get_instance();
+    for (auto province: provinces) {
+        std::scoped_lock lock(province->m);
+        Town& town = province->town;
 
+        for (auto& factory: province->factories) {
+            factory.month_tick();
+
+            // A little sketchy since popMan locks, when ownership transfered to provinceMan, itll be better
+            for (const auto pop_id: factory.employer.pops_to_fire) {
+                popMan->fire_pop(pop_id);
+            }
+            factory.employer.pops_to_fire.clear();
+
+            for (const auto& [pop_id, _]: factory.employer.get_employee_ids()) {
+                float wage = factory.get_wage(town);
+                popMan->pay_pop(pop_id, wage);
+                factory.capital.remove_cash(wage);
+            }
+        }
+
+        for (auto& farm: province->sub_farms) {
+            farm.month_tick();
+        }
+
+
+    }
+}
+
+void ProvinceManager::order_tick() {
+    for (auto prov_id: get_provinces_vector()) {
+        auto province = get_province(prov_id);
+
+        std::scoped_lock lock(province->m);
+        
+        Town& town = province->town;
+        for (auto& factory: province->factories) {
+            factory.adjust_trade_orders(town);
+        }
+        for (auto& farm: province->sub_farms) {
+            farm.adjust_trade_orders(town);
+        }
+    }
+}
+
+void ProvinceManager::bookkeeping_tick() {
     std::function<void(int)> f = [this](int province_id) { 
         auto province = provinces[province_id];
         std::scoped_lock lock(province->m);
@@ -495,16 +541,13 @@ void ProvinceManager::bookkeeping_tick() {
     // }
 }
 
-void ProvinceManager::simulation_tick() {
-    for (auto province: provinces) {
+void ProvinceManager::trading_tick() {
+    for (auto prov_id: get_provinces_vector()) {
+        auto province = get_province(prov_id);
+        
         std::scoped_lock lock(province->m);
-
-        for (auto& factory: province->factories) {
-            factory.month_tick();
-        }
-
-        for (auto& farm: province->sub_farms) {
-            farm.month_tick();
-        }
+        auto& town = province->town;
+        town.mp.market_tick(province);
     }
 }
+

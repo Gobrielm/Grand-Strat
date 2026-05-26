@@ -5,7 +5,6 @@
 #include "cargo_info.hpp"
 
 #include "classes/map_objects/station.hpp"
-#include "trading_system.hpp"
 #include "pop_manager.hpp"
 
 
@@ -100,8 +99,8 @@ void TerminalMap::_on_month_tick_timeout() {
 
     print_line("Orders");
     // Order Stage
-    TradingSystem::get_instance()->order_tick();
-    print_line("A");
+    ProvinceManager::get_instance()->order_tick();
+    print_line("Pop Orders");
     PopManager::get_instance()->adjust_pop_orders();
 
     print_line("Bookkeeping");
@@ -111,12 +110,12 @@ void TerminalMap::_on_month_tick_timeout() {
     // AiManager::get_instance()->month_tick();
     // thread_pool->month_tick();
     
-    print_line("Trading");
+    print_line("Pop Tick");
     // Trading Stage
     PopManager::get_instance()->pop_tick();
-    print_line("B");
-    TradingSystem::get_instance()->trading_tick();
-    print_line("C");
+    print_line("Trading");
+    ProvinceManager::get_instance()->trading_tick();
+    print_line("Done");
 }
 
 // std::vector<Ref<Terminal>> TerminalMap::get_terminals_for_day_tick() const {

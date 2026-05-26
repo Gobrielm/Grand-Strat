@@ -12,7 +12,7 @@ void PopManagerThreadPool::month_tick_check() {
         if (stop) break;
         TerminalMap::get_instance()->pause_time(); // Pause time while dealing with last months work
         {   
-            std::unique_lock<std::mutex> lock(jobs_done_mutex);
+            std::unique_lock<std::mutex> lock(work_to_process_mutex);
             jobs_done_cv.wait(lock, [this] { // Sleeps and waits for jobs to be done 
                 return jobs_remaining == 0; 
             });
@@ -27,13 +27,8 @@ void PopManagerThreadPool::month_tick_check() {
 }
 
 void PopManagerThreadPool::month_tick_helper() {
-    int new_jobs = 0;
-    {
-        std::unique_lock lock(work_to_process_mutex);
-        new_jobs = work_adder_function();
-    }
-    
-    jobs_remaining = new_jobs;
+    std::unique_lock lock(work_to_process_mutex);
+    jobs_remaining = work_adder_function();
     condition.notify_all();
 }
 
@@ -53,8 +48,8 @@ void PopManagerThreadPool::thread_processor() {
         // Get one province to process
         province_to_process = provinces_to_process.back();
         provinces_to_process.pop_back();
-            
         lock.unlock();
+
         work_function(province_to_process);
 
         lock.lock();

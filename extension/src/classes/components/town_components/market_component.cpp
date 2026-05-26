@@ -48,7 +48,7 @@ float MarketComponent::get_min_price(int type) const {
     if (sorted_buy_orders.count(type) && !sorted_buy_orders.at(type).empty()) {
         return (sorted_buy_orders.at(type).end())->get_price();
     }
-    return 0.1;
+    return 0.0001;
 }
 
 float MarketComponent::get_max_price(int type) const {

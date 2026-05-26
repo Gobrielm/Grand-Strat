@@ -276,11 +276,6 @@ float Factory::get_wage(Town& town) {
     return employer.get_wage(town, capital.get_cash());
 }
 
-void Factory::day_tick() {
-    print_error("Never be Run, factory template day tick");
-    ERR_FAIL();
-}
-
 void Factory::month_tick() { 
     capital.update_cash_history();
     if (construction.is_finished_constructing()) {

@@ -289,7 +289,7 @@ float BasePop::get_buy_price_for_wanted_good(int type, float current_price) cons
         return 0;
     }
 
-    float available_money = income; // Save a bit
+    float available_money = income;
     
     float wanted = float(get_desired(type)) / get_max_storage(type); // 0 - 1;
     if (wanted == 0) return 0;
@@ -448,46 +448,58 @@ void BasePop::reset_and_fill_storage() {
 }
 
 void BasePop::adjust_pop_orders(Town& town) {
-    for (const auto& [type, amt]: get_base_wants(pop_type)) {
-        if (!orders.count(type)) {
-            orders[type] = std::make_shared<TradeOrder>(pop_id, TradeOrderOwner::POP, type, amt, true, town.mp.get_price(type), get_buy_price_for_wanted_good(type, town.mp.get_price(type)));
-            town.mp.add_order(orders[type]);
+
+    auto adjust_pop_want_orders = [&] () {
+        for (const auto& [type, amt]: get_base_wants(pop_type)) {
+
+            double max_price = get_buy_price_for_wanted_good(type, town.mp.get_price(type));
+
+            if (!orders.count(type)) {
+                orders[type] = std::make_shared<TradeOrder>(pop_id, TradeOrderOwner::POP, type, amt, true, town.mp.get_price(type), max_price);
+                town.mp.add_order(orders[type]);
+            }
+
+            orders[type]->change_amount(get_desired(type));
+
+            float price = orders[type]->get_price();
+            orders[type]->set_max_price(max_price);
+
+            if (get_fulfillment(type) < 0.75) {
+                float new_price = std::min(max_price, price * 1.01);
+                orders[type]->set_price(new_price);
+            } else {
+                orders[type]->set_price(price / 1.01);
+            }
         }
+    };
 
-        orders[type]->change_amount(get_desired(type));
+    auto adjust_pop_need_orders = [&] () {
+        for (const auto& [type, amt]: get_base_needs(pop_type)) {
+            if (!orders.count(type)) {
+                orders[type] = std::make_shared<TradeOrder>(pop_id, TradeOrderOwner::POP, type, amt, true, town.mp.get_price(type), get_buy_price_for_needed_good(type, town.mp.get_price(type)));
+                town.mp.add_order(orders[type]);
+            }
 
-        float price = orders[type]->get_limit_price();
-        orders[type]->set_max_price(get_buy_price_for_wanted_good(type, town.mp.get_price(type)));
+            orders[type]->change_amount(get_desired(type));
 
-        if (get_fulfillment(type) < 0.75) {
-            float new_price = std::min(orders[type]->get_limit_price(), price * 1.01);
-            orders[type]->set_price(new_price);
-        } else {
-            orders[type]->set_price(price / 1.01);
+            float price = orders[type]->get_limit_price();
+            orders[type]->set_max_price(get_buy_price_for_needed_good(type, town.mp.get_price(type)));
+
+            if (get_fulfillment(type) < 0.75) {
+                float new_price = std::min(orders[type]->get_limit_price(), price * 1.01);
+                orders[type]->set_price(new_price);
+            } else {
+                orders[type]->set_price(price / 1.01);
+            }
         }
-    }
+    };
 
-    for (const auto& [type, amt]: get_base_needs(pop_type)) {
-        if (!orders.count(type)) {
-            orders[type] = std::make_shared<TradeOrder>(pop_id, TradeOrderOwner::POP, type, amt, true, town.mp.get_price(type), get_buy_price_for_needed_good(type, town.mp.get_price(type)));
-            town.mp.add_order(orders[type]);
-        }
-
-        orders[type]->change_amount(get_desired(type));
-
-        float price = orders[type]->get_limit_price();
-        orders[type]->set_max_price(get_buy_price_for_needed_good(type, town.mp.get_price(type)));
-
-        if (get_fulfillment(type) < 0.75) {
-            float new_price = std::min(orders[type]->get_limit_price(), price * 1.01);
-            orders[type]->set_price(new_price);
-        } else {
-            orders[type]->set_price(price / 1.01);
-        }
-    }
+    adjust_pop_want_orders();
+    adjust_pop_need_orders();
     
-    if (orders.count(10)) {
-        DataCollector::get_instance()->add_demand(10, orders[10]->get_amount());
+    int grain_type = CargoInfo::get_instance()->get_cargo_type("grain");
+    if (orders.count(grain_type)) {
+        DataCollector::get_instance()->add_demand(grain_type, orders[grain_type]->get_amount());
     }
 }
 

@@ -76,7 +76,6 @@ public:
     float get_wage(Town& town);
 
     // Process Hooks
-    void day_tick();
     void month_tick();
 
     void adjust_trade_orders(Town& town);
