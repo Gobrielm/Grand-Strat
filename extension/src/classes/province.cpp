@@ -1,6 +1,5 @@
 #include "singletons/terminal_map.hpp"
 #include "singletons/cargo_info.hpp"
-#include "singletons/trading_system.hpp"
 #include "singletons/pop_manager.hpp"
 #include "singletons/province_manager.hpp"
 

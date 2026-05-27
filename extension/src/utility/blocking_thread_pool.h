@@ -9,16 +9,11 @@
 #include <functional>
 
 
-class ProvinceManagerThreadPool {
-    friend class ProvinceManager;
+class BlockingThreadPool {
 
     int workers_active = 0;
     std::vector<std::thread> worker_threads;
-    mutable std::mutex mutex;
     std::atomic<bool> stop = false;
-
-    std::condition_variable isWorkAvailable;
-    std::condition_variable areJobsDone;
 
     std::vector<int> provinces_to_process;
     std::function<std::vector<int>()> work_adder_function;
@@ -30,12 +25,16 @@ class ProvinceManagerThreadPool {
 
     public:
 
-    ProvinceManagerThreadPool(int num_of_threads = 2, std::function<std::vector<int>()> p_work_adder_function = [](){ return std::vector<int>(); });
+    std::condition_variable isWorkAvailable;
+    std::condition_variable areJobsDone;
+    mutable std::mutex mutex;
 
-    ~ProvinceManagerThreadPool();
+    BlockingThreadPool(int num_of_threads = 2, std::function<std::vector<int>()> p_work_adder_function = [](){ return std::vector<int>(); });
 
-    // Will Block until everything finishes
-    void month_tick();
+    ~BlockingThreadPool();
+
+    // Will Block until everything finishes, returns will time taken
+    double month_tick();
 
     void set_work_function(std::function<void(int)> func);
 };

@@ -10,7 +10,7 @@
 
 #include "classes/province.hpp"
 
-class ProvinceManagerThreadPool;
+class BlockingThreadPool;
 
 using namespace godot;
 
@@ -20,7 +20,7 @@ class ProvinceManager : public RefCounted {
     mutable std::shared_mutex province_mutex;
     static Ref<ProvinceManager> singleton_instance;
 
-    ProvinceManagerThreadPool* thread_pool;
+    BlockingThreadPool* thread_pool;
 
     std::unordered_map<int, int> province_id_to_vector_position; // Province id -> province
     std::vector<Province*> provinces;

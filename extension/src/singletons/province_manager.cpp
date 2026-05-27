@@ -1,7 +1,7 @@
 #include "province_manager.hpp"
 #include "terminal_map.hpp"
 #include "pop_manager.hpp"
-#include "province_manager_thread_pool.hpp"
+#include "utility/blocking_thread_pool.h"
 #include "classes/map_objects/subsistence_farm.hpp"
 #include "classes/map_objects/town.hpp"
 #include "classes/map_objects/station.hpp"
@@ -19,7 +19,7 @@ ProvinceManager::ProvinceManager() {
     std::function f = [this] () {
         return get_provinces_vector();
     };
-    thread_pool = new ProvinceManagerThreadPool(4, f);
+    thread_pool = new BlockingThreadPool(4, f);
 }
 
 ProvinceManager::~ProvinceManager() {
@@ -529,10 +529,12 @@ void ProvinceManager::bookkeeping_tick() {
         auto& town = province->town;
         town.mp.update_last_month_plot();
     };
-    print_line("Goo");
+
     thread_pool->set_work_function(f);
-    thread_pool->month_tick();
-    print_line("Goo");
+    auto time_taken = thread_pool->month_tick();
+    if (time_taken > 10) {
+        print_line("PvMan bookkeeping_tick took: " + String::num(time_taken, 1) + " seconds");
+    }
 
     // for (auto province: provinces) {
     //     std::scoped_lock lock(province->m);
