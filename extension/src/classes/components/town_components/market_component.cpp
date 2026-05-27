@@ -16,18 +16,15 @@ MarketComponent::MarketComponent(const MarketComponent& other):
 {}
 
 std::vector<int> MarketComponent::get_types_among_orders() const {
-    std::vector<int> v;
     std::unordered_set<int> types_added;
-    for (auto order: buy_orders) {
-        v.push_back(order->get_type());
-        types_added.insert(order->get_type());
+    for (auto& [type, _]: sorted_buy_orders) {
+        types_added.insert(type);
     }
-    for (auto order: sell_orders) {
-        if (!types_added.count(order->get_type())) {
-            v.push_back(order->get_type());
-        }
+    for (auto& [type, _]: sorted_sell_orders) {
+        types_added.insert(type);
     }
-    return v;
+    
+    return std::vector<int>(types_added.begin(), types_added.end());
 }
 
 void MarketComponent::add_order(std::shared_ptr<TradeOrder> to) {
@@ -328,9 +325,12 @@ void MarketComponent::update_last_month_plot() {
 }
 
 float MarketComponent::find_market_price_equilibrium(int type) const {
-    if (!last_month_plot.count(type)) return 0;
-    if (last_month_plot.at(type).second.empty()) return 0;
-    if (last_month_plot.at(type).first.empty()) return last_month_plot.at(type).first.begin()->second;
+    
+    if (!last_month_plot.count(type) || 
+        (last_month_plot.at(type).first.empty() && last_month_plot.at(type).second.empty())) return 0;
+
+    if (last_month_plot.at(type).second.empty()) return last_month_plot.at(type).first.begin()->second;
+    if (last_month_plot.at(type).first.empty()) return last_month_plot.at(type).second.begin()->second;
 
     int demand_included = 0;
     
