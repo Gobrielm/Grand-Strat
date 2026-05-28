@@ -22,6 +22,7 @@ class InitialBuilder;
 class ProvinceManager;
 class PositionComponent;
 class MapObjectInfo;
+class ProvincePopManager;
 
 enum class PopTypes: int;
 
@@ -36,6 +37,7 @@ class Province : public Object {
     friend PopManager;
     friend InitialBuilder;
     friend MapObjectInfo;
+    friend ProvincePopManager;
 
     mutable std::mutex m;
     mutable std::shared_mutex pops_lock;

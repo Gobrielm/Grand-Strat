@@ -11,6 +11,7 @@
 #include "base_pop.hpp"
 #include "map_objects/town.hpp"
 #include "factory_utility/recipe.hpp"
+#include "province_manager_utility/province_pop_manager.h"
 
 #include "classes/map_objects/subsistence_farm.hpp"
 #include "classes/components/position_component.hpp"
