@@ -98,12 +98,14 @@ void DataCollector::write_data_to_file() {
 
 void DataCollector::add_demand(int type, float amount) {
     std::scoped_lock lock(m);
-    if (type == 10)
+    if (type == 10) {
         grain_demand.back() += amount;
+    }
 }
 
 void DataCollector::add_supply(int type, float amount) {
     std::scoped_lock lock(m);
-    if (type == 10)
+    if (type == 10) {
         grain_supply.back() += amount;
+    }
 }

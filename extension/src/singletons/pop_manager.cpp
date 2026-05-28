@@ -95,8 +95,8 @@ void PopManager::thread_trading_tick(int province_id) { // Assumes all pops are 
         
 
     // auto time1 = std::chrono::high_resolution_clock::now();
-    // TODO: Should become uneccessary due to pops creating orders
-    // sell_to_pops(province, province->pops);
+    
+    sell_to_pops(province, province->pops);
     // auto time2 = std::chrono::high_resolution_clock::now();
     // find_employment_for_pops(province, province->pops);
     // auto time3 = std::chrono::high_resolution_clock::now();
@@ -467,12 +467,12 @@ int PopManager::create_pop(Variant culture, const Vector2i p_location, PopTypes 
 }
 
 void PopManager::pay_pop(int pop_id, float wage) {
-    auto lock = lock_pop_write(pop_id);
+    // auto lock = lock_pop_write(pop_id);
     get_pop(pop_id)->pay_wage(wage);
 }
 
 void PopManager::fire_pop(int pop_id) {
-    auto lock = lock_pop_write(pop_id);
+    // auto lock = lock_pop_write(pop_id);
     get_pop(pop_id)->fire();
 }
 

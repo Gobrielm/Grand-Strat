@@ -84,6 +84,7 @@ public:
 
     Array get_town_factories(Vector2i town_tile);
     Dictionary get_town_pdps(Vector2i town_tile);
+    Dictionary get_town_pdhs(Vector2i town_tile);
 
     Dictionary get_factory_info(Vector2i coords);
     int16_t get_cash_of_factory(Vector2i coords);

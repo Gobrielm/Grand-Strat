@@ -281,7 +281,7 @@ void Factory::month_tick() {
     if (construction.is_finished_constructing()) {
         finish_upgrade();
     }
-    
+
     create_recipe();
 }
 

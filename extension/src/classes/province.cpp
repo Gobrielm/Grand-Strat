@@ -540,6 +540,10 @@ std::pair<CapitalComponent*, StorageComponent*> Province::get_capital_and_storag
                 auto& factory = factories[id_to_vector_position[source_id].first];
                 return std::pair<CapitalComponent*, StorageComponent*>(&factory.capital, &factory.storage);
             }
+            case BuildingType::SUBSISTENCE_FARM: {
+                auto& sub_farm = sub_farms[id_to_vector_position[source_id].first];
+                return std::pair<CapitalComponent*, StorageComponent*>(&sub_farm.capital, &sub_farm.storage);
+            }
             default: {
                 print_error("Unknown Entity Tried to Trade: " + String::num(static_cast<int>(type)));
                 return std::pair<CapitalComponent*, StorageComponent*>(nullptr, nullptr);

@@ -2,10 +2,12 @@
 #include "terminal_map.hpp"
 #include "pop_manager.hpp"
 #include "utility/blocking_thread_pool.h"
+#include "utility/debug_trace.h"
 #include "classes/map_objects/subsistence_farm.hpp"
 #include "classes/map_objects/town.hpp"
 #include "classes/map_objects/station.hpp"
 #include "cargo_info.hpp"
+#include "classes/godot_wrappers/pdh.h"
 #include "classes/godot_wrappers/pdp.hpp"
 #include <godot_cpp/core/class_db.hpp>
 #include <chrono>
@@ -66,6 +68,7 @@ void ProvinceManager::_bind_methods() {
 
     ClassDB::bind_method(D_METHOD("get_town_factories", "town_tile"), &ProvinceManager::get_town_factories);
     ClassDB::bind_method(D_METHOD("get_town_pdps", "town_tile"), &ProvinceManager::get_town_pdps);
+    ClassDB::bind_method(D_METHOD("get_town_phps", "town_tile"), &ProvinceManager::get_town_pdhs);
     ClassDB::bind_method(D_METHOD("get_factory_info", "coords"), &ProvinceManager::get_factory_info);
     ClassDB::bind_method(D_METHOD("get_cash_of_factory", "coords"), &ProvinceManager::get_cash_of_factory);
 }
@@ -362,7 +365,25 @@ Dictionary ProvinceManager::get_town_pdps(Vector2i town_tile) {
     Dictionary d;
     auto price_map = town.mp.get_current_prices();
     for (auto [type, price]: price_map) {
-        Ref<PDP> pdp = memnew(PDP(price, town.mp.get_current_demand(type), town.mp.get_current_supply(type), town.mp.get_market_info_plot_godot(type)));
+        Ref<PDP> pdp = memnew(PDP(price, town.mp.get_current_supply(type), town.mp.get_current_demand(type), town.mp.get_market_info_plot_godot(type)));
+        d[type] = pdp;
+    }
+
+    return d;
+}
+
+Dictionary ProvinceManager::get_town_pdhs(Vector2i town_tile) {
+    auto province = get_province(town_tile);
+    if (province == nullptr) return Dictionary();
+
+    std::scoped_lock lock(province->m);
+
+    Town& town = province->town;
+
+    Dictionary d;
+    auto price_map = town.mp.get_current_prices();
+    for (auto [type, price]: price_map) {
+        Ref<PDH> pdp = memnew(PDH(price, town.mp.get_current_supply(type), town.mp.get_current_demand(type), town.mp.get_market_sale_history(type)));
         d[type] = pdp;
     }
 
@@ -477,20 +498,27 @@ unsigned long ProvinceManager::get_grain_supply() const {
 }
 
 void ProvinceManager::simulation_tick() {
+    auto dt = DebugTrace::get_instance();
+
     auto popMan = PopManager::get_instance();
     for (auto province: provinces) {
+        dt->log("Before Lock");
         std::scoped_lock lock(province->m);
+        dt->log("After Lock");
         Town& town = province->town;
 
         for (auto& factory: province->factories) {
+            dt->log("Factory Month Tick");
             factory.month_tick();
 
+            dt->log("Firing");
             // A little sketchy since popMan locks, when ownership transfered to provinceMan, itll be better
             for (const auto pop_id: factory.employer.pops_to_fire) {
                 popMan->fire_pop(pop_id);
             }
             factory.employer.pops_to_fire.clear();
 
+            dt->log("pay pops");
             for (const auto& [pop_id, _]: factory.employer.get_employee_ids()) {
                 float wage = factory.get_wage(town);
                 popMan->pay_pop(pop_id, wage);
@@ -498,18 +526,18 @@ void ProvinceManager::simulation_tick() {
             }
         }
 
+        dt->log("Farms");
         for (auto& farm: province->sub_farms) {
             farm.month_tick();
         }
 
 
     }
+    dt->log("Sim Done");
 }
 
 void ProvinceManager::order_tick() {
-    for (auto prov_id: get_provinces_vector()) {
-        auto province = get_province(prov_id);
-
+    for (auto province: provinces) {
         std::scoped_lock lock(province->m);
         
         Town& town = province->town;
@@ -527,7 +555,7 @@ void ProvinceManager::bookkeeping_tick() {
         auto province = provinces[province_id];
         std::scoped_lock lock(province->m);
         auto& town = province->town;
-        town.mp.update_last_month_plot();
+        town.mp.bookkeeping_tick();
     };
 
     thread_pool->set_work_function(f);

@@ -2,6 +2,7 @@
 #include "../singletons/recipe_info.hpp"
 #include "../singletons/user_singletons/country_manager.hpp"
 #include "../singletons/pop_manager.hpp"
+#include "debug_trace.h"
 
 
 void StaticRegistry::initialize() {
@@ -16,6 +17,8 @@ void StaticRegistry::initialize() {
     
     BasePop::create_base_needs();
     BasePop::create_base_wants();
+
+    DebugTrace::create_instance();
     // AiManager::create();
 }
 
