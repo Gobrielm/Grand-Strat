@@ -51,7 +51,7 @@ func request_current_name(coords: Vector2i) -> void:
 
 @rpc("any_peer", "call_local", "unreliable")
 func request_current_prices(coords: Vector2i) -> void:
-	var dict: Dictionary = ProvinceManager.get_instance().get_town_pdps(coords)
+	var dict: Dictionary = ProvinceManager.get_instance().get_town_phps(coords)
 	update_current_prices.rpc_id(multiplayer.get_remote_sender_id(), dict)
 
 @rpc("any_peer", "call_local", "unreliable")
@@ -100,16 +100,16 @@ func display_current_prices() -> void:
 	var num: int = 0
 	ind_to_type.clear()
 	for type: int in town_info:
-		var pdp: PDP = town_info[type]
+		var pdh: PDH = town_info[type]
 		ind_to_type.push_back(type)
-		var text: String = names[type] + ": " + pdp.to_string()
+		var text: String = names[type] + ": " + pdh.to_string()
 		if num < price_list.item_count:
 			var prev: String = price_list.get_item_text(num).trim_prefix(names[type] + ": ")
 			price_list.set_item_text(num, text)
 			var prev_price: float = 0.0
 			if prev.is_valid_float():
 				prev_price = float(prev)
-			set_color(num, pdp.price, prev_price)
+			set_color(num, pdh.price, prev_price)
 		else:
 			price_list.add_item(text, null, false)
 			$Price_Node/Price_List.set_item_tooltip_enabled(num, false)
@@ -147,17 +147,70 @@ func _on_cargo_info_pop_up_popup_requested() -> void:
 @rpc("any_peer", "call_local", "unreliable")
 func populate_info_window(type: int) -> void:
 	var info: Dictionary = {}
-	var pdp: PDP = town_info[type]
+	var pdh: PDH = town_info[type]
 	
 	info.type = CargoInfo.get_instance().get_cargo_name(type)
 	
-	info.price = "$" + str(Utils.round(pdp.price, 2))
-	info.supply = "Supply: " + str(pdp.supply)
-	info.demand = "Demand: " + str(pdp.demand)
+	info.price = "$" + str(Utils.round(pdh.price, 2))
+	info.supply = "Supply: " + str(pdh.supply)
+	info.demand = "Demand: " + str(pdh.demand)
 	
 	pop_up_info_window.rpc_id(multiplayer.get_remote_sender_id(), info)
 
-func create_graph() -> void:
+func create_graph_pdh() -> void:
+	var graph: ColorRect = $Graph
+	for child: Node in graph.get_children():
+		if (child is ColorRect):
+			graph.remove_child(child)
+			child.free()
+	
+	if type_selected == -1:
+		return
+	
+	graph.get_node("TypeLabel").text = CargoInfo.get_instance().get_cargo_name(type_selected)
+	
+	var price_bounds: Vector2 = Vector2(INF, 0)
+	var amount_bounds: Vector2 = Vector2(INF, 0)
+	
+	var pdh: PDH = town_info[type_selected]
+	for i: int in pdh.sale_history.size():
+		var amt: float = pdh.sale_history[i]
+		if amt == 0: continue
+		var price: float = i / 2.0
+		amount_bounds.x = min(amount_bounds.x, amt)
+		amount_bounds.y = max(amount_bounds.y, amt)
+		price_bounds.x = min(price_bounds.x, price)
+		price_bounds.y = max(price_bounds.y, price)
+	
+	amount_bounds.x *= 0.8
+	price_bounds.x *= 0.8
+	
+	amount_bounds.y *= 1.25
+	price_bounds.y *= 1.25
+	
+	for i: int in pdh.sale_history.size():
+		var amt: float = pdh.sale_history[i]
+		if amt == 0: continue
+		var price: float = i / 2.0
+		var point: Vector2 = Vector2(amt, price)
+		create_point(point, false, price_bounds, amount_bounds)
+	
+	var bottomBorder: ColorRect = $Graph/Borders/BottomBorder
+	var leftBorder: ColorRect = $Graph/Borders/LeftBorder
+	
+	var amt_diff: float = amount_bounds.y - amount_bounds.x
+	(leftBorder.get_node("1Mark/Label") as Label).text = str(amount_bounds.y)
+	(leftBorder.get_node("3_4Mark/Label") as Label).text = str(amount_bounds.y - amt_diff * 1/4)
+	(leftBorder.get_node("1_2Mark/Label") as Label).text = str(amount_bounds.y - amt_diff * 1/2)
+	(leftBorder.get_node("1_4Mark/Label") as Label).text = str(amount_bounds.y - amt_diff * 3/4)
+	
+	var price_diff: float = price_bounds.y - price_bounds.x
+	(bottomBorder.get_node("1Mark/Label") as Label).text = str(Utils.round(price_bounds.y, 2))
+	(bottomBorder.get_node("3_4Mark/Label") as Label).text = str(Utils.round(price_bounds.y - price_diff * 1/4, 2))
+	(bottomBorder.get_node("1_2Mark/Label") as Label).text = str(Utils.round(price_bounds.y - price_diff * 1/2, 2))
+	(bottomBorder.get_node("1_4Mark/Label") as Label).text = str(Utils.round(price_bounds.y - price_diff * 3/4, 2))
+
+func create_graph_pdp() -> void:
 	var graph: ColorRect = $Graph
 	for child: Node in graph.get_children():
 		if (child is ColorRect):
@@ -200,6 +253,21 @@ func create_graph() -> void:
 	
 	for vec: Vector2 in pdp.sell_orders:
 		create_point(vec, false, price_bounds, amount_bounds)
+	
+	var bottomBorder: ColorRect = $Graph/Borders/BottomBorder
+	var leftBorder: ColorRect = $Graph/Borders/LeftBorder
+	
+	var amt_diff: float = amount_bounds.y - amount_bounds.x
+	(leftBorder.get_node("1Mark/Label") as Label).text = str(amount_bounds.y)
+	(leftBorder.get_node("3_4Mark/Label") as Label).text = str(amount_bounds.y - amt_diff * 1/4)
+	(leftBorder.get_node("1_2Mark/Label") as Label).text = str(amount_bounds.y - amt_diff * 1/2)
+	(leftBorder.get_node("1_4Mark/Label") as Label).text = str(amount_bounds.y - amt_diff * 3/4)
+	
+	var price_diff: float = price_bounds.y - price_bounds.x
+	(bottomBorder.get_node("1Mark/Label") as Label).text = str(price_bounds.y)
+	(bottomBorder.get_node("3_4Mark/Label") as Label).text = str(price_bounds.y - price_diff * 1/4)
+	(bottomBorder.get_node("1_2Mark/Label") as Label).text = str(price_bounds.y - price_diff * 1/2)
+	(bottomBorder.get_node("1_4Mark/Label") as Label).text = str(price_bounds.y - price_diff * 3/4)
 
 func create_point(point: Vector2, buy: bool, price_bounds: Vector2, amount_bounds: Vector2) -> void:
 	var graph: ColorRect = $Graph
@@ -236,5 +304,5 @@ func _on_price_list_item_clicked(index: int, _at_position: Vector2, _mouse_butto
 	var diff: bool = type_selected != ind_to_type[index]
 	type_selected = ind_to_type[index]
 	if diff:
-		create_graph()
+		create_graph_pdh()
 	

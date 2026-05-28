@@ -6,6 +6,10 @@
 [sub_resource type="LabelSettings" id="LabelSettings_6vqjj"]
 font_color = Color(0, 0, 0, 1)
 
+[sub_resource type="LabelSettings" id="LabelSettings_mdfr1"]
+font_size = 12
+font_color = Color(0, 0, 0, 1)
+
 [node name="town_window" type="Window" unique_id=682905866]
 oversampling_override = 1.0
 initial_position = 1
@@ -111,8 +115,157 @@ grow_vertical = 2
 layout_mode = 0
 offset_right = 40.0
 offset_bottom = 23.0
-text = "AAAAA"
 label_settings = SubResource("LabelSettings_6vqjj")
+
+[node name="Borders" type="Control" parent="Graph" unique_id=2086536431]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="LeftBorder" type="ColorRect" parent="Graph/Borders" unique_id=94982272]
+layout_mode = 0
+offset_left = -3.0
+offset_bottom = 322.0
+color = Color(0, 0, 0, 1)
+
+[node name="3_4Mark" type="ColorRect" parent="Graph/Borders/LeftBorder" unique_id=385274012]
+layout_mode = 0
+offset_left = 3.0
+offset_top = 80.0
+offset_right = 10.0
+offset_bottom = 83.0
+color = Color(0, 0, 0, 1)
+
+[node name="Label" type="Label" parent="Graph/Borders/LeftBorder/3_4Mark" unique_id=1578322798]
+layout_mode = 0
+offset_left = 4.0
+offset_top = 4.0
+offset_right = 47.0
+offset_bottom = 27.0
+text = "AAAA"
+label_settings = SubResource("LabelSettings_mdfr1")
+
+[node name="1_2Mark" type="ColorRect" parent="Graph/Borders/LeftBorder" unique_id=98662165]
+layout_mode = 0
+offset_left = 3.0
+offset_top = 160.0
+offset_right = 10.0
+offset_bottom = 163.0
+color = Color(0, 0, 0, 1)
+
+[node name="Label" type="Label" parent="Graph/Borders/LeftBorder/1_2Mark" unique_id=1374622878]
+layout_mode = 0
+offset_left = 4.0
+offset_top = 4.0
+offset_right = 47.0
+offset_bottom = 27.0
+text = "AAAA"
+label_settings = SubResource("LabelSettings_mdfr1")
+
+[node name="1_4Mark" type="ColorRect" parent="Graph/Borders/LeftBorder" unique_id=502843109]
+layout_mode = 0
+offset_left = 3.0
+offset_top = 240.0
+offset_right = 10.0
+offset_bottom = 243.0
+color = Color(0, 0, 0, 1)
+
+[node name="Label" type="Label" parent="Graph/Borders/LeftBorder/1_4Mark" unique_id=1901440634]
+layout_mode = 0
+offset_left = 4.0
+offset_top = 4.0
+offset_right = 47.0
+offset_bottom = 27.0
+text = "AAAA"
+label_settings = SubResource("LabelSettings_mdfr1")
+
+[node name="1Mark" type="ColorRect" parent="Graph/Borders/LeftBorder" unique_id=817668153]
+layout_mode = 0
+offset_left = 3.0
+offset_right = 10.0
+offset_bottom = 3.0
+color = Color(0, 0, 0, 1)
+
+[node name="Label" type="Label" parent="Graph/Borders/LeftBorder/1Mark" unique_id=253317390]
+layout_mode = 0
+offset_left = 213.0
+offset_top = 6.0
+offset_right = 256.0
+offset_bottom = 29.0
+text = "AAAA"
+label_settings = SubResource("LabelSettings_mdfr1")
+
+[node name="BottomBorder" type="ColorRect" parent="Graph/Borders" unique_id=1923783132]
+layout_mode = 0
+offset_left = -3.0
+offset_top = 322.0
+offset_right = 328.0
+offset_bottom = 326.0
+color = Color(0, 0, 0, 1)
+
+[node name="1_4Mark" type="ColorRect" parent="Graph/Borders/BottomBorder" unique_id=1756418459]
+layout_mode = 0
+offset_left = 80.0
+offset_top = -7.0
+offset_right = 83.0
+color = Color(0, 0, 0, 1)
+
+[node name="Label" type="Label" parent="Graph/Borders/BottomBorder/1_4Mark" unique_id=176267595]
+layout_mode = 0
+offset_left = -19.0
+offset_top = -17.0
+offset_right = 24.0
+offset_bottom = 6.0
+text = "AAAA"
+label_settings = SubResource("LabelSettings_mdfr1")
+
+[node name="1_2Mark" type="ColorRect" parent="Graph/Borders/BottomBorder" unique_id=421767705]
+layout_mode = 0
+offset_left = 160.0
+offset_top = -7.0
+offset_right = 163.0
+color = Color(0, 0, 0, 1)
+
+[node name="Label" type="Label" parent="Graph/Borders/BottomBorder/1_2Mark" unique_id=576429395]
+layout_mode = 0
+offset_left = -19.0
+offset_top = -17.0
+offset_right = 24.0
+offset_bottom = 6.0
+text = "AAAA"
+label_settings = SubResource("LabelSettings_mdfr1")
+
+[node name="3_4Mark" type="ColorRect" parent="Graph/Borders/BottomBorder" unique_id=672070714]
+layout_mode = 0
+offset_left = 240.0
+offset_top = -7.0
+offset_right = 243.0
+color = Color(0, 0, 0, 1)
+
+[node name="Label" type="Label" parent="Graph/Borders/BottomBorder/3_4Mark" unique_id=1747493278]
+layout_mode = 0
+offset_left = -19.0
+offset_top = -17.0
+offset_right = 24.0
+offset_bottom = 6.0
+text = "AAAA"
+label_settings = SubResource("LabelSettings_mdfr1")
+
+[node name="1Mark" type="ColorRect" parent="Graph/Borders/BottomBorder" unique_id=1417055049]
+layout_mode = 0
+offset_left = 320.0
+offset_top = -7.0
+offset_right = 323.0
+color = Color(0, 0, 0, 1)
+
+[node name="Label" type="Label" parent="Graph/Borders/BottomBorder/1Mark" unique_id=848932980]
+layout_mode = 0
+offset_left = -19.0
+offset_top = -17.0
+offset_right = 24.0
+offset_bottom = 6.0
+text = "AAAA"
+label_settings = SubResource("LabelSettings_mdfr1")
 
 [connection signal="close_requested" from="." to="." method="_on_close_requested"]
 [connection signal="item_clicked" from="Price_Node/Price_List" to="." method="_on_price_list_item_clicked"]
