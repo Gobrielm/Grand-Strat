@@ -30,9 +30,9 @@ class PopManager {
     std::unordered_map<int, BasePop> pops;
     static int constexpr NUMBER_OF_POP_LOCKS = 4096;
     mutable std::vector<std::shared_mutex*> pop_locks; // Deals with individual pops
-    class PopManagerThreadPool* thread_pool = nullptr;
+    
+    class BlockingThreadPool* thread_pool = nullptr;
 
-    int thread_month_tick_loader();
     int get_pop_mutex_number(int pop_id) const;
     std::shared_mutex* get_lock(int pop_id) const;
     std::shared_lock<std::shared_mutex> lock_pop_read(int pop_id) const;

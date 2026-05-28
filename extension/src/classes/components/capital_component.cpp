@@ -36,6 +36,7 @@ float CapitalComponent::transfer_cash(float amount) {
     
 void CapitalComponent::update_cash_history() {
     cash_history.pop_front();
+    cash_history.push_back(0);
 }
 
 const std::list<float>& CapitalComponent::get_cash_history() const {

@@ -1,6 +1,5 @@
 #include "singletons/terminal_map.hpp"
 #include "singletons/cargo_info.hpp"
-#include "singletons/trading_system.hpp"
 #include "singletons/pop_manager.hpp"
 #include "singletons/province_manager.hpp"
 
@@ -540,6 +539,10 @@ std::pair<CapitalComponent*, StorageComponent*> Province::get_capital_and_storag
             case BuildingType::FACTORY: {
                 auto& factory = factories[id_to_vector_position[source_id].first];
                 return std::pair<CapitalComponent*, StorageComponent*>(&factory.capital, &factory.storage);
+            }
+            case BuildingType::SUBSISTENCE_FARM: {
+                auto& sub_farm = sub_farms[id_to_vector_position[source_id].first];
+                return std::pair<CapitalComponent*, StorageComponent*>(&sub_farm.capital, &sub_farm.storage);
             }
             default: {
                 print_error("Unknown Entity Tried to Trade: " + String::num(static_cast<int>(type)));

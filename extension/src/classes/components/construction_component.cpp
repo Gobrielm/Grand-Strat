@@ -39,7 +39,7 @@ int ConstructionComponent::get_amount_of_type_needed_for_construction(int type) 
 bool ConstructionComponent::is_finished_constructing() const {
     if (materials.size() == 0) return false; // If not constructing than not finished to avoid upgrading
     for (const auto& [type, val]: materials) {
-		if (max_amounts.at(type) != val) {
+		if (max_amounts.count(type) && max_amounts.at(type) != val) {
             return false;
         }
     }

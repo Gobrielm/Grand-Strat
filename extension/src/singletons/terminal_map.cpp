@@ -5,6 +5,7 @@
 #include "cargo_info.hpp"
 
 #include "classes/map_objects/station.hpp"
+#include "utility/debug_trace.h"
 #include "pop_manager.hpp"
 
 
@@ -92,30 +93,32 @@ void TerminalMap::_on_day_tick_timeout() {
 }
 
 void TerminalMap::_on_month_tick_timeout() {
-    print_line("Sim");
+    auto dt = DebugTrace::get_instance();
+    dt->clear();
+    dt->log("Sim");
     // Simulation
     ProvinceManager::get_instance()->simulation_tick();
     // TODO: Pay Wages
 
-    print_line("Orders");
+    dt->log("Orders");
     // Order Stage
     ProvinceManager::get_instance()->order_tick();
-    print_line("Pop Orders");
-    PopManager::get_instance()->adjust_pop_orders();
+    // print_line("Pop Orders");
+    // PopManager::get_instance()->adjust_pop_orders();
 
-    print_line("Bookkeeping");
+    dt->log("Bookkeeping");
     // Bookkeeping Stage
     ProvinceManager::get_instance()->bookkeeping_tick();
 
     // AiManager::get_instance()->month_tick();
     // thread_pool->month_tick();
     
-    print_line("Pop Tick");
+    dt->log("Pop Tick");
     // Trading Stage
     PopManager::get_instance()->pop_tick();
-    print_line("Trading");
+    dt->log("Trading");
     ProvinceManager::get_instance()->trading_tick();
-    print_line("Done");
+    dt->log("Done");
 }
 
 // std::vector<Ref<Terminal>> TerminalMap::get_terminals_for_day_tick() const {

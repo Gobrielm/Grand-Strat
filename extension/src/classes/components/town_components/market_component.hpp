@@ -3,6 +3,7 @@
 #include "classes/local_price_controller.hpp"
 #include "classes/trade_order.hpp"
 
+#include <deque>
 #include <set>
 #include <unordered_map>
 #include <memory>
@@ -22,21 +23,23 @@ class MarketComponent {
 
     // Descending Orders
     std::unordered_map<int, 
-        std::vector<TradeOrder>
+        std::deque<TradeOrder>
     > sorted_buy_orders;
 
     // Ascending Orders
     std::unordered_map<int, 
-        std::vector<TradeOrder>
+        std::deque<TradeOrder>
     > sorted_sell_orders;
 
     // <amount, price>, buys sorted decreasing, sells sorted increasing
     std::unordered_map<int, std::pair<std::vector<std::pair<int, float>>, std::vector<std::pair<int, float>>>> last_month_plot;
     std::unordered_map<int, float> equilibrium_prices;
+    // index by type, then by price, buckets of 0.5, ie round(price * 2) to get amount
+    std::vector<std::vector<int>> sale_history;
 
     std::vector<int> get_types_among_orders() const;
 
-    void finish_market_exchange(const TradeOrder& buy_order, const TradeOrder& sell_order, std::pair<CapitalComponent*, StorageComponent*> buyer, std::pair<CapitalComponent*, StorageComponent*> seller);
+    void finish_market_exchange(TradeOrder& buy_order, TradeOrder& sell_order, std::pair<CapitalComponent*, StorageComponent*> buyer, std::pair<CapitalComponent*, StorageComponent*> seller);
 
     std::pair<std::vector<std::pair<int, float>>, std::vector<std::pair<int, float>>> get_market_info_plot(int type) const;
     void sort_orders();
@@ -53,6 +56,8 @@ class MarketComponent {
 
     std::unordered_map<int, float> get_current_prices() const;
     Array get_market_info_plot_godot(int type) const;
+
+    Array get_market_sale_history(int type) const;
     
     /// @param province The locked province that town is in
     void market_tick(Province* province);
@@ -63,6 +68,8 @@ class MarketComponent {
     int32_t get_current_demand(int type) const;
     int32_t get_current_supply(int type) const;
 
-    void update_last_month_plot();
+    void bookkeeping_tick();
     float find_market_price_equilibrium(int type) const;
+
+    void record_sale(int type, double price, int amount);
 };

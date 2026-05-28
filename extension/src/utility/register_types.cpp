@@ -9,6 +9,7 @@
 // #include "../classes/ai_base.hpp"
 #include "../classes/initial_builder.hpp"
 #include "../classes/godot_wrappers/pdp.hpp"
+#include "../classes/godot_wrappers/pdh.h"
 #include "../singletons/money_controller.hpp"
 #include "../singletons/road_map.hpp"
 #include "../singletons/terminal_map.hpp"
@@ -29,6 +30,7 @@ void initialize_gdextension_types(ModuleInitializationLevel p_level)
 	
 	//--verbose in godot for more details
 	GDREGISTER_CLASS(PDP);
+	GDREGISTER_CLASS(PDH);
 
 	GDREGISTER_CLASS(MoneyController);
 	GDREGISTER_CLASS(Province);

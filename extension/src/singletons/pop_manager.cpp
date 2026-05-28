@@ -6,7 +6,7 @@
 #include "terminal_map.hpp"
 #include "money_controller.hpp"
 #include "data_collector.hpp"
-#include "pop_manager_utility/pop_manager_thread_pool.hpp"
+#include "utility/blocking_thread_pool.h"
 
 #include "classes/province.hpp"
 #include "classes/map_objects/town.hpp"
@@ -28,7 +28,10 @@ void PopManager::cleanup() {
 }
 
 PopManager::PopManager() {
-    thread_pool = new PopManagerThreadPool(8, [this]() { return thread_month_tick_loader(); });
+    std::function f = [this] () {
+        return ProvinceManager::get_instance()->get_provinces_vector();
+    };
+    thread_pool = new BlockingThreadPool(4, f);
 
     for (int i = 0; i < NUMBER_OF_POP_LOCKS; i++) {
         pop_locks.push_back(new std::shared_mutex);  // constructs a new shared_mutex directly in the vector
@@ -48,37 +51,19 @@ std::shared_ptr<PopManager> PopManager::get_instance() {
     return singleton_instance;
 }
 
-int PopManager::thread_month_tick_loader() {
-    // refresh_employment_sorted_by_wage();
-    auto pm = ProvinceManager::get_instance();
-    
-    thread_pool->provinces_to_process = pm->get_provinces_vector();
-    return thread_pool->provinces_to_process.size();
-}
-
 void PopManager::adjust_pop_orders() {
+    print_line("Gah1");
     std::function<void(int)> f = [this](int province_id) { this->thread_order_tick(province_id); };
     thread_pool->set_work_function(f);
     thread_pool->month_tick();
-
-    print_line("Gah1");
-    std::unique_lock<std::mutex> lock(thread_pool->work_to_process_mutex);
-    thread_pool->jobs_done_cv.wait(lock, [this] { // Sleeps and waits for jobs to be done 
-        return thread_pool->jobs_remaining == 0; 
-    });
     print_line("Gah1");
 }
 
 void PopManager::pop_tick() {
+    print_line("Gah2");
     std::function<void(int)> f = [this](int province_id) { this->thread_trading_tick(province_id); };
     thread_pool->set_work_function(f);
     thread_pool->month_tick();
-
-    print_line("Gah2");
-    std::unique_lock<std::mutex> lock(thread_pool->work_to_process_mutex);
-    thread_pool->jobs_done_cv.wait(lock, [this] { // Sleeps and waits for jobs to be done 
-        return thread_pool->jobs_remaining == 0; 
-    });
     print_line("Gah2");
 }
 
@@ -110,8 +95,8 @@ void PopManager::thread_trading_tick(int province_id) { // Assumes all pops are 
         
 
     // auto time1 = std::chrono::high_resolution_clock::now();
-    // TODO: Should become uneccessary due to pops creating orders
-    // sell_to_pops(province, province->pops);
+    
+    sell_to_pops(province, province->pops);
     // auto time2 = std::chrono::high_resolution_clock::now();
     // find_employment_for_pops(province, province->pops);
     // auto time3 = std::chrono::high_resolution_clock::now();
@@ -482,12 +467,12 @@ int PopManager::create_pop(Variant culture, const Vector2i p_location, PopTypes 
 }
 
 void PopManager::pay_pop(int pop_id, float wage) {
-    auto lock = lock_pop_write(pop_id);
+    // auto lock = lock_pop_write(pop_id);
     get_pop(pop_id)->pay_wage(wage);
 }
 
 void PopManager::fire_pop(int pop_id) {
-    auto lock = lock_pop_write(pop_id);
+    // auto lock = lock_pop_write(pop_id);
     get_pop(pop_id)->fire();
 }
 

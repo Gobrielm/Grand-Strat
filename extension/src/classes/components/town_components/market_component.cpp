@@ -43,16 +43,34 @@ float MarketComponent::get_price(int type) const {
 }
 
 float MarketComponent::get_min_price(int type) const {
+    double min_price = -1;
     if (sorted_buy_orders.count(type) && !sorted_buy_orders.at(type).empty()) {
-        return (sorted_buy_orders.at(type).end())->get_price();
+        min_price = (sorted_buy_orders.at(type).end())->get_price();
     }
+    if (sorted_sell_orders.count(type) && !sorted_sell_orders.at(type).empty()) {
+        min_price = std::min(min_price, (sorted_sell_orders.at(type).begin())->get_price());
+    }
+
+    if (min_price != -1) {
+        return min_price;
+    }
+
     return 0.0001;
 }
 
 float MarketComponent::get_max_price(int type) const {
-    if (sorted_sell_orders.count(type) && !sorted_sell_orders.at(type).empty()) {
-        return (sorted_sell_orders.at(type).end())->get_price();
+    double max_price = -1;
+    if (sorted_buy_orders.count(type) && !sorted_buy_orders.at(type).empty()) {
+        max_price = (sorted_buy_orders.at(type).begin())->get_price();
     }
+    if (sorted_sell_orders.count(type) && !sorted_sell_orders.at(type).empty()) {
+        max_price = std::max(max_price, (sorted_sell_orders.at(type).end())->get_price());
+    }
+
+    if (max_price != -1) {
+        return max_price;
+    }
+
     return 10000;
 }
 
@@ -118,24 +136,34 @@ Array MarketComponent::get_market_info_plot_godot(int type) const {
     return a;
 }
 
+Array MarketComponent::get_market_sale_history(int type) const {
+    Array toReturn;
+
+    for (int i = 0; i < sale_history[type].size(); i++) {
+        toReturn.push_back(sale_history[type][i]);
+    }
+
+    return toReturn;
+}
+
 void MarketComponent::market_tick(Province* province) {
-    // sort orders
-    sort_orders();
-    
     for (auto& [type, buys]: sorted_buy_orders) {
         auto& sell_orders_vec = sorted_sell_orders[type];
 
-        int i = 0;
         if (sell_orders_vec.empty()) continue;
 
-        for (auto& buy_order: buys) {
-            if (buy_order.get_amount() == 0) continue;
-
-            while (i < sell_orders_vec.size() && (sell_orders_vec[i]).get_amount() == 0) {
-                i++;
+        while (!buys.empty()) {
+            auto& buy_order = buys.front();
+            if (buy_order.get_amount() == 0) {
+                buys.pop_front();
+                continue;
             }
-            if (i >= sell_orders_vec.size()) break;
-            auto& sell_order = sell_orders_vec[i];
+
+            while (!sell_orders_vec.empty() && (sell_orders_vec.front()).get_amount() == 0) {
+                sell_orders_vec.pop_front();
+            }
+            if (sell_orders_vec.empty()) break;
+            auto& sell_order = sell_orders_vec.front();
 
             float price1 = buy_order.get_price();
             float price2 = sell_order.get_price();
@@ -177,8 +205,8 @@ void MarketComponent::sort_orders() {
 }
 
 void MarketComponent::finish_market_exchange(
-    const TradeOrder& buy_order, 
-    const TradeOrder& sell_order, 
+    TradeOrder& buy_order, 
+    TradeOrder& sell_order, 
     std::pair<CapitalComponent*, StorageComponent*> buyer, 
     std::pair<CapitalComponent*, StorageComponent*> seller
 ) {
@@ -204,12 +232,16 @@ void MarketComponent::finish_market_exchange(
     if (buyer.first->get_cash() < sub_total) {
         return;
     }
+
+    sell_order.change_amount(sell_order.get_amount() - amt);
+    buy_order.change_amount(buy_order.get_amount() - amt);
     
     buyer.first->remove_cash(sub_total);
     seller.first->add_cash(sub_total);
 
     buyer.second->add_cargo(type, amt);
     seller.second->remove_cargo(type, amt);
+    record_sale(type, price, amt);
 }
 
 void MarketComponent::sell_to_pop(Province* province, BasePop& pop) {
@@ -226,8 +258,12 @@ void MarketComponent::sell_to_pop(Province* province, BasePop& pop) {
             DataCollector::get_instance()->add_demand(grain_type, pop.get_desired(type));
         }
 
-        for (auto& sell_order: orders) {
-            if (sell_order.get_amount() == 0) continue;
+        while (!orders.empty()) {
+            auto& sell_order = orders.front();
+            if (sell_order.get_amount() == 0) {
+                orders.pop_front();
+                continue;
+            }
 
             // demand_to_relay.push_back(std::unique_ptr<TownCargo>(new TownCargo(type, desired, pop_price, sell_order->terminal_id)));
 
@@ -270,13 +306,24 @@ void MarketComponent::sell_to_pop(Province* province, BasePop& pop) {
             }
             auto [capital, storage] = res;
             amt = std::min(amt, (unsigned) floor(storage->get_amount(type)));
-            if (amt == 0) continue;
+            if (amt == 0) {
+                orders.pop_front();
+                continue;
+            }
 
             float sub_total = price * amt;
 
             capital->add_cash(sub_total);
             storage->remove_cargo(type, amt);
             pop.buy_good(type, amt, price);
+
+            sell_order.change_amount(sell_order.get_amount() - amt);
+            record_sale(type, price, amt);
+
+            // TODO: Standardize this more to create pop order
+            // TradeOrder buy_order(type, amt, true, )
+
+            // finish_market_exchange(, sell_order)
         }
     }
     
@@ -314,7 +361,11 @@ int32_t MarketComponent::get_current_supply(int type) const {
     return tot;
 }
 
-void MarketComponent::update_last_month_plot() {
+void MarketComponent::bookkeeping_tick() {
+    // sort orders
+    sort_orders();
+    sale_history.resize(CargoInfo::get_instance()->get_number_of_goods(), std::vector<int>(200, 0));
+
     last_month_plot.clear();
     equilibrium_prices.clear();
     
@@ -376,4 +427,8 @@ float MarketComponent::find_market_price_equilibrium(int type) const {
     }
 
     return current_price;
+}
+
+void MarketComponent::record_sale(int type, double price, int amount) {
+    sale_history[type][round(price * 2)] += amount;
 }
