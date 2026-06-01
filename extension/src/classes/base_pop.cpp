@@ -276,12 +276,7 @@ float BasePop::get_buy_price_for_needed_good(int type, float current_price) cons
     float mult = (needed == 1) ? (1 + ((rand() % 5) / 100.0)): 1;
     float available_money = std::min(std::max(income, current_price * mult), capital.get_cash()); // Highest will go
 
-    float price = available_money;
-    if (price > current_price) {
-        return (price + current_price) / 2;
-    } else {
-        return price;
-    }
+    return std::min(available_money, current_price);
 }
 
 float BasePop::get_buy_price_for_wanted_good(int type, float current_price) const {

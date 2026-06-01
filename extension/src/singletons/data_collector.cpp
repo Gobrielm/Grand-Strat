@@ -38,23 +38,24 @@ DataCollector* DataCollector::get_instance() {
 void DataCollector::month_tick() {
     auto start_time = std::chrono::high_resolution_clock::now();
 
+    auto pop_manager = PopManager::get_instance();
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     Ref<ProvinceManager> province_manager = ProvinceManager::get_instance();
-    auto pop_manager = PopManager::get_instance();
     if (is_collecting_data) {
         auto pops_data = (pop_manager->get_pop_statistics());
 
         station_data_points.push_back(province_manager -> get_average_cash_of_station());
         factory_data_points.push_back(province_manager -> get_average_cash_of_factory());
-        pops_data_points.push_back((*pops_data)[PopStats::AveragePopWealth]);
+        pops_data_points.push_back(pops_data[PopStats::AveragePopWealth]);
         factory_ave_level.push_back(province_manager -> get_average_factory_level());
-        starving_pops.push_back((*pops_data)[PopStats::NumOfStarvingPops]);
+        starving_pops.push_back(pops_data[PopStats::NumOfStarvingPops]);
         grain_supply.push_back(0);
         grain_demand.push_back(0);
-        broke_pops.push_back((*pops_data)[PopStats::NumOfBrokePops]);
-        unemployement_rate.push_back((*pops_data)[PopStats::UnemploymentRate]);
-        real_unemployement_rate.push_back((*pops_data)[PopStats::RealUnemploymentRate]);
-        number_of_peasants.push_back((*pops_data)[PopStats::NumOfPeasants]);
+        broke_pops.push_back(pops_data[PopStats::NumOfBrokePops]);
+        unemployement_rate.push_back(pops_data[PopStats::UnemploymentRate]);
+        real_unemployement_rate.push_back(pops_data[PopStats::RealUnemploymentRate]);
+        number_of_peasants.push_back(pops_data[PopStats::NumOfPeasants]);
+        grain_price.push_back(province_manager -> get_average_price(CargoInfo::get_instance()->get_cargo_type("grain")));
         write_data_to_file();
     }
 
@@ -76,7 +77,8 @@ void DataCollector::write_data_to_file() {
     file << "Broke pops,";
     file << "Unemployment Rate,";
     file << "Real Unemployment Rate,";
-    file << "Number Of Peasants";
+    file << "Number Of Peasants,";
+    file << "Price of Grain";
     file << '\n';
     for (int i = 0; i < station_data_points.size(); i++) {
         file << (i + 1) << ",";
@@ -90,7 +92,8 @@ void DataCollector::write_data_to_file() {
         file << broke_pops[i] << ",";
         file << unemployement_rate[i] << ",";
         file << real_unemployement_rate[i] << ",";
-        file << number_of_peasants[i];
+        file << number_of_peasants[i] << ",";
+        file << grain_price[i];
         file << '\n';
     }
     file.close();

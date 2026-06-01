@@ -58,6 +58,7 @@ class MarketComponent {
     Array get_market_info_plot_godot(int type) const;
 
     Array get_market_sale_history(int type) const;
+    const std::vector<int>& get_market_sale_history_ref(int type);
     
     /// @param province The locked province that town is in
     void market_tick(Province* province);

@@ -1,6 +1,6 @@
 #include "country.hpp"
 #include "../money_controller.hpp"
-#include "../pop_manager.hpp"
+#include "../province_manager.hpp"
 
 
 void Country::_bind_methods() {
@@ -23,7 +23,7 @@ void Country::assign_player_id(int p_player_id) {
 
 void Country::pay_random_pops(int total_number_to_pay, float total_money_to_pay) {
     double for_each = total_money_to_pay / total_number_to_pay;
-    PopManager::get_instance()->pay_pops(total_number_to_pay, total_money_to_pay / total_number_to_pay);
+    ProvinceManager::get_instance()->pay_pops(total_number_to_pay, total_money_to_pay / total_number_to_pay);
 }
 
 void Country::month_tick() {

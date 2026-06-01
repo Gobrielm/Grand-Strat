@@ -50,11 +50,11 @@ void Recipe::clear() {
 }
 
 float Recipe::get_input(int type) const {
-    return 0 ? !inputs.count(type): inputs.at(type);
+    return !inputs.count(type) ? 0: inputs.at(type);
 }
 
 float Recipe::get_output(int type) const {
-    return 0 ? !outputs.count(type): outputs.at(type);
+    return !outputs.count(type) ? 0: outputs.at(type);
 }
 
 std::unordered_map<int, float> Recipe::get_inputs() const {

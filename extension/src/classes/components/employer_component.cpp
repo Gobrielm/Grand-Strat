@@ -48,11 +48,10 @@ void EmployerComponent::degrade() {
 }
 
 bool EmployerComponent::is_pop_type_needed(PopTypes pop_type) const {
-    return does_need_pop_type(pop_type);
-}
+    if (!pops_needed.count(pop_type)) return false;
+    if (!employees.count(pop_type)) return true; // Need poptype, but have no employees
 
-bool EmployerComponent::does_need_pop_type(PopTypes pop_type) const {
-    return pops_needed.count(pop_type) && pops_needed.at(pop_type) != employees.at(pop_type).size();
+    return pops_needed.at(pop_type) != employees.at(pop_type).size();
 }
 
 void EmployerComponent::add_pop(BasePop* pop) {

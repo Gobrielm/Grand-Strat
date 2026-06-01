@@ -28,7 +28,7 @@ class TradeOrder {
     double limit_price = 0.0;
 
     int source_id = -1;
-    TradeOrderOwner owner_type;
+    TradeOrderOwner owner_type = TradeOrderOwner::INVALID;
     bool active = true;
     
 
@@ -36,7 +36,11 @@ class TradeOrder {
 
     // Assumes, one order of type from owner
     int32_t get_order_id() const {
-        return (source_id * CargoInfo::get_instance()->get_number_of_goods() * 4 + type * 4 + int(owner_type));
+        int32_t x = (source_id * CargoInfo::get_instance()->get_number_of_goods() * 4 + type * 4 + int(owner_type));
+        if (owner_type == TradeOrderOwner::INVALID) {
+            print_error("Getting order id from invalid owner");
+        }
+        return x;
     }
 
 public:

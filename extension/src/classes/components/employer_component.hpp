@@ -16,7 +16,6 @@ class EmployerComponent {
 
     
 
-    bool does_need_pop_type(PopTypes pop_type) const;
     void remove_pop(int pop_id, PopTypes pop_type);
 
     public:

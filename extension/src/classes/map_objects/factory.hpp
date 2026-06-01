@@ -23,6 +23,8 @@ public:
     ConstructionComponent construction;
     StorageComponent storage;
     StorageComponent last_month_storage;
+    // type -> true if bought/sold more than/equal to needed, false if sold/bought less than neccessary
+    std::vector<int> storage_delta_indicator;
 
     EmployerComponent employer;
     LocalPriceController lpc;

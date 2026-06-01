@@ -11,7 +11,7 @@
 #include "base_pop.hpp"
 #include "map_objects/town.hpp"
 #include "factory_utility/recipe.hpp"
-#include "province_manager_utility/province_pop_manager.h"
+#include "province_utility/province_pop_manager.h"
 
 #include "classes/map_objects/subsistence_farm.hpp"
 #include "classes/components/position_component.hpp"
@@ -35,7 +35,7 @@ void Province::_bind_methods() {
     ClassDB::bind_method(D_METHOD("set_country_id", "country_id"), &Province::set_country_id);
 
     ClassDB::bind_method(D_METHOD("create_pops"), &Province::create_pops);
-    ClassDB::bind_method(D_METHOD("count_pops"), &Province::count_pops);
+    ClassDB::bind_method(D_METHOD("get_number_of_pops"), &Province::get_number_of_pops);
 
     ClassDB::bind_method(D_METHOD("get_town_tile"), &Province::get_town_tile);
 }
@@ -75,12 +75,12 @@ float Province::get_theoretical_supply_of_grain_from_peasants() const {
     EmployerComponent peasant_ec = SubsistenceFarm::get_default_employer_component();
     float grain_o = (peasant_ec.recipe.get_outputs().begin())->second;
     int pops_needed = peasant_ec.get_pops_needed_num();
-    auto stats = get_pop_type_statistics();
+    auto stats = ppm.get_pop_type_statistics();
     return (grain_o * stats[PopTypes::peasant]) / pops_needed;
 }
 
 float Province::get_demand_for_cargo(int type) const {
-    auto stats = get_pop_type_statistics();
+    auto stats = ppm.get_pop_type_statistics();
     float total_demand = 0;
     {
         std::scoped_lock lock(m);
@@ -93,7 +93,7 @@ float Province::get_demand_for_cargo(int type) const {
 
 std::unordered_map<int, float> Province::get_demand_for_needed_goods() const {
     std::unordered_map<int, float> toReturn;
-    std::unordered_map<PopTypes, size_t> pop_size = get_pop_type_statistics();
+    std::unordered_map<PopTypes, long> pop_size = ppm.get_pop_type_statistics();
     
     for (const auto& [type, amount]: BasePop::get_base_needs(PopTypes::rural)) {
         toReturn[type] += amount * pop_size[PopTypes::rural];   
@@ -365,27 +365,9 @@ void Province::init_province() {
 }
 
 int Province::get_number_of_pops() const {
-    std::shared_lock lock(pops_lock);
-    return pops.size();
+    std::scoped_lock lock(m);
+    return ppm.get_number_of_pops();
 }
-
-std::unordered_map<PopTypes, size_t> Province::get_pop_type_statistics() const {
-    auto pop_manager = PopManager::get_instance();
-    std::unordered_map<PopTypes, size_t> stats;
-    std::unordered_set<int> pops_copy;
-    {
-        std::shared_lock lock(pops_lock);
-        pops_copy = pops;
-    }
-    
-    for (const auto& id: pops_copy) {
-        auto pop = pop_manager->get_pop(id);
-        auto lock = pop_manager->lock_pop_read(id);
-        stats[pop->get_type()]++;
-    }
-    return stats;
-}
-
 
 void Province::create_pops() {
     int number_of_peasant_pops = floor(population * 0.9 / BasePop::get_people_per_pop(PopTypes::peasant));
@@ -421,38 +403,26 @@ void Province::create_pops() {
 }
 
 void Province::create_peasant_pop(Variant culture, Vector2i p_location) {
-    int pop_id = PopManager::get_instance()->create_pop(culture, p_location, PopTypes::peasant);
-    {
-        std::unique_lock lock(pops_lock);
-        pops.insert(pop_id);
-    }
+    std::unique_lock lock(m);
+    ppm.create_pop(PopTypes::peasant, culture, p_location, province_id);
 }
 
 void Province::create_rural_pop(Variant culture, Vector2i p_location) {
-    int pop_id = PopManager::get_instance()->create_pop(culture, p_location, PopTypes::rural);
-    {
-        std::unique_lock lock(pops_lock);
-        pops.insert(pop_id);
-    }
+    std::unique_lock lock(m);
+    ppm.create_pop(PopTypes::rural, culture, p_location, province_id);
 }
 
 void Province::create_town_pops(int amount) {
-    int index = 0;
-
     Vector2i town_pos = town.position.get_position_vector2i();
+    std::unique_lock lock(m);
 	for (int i = 0; i < amount; i++) {
-        int pop_id = create_town_pop(0, town_pos);
-        pops.insert(pop_id);
+        ppm.create_pop(PopTypes::town, 0, town_pos, province_id);
     }
 }
 
 int Province::create_town_pop(Variant culture, Vector2i p_location) {
-    int pop_id = PopManager::get_instance()->create_pop(culture, p_location, PopTypes::town);
-    {
-        std::unique_lock lock(pops_lock);
-        pops.insert(pop_id);
-    }
-    return pop_id;
+    std::unique_lock lock(m);
+    return ppm.create_pop(PopTypes::town, 0, p_location, province_id);
 }
 
 void Province::create_buildings_for_peasants() {
@@ -469,13 +439,11 @@ void Province::create_buildings_for_peasants() {
 }
 
 void Province::employ_peasants() {
-    if (pops.size() == 0) {
+    if (ppm.get_number_of_pops() == 0) {
         return;
     }
 
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
-    auto pop_manager = PopManager::get_instance();
-    
     
     std::scoped_lock(m);
     create_buildings_for_peasants();
@@ -488,24 +456,17 @@ void Province::employ_peasants() {
     
     int i = 0;
 
-    for (const auto& pop_id: pops) {
-        auto pop = pop_manager->get_pop(pop_id);
-        auto lock = pop_manager->lock_pop_write(pop_id);
-        if (pop->get_type() != PopTypes::peasant) continue;
+    for (auto& [id, pop]: ppm.pops) {
+        if (pop.get_type() != PopTypes::peasant) continue;
         
         SubsistenceFarm& farm = sub_farms[i];
         
-        farm.add_pop(town, pop);          
+        farm.add_pop(town, &pop);          
 
         i = (i + 1) % sub_farms.size();
     }
     
     
-}
-
-int Province::count_pops() const {
-    std::shared_lock lock(pops_lock);
-    return pops.size();
 }
 
 Factory& Province::get_factory_unsafe(int pos_id) {
@@ -553,9 +514,8 @@ std::pair<CapitalComponent*, StorageComponent*> Province::get_capital_and_storag
     };
 
     auto get_components_pop = [&] () {
-        if (pops.count(source_id)) {
-            auto pm = PopManager::get_instance();
-            BasePop* pop = pm->get_pop(source_id); // TODO: Could result in deadlock, fixed when changing ownership to provinces
+        if (ppm.pops.count(source_id)) {
+            BasePop* pop = ppm.get_pop(source_id);
 
             return std::pair<CapitalComponent*, StorageComponent*>(&pop->capital, &pop->storage);
         } else {

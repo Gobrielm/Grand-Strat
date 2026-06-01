@@ -44,6 +44,7 @@ class SubsistenceFarm {
     SubsistenceFarm& operator=(const SubsistenceFarm&);
 
     void add_pop(Town& town, BasePop* pop);
+    float get_wage();
 
     void adjust_trade_orders(Town& town);
     double get_batch_size();

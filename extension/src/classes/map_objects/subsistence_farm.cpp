@@ -38,19 +38,26 @@ void SubsistenceFarm::add_pop(Town& town, BasePop* pop) {
     consider_upgrade();
 }
 
+float SubsistenceFarm::get_wage() {
+    if (employer.get_employement() == 0) return 0;
+    return capital.get_cash() / employer.get_employement();
+}
+
 void SubsistenceFarm::adjust_trade_orders(Town& town) {
 
     auto& recipe = employer.recipe;
 
     for (const auto& [type, amt]: recipe.get_outputs()) {
+        float town_price = town.mp.get_price(type);
+        if (town_price == 0) town_price = 0.1;
+
         if (!orders.count(type)) {
-            orders[type] = std::make_shared<TradeOrder>(position, type, amt, false, town.mp.get_price(type), town.mp.get_min_price(type));
+            orders[type] = std::make_shared<TradeOrder>(position, type, amt, false, town_price, 0.1); // Arbitrary limit price
             town.mp.add_order(orders[type]);
         }
 
         orders[type]->change_amount(storage.get_amount(type));
-        orders[type]->set_max_price(town.mp.get_min_price(type));
-        orders[type]->set_price(town.mp.get_price(type));
+        orders[type]->set_price(town_price);
     }
 }
 

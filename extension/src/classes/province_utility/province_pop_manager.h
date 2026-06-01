@@ -10,20 +10,9 @@
 
 #include <classes/base_pop.hpp>
 
-enum class PopStats {
-    AveragePopWealth,
-    NumOfStarvingPops,
-    NumOfBrokePops,
-    NumOfPeasants,
-    UnemploymentRate,
-    RealUnemploymentRate,
-    NumUnemployed,
-    NumRealUnemployed,
-    TotalPopWealth
-};
-
 class EmployerComponent;
 class Province;
+enum class PopStats: int;
 
 class ProvincePopManager {
     friend Province;
@@ -70,7 +59,7 @@ class ProvincePopManager {
     ~ProvincePopManager();
 
     // order phase
-    void adjust_pop_orders(class Town& town);
+    // void adjust_pop_orders(class Town& town);
     // trading phase
     void pop_tick(Province* province);
     void sell_to_pops(Province* province);
@@ -88,11 +77,13 @@ class ProvincePopManager {
 
     //Economy stats
     
-
-    std::unordered_map<PopStats, long>& get_pop_statistics() const;
+    int get_number_of_pops() const;
+    std::unordered_map<PopStats, long> get_pop_statistics() const;
     long get_total_wealth_of_pops() const;
     int get_number_of_broke_pops() const;
     int get_number_of_starving_pops() const;
+    int get_number_of_unemployed_pops() const;
+    int get_number_of_real_unemployed_pops() const;
     float get_unemployment_rate() const;
     float get_real_unemployment_rate() const;
     /// @brief Runs in n time where n is the total amount of pops.

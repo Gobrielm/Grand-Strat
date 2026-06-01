@@ -17,6 +17,9 @@ enum class PopStats {
     NumOfPeasants,
     UnemploymentRate,
     RealUnemploymentRate,
+    NumUnemployed,
+    NumRealUnemployed,
+    TotalPopWealth
 };
 
 class EmployerComponent;
@@ -26,41 +29,38 @@ class PopManager {
     friend Province;
     static std::shared_ptr<PopManager> singleton_instance;
     mutable std::shared_mutex m; // Deals with datastructures
-    mutable std::shared_mutex employment_mutex; // Deals with employment_options mutex
-    std::unordered_map<int, BasePop> pops;
-    static int constexpr NUMBER_OF_POP_LOCKS = 4096;
-    mutable std::vector<std::shared_mutex*> pop_locks; // Deals with individual pops
+    
+    // Potentially have global map to find pops
+    // std::unordered_map<int, int> pop_id_to_province_id;
+
+    
     
     class BlockingThreadPool* thread_pool = nullptr;
 
-    int get_pop_mutex_number(int pop_id) const;
-    std::shared_mutex* get_lock(int pop_id) const;
-    std::shared_lock<std::shared_mutex> lock_pop_read(int pop_id) const;
-    std::unique_lock<std::shared_mutex> lock_pop_write(int pop_id) const;
-    const BasePop* get_pop(int pop_id) const;
-    BasePop* get_pop(int pop_id);
-    int get_pop_country_id(BasePop* pop) const;
-    int get_pop_country_id_unsafe(BasePop* pop) const;
+    // const BasePop* get_pop(int pop_id) const;
+    // BasePop* get_pop(int pop_id);
+    // int get_pop_country_id(BasePop* pop) const;
+    // int get_pop_country_id_unsafe(BasePop* pop) const;
 
-    void thread_order_tick(int province_id);
+    // void thread_order_tick(int province_id);
     void thread_trading_tick(int province_id);
 
-    void sell_to_pops(Province* province, std::unordered_set<int>& pops_to_sell_to);
+    // void sell_to_pops(Province* province, std::unordered_set<int>& pops_to_sell_to);
     // void create_pop_location_to_towns(std::vector<BasePop*>& pop_group, std::unordered_map<Vector2i, Vector2i, godot_helpers::Vector2iHasher>& location_to_nearest_town) const;
     // Vector2i get_town_tile(const BasePop* pop) const;
     // void change_pop_unsafe(BasePop* pop);
-    void find_employment_for_pops(Province* province, std::unordered_set<int>& pops_to_employ);
+    // void find_employment_for_pops(Province* province);
 
     // Find Employement functions
-    using employ_type = std::unordered_map<
-        PopTypes, std::unordered_map<
-            int, std::set<
-                std::pair<float, int>, 
-                std::greater<std::pair<float, int>
-                >
-            >
-        >
-    >;
+    // using employ_type = std::unordered_map<
+    //     PopTypes, std::unordered_map<
+    //         int, std::set<
+    //             std::pair<float, int>, 
+    //             std::greater<std::pair<float, int>
+    //             >
+    //         >
+    //     >
+    // >;
 
     // employ_type employment_options; // PopType -> Country id -> set of available factories
 
@@ -86,31 +86,31 @@ class PopManager {
     static std::shared_ptr<PopManager> get_instance();
 
     // order phase
-    void adjust_pop_orders();
+    // void adjust_pop_orders();
     // trading phase
     void pop_tick();
 
     /// Returns with pop id
-    void set_pop_location(int pop_id, const Vector2i& location);
-    int create_pop(Variant culture, const Vector2i p_location, PopTypes p_pop_type);
-    void pay_pop(int pop_id, float wage);
-    void fire_pop(int pop_id);
-    void sell_cargo_to_pop(int pop_id, int type, int amount, float price);
-    void give_pop_cargo(int pop_id, int type, int amount);
-    int get_pop_desired(int pop_id, int type, float price);
-    void pay_pops(int num_to_pay, double for_each);
-    float get_expected_wage(int pop_id) const;
+    // void set_pop_location(int pop_id, const Vector2i& location);
+    // int create_pop(Variant culture, const Vector2i p_location, PopTypes p_pop_type);
+    // void pay_pop(int pop_id, float wage);
+    // void fire_pop(int pop_id);
+    // void sell_cargo_to_pop(int pop_id, int type, int amount, float price);
+    // void give_pop_cargo(int pop_id, int type, int amount);
+    // int get_pop_desired(int pop_id, int type, float price);
+    // void pay_pops(int num_to_pay, double for_each);
+    // float get_expected_wage(int pop_id) const;
 
     //Economy stats
     
 
-    std::shared_ptr<std::unordered_map<PopStats, float>> get_pop_statistics() const;
-    float get_average_cash_of_pops() const;
+    std::unordered_map<PopStats, double> get_pop_statistics() const;
+    double get_average_cash_of_pops() const;
     int get_number_of_broke_pops() const;
     int get_number_of_starving_pops() const;
-    float get_unemployment_rate() const;
-    float get_real_unemployment_rate() const;
+    double get_unemployment_rate() const;
+    double get_real_unemployment_rate() const;
     /// @brief Runs in n time where n is the total amount of pops.
     /// @return A vector who has the total quantity of each type of pop.
-    std::unordered_map<PopTypes, int> get_pop_type_statistics() const;
+    std::unordered_map<PopTypes, long> get_pop_type_statistics() const;
 };
