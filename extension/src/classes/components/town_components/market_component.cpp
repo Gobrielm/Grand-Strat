@@ -3,16 +3,24 @@
 #include "market_component.hpp"
 #include "singletons/terminal_map.hpp"
 #include "singletons/data_collector.hpp"
+#include "utility/debug_trace.h"
 #include "classes/province.hpp"
 #include "classes/base_pop.hpp"
 #include "classes/components/capital_component.hpp"
 #include "classes/components/storage_component.hpp"
 
-MarketComponent::MarketComponent() {}
+MarketComponent::MarketComponent() {
+    sale_history.resize(CargoInfo::get_instance()->get_number_of_goods(), std::vector<int>(200, 0));
+}
 
 MarketComponent::MarketComponent(const MarketComponent& other): 
     sell_orders(other.sell_orders), 
-    buy_orders(other.buy_orders)
+    buy_orders(other.buy_orders),
+    sale_history(other.sale_history),
+    equilibrium_prices(other.equilibrium_prices),
+    last_month_plot(other.last_month_plot),
+    sorted_buy_orders(other.sorted_buy_orders),
+    sorted_sell_orders(other.sorted_sell_orders)
 {}
 
 std::vector<int> MarketComponent::get_types_among_orders() const {
@@ -28,6 +36,17 @@ std::vector<int> MarketComponent::get_types_among_orders() const {
 }
 
 void MarketComponent::add_order(std::shared_ptr<TradeOrder> to) {
+    if (to->get_price() <= 0.1) {
+        print_line(
+            "Type:" + String::num(to->get_type()) +
+            " Price: " + String::num(to->get_price()) +
+            " Limit Price: " + String::num(to->get_limit_price()) +
+            " Amount: " + String::num(to->get_amount()) +
+            " Owner Type: " + String::num(int(to->get_owner_type())) +
+            " Source ID: " + String::num(to->get_source_id())
+        );
+    }
+
     if (to->is_buy_order()) {
         buy_orders.push_back(to);
     } else {
@@ -36,7 +55,7 @@ void MarketComponent::add_order(std::shared_ptr<TradeOrder> to) {
 }
 
 float MarketComponent::get_price(int type) const {
-    if (equilibrium_prices.count(type)) {
+    if (equilibrium_prices.count(type) && equilibrium_prices.at(type) != 0) {
         return equilibrium_prices.at(type);
     }
     return LocalPriceController::get_base_price(type);
@@ -146,6 +165,14 @@ Array MarketComponent::get_market_sale_history(int type) const {
     return toReturn;
 }
 
+const std::vector<int>& MarketComponent::get_market_sale_history_ref(int type) {
+    if (sale_history.size() <= type) {
+        sale_history.emplace_back();
+        ERR_FAIL_V_MSG(sale_history[0], "Sale history is being accessed, before initialized with type: " + String::num(type));
+    }
+    return sale_history[type];
+}
+
 void MarketComponent::market_tick(Province* province) {
     for (auto& [type, buys]: sorted_buy_orders) {
         auto& sell_orders_vec = sorted_sell_orders[type];
@@ -170,7 +197,7 @@ void MarketComponent::market_tick(Province* province) {
             float avg = (price1 + price2) / 2.0f;
 
             if (!buy_order.is_price_acceptable(avg) || !sell_order.is_price_acceptable(avg)) {
-                continue;
+                break;
             }
             
             finish_market_exchange(
@@ -188,12 +215,24 @@ void MarketComponent::sort_orders() {
     
     for (auto& order: buy_orders) {
         int type = order->get_type();
+        if (order->get_price() < 0.0001) {
+            print_error("Price Invalid1");
+        }
         sorted_buy_orders[type].push_back(*order);
+        if (sorted_buy_orders[type].back().get_price() < 0.0001) {
+            print_error("Price Invalid2");
+        }
     }
 
     for (auto& order: sell_orders) {
         int type = order->get_type();
+        if (order->get_price() < 0.0001) {
+            print_error("Price Invalid1");
+        }
         sorted_sell_orders[type].push_back(*order);
+        if (sorted_sell_orders[type].back().get_price() < 0.0001) {
+            print_error("Price Invalid2");
+        }
     }
 
     for (auto& [type, orders]: sorted_buy_orders) {
@@ -245,7 +284,6 @@ void MarketComponent::finish_market_exchange(
 }
 
 void MarketComponent::sell_to_pop(Province* province, BasePop& pop) {
-    Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     // std::unordered_map<int, float> money_to_pay;
     
     for (auto& [type, orders]: sorted_sell_orders) {
@@ -269,6 +307,9 @@ void MarketComponent::sell_to_pop(Province* province, BasePop& pop) {
 
             const float seller_price = sell_order.get_price();
             const float buyer_price = pop.get_buy_price(type, seller_price);
+
+            
+            // DebugTrace::get_instance()->log("Price: " + std::to_string(sell_order.get_price()) + " | Limit: " + std::to_string(sell_order.get_limit_price()));
 
             if (std::isnan(seller_price)) {
                 ERR_FAIL_MSG("seller price is nan");
@@ -378,7 +419,7 @@ void MarketComponent::bookkeeping_tick() {
 float MarketComponent::find_market_price_equilibrium(int type) const {
     
     if (!last_month_plot.count(type) || 
-        (last_month_plot.at(type).first.empty() && last_month_plot.at(type).second.empty())) return 0;
+        (last_month_plot.at(type).first.empty() && last_month_plot.at(type).second.empty())) return LocalPriceController::get_base_price(type);
 
     if (last_month_plot.at(type).second.empty()) return last_month_plot.at(type).first.begin()->second;
     if (last_month_plot.at(type).first.empty()) return last_month_plot.at(type).second.begin()->second;
@@ -425,10 +466,17 @@ float MarketComponent::find_market_price_equilibrium(int type) const {
             }
         }        
     }
+    if (current_price == 0) {
+        return LocalPriceController::get_base_price(type);
+    }
 
     return current_price;
 }
 
 void MarketComponent::record_sale(int type, double price, int amount) {
+    if (price < 0 || price > 99) {
+        DebugTrace::get_instance()->log("Record Sale: " + std::to_string(price));
+        return;
+    }
     sale_history[type][round(price * 2)] += amount;
 }

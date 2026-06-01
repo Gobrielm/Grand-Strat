@@ -497,6 +497,41 @@ unsigned long ProvinceManager::get_grain_supply() const {
     return round(total_demand);
 }
 
+float ProvinceManager::get_average_price(int type) const {
+    double total_demand = 0;
+    double weighted_average = 0;
+
+    for (auto province: provinces) {
+        std::scoped_lock lock(province->m);
+        auto& town = province->town;
+        
+        // auto& sale_history = town.mp.get_market_sale_history_ref(type);
+        auto amt = town.mp.get_current_supply(type);
+        auto price = town.mp.get_price(type);
+
+        // for (int i = 0; i < sale_history.size(); i++) {
+        //     float price = i / 2.0;
+        //     int amount = sale_history[i];
+
+        //     total_demand += amount;
+        //     weighted_average += amount * price;
+        // }
+        total_demand += amt;
+        weighted_average += amt * price;
+    }
+    if (total_demand == 0) return CargoInfo::get_instance()->get_base_prices()[CargoInfo::get_instance()->get_cargo_type("grain")];
+    return weighted_average / total_demand;
+}
+
+void ProvinceManager::pay_pops(int num_to_pay, double for_each) {
+    while (num_to_pay > 0) {
+        int i = rand() % int(provinces.size());
+        auto province = provinces[i];
+        province->ppm.pay_pops(std::min(10, num_to_pay), for_each);
+        num_to_pay -= 10;
+    }
+}
+
 void ProvinceManager::simulation_tick() {
     auto dt = DebugTrace::get_instance();
 
@@ -514,14 +549,14 @@ void ProvinceManager::simulation_tick() {
             dt->log("Firing");
             // A little sketchy since popMan locks, when ownership transfered to provinceMan, itll be better
             for (const auto pop_id: factory.employer.pops_to_fire) {
-                popMan->fire_pop(pop_id);
+                province->ppm.fire_pop(pop_id);
             }
             factory.employer.pops_to_fire.clear();
 
             dt->log("pay pops");
             for (const auto& [pop_id, _]: factory.employer.get_employee_ids()) {
                 float wage = factory.get_wage(town);
-                popMan->pay_pop(pop_id, wage);
+                province->ppm.pay_pop(pop_id, wage);
                 factory.capital.remove_cash(wage);
             }
         }
@@ -529,6 +564,13 @@ void ProvinceManager::simulation_tick() {
         dt->log("Farms");
         for (auto& farm: province->sub_farms) {
             farm.month_tick();
+
+            float wage = farm.get_wage();
+            for (const auto& [pop_id, _]: farm.employer.get_employee_ids()) {
+                wage = std::min(wage, farm.capital.get_cash());
+                province->ppm.pay_pop(pop_id, wage);
+                farm.capital.remove_cash(wage);
+            }
         }
 
 

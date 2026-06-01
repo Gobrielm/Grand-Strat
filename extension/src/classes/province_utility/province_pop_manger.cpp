@@ -4,6 +4,7 @@
 #include "singletons/province_manager.hpp"
 #include "singletons/cargo_info.hpp"
 #include "singletons/data_collector.hpp"
+#include "utility/debug_trace.h"
 
 #include "classes/province.hpp"
 #include "classes/map_objects/town.hpp"
@@ -22,20 +23,51 @@ ProvincePopManager::~ProvincePopManager() {
     }
 }
 
-void ProvincePopManager::adjust_pop_orders(Town& town) {
-    for (auto& [id, pop]: pops) {
-        pop.adjust_pop_orders(town);
-    }
-}
+// void ProvincePopManager::adjust_pop_orders(Town& town) {
+//     for (auto& [id, pop]: pops) {
+//         pop.adjust_pop_orders(town);
+//     }
+// }
 
 void ProvincePopManager::pop_tick(Province* province) {
+    DebugTrace::get_instance()->log("Pop tick start");
     for (auto& [id, pop]: pops) {
         pop.month_tick();
     }
+    DebugTrace::get_instance()->log("Selling");
+
     sell_to_pops(province);
+
+    // auto time1 = std::chrono::high_resolution_clock::now();
+    
+    // auto time2 = std::chrono::high_resolution_clock::now();
+    // DebugTrace::get_instance()->log("Employment");
+    find_employment_for_pops(province);
+    // auto time3 = std::chrono::high_resolution_clock::now();
+
+    // String x;
+    // std::chrono::duration<double> elapsed1 = time1 - start_time;
+    // std::chrono::duration<double> elapsed2 = time2 - time1;
+    // std::chrono::duration<double> elapsed3 = time3 - time2;
+
+
+    // if (elapsed1 > elapsed3) {
+    //     x = "Month Tick";
+    // } else {
+    //     x = "Employment";
+    // }
+
+    // std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - start_time;
+    // if (elapsed.count() > 0.5) {
+    //     print_line("Pop group month tick took " + String::num_scientific(elapsed1.count()) + " seconds");
+    //     print_line("Pop group market tick took " + String::num_scientific(elapsed2.count()) + " seconds");
+    //     print_line("Pop group employment tick took " + String::num_scientific(elapsed3.count()) + " seconds");
+    //     print_line("Total: " + String::num_scientific(elapsed.count()) + " seconds");
+    // }
 }
 
 void ProvincePopManager::sell_to_pops(Province* province) {
+    DebugTrace::get_instance()->log("Province id: " + std::to_string(province->get_province_id()));
     Town& town = province->town;
     for (auto& [id, pop]: pops) {
         town.mp.sell_to_pop(province, pop);
@@ -76,27 +108,38 @@ void ProvincePopManager::find_employment_for_pops(Province* province) {
 
     Town& town = province->town;
     // Create employment queue
-    std::priority_queue<std::pair<float, int>> employement_queue;
-    for (auto& fact: province->factories) {
-        employement_queue.push(std::make_pair(fact.get_wage(town), fact.position.get_building_id()));
+    std::vector<std::priority_queue<std::pair<float, int>>> employement_queue(2);
+
+    for (auto& factory: province->factories) {
+        if (factory.is_hiring(PopTypes::rural)) {
+            employement_queue[0].push(std::make_pair(factory.get_wage(town), factory.position.get_building_id()));
+        }
+        if (factory.is_hiring(PopTypes::town)) {
+            employement_queue[1].push(std::make_pair(factory.get_wage(town), factory.position.get_building_id()));
+        }
     }
 
     // Employ Pops
     for (auto& [id, pop]: pops) {
         auto pop_type = pop.get_type();
         if (!pop.is_seeking_employment()) continue;
+        if (pop_type == PopTypes::peasant) continue; // Do not allow peasants to change jobs
+        int pop_type_index = int(pop_type) - 1;
+        if (pop_type_index != 0 && pop_type_index != 1) {
+            print_line("Pop Type: " + String::num_int64(pop_type_index + 1) + " looking");
+            continue;
+        }
         
-        while (employement_queue.size() != 0) {
-            int building_id = employement_queue.top().second;
+        while (employement_queue[pop_type_index].size() != 0) {
+            int building_id = employement_queue[pop_type_index].top().second;
             auto& factory = province->get_factory_unsafe(building_id);
             if (!factory.is_hiring(pop_type)) {
-                employement_queue.pop();
+                employement_queue[pop_type_index].pop();
                 continue;
             }
-
             factory.employ_pop(town, pop);
+            break;
         }
-
     }
 }
 
@@ -209,10 +252,10 @@ void ProvincePopManager::find_employment_for_pops(Province* province) {
 float ProvincePopManager::get_profit_of_ec(const EmployerComponent ec, const std::unordered_map<int, float>& average_prices) const {
     float profit = 0;
     for (const auto& [type, amount]: ec.recipe.get_inputs()) {
-        profit -= average_prices.at(type) * amount * 30;
+        profit -= average_prices.at(type) * amount;
     }
     for (const auto& [type, amount]: ec.recipe.get_outputs()) {
-        profit += average_prices.at(type) * amount * 30;
+        profit += average_prices.at(type) * amount;
     }
     for (const auto& [type, amount_of_pops]: ec.get_pops_needed()) {
         for (const auto& [type, amount]: BasePop::get_base_needs(type)) {
@@ -389,8 +432,12 @@ float ProvincePopManager::get_expected_wage(int pop_id) const {
     return pops.at(pop_id).get_expected_income(prices);
 }
 
+int ProvincePopManager::get_number_of_pops() const {
+    return pops.size();
+}
+
 //Economy stats
-std::unordered_map<PopStats, long>& ProvincePopManager::get_pop_statistics() const {
+std::unordered_map<PopStats, long> ProvincePopManager::get_pop_statistics() const {
     std::unordered_map<PopStats, long> toReturn;
 
     for (const auto& [id, pop] : pops) {
@@ -406,20 +453,15 @@ std::unordered_map<PopStats, long>& ProvincePopManager::get_pop_statistics() con
             toReturn[PopStats::NumRealUnemployed]++;
     }
     toReturn[PopStats::TotalPopWealth] += get_total_wealth_of_pops();
-    return toReturn;
+    return std::move(toReturn);
 }
 
 long ProvincePopManager::get_total_wealth_of_pops() const {
-    long total = 0;
-    double amount = 0;
+    double total = 0;
     for (const auto& [id, pop] : pops) {
-        amount += pop.get_wealth();
-        
-        long amt = amount;
-        amount -= amt;
-        total += amt;
+        total += pop.get_wealth();
     }
-    return total + round(amount);
+    return std::lround(total);
 }
 
 int ProvincePopManager::get_number_of_broke_pops() const {
@@ -435,7 +477,27 @@ int ProvincePopManager::get_number_of_broke_pops() const {
 int ProvincePopManager::get_number_of_starving_pops() const {
     int total = 0;
     for (const auto& [pop_id, pop]: pops) {
-        if (pop.is_starving()) {
+        if (pop.is_unemployed()) {
+            total++;
+        }
+    }
+    return total;
+}
+
+int ProvincePopManager::get_number_of_unemployed_pops() const {
+    int total = 0;
+    for (const auto& [pop_id, pop]: pops) {
+        if (pop.is_unemployed()) {
+            total++;
+        }
+    }
+    return total;
+}
+
+int ProvincePopManager::get_number_of_real_unemployed_pops() const {
+    int total = 0;
+    for (const auto& [pop_id, pop]: pops) {
+        if (pop.get_income() == 0) {
             total++;
         }
     }

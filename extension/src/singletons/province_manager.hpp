@@ -95,6 +95,9 @@ public:
     float get_average_factory_level() const;
     unsigned long get_grain_demand() const;
     unsigned long get_grain_supply() const;
+    float get_average_price(int type) const;
+
+    void pay_pops(int num_to_pay, double for_each);
 
     // Simulation
     void simulation_tick();

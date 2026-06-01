@@ -1,5 +1,5 @@
 #include "debug_trace.h"
-
+#include <mutex>
 #include <fstream>
 
 DebugTrace* DebugTrace::instance = nullptr;
@@ -26,6 +26,7 @@ DebugTrace::~DebugTrace() {
 }
 
 void DebugTrace::log(const std::string& message) {
+    std::scoped_lock(mutex);
     std::ofstream file(file_name, std::ios::app);
 
     if (file.is_open()) {
@@ -34,6 +35,7 @@ void DebugTrace::log(const std::string& message) {
 }
 
 void DebugTrace::clear() {
+    std::scoped_lock(mutex);
     // Opening with trunc clears the file
     std::ofstream file(file_name, std::ios::trunc);
 }

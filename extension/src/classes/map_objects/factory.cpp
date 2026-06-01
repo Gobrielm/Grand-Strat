@@ -18,9 +18,10 @@ position(p_position, BuildingType::FACTORY),
 employer(employer_component) {
     owner = OwnerComponent(p_owner);
     lpc = LocalPriceController();
+    storage_delta_indicator = std::vector<int>(CargoInfo::get_instance()->get_number_of_goods(), 0);
 }
 
-Factory::Factory(const Factory& other): position(other.position), owner(other.owner), storage(other.storage), capital(other.capital), employer(other.employer), lpc(other.lpc) {}
+Factory::Factory(const Factory& other): position(other.position), owner(other.owner), storage(other.storage), capital(other.capital), employer(other.employer), lpc(other.lpc), storage_delta_indicator(other.storage_delta_indicator) {}
 
 Factory& Factory::operator=(const Factory& other) {
     if (this == &other) return *this;
@@ -31,6 +32,7 @@ Factory& Factory::operator=(const Factory& other) {
     capital = other.capital;
     employer = other.employer;
     orders = other.orders;
+    storage_delta_indicator = other.storage_delta_indicator;
 
     return *this;
 }
@@ -60,7 +62,7 @@ float Factory::get_min_price(int type, Town* town) const {
         available += price * amount;
     }
     
-    return std::max(available / recipe.get_output(type) * -1, 0.0f);
+    return std::max(available / recipe.get_output(type) * -1, 0.1f);
 }
 
 float Factory::get_max_price(int type, Town* town) const {
@@ -292,6 +294,26 @@ void Factory::adjust_trade_orders(Town& town) {
     //     employer.queue_employees_to_be_fired();
     // }
 
+    // diff = actual - wanted
+    auto getPriceMult = [this] (int type, int diff) {
+        if (diff >= 0) {
+
+            if (storage_delta_indicator[type] > 3) {
+                return 0.99;
+            }
+
+            storage_delta_indicator[type] = std::min(storage_delta_indicator[type] + 1, 5);
+        } else {
+
+            if (storage_delta_indicator[type] < -3) {
+                return 1.01;
+            }
+
+            storage_delta_indicator[type] = std::max(storage_delta_indicator[type] - 1, -5);
+        }
+        return 1.0;
+    };
+
     auto& recipe = get_recipe();
     for (const auto& [type, amt]: recipe.get_inputs()) {
         if (!orders.count(type)) {
@@ -301,14 +323,14 @@ void Factory::adjust_trade_orders(Town& town) {
 
         orders[type]->change_amount(amt);
 
-        float price = orders[type]->get_limit_price();
+        float price = orders[type]->get_price();
         orders[type]->set_max_price(get_max_price(type));
-        if (last_month_storage.get_amount(type) < amt) {
-            float new_price = std::min(get_max_price(type), price * 1.01f);
-            orders[type]->set_price(new_price);
-        } else {
-            orders[type]->set_price(price / 1.01);
-        }
+
+        int diff = storage.get_amount(type) - last_month_storage.get_amount(type);
+        float mult = getPriceMult(type, diff);
+
+        float new_price = std::min(get_max_price(type), price * mult);
+        orders[type]->set_price(new_price);
     }
     
     for (const auto& [type, amt]: recipe.get_outputs()) {
@@ -317,14 +339,16 @@ void Factory::adjust_trade_orders(Town& town) {
             town.mp.add_order(orders[type]);
         }
 
-        float price = orders[type]->get_limit_price();
+        float price = orders[type]->get_price();
         orders[type]->set_max_price(get_min_price(type));
-        if (last_month_storage.get_amount(type) > 1) {
-            float new_price = std::max(get_min_price(type), price / 1.01f);
-            orders[type]->set_price(new_price);
-        } else {
-            orders[type]->set_price(price * 1.01);
-        }
+
+        int diff = last_month_storage.get_amount(type) - storage.get_amount(type);
+        float mult = getPriceMult(type, diff);
+
+        float new_price = std::min(get_min_price(type), price * mult);
+        orders[type]->set_price(new_price);
+
+        // print_line("Factory | Price: " + String::num(orders[type]->get_price()) + "Limit Price: " + String::num(orders[type]->get_limit_price()));
     }
     last_month_storage = storage;
 }

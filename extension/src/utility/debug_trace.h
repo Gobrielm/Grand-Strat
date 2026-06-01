@@ -1,5 +1,6 @@
 #pragma once
 
+#include <mutex>
 #include <string>
 
 class DebugTrace {
@@ -18,5 +19,6 @@ private:
 
     static DebugTrace* instance;
 
+    std::mutex mutex;
     std::string file_name;
 };

@@ -163,7 +163,7 @@ int InitialBuilder::get_levels_to_build_helper(int type, int demand) const {
         ERR_PRINT("Type not found in outputs: " + CargoInfo::get_instance()->get_cargo_name(type));
         return 0;
     }
-    int levels_to_build = round((demand) / (output_quant * 30));
+    int levels_to_build = round((demand) / (output_quant));
     return levels_to_build;
 }
 

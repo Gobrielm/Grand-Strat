@@ -1,5 +1,6 @@
 #pragma once
 
+#include "province_utility/province_pop_manager.h"
 #include <godot_cpp/classes/object.hpp>
 #include "utility/vector2i_hash.hpp"
 #include "classes/map_objects/town.hpp"
@@ -22,7 +23,6 @@ class InitialBuilder;
 class ProvinceManager;
 class PositionComponent;
 class MapObjectInfo;
-class ProvincePopManager;
 
 enum class PopTypes: int;
 
@@ -40,13 +40,10 @@ class Province : public Object {
     friend ProvincePopManager;
 
     mutable std::mutex m;
-    mutable std::shared_mutex pops_lock;
     int province_id;
     int country_id = -1;
     int population;
     std::vector<Vector2i> tiles;
-
-    std::unordered_set<int> pops; // Shift ownership eventually to province
 
 
     // New Structures
@@ -58,6 +55,7 @@ class Province : public Object {
 
     // Owned objects
     Town town;
+    ProvincePopManager ppm;
 
     std::unordered_map<int, std::pair<int, BuildingType>> id_to_vector_position;
     std::vector<Factory> factories;
@@ -128,11 +126,9 @@ class Province : public Object {
     void init_province();
 
     // === Pops ===
-    // Info Stuff
-    int get_number_of_pops() const;
-    std::unordered_map<PopTypes, size_t> get_pop_type_statistics() const;
 
     // Local Pop Stuff
+    int get_number_of_pops() const;
     void create_pops();
     void create_peasant_pop(Variant culture, Vector2i p_location);
     void create_rural_pop(Variant culture, Vector2i p_location);
@@ -140,6 +136,5 @@ class Province : public Object {
     int create_town_pop(Variant culture, Vector2i p_location);
     void create_buildings_for_peasants();
     void employ_peasants();
-    int count_pops() const;
     
 };
