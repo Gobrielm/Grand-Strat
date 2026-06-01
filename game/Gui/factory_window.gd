@@ -124,12 +124,12 @@ func factory_window() -> void:
 	
 	for i: int in cargo_list.item_count:
 		cargo_list.remove_item(0)
-	for cargo: int in current_cargo.size():
-		if current_cargo[cargo] != 0:
-			var cargo_name: String = names[cargo]
-			cargo_list.add_item(cargo_name + ", " + str(current_cargo[cargo]))
-			if cargo_name == selected_name:
-				cargo_list.select(cargo)
+	for type: int in current_cargo:
+		if current_cargo[type].amount != 0:
+			var cargo_name: String = names[type]
+			cargo_list.add_item(cargo_name + ", " + str(current_cargo[type].amount))
+			#if cargo_name == selected_name:
+				#cargo_list.select(type)
 
 func display_current_prices() -> void:
 	var price_list: ItemList = $Price_Node/Price_List

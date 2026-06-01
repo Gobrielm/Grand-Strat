@@ -36,6 +36,7 @@ func open_window(new_location: Vector2i) -> void:
 	location = new_location
 	refresh_window()
 	popup()
+	create_graph_pdh()
 
 func refresh_window() -> void:
 	if location != null:
@@ -199,16 +200,16 @@ func create_graph_pdh() -> void:
 	var leftBorder: ColorRect = $Graph/Borders/LeftBorder
 	
 	var amt_diff: float = amount_bounds.y - amount_bounds.x
-	(leftBorder.get_node("1Mark/Label") as Label).text = str(amount_bounds.y)
-	(leftBorder.get_node("3_4Mark/Label") as Label).text = str(amount_bounds.y - amt_diff * 1/4)
-	(leftBorder.get_node("1_2Mark/Label") as Label).text = str(amount_bounds.y - amt_diff * 1/2)
-	(leftBorder.get_node("1_4Mark/Label") as Label).text = str(amount_bounds.y - amt_diff * 3/4)
+	(bottomBorder.get_node("1Mark/Label") as Label).text = str(Utils.round(amount_bounds.y, 2))
+	(bottomBorder.get_node("3_4Mark/Label") as Label).text = str(Utils.round(amount_bounds.y - amt_diff * 1/4.0, 2))
+	(bottomBorder.get_node("1_2Mark/Label") as Label).text = str(Utils.round(amount_bounds.y - amt_diff * 1/2.0, 2))
+	(bottomBorder.get_node("1_4Mark/Label") as Label).text = str(Utils.round(amount_bounds.y - amt_diff * 3/4.0, 2))
 	
 	var price_diff: float = price_bounds.y - price_bounds.x
-	(bottomBorder.get_node("1Mark/Label") as Label).text = str(Utils.round(price_bounds.y, 2))
-	(bottomBorder.get_node("3_4Mark/Label") as Label).text = str(Utils.round(price_bounds.y - price_diff * 1/4, 2))
-	(bottomBorder.get_node("1_2Mark/Label") as Label).text = str(Utils.round(price_bounds.y - price_diff * 1/2, 2))
-	(bottomBorder.get_node("1_4Mark/Label") as Label).text = str(Utils.round(price_bounds.y - price_diff * 3/4, 2))
+	(leftBorder.get_node("1Mark/Label") as Label).text = str(Utils.round(price_bounds.y, 2))
+	(leftBorder.get_node("3_4Mark/Label") as Label).text = str(Utils.round(price_bounds.y - price_diff * 1/4.0, 2))
+	(leftBorder.get_node("1_2Mark/Label") as Label).text = str(Utils.round(price_bounds.y - price_diff * 1/2.0, 2))
+	(leftBorder.get_node("1_4Mark/Label") as Label).text = str(Utils.round(price_bounds.y - price_diff * 3/4.0, 2))
 
 func create_graph_pdp() -> void:
 	var graph: ColorRect = $Graph
@@ -258,16 +259,16 @@ func create_graph_pdp() -> void:
 	var leftBorder: ColorRect = $Graph/Borders/LeftBorder
 	
 	var amt_diff: float = amount_bounds.y - amount_bounds.x
-	(leftBorder.get_node("1Mark/Label") as Label).text = str(amount_bounds.y)
-	(leftBorder.get_node("3_4Mark/Label") as Label).text = str(amount_bounds.y - amt_diff * 1/4)
-	(leftBorder.get_node("1_2Mark/Label") as Label).text = str(amount_bounds.y - amt_diff * 1/2)
-	(leftBorder.get_node("1_4Mark/Label") as Label).text = str(amount_bounds.y - amt_diff * 3/4)
+	(bottomBorder.get_node("1Mark/Label") as Label).text = str(amount_bounds.y)
+	(bottomBorder.get_node("3_4Mark/Label") as Label).text = str(amount_bounds.y - amt_diff * 1/4.0)
+	(bottomBorder.get_node("1_2Mark/Label") as Label).text = str(amount_bounds.y - amt_diff * 1/2.0)
+	(bottomBorder.get_node("1_4Mark/Label") as Label).text = str(amount_bounds.y - amt_diff * 3/4.0)
 	
 	var price_diff: float = price_bounds.y - price_bounds.x
-	(bottomBorder.get_node("1Mark/Label") as Label).text = str(price_bounds.y)
-	(bottomBorder.get_node("3_4Mark/Label") as Label).text = str(price_bounds.y - price_diff * 1/4)
-	(bottomBorder.get_node("1_2Mark/Label") as Label).text = str(price_bounds.y - price_diff * 1/2)
-	(bottomBorder.get_node("1_4Mark/Label") as Label).text = str(price_bounds.y - price_diff * 3/4)
+	(leftBorder.get_node("1Mark/Label") as Label).text = str(Utils.round(price_bounds.y, 2))
+	(leftBorder.get_node("3_4Mark/Label") as Label).text = str(Utils.round(price_bounds.y - price_diff * 1/4.0, 2))
+	(leftBorder.get_node("1_2Mark/Label") as Label).text = str(Utils.round(price_bounds.y - price_diff * 1/2.0, 2))
+	(leftBorder.get_node("1_4Mark/Label") as Label).text = str(Utils.round(price_bounds.y - price_diff * 3/4.0, 2))
 
 func create_point(point: Vector2, buy: bool, price_bounds: Vector2, amount_bounds: Vector2) -> void:
 	var graph: ColorRect = $Graph
