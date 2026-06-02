@@ -296,7 +296,7 @@ void Factory::adjust_trade_orders(Town& town) {
 
     // diff = actual - wanted
     auto getPriceMult = [this] (int type, int diff) {
-        if (diff >= 0) {
+        if (diff > 0) {
 
             if (storage_delta_indicator[type] > 3) {
                 return 0.99;
@@ -345,7 +345,7 @@ void Factory::adjust_trade_orders(Town& town) {
         int diff = last_month_storage.get_amount(type) - storage.get_amount(type);
         float mult = getPriceMult(type, diff);
 
-        float new_price = std::min(get_min_price(type), price * mult);
+        float new_price = std::max(get_min_price(type), price * mult);
         orders[type]->set_price(new_price);
 
         // print_line("Factory | Price: " + String::num(orders[type]->get_price()) + "Limit Price: " + String::num(orders[type]->get_limit_price()));

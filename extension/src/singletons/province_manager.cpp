@@ -440,6 +440,21 @@ float ProvinceManager::get_average_factory_level() const {
     return ave / count;
 }
 
+float ProvinceManager::get_average_cash_of_sub_farms() const {
+    double ave = 0;
+    int count = 0;
+
+    for (auto province: provinces) {
+        std::scoped_lock(province->m);
+        for (const auto& farm: province->sub_farms) {
+            ave += farm.capital.get_cash();
+            count++;
+        }
+
+    }
+    return ave / count;
+}
+
 float ProvinceManager::get_average_cash_of_factory() const {
     double ave = 0;
     int count = 0;

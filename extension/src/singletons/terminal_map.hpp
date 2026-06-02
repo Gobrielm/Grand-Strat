@@ -14,12 +14,9 @@
 #include "classes/map_objects/factory.hpp"
 #include "classes/map_objects/town.hpp"
 
-class TradingSystem;
-
 using namespace godot;
 
 class TerminalMap : public RefCounted {
-    friend TradingSystem;
     GDCLASS(TerminalMap, RefCounted);
 
 private:

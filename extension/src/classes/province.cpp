@@ -73,7 +73,7 @@ int Province::get_population() const {
 
 float Province::get_theoretical_supply_of_grain_from_peasants() const {
     EmployerComponent peasant_ec = SubsistenceFarm::get_default_employer_component();
-    float grain_o = (peasant_ec.recipe.get_outputs().begin())->second;
+    double grain_o = peasant_ec.recipe.get_outputs()[CargoInfo::get_instance()->get_cargo_type("grain")];
     int pops_needed = peasant_ec.get_pops_needed_num();
     auto stats = ppm.get_pop_type_statistics();
     return (grain_o * stats[PopTypes::peasant]) / pops_needed;
@@ -105,7 +105,7 @@ std::unordered_map<int, float> Province::get_demand_for_needed_goods() const {
         toReturn[type] += amount * pop_size[PopTypes::town];   
     }
 
-    toReturn[10] -= get_theoretical_supply_of_grain_from_peasants();
+    toReturn[CargoInfo::get_instance()->get_cargo_type("grain")] -= get_theoretical_supply_of_grain_from_peasants();
     
     return toReturn;
 }
@@ -429,7 +429,7 @@ void Province::create_buildings_for_peasants() {
     auto terminal_map = TerminalMap::get_instance();
 
     for (const Vector2i &tile: tiles) {
-        int temp = terminal_map->get_cargo_value_of_tile(tile, 10); // Grain id
+        int temp = terminal_map->get_cargo_value_of_tile(tile, CargoInfo::get_instance()->get_cargo_type("grain"));
         if (temp > 0) {
             SubsistenceFarm farm(tile, 0);
             farm = add_subsistence_farm(farm);
