@@ -207,9 +207,7 @@ func refresh_territories() -> void:
 	#Uses states for now, may change
 	var file: String = "res://Map/Map_Info/states.png"
 	var im_provinces: Image = load(file).get_image()
-	#For Testing
-	#var provinces: TileMapLayer = preload("res://Map/Map_Info/provinces.tscn").instantiate()
-	#add_child(provinces)
+	
 	var colors_to_province_id: Dictionary = {}
 	var province_id_to_color: Dictionary = {}
 	var current_prov_id: int = 0
@@ -228,7 +226,8 @@ func refresh_territories() -> void:
 				colors_to_province_id[color] = current_prov_id
 				province_id_to_color[current_prov_id] = color
 				current_prov_id += 1
-			#provinces.add_tile_to_province(tile, colors_to_province_id[color])
+			#For Testing
+			#$provinces.add_tile_to_province(tile, colors_to_province_id[color])
 			province_manager.create_new_if_empty(colors_to_province_id[color])
 			province_manager.add_tile_to_province(colors_to_province_id[color], tile)
 			
@@ -256,6 +255,15 @@ func refresh_territories() -> void:
 				new_image.set_pixel(x - 1, y, color)
 	
 	new_image.save_png(file)
+	
+	#$provinces.assign_province_colors()
+	#call_deferred("save_provinces")
+
+func save_provinces() -> void:
+	var filepath: String = "res://Map/Map_Info/provinces.tscn"
+	var packed_scene: PackedScene = PackedScene.new()
+	packed_scene.pack($provinces)
+	ResourceSaver.save(packed_scene, filepath)
 
 func use_image_to_create_unique_province_colors() -> void:
 	var province_manager: ProvinceManager = ProvinceManager.get_instance()
