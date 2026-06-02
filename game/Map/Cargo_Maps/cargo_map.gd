@@ -53,6 +53,7 @@ func place_factories_client_side(fact_tiles: Dictionary) -> void:
 		set_cell(tile, 0, atlas)
 		Utils.world_map.make_cell_invisible(tile)
 	
+	print("Placing Done")
 	mutex.unlock()
 
 func add_industries_to_towns() -> void:

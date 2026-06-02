@@ -60,13 +60,7 @@ func day_tick() -> void:
 	TerminalMap.get_instance()._on_day_tick_timeout()
 	clock.iterate_day()
 	if clock.is_next_month():
-		var time_taken: float = (Time.get_ticks_msec() - start) / 1000
-		if time_taken > 15:
-			print(str(time_taken) + " seconds have passed for one whole month.")
-		start = Time.get_ticks_msec()
 		_on_month_tick_timeout()
-
-var start: float = 0.0
 
 func _on_month_tick_timeout() -> void:
 	if thread.is_started():
@@ -75,11 +69,14 @@ func _on_month_tick_timeout() -> void:
 
 func call_month_tick() -> void:
 	backend_pause()
+	var start: float = Time.get_ticks_msec()
 	CountryManager.get_instance().month_tick()
 	DataCollector.get_instance().month_tick()
 	RoadMap.get_instance().month_tick()
 	TerminalMap.get_instance()._on_month_tick_timeout()
 	Utils.unit_map._on_month_tick_timeout()
+	var time_taken: float = (Time.get_ticks_msec() - start) / 1000
+	print(str(time_taken) + " seconds have passed for one whole month.")
 	backend_unpause()
 
 func _process(delta: float) -> void:
