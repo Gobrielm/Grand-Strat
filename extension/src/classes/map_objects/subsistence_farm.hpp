@@ -37,6 +37,10 @@ class SubsistenceFarm {
     CapitalComponent capital;
     EmployerComponent employer;
 
+    StorageComponent last_month_storage;
+    // type -> true if bought/sold more than/equal to needed, false if sold/bought less than neccessary
+    std::vector<int> storage_delta_indicator;
+
     SubsistenceFarm();
     SubsistenceFarm(Vector2i p_location, int p_owner);
     SubsistenceFarm(const SubsistenceFarm& other);
@@ -46,7 +50,6 @@ class SubsistenceFarm {
     void add_pop(Town& town, BasePop* pop);
     float get_wage();
 
-    void adjust_trade_orders(Town& town);
     double get_batch_size();
     void create_recipe();
     void month_tick();
@@ -55,4 +58,6 @@ class SubsistenceFarm {
 
     void consider_upgrade();
     void consider_degrade();
+
+    void adjust_trade_orders(Town& town);
 };

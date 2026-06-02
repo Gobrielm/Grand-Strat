@@ -15,7 +15,7 @@ DebugTrace* DebugTrace::get_instance() {
 }
 
 DebugTrace::DebugTrace() {
-    file_name = "debug_trace.log";
+    file_name = "../debug_trace.log";
 
     // Create file if it doesn't exist
     std::ofstream file(file_name, std::ios::app);

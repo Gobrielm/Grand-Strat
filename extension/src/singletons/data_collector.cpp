@@ -44,7 +44,7 @@ void DataCollector::month_tick() {
     if (is_collecting_data) {
         auto pops_data = (pop_manager->get_pop_statistics());
 
-        station_data_points.push_back(province_manager -> get_average_cash_of_station());
+        subsistence_farm_data_points.push_back(province_manager -> get_average_cash_of_sub_farms());
         factory_data_points.push_back(province_manager -> get_average_cash_of_factory());
         pops_data_points.push_back(pops_data[PopStats::AveragePopWealth]);
         factory_ave_level.push_back(province_manager -> get_average_factory_level());
@@ -65,24 +65,24 @@ void DataCollector::month_tick() {
 }
 
 void DataCollector::write_data_to_file() {
-    std::ofstream file("data.xlsx");
+    std::ofstream file("../data.csv");
     file << "Month,";
-    file << "Station Data points,";
-    file << "Factory Data points,";
-    file << "Pops average wealth,";
-    file << "Factory average level,";
-    file << "Grain Demand,";
-    file << "Grain Supply,";
-    file << "Starving pops,";
-    file << "Broke pops,";
-    file << "Unemployment Rate,";
-    file << "Real Unemployment Rate,";
-    file << "Number Of Peasants,";
-    file << "Price of Grain";
+    file << "SubsistenceFarms,";
+    file << "FactoryDataPoints,";
+    file << "PopsAverageWealth,";
+    file << "FactoryAverageLevel,";
+    file << "GrainDemand,";
+    file << "GrainSupply,";
+    file << "StarvingPops,";
+    file << "BrokePops,";
+    file << "UnemploymentRate,";
+    file << "Real UnemploymentRate,";
+    file << "NumberOfPeasants,";
+    file << "PriceOfGrain";
     file << '\n';
-    for (int i = 0; i < station_data_points.size(); i++) {
+    for (int i = 0; i < subsistence_farm_data_points.size(); i++) {
         file << (i + 1) << ",";
-        file << station_data_points[i] << ",";
+        file << subsistence_farm_data_points[i] << ",";
         file << factory_data_points[i] << ",";
         file << pops_data_points[i] << ",";
         file << factory_ave_level[i] << ",";

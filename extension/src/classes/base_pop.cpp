@@ -276,7 +276,7 @@ float BasePop::get_buy_price_for_needed_good(int type, float current_price) cons
     float mult = (needed == 1) ? (1 + ((rand() % 5) / 100.0)): 1;
     float available_money = std::min(std::max(income, current_price * mult), capital.get_cash()); // Highest will go
 
-    return std::min(available_money, current_price);
+    return available_money;
 }
 
 float BasePop::get_buy_price_for_wanted_good(int type, float current_price) const {
@@ -343,13 +343,13 @@ unsigned int BasePop::get_desired(int type, float price) const {
     ERR_FAIL_COND_V_MSG(price < 0, 0, "Price is below 0.");
     int amount_can_buy = int(capital.get_cash() / price);
     int amount_can_store = int(get_max_storage(type) - storage.get_amount(type));
-    int amount = std::min(amount_can_buy, amount_can_store);
+    uint32_t amount = std::min(amount_can_buy, amount_can_store);
 
     if (income == 0.0 && !get_base_needs().count(type)) {
         return 0; // Don't buy if not neccessary and no job
     }
 	
-	return std::max(amount, 0);
+	return std::max(amount, 0u);
 }
 
 void BasePop::buy_good(int type, int amount, float price) {

@@ -90,6 +90,7 @@ public:
     int16_t get_cash_of_factory(Vector2i coords);
 
     //Economy Testing Functions
+    float get_average_cash_of_sub_farms() const;
     float get_average_cash_of_factory() const;
     float get_average_cash_of_station() const;
     float get_average_factory_level() const;
