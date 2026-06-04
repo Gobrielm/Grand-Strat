@@ -43,7 +43,7 @@ void EmployerComponent::degrade() {
     }
     int level = --recipe.level;
     for (const auto &[type, amount]: pops_needed) {
-        pops_needed[type] = std::round((amount * level) / (level + 1));
+        pops_needed[type] = std::round((amount * level) / (level + 1.0));
     }
 }
 
@@ -116,7 +116,7 @@ double EmployerComponent::get_level() const {
 	if (employment == 0) {
         return 0;
     }
-	return double(employment) / get_pops_needed_num();
+	return double(employment) / get_pops_needed_num() * recipe.level;
 }
 
 int EmployerComponent::get_level_without_employment() const {

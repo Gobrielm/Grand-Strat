@@ -211,12 +211,15 @@ void Factory::upgrade() {
 
 void Factory::admin_upgrade() {
     employer.upgrade();
+    storage.MAX_STORAGE = employer.get_level() * 5000; // Arbitrary storage increase per level
 }
 
 void Factory::finish_upgrade() {
     print_line("Finished Upgrade.");
     construction.finish_construction();
     employer.upgrade();
+    storage.MAX_STORAGE = employer.get_level() * 5000; // Arbitrary storage increase per level
+    
 }
 
 bool Factory::is_primary_factory() const {

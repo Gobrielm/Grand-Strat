@@ -143,7 +143,9 @@ int InitialBuilder::get_levels_to_build(int type, Province* province) const {
     int num_pop = province->get_number_of_pops();
     String cargo_name = CargoInfo::get_instance()->get_cargo_name(type);
     std::unordered_map<int, float> cargo_needed = province->get_demand_for_needed_goods();
+
     ERR_FAIL_COND_V_MSG(!cargo_needed.count(type), 0, "No Demand for good of type: " + cargo_name);
+
     float demand = round(cargo_needed.at(type));
     if (cargo_name == "grain") {
         return get_levels_to_build_helper(type, demand);
@@ -156,6 +158,7 @@ int InitialBuilder::get_levels_to_build(int type, Province* province) const {
 }
 
 int InitialBuilder::get_levels_to_build_helper(int type, int demand) const {
+    
     auto ec = RecipeInfo::get_instance()->get_primary_employer_component_for_type(type);
     ERR_FAIL_COND_V_MSG(!ec, 0, "Recipe is null from type: " + CargoInfo::get_instance()->get_cargo_name(type));
     float output_quant = ec.value().recipe.get_outputs()[type];
