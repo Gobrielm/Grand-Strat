@@ -32,6 +32,13 @@ func _on_strat_pressed() -> void:
 	unpress_other_buttons()
 	press_button($strat)
 
+func _on_provinces_pressed() -> void:
+	close_other_mapmodes()
+	unpress_other_buttons()
+	Utils.turn_on_black_white_map()
+	(Utils.world_map.get_node("provinces") as TileMapLayer).visible = true
+	press_button($provinces)
+
 func unpress_other_buttons() -> void:
 	for child: Node in get_children():
 		if child is Button:
@@ -50,6 +57,7 @@ func unpress_button(button: Button) -> void:
 func close_other_mapmodes() -> void:
 	tile_ownership.get_instance().visible = false
 	Utils.cargo_values.close_all_layers()
+	((Utils.world_map as TileMapLayer).get_node("provinces") as TileMapLayer).visible = false
 
 func _on_resource_window_resource_window_picked(type: int) -> void:
 	Utils.cargo_values.open_resource_map(type)
