@@ -119,6 +119,7 @@ void TerminalMap::_on_month_tick_timeout() {
     dt->log("Trading");
     ProvinceManager::get_instance()->trading_tick();
     dt->log("Done");
+    // ProvinceManager::get_instance()->test_check();
 }
 
 // std::vector<Ref<Terminal>> TerminalMap::get_terminals_for_day_tick() const {

@@ -77,6 +77,7 @@ void SubsistenceFarm::month_tick() {
     create_recipe();
     consider_degrade();
     consider_upgrade();
+    storage.MAX_STORAGE = employer.get_level() * 5000; // Arbitrary storage increase per level
 }
 
 EmployerComponent SubsistenceFarm::get_default_employer_component() {

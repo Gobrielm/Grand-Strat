@@ -100,6 +100,8 @@ public:
 
     void pay_pops(int num_to_pay, double for_each);
 
+    void test_check();
+
     // Simulation
     void simulation_tick();
 

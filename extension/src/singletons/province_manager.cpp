@@ -400,13 +400,19 @@ Dictionary ProvinceManager::get_factory_info(const Vector2i coords) {
     if (pos.get_type() == BuildingType::FACTORY) {
         auto& factory = province->get_factory_unsafe(pos.get_building_id());
 
+        Dictionary cargo_dict;
         for (const auto [type, amount]: factory.storage.get_storage()) {
             Dictionary d;
             d["amount"] = amount;
             d["supply"] = factory.get_current_price(type);
             d["demand"] = factory.get_demand(type);
-            outer_dict[type] = d;
+            cargo_dict[type] = d;
         }
+
+        outer_dict["cargo"] = cargo_dict;
+        outer_dict["level"] = factory.employer.get_level_without_employment();
+        outer_dict["cash"] = factory.capital.get_cash();
+        outer_dict["employment_rate"] = factory.employer.get_employment_rate();
     }
 
     return outer_dict;
@@ -545,6 +551,17 @@ void ProvinceManager::pay_pops(int num_to_pay, double for_each) {
         province->ppm.pay_pops(std::min(10, num_to_pay), for_each);
         num_to_pay -= 10;
     }
+}
+
+void ProvinceManager::test_check() {
+    long tot = 0;
+    long peasant_tot = 0;
+    for (auto province: provinces) {
+        tot += province->get_demand_for_needed_goods()[CargoInfo::get_instance()->get_cargo_type("grain")];
+        peasant_tot += province->get_theoretical_supply_of_grain_from_peasants();
+    }
+    print_line("Total Grain Needed Exp: " + String::num_int64(tot));
+    print_line("Total Grain Produced Peasants Exp: " + String::num_int64(peasant_tot));
 }
 
 void ProvinceManager::simulation_tick() {

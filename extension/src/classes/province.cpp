@@ -96,13 +96,13 @@ std::unordered_map<int, float> Province::get_demand_for_needed_goods() const {
     std::unordered_map<PopTypes, long> pop_size = ppm.get_pop_type_statistics();
     
     for (const auto& [type, amount]: BasePop::get_base_needs(PopTypes::rural)) {
-        toReturn[type] += amount * pop_size[PopTypes::rural];   
+        toReturn[type] += amount * pop_size[PopTypes::rural];
     }
     for (const auto& [type, amount]: BasePop::get_base_needs(PopTypes::peasant)) {
-        toReturn[type] += amount * pop_size[PopTypes::peasant];   
+        toReturn[type] += amount * pop_size[PopTypes::peasant];
     }
     for (const auto& [type, amount]: BasePop::get_base_needs(PopTypes::town)) {
-        toReturn[type] += amount * pop_size[PopTypes::town];   
+        toReturn[type] += amount * pop_size[PopTypes::town];
     }
 
     toReturn[CargoInfo::get_instance()->get_cargo_type("grain")] -= get_theoretical_supply_of_grain_from_peasants();
@@ -359,8 +359,6 @@ void Province::init_province() {
 
     // encode previously created town
     tm->encode_building(town.position);
-
-    // Create factories
     
 }
 
@@ -428,14 +426,9 @@ int Province::create_town_pop(Variant culture, Vector2i p_location) {
 void Province::create_buildings_for_peasants() {
     auto terminal_map = TerminalMap::get_instance();
 
-    for (const Vector2i &tile: tiles) {
-        int temp = terminal_map->get_cargo_value_of_tile(tile, CargoInfo::get_instance()->get_cargo_type("grain"));
-        if (temp > 0) {
-            SubsistenceFarm farm(tile, 0);
-            farm = add_subsistence_farm(farm);
-            terminal_map->encode_building(farm.position);
-        }
-    }
+    SubsistenceFarm farm(town.position.get_position_vector2i(), 0);
+    farm = add_subsistence_farm(farm);
+    terminal_map->encode_building(farm.position);
 }
 
 void Province::employ_peasants() {
@@ -453,17 +446,13 @@ void Province::employ_peasants() {
         // print_error("No possible peasant buildings");
         return;
     }
-    
-    int i = 0;
 
     for (auto& [id, pop]: ppm.pops) {
         if (pop.get_type() != PopTypes::peasant) continue;
         
-        SubsistenceFarm& farm = sub_farms[i];
+        SubsistenceFarm& farm = sub_farms[0];
         
         farm.add_pop(town, &pop);          
-
-        i = (i + 1) % sub_farms.size();
     }
     
     
