@@ -526,19 +526,19 @@ float ProvinceManager::get_average_price(int type) const {
         std::scoped_lock lock(province->m);
         auto& town = province->town;
         
-        // auto& sale_history = town.mp.get_market_sale_history_ref(type);
-        auto amt = town.mp.get_current_supply(type);
-        auto price = town.mp.get_price(type);
+        auto& sale_history = town.mp.get_market_sale_history_ref(type);
+        // auto amt = town.mp.get_current_supply(type);
+        // auto price = town.mp.get_price(type);
 
-        // for (int i = 0; i < sale_history.size(); i++) {
-        //     float price = i / 2.0;
-        //     int amount = sale_history[i];
+        for (int i = 0; i < sale_history.size(); i++) {
+            float price = i / 2.0;
+            int amount = sale_history[i];
 
-        //     total_demand += amount;
-        //     weighted_average += amount * price;
-        // }
-        total_demand += amt;
-        weighted_average += amt * price;
+            total_demand += amount;
+            weighted_average += amount * price;
+        }
+        // total_demand += amt;
+        // weighted_average += amt * price;
     }
     if (total_demand == 0) return CargoInfo::get_instance()->get_base_prices()[CargoInfo::get_instance()->get_cargo_type("grain")];
     return weighted_average / total_demand;

@@ -35,7 +35,10 @@ class MarketComponent {
     std::unordered_map<int, std::pair<std::vector<std::pair<int, float>>, std::vector<std::pair<int, float>>>> last_month_plot;
     std::unordered_map<int, float> equilibrium_prices;
     // index by type, then by price, buckets of 0.5, ie round(price * 2) to get amount
-    std::vector<std::vector<int>> sale_history;
+    std::vector<std::vector<unsigned int>> sale_history;
+    // index by type, then by price, buckets of 0.5, ie round(price * 2) to get amount
+    std::vector<std::vector<unsigned int>> buy_order_buckets;
+    std::vector<std::vector<unsigned int>> sell_order_buckets;
 
     std::vector<int> get_types_among_orders() const;
 
@@ -58,7 +61,7 @@ class MarketComponent {
     Array get_market_info_plot_godot(int type) const;
 
     Array get_market_sale_history(int type) const;
-    const std::vector<int>& get_market_sale_history_ref(int type);
+    const std::vector<unsigned int>& get_market_sale_history_ref(int type);
     
     /// @param province The locked province that town is in
     void market_tick(Province* province);

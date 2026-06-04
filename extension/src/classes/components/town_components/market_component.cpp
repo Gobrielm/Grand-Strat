@@ -10,13 +10,17 @@
 #include "classes/components/storage_component.hpp"
 
 MarketComponent::MarketComponent() {
-    sale_history.resize(CargoInfo::get_instance()->get_number_of_goods(), std::vector<int>(200, 0));
+    sale_history.resize(CargoInfo::get_instance()->get_number_of_goods(), std::vector<unsigned int>(200, 0));
+    buy_order_buckets.resize(CargoInfo::get_instance()->get_number_of_goods(), std::vector<unsigned int>(200, 0));
+    sell_order_buckets.resize(CargoInfo::get_instance()->get_number_of_goods(), std::vector<unsigned int>(200, 0));
 }
 
 MarketComponent::MarketComponent(const MarketComponent& other): 
     sell_orders(other.sell_orders), 
     buy_orders(other.buy_orders),
     sale_history(other.sale_history),
+    buy_order_buckets(other.buy_order_buckets),
+    sell_order_buckets(other.sell_order_buckets),
     equilibrium_prices(other.equilibrium_prices),
     last_month_plot(other.last_month_plot),
     sorted_buy_orders(other.sorted_buy_orders),
@@ -49,8 +53,10 @@ void MarketComponent::add_order(std::shared_ptr<TradeOrder> to) {
 
     if (to->is_buy_order()) {
         buy_orders.push_back(to);
+        buy_order_buckets[to->get_type()][round(to->get_price() * 2)] += to->get_amount();
     } else {
         sell_orders.push_back(to);
+        sell_order_buckets[to->get_type()][round(to->get_price() * 2)] += to->get_amount();
     }
 }
 
@@ -129,22 +135,36 @@ Array MarketComponent::get_market_info_plot_godot(int type) const {
     Array buys;
     Array sells;
 
-    if (!last_month_plot.count(type)) {
-        return Array();
-    }
+    // if (!last_month_plot.count(type)) {
+    //     return Array();
+    // }
 
-    const auto& orders = last_month_plot.at(type);
+    // const auto& orders = last_month_plot.at(type);
 
-    const auto& last_month_buy_orders = orders.first;
-    const auto& last_month_sell_orders = orders.second;
+    // const auto& last_month_buy_orders = orders.first;
+    // const auto& last_month_sell_orders = orders.second;
     
-    for (const auto& [amt, price]: last_month_buy_orders) {
-        Vector2 v(amt, price);
+    // for (const auto& [amt, price]: last_month_buy_orders) {
+    //     Vector2 v(amt, price);
+    //     buys.push_back(v);
+    // }
+
+    // for (const auto& [amt, price]: last_month_sell_orders) {
+    //     Vector2 v(amt, price);
+    //     sells.push_back(v);
+    // }
+
+    for (int i = 0; i < buy_order_buckets[type].size(); i++) {
+        unsigned int amt = buy_order_buckets[type][i];
+        if (amt == 0) continue;
+        Vector2 v(amt, i / 2.0);
         buys.push_back(v);
     }
 
-    for (const auto& [amt, price]: last_month_sell_orders) {
-        Vector2 v(amt, price);
+    for (int i = 0; i < sell_order_buckets[type].size(); i++) {
+        unsigned int amt = sell_order_buckets[type][i];
+        if (amt == 0) continue;
+        Vector2 v(amt, i / 2.0);
         sells.push_back(v);
     }
     
@@ -165,7 +185,7 @@ Array MarketComponent::get_market_sale_history(int type) const {
     return toReturn;
 }
 
-const std::vector<int>& MarketComponent::get_market_sale_history_ref(int type) {
+const std::vector<unsigned int>& MarketComponent::get_market_sale_history_ref(int type) {
     if (sale_history.size() <= type) {
         sale_history.emplace_back();
         ERR_FAIL_V_MSG(sale_history[0], "Sale history is being accessed, before initialized with type: " + String::num(type));
@@ -386,18 +406,24 @@ void MarketComponent::sell_to_pop(Province* province, BasePop& pop) {
 
 int32_t MarketComponent::get_current_demand(int type) const {
     int32_t tot = 0;
-    if (!last_month_plot.count(type)) return tot;
-    for (const auto& [amt, price]: last_month_plot.at(type).first) {
-        tot += amt;
+    // if (!last_month_plot.count(type)) return tot;
+    // for (const auto& [amt, price]: last_month_plot.at(type).first) {
+    //     tot += amt;
+    // }
+    for (int i = 0; i < buy_order_buckets[type].size(); i++) {
+        tot += buy_order_buckets[type][i];
     }
     return tot;
 }
 
 int32_t MarketComponent::get_current_supply(int type) const {
     int32_t tot = 0;
-    if (!last_month_plot.count(type)) return tot;
-    for (const auto& [amt, price]: last_month_plot.at(type).second) {
-        tot += amt;
+    // if (!last_month_plot.count(type)) return tot;
+    // for (const auto& [amt, price]: last_month_plot.at(type).second) {
+    //     tot += amt;
+    // }
+    for (int i = 0; i < sell_order_buckets[type].size(); i++) {
+        tot += sell_order_buckets[type][i];
     }
     return tot;
 }
@@ -405,7 +431,7 @@ int32_t MarketComponent::get_current_supply(int type) const {
 void MarketComponent::bookkeeping_tick() {
     // sort orders
     sort_orders();
-    sale_history.resize(CargoInfo::get_instance()->get_number_of_goods(), std::vector<int>(200, 0));
+    sale_history.resize(CargoInfo::get_instance()->get_number_of_goods(), std::vector<unsigned int>(200, 0));
 
     last_month_plot.clear();
     equilibrium_prices.clear();
