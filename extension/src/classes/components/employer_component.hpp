@@ -32,6 +32,8 @@ class EmployerComponent {
     void upgrade();
     void degrade();
 
+    int get_input(int type) const;
+    int get_output(int type) const;
 
     bool is_pop_type_needed(PopTypes pop_type) const;
     void add_pop(BasePop* pop);

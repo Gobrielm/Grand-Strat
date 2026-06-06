@@ -195,6 +195,13 @@ int Factory::get_primary_type() const {
     }
 }
 
+int Factory::get_supply(int type) const {
+    if (employer.recipe.get_output(type) != 0) {
+        return employer.get_output(type);
+    }
+    return 0;
+}
+
 int Factory::get_demand(int type) const {
     int delta = storage.get_amount(type) - last_month_storage.get_amount(type);
     int amt = get_recipe().get_output(type);
@@ -318,7 +325,8 @@ void Factory::adjust_trade_orders(Town& town) {
     };
 
     auto& recipe = get_recipe();
-    for (const auto& [type, amt]: recipe.get_inputs()) {
+    for (const auto& [type, _]: recipe.get_inputs()) {
+        int amt = employer.get_input(type);
         if (!orders.count(type)) {
             orders[type] = std::make_shared<TradeOrder>(position, type, amt, true, town.mp.get_price(type), get_max_price(type, &town));
             town.mp.add_order(orders[type]);
@@ -336,7 +344,8 @@ void Factory::adjust_trade_orders(Town& town) {
         orders[type]->set_price(new_price);
     }
     
-    for (const auto& [type, amt]: recipe.get_outputs()) {
+    for (const auto& [type, _]: recipe.get_outputs()) {
+        int amt = employer.get_output(type);
         if (!orders.count(type)) {
             orders[type] = std::make_shared<TradeOrder>(position, type, amt, false, town.mp.get_price(type), get_min_price(type, &town));
             town.mp.add_order(orders[type]);

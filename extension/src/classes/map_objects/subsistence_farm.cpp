@@ -143,7 +143,8 @@ void SubsistenceFarm::adjust_trade_orders(Town& town) {
 
     auto& recipe = employer.recipe;
     
-    for (const auto& [type, amt]: recipe.get_outputs()) {
+    for (const auto& [type, _]: recipe.get_outputs()) {
+        int amt = employer.get_output(type);
         if (!orders.count(type)) {
             orders[type] = std::make_shared<TradeOrder>(position, type, amt, false, town.mp.get_price(type), 0.1); // arbitrary price
             town.mp.add_order(orders[type]);
@@ -158,4 +159,28 @@ void SubsistenceFarm::adjust_trade_orders(Town& town) {
         orders[type]->set_price(new_price);
     }
     last_month_storage = storage;
+}
+
+float SubsistenceFarm::get_current_price(int type) const {
+    if (orders.count(type)) {
+        return orders.at(type)->get_price();
+    }
+    return 0;
+}
+
+int SubsistenceFarm::get_supply(int type) const {
+    if (employer.recipe.get_output(type) != 0) {
+        return employer.get_output(type);
+    }
+    return 0;
+}
+
+int SubsistenceFarm::get_demand(int type) const {
+    int delta = storage.get_amount(type) - last_month_storage.get_amount(type);
+    int amt = employer.recipe.get_output(type);
+    if (amt == 0) return 0;
+
+    int demand = std::max(delta - amt, 0);
+
+    return demand;
 }

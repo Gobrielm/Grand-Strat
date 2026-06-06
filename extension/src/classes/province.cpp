@@ -233,7 +233,7 @@ Factory& Province::add_hidden_factory(Factory& factory) {
     factories.push_back(factory);
     id_to_vector_position[factory.position.get_building_id()] = std::make_pair(spot, factory.position.get_type());
 
-    hidden_position_components[factory.position.get_position_vector2i()].push_back(factory.position);
+    hidden_position_components[factory.position.get_position_vector2i()] = factory.position;
     return factories.back();
 }
 
@@ -258,7 +258,7 @@ SubsistenceFarm& Province::add_subsistence_farm(SubsistenceFarm& farm) {
     sub_farms.push_back(farm);
     id_to_vector_position[farm.position.get_building_id()] = std::make_pair(spot, farm.position.get_type());
 
-    hidden_position_components[farm.position.get_position_vector2i()].push_back(farm.position);
+    hidden_position_components[farm.position.get_position_vector2i()] = farm.position;
     return sub_farms.back();
 }
 
@@ -290,7 +290,7 @@ bool Province::is_building_at_pos(Vector2i pos) const {
 int Province::get_hidden_buildings_at_pos(Vector2i pos) const {
     std::scoped_lock lock(m);
     if (hidden_position_components.count(pos)) {
-        return hidden_position_components.at(pos).size();
+        return hidden_position_components.count(pos);
     }
     return 0;
 }
@@ -472,9 +472,23 @@ Station& Province::get_station_unsafe(int pos_id) {
     return stations[id_to_vector_position[pos_id].first];
 }
 
+SubsistenceFarm& Province::get_subsistence_farm_unsafe(int pos_id) {
+    if (!id_to_vector_position.count(pos_id) || id_to_vector_position[pos_id].second != BuildingType::SUBSISTENCE_FARM) {
+        std::cout << "Tried to fetch invalid subsistence farm with pos: "  + std::to_string(pos_id);
+    }
+    return sub_farms[id_to_vector_position[pos_id].first];
+}
+
 PositionComponent Province::get_visible_position_component_unsafe(Vector2i tile) const {
     if (position_components.count(tile)) {
         return position_components.at(tile);
+    }
+    return PositionComponent();
+}
+
+PositionComponent Province::get_hidden_position_component_unsafe(Vector2i tile) const {
+    if (hidden_position_components.count(tile) && hidden_position_components.count(tile)) {
+        return hidden_position_components.at(tile);
     }
     return PositionComponent();
 }
