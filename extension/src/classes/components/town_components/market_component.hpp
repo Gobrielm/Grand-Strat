@@ -31,14 +31,15 @@ class MarketComponent {
         std::deque<TradeOrder>
     > sorted_sell_orders;
 
-    // <amount, price>, buys sorted decreasing, sells sorted increasing
-    std::unordered_map<int, std::pair<std::vector<std::pair<int, float>>, std::vector<std::pair<int, float>>>> last_month_plot;
     std::unordered_map<int, float> equilibrium_prices;
+
+    static const int PLOT_BUCKETS = 200;
     // index by type, then by price, buckets of 0.5, ie round(price * 2) to get amount
-    std::vector<std::vector<unsigned int>> sale_history;
+    std::vector<unsigned int> sale_history;
     // index by type, then by price, buckets of 0.5, ie round(price * 2) to get amount
-    std::vector<std::vector<unsigned int>> buy_order_buckets;
-    std::vector<std::vector<unsigned int>> sell_order_buckets;
+    std::vector<unsigned int> buy_order_buckets;
+    // index by type, then by price, buckets of 0.5, ie round(price * 2) to get amount
+    std::vector<unsigned int> sell_order_buckets;
 
     std::vector<int> get_types_among_orders() const;
 
@@ -52,6 +53,7 @@ class MarketComponent {
     MarketComponent();
     MarketComponent(const MarketComponent& other);
 
+
     void add_order(std::shared_ptr<TradeOrder> to);
     float get_price(int type) const;
     float get_min_price(int type) const;
@@ -61,7 +63,7 @@ class MarketComponent {
     Array get_market_info_plot_godot(int type) const;
 
     Array get_market_sale_history(int type) const;
-    const std::vector<unsigned int>& get_market_sale_history_ref(int type);
+    std::vector<unsigned int> get_market_sale_history_ref(int type) const;
     
     /// @param province The locked province that town is in
     void market_tick(Province* province);

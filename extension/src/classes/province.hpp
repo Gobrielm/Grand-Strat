@@ -51,7 +51,7 @@ class Province : public Object {
     // Used to access the top level building on each tile
     std::unordered_map<Vector2i, PositionComponent, godot_helpers::Vector2iHasher, godot_helpers::Vector2iEqual> position_components;
     // Used to access the hidden buildings at each tile, ie sub. farms or town factories
-    std::unordered_map<Vector2i, std::vector<PositionComponent>, godot_helpers::Vector2iHasher, godot_helpers::Vector2iEqual> hidden_position_components;
+    std::unordered_map<Vector2i, PositionComponent, godot_helpers::Vector2iHasher, godot_helpers::Vector2iEqual> hidden_position_components;
 
     // Owned objects
     Town town;
@@ -65,7 +65,9 @@ class Province : public Object {
     // private helper functions
     Factory& get_factory_unsafe(int pos_id);
     Station& get_station_unsafe(int pos_id);
+    SubsistenceFarm& get_subsistence_farm_unsafe(int pos_id);
     PositionComponent get_visible_position_component_unsafe(Vector2i tile) const;
+    PositionComponent get_hidden_position_component_unsafe(Vector2i tile) const;
     std::pair<CapitalComponent*, StorageComponent*> get_capital_and_storage_components_unsafe(const TradeOrder& order);
 
     protected:

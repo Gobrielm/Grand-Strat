@@ -55,9 +55,8 @@ void InitialBuilder::build_initital_factories() {
 
 void InitialBuilder::build_factory_type(int type, Province* province) {
     int tile_count = province->get_tiles_vector().size();
-    int num_of_levels_to_place = 5;
-    // int num_of_levels_to_place = get_levels_to_build(type, province);
-    if (num_of_levels_to_place == 0) return;
+    int num_of_levels_to_place = get_levels_to_build(type, province);
+    if (num_of_levels_to_place <= 0) return;
     int levels_placed = 0;
     Ref<TerminalMap> tm = TerminalMap::get_instance();
     for (const Vector2i &tile: province->get_town_centered_tiles()) {

@@ -60,6 +60,7 @@ public:
     void add_outputs(double batch_size);
     String get_recipe_as_string() const;
     int get_primary_type() const;
+    int get_supply(int type) const;
     int get_demand(int type) const;
 
     // Level & Upgrades

@@ -60,4 +60,8 @@ class SubsistenceFarm {
     void consider_degrade();
 
     void adjust_trade_orders(Town& town);
+
+    float get_current_price(int type) const;
+    int get_supply(int type) const;
+    int get_demand(int type) const;
 };

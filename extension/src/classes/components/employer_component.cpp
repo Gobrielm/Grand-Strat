@@ -47,6 +47,16 @@ void EmployerComponent::degrade() {
     }
 }
 
+int EmployerComponent::get_input(int type) const {
+    if (!recipe.get_inputs().count(type)) return 0;
+    return recipe.get_inputs().at(type) * get_level();
+}
+int EmployerComponent::get_output(int type) const {
+    if (!recipe.get_outputs().count(type)) return 0;
+    return recipe.get_outputs().at(type) * get_level();
+}
+
+
 bool EmployerComponent::is_pop_type_needed(PopTypes pop_type) const {
     if (!pops_needed.count(pop_type)) return false;
     if (!employees.count(pop_type)) return true; // Need poptype, but have no employees

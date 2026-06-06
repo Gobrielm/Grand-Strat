@@ -10,9 +10,9 @@
 #include "classes/components/storage_component.hpp"
 
 MarketComponent::MarketComponent() {
-    sale_history.resize(CargoInfo::get_instance()->get_number_of_goods(), std::vector<unsigned int>(200, 0));
-    buy_order_buckets.resize(CargoInfo::get_instance()->get_number_of_goods(), std::vector<unsigned int>(200, 0));
-    sell_order_buckets.resize(CargoInfo::get_instance()->get_number_of_goods(), std::vector<unsigned int>(200, 0));
+    sale_history.resize(CargoInfo::get_instance()->get_number_of_goods() * PLOT_BUCKETS, 0);
+    buy_order_buckets.resize(CargoInfo::get_instance()->get_number_of_goods() * PLOT_BUCKETS, 0);
+    sell_order_buckets.resize(CargoInfo::get_instance()->get_number_of_goods() * PLOT_BUCKETS, 0);
 }
 
 MarketComponent::MarketComponent(const MarketComponent& other): 
@@ -22,7 +22,6 @@ MarketComponent::MarketComponent(const MarketComponent& other):
     buy_order_buckets(other.buy_order_buckets),
     sell_order_buckets(other.sell_order_buckets),
     equilibrium_prices(other.equilibrium_prices),
-    last_month_plot(other.last_month_plot),
     sorted_buy_orders(other.sorted_buy_orders),
     sorted_sell_orders(other.sorted_sell_orders)
 {}
@@ -53,10 +52,8 @@ void MarketComponent::add_order(std::shared_ptr<TradeOrder> to) {
 
     if (to->is_buy_order()) {
         buy_orders.push_back(to);
-        buy_order_buckets[to->get_type()][round(to->get_price() * 2)] += to->get_amount();
     } else {
         sell_orders.push_back(to);
-        sell_order_buckets[to->get_type()][round(to->get_price() * 2)] += to->get_amount();
     }
 }
 
@@ -154,15 +151,15 @@ Array MarketComponent::get_market_info_plot_godot(int type) const {
     //     sells.push_back(v);
     // }
 
-    for (int i = 0; i < buy_order_buckets[type].size(); i++) {
-        unsigned int amt = buy_order_buckets[type][i];
+    for (int i = 0; i < PLOT_BUCKETS; i++) {
+        unsigned int amt = buy_order_buckets[type * PLOT_BUCKETS + i];
         if (amt == 0) continue;
         Vector2 v(amt, i / 2.0);
         buys.push_back(v);
     }
 
-    for (int i = 0; i < sell_order_buckets[type].size(); i++) {
-        unsigned int amt = sell_order_buckets[type][i];
+    for (int i = 0; i < PLOT_BUCKETS; i++) {
+        unsigned int amt = sell_order_buckets[type * PLOT_BUCKETS + i];
         if (amt == 0) continue;
         Vector2 v(amt, i / 2.0);
         sells.push_back(v);
@@ -178,19 +175,24 @@ Array MarketComponent::get_market_info_plot_godot(int type) const {
 Array MarketComponent::get_market_sale_history(int type) const {
     Array toReturn;
 
-    for (int i = 0; i < sale_history[type].size(); i++) {
-        toReturn.push_back(sale_history[type][i]);
+    for (int i = 0; i < PLOT_BUCKETS; i++) {
+        toReturn.push_back(sale_history[type * PLOT_BUCKETS + i]);
     }
 
     return toReturn;
 }
 
-const std::vector<unsigned int>& MarketComponent::get_market_sale_history_ref(int type) {
-    if (sale_history.size() <= type) {
-        sale_history.emplace_back();
-        ERR_FAIL_V_MSG(sale_history[0], "Sale history is being accessed, before initialized with type: " + String::num(type));
+std::vector<unsigned int> MarketComponent::get_market_sale_history_ref(int type) const {
+    if (sale_history.size() == 0) {
+        ERR_FAIL_V_MSG(sale_history, "Sale history is being accessed, before initialized");
     }
-    return sale_history[type];
+
+    std::vector<unsigned int> toReturn(PLOT_BUCKETS);
+    for (int i = 0; i < PLOT_BUCKETS; i++) {
+        toReturn[i] = sale_history[type * PLOT_BUCKETS + i];
+    }
+
+    return toReturn;
 }
 
 void MarketComponent::market_tick(Province* province) {
@@ -315,6 +317,7 @@ void MarketComponent::sell_to_pop(Province* province, BasePop& pop) {
         if (type == grain_type) {
             DataCollector::get_instance()->add_demand(grain_type, pop.get_desired(type));
         }
+        buy_order_buckets[type * PLOT_BUCKETS + round(pop.get_buy_price(type, get_price(type)) * 2)] += pop.get_desired(type);
 
         while (!orders.empty()) {
             auto& sell_order = orders.front();
@@ -410,8 +413,8 @@ int32_t MarketComponent::get_current_demand(int type) const {
     // for (const auto& [amt, price]: last_month_plot.at(type).first) {
     //     tot += amt;
     // }
-    for (int i = 0; i < buy_order_buckets[type].size(); i++) {
-        tot += buy_order_buckets[type][i];
+    for (int i = 0; i < PLOT_BUCKETS; i++) {
+        tot += buy_order_buckets[type * PLOT_BUCKETS + i];
     }
     return tot;
 }
@@ -422,8 +425,8 @@ int32_t MarketComponent::get_current_supply(int type) const {
     // for (const auto& [amt, price]: last_month_plot.at(type).second) {
     //     tot += amt;
     // }
-    for (int i = 0; i < sell_order_buckets[type].size(); i++) {
-        tot += sell_order_buckets[type][i];
+    for (int i = 0; i < PLOT_BUCKETS; i++) {
+        tot += sell_order_buckets[type * PLOT_BUCKETS + i];
     }
     return tot;
 }
@@ -431,78 +434,150 @@ int32_t MarketComponent::get_current_supply(int type) const {
 void MarketComponent::bookkeeping_tick() {
     // sort orders
     sort_orders();
-    sale_history.resize(CargoInfo::get_instance()->get_number_of_goods(), std::vector<unsigned int>(200, 0));
+    for (int i = 0; i < sale_history.size(); i++) {
+        sale_history[i] = 0;
+        buy_order_buckets[i] = 0;
+        sell_order_buckets[i] = 0;
+    }
 
-    last_month_plot.clear();
+    for (auto& order: buy_orders) {
+        if (order->get_amount() == 0) continue;
+        buy_order_buckets[order->get_type() * PLOT_BUCKETS + round(order->get_price() * 2)] += order->get_amount();
+    }
+
+    for (auto& order: sell_orders) {
+        if (order->get_amount() == 0) continue;
+        sell_order_buckets[order->get_type() * PLOT_BUCKETS + round(order->get_price() * 2)] += order->get_amount();
+    }
+
     equilibrium_prices.clear();
     
     for (auto& type: get_types_among_orders()) {
-        last_month_plot[type] = get_market_info_plot(type);
+        // last_month_plot[type] = get_market_info_plot(type);
         equilibrium_prices[type] = find_market_price_equilibrium(type);
     }
 }
 
 float MarketComponent::find_market_price_equilibrium(int type) const {
     
-    if (!last_month_plot.count(type) || 
-        (last_month_plot.at(type).first.empty() && last_month_plot.at(type).second.empty())) return LocalPriceController::get_base_price(type);
-
-    if (last_month_plot.at(type).second.empty()) return last_month_plot.at(type).first.begin()->second;
-    if (last_month_plot.at(type).first.empty()) return last_month_plot.at(type).second.begin()->second;
-
-    int demand_included = 0;
-    
-    const auto& buys  = last_month_plot.at(type).first;
-    const auto& sells = last_month_plot.at(type).second;
-
-    int buy_i = 0;
+    int buy_i = PLOT_BUCKETS - 1;
     int sell_i = 0;
 
-    int demand = buys.at(0).first;
-    int supply = sells.at(0).first;
+    const int offset = type * PLOT_BUCKETS;
+
+    if (buy_i >= buy_order_buckets.size() || sell_i >= sell_order_buckets.size()) {
+        return LocalPriceController::get_base_price(type);
+    }
+
+    int demand = buy_order_buckets[buy_i];
+    int supply = sell_order_buckets[sell_i];
 
     float current_price = 0;
+    int total_traded = 0;
 
-    while (buy_i < buys.size() && sell_i < sells.size()) {
+    while (buy_i >= 0 && sell_i < PLOT_BUCKETS) {
         
-        float best_buy_price = buys.at(buy_i).second;
-        float best_sell_price = sells.at(sell_i).second;
+        float best_buy_price = buy_i / 2.0f;
+        float best_sell_price = sell_i / 2.0f;
 
         if (best_sell_price > best_buy_price) {
             break;
         }
 
         int traded = std::min(supply, demand);
+        total_traded += traded;
 
         supply -= traded;
         demand -= traded;
 
         current_price = (best_buy_price + best_sell_price) / 2.0f;
 
-        if (supply == 0) {
+        while (supply == 0) {
             sell_i++;
-            if (sell_i < sells.size()) {
-                supply = sells.at(sell_i).first;
+            if (sell_i < PLOT_BUCKETS) {
+                supply = sell_order_buckets[offset + sell_i];
+            } else {
+                break;
             }
         }
-        if (demand == 0) {
-            buy_i++;
-            if (buy_i < buys.size()) {
-                demand = buys.at(buy_i).first;
+        while (demand == 0) {
+            buy_i--;
+            if (buy_i >= 0) {
+                demand = buy_order_buckets[offset + buy_i];
+            } else {
+                break;
             }
         }        
     }
-    if (current_price == 0) {
+
+    if (current_price == 0 || total_traded == 0) {
         return LocalPriceController::get_base_price(type);
     }
 
     return current_price;
 }
 
+// float MarketComponent::find_market_price_equilibrium(int type) const {
+    
+//     if (!last_month_plot.count(type) || 
+//         (last_month_plot.at(type).first.empty() && last_month_plot.at(type).second.empty())) return LocalPriceController::get_base_price(type);
+
+//     if (last_month_plot.at(type).second.empty()) return last_month_plot.at(type).first.begin()->second;
+//     if (last_month_plot.at(type).first.empty()) return last_month_plot.at(type).second.begin()->second;
+
+//     int demand_included = 0;
+    
+//     const auto& buys  = last_month_plot.at(type).first;
+//     const auto& sells = last_month_plot.at(type).second;
+
+//     int buy_i = 0;
+//     int sell_i = 0;
+
+//     int demand = buys.at(0).first;
+//     int supply = sells.at(0).first;
+
+//     float current_price = 0;
+
+//     while (buy_i < buys.size() && sell_i < sells.size()) {
+        
+//         float best_buy_price = buys.at(buy_i).second;
+//         float best_sell_price = sells.at(sell_i).second;
+
+//         if (best_sell_price > best_buy_price) {
+//             break;
+//         }
+
+//         int traded = std::min(supply, demand);
+
+//         supply -= traded;
+//         demand -= traded;
+
+//         current_price = (best_buy_price + best_sell_price) / 2.0f;
+
+//         if (supply == 0) {
+//             sell_i++;
+//             if (sell_i < sells.size()) {
+//                 supply = sells.at(sell_i).first;
+//             }
+//         }
+//         if (demand == 0) {
+//             buy_i++;
+//             if (buy_i < buys.size()) {
+//                 demand = buys.at(buy_i).first;
+//             }
+//         }        
+//     }
+//     if (current_price == 0) {
+//         return LocalPriceController::get_base_price(type);
+//     }
+
+//     return current_price;
+// }
+
 void MarketComponent::record_sale(int type, double price, int amount) {
     if (price < 0 || price > 99) {
         DebugTrace::get_instance()->log("Record Sale: " + std::to_string(price));
         return;
     }
-    sale_history[type][round(price * 2)] += amount;
+    sale_history[type * PLOT_BUCKETS + round(price * 2)] += amount;
 }

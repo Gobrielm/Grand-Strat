@@ -70,6 +70,7 @@ void ProvinceManager::_bind_methods() {
     ClassDB::bind_method(D_METHOD("get_town_pdps", "town_tile"), &ProvinceManager::get_town_pdps);
     ClassDB::bind_method(D_METHOD("get_town_phps", "town_tile"), &ProvinceManager::get_town_pdhs);
     ClassDB::bind_method(D_METHOD("get_factory_info", "coords"), &ProvinceManager::get_factory_info);
+    ClassDB::bind_method(D_METHOD("get_subsistence_farm_info", "coords"), &ProvinceManager::get_subsistence_farm_info);
     ClassDB::bind_method(D_METHOD("get_cash_of_factory", "coords"), &ProvinceManager::get_cash_of_factory);
 }
 
@@ -404,7 +405,8 @@ Dictionary ProvinceManager::get_factory_info(const Vector2i coords) {
         for (const auto [type, amount]: factory.storage.get_storage()) {
             Dictionary d;
             d["amount"] = amount;
-            d["supply"] = factory.get_current_price(type);
+            d["price"] = factory.get_current_price(type);
+            d["supply"] = factory.get_supply(type);
             d["demand"] = factory.get_demand(type);
             cargo_dict[type] = d;
         }
@@ -414,6 +416,33 @@ Dictionary ProvinceManager::get_factory_info(const Vector2i coords) {
         outer_dict["cash"] = factory.capital.get_cash();
         outer_dict["employment_rate"] = factory.employer.get_employment_rate();
     }
+
+    return outer_dict;
+}
+
+Dictionary ProvinceManager::get_subsistence_farm_info(Vector2i coords) {
+    auto province = get_province(coords);
+    if (province == nullptr) return Dictionary();
+
+    std::scoped_lock lock(province->m);
+    Dictionary outer_dict;
+    SubsistenceFarm& farm = province->sub_farms.front();
+
+    Dictionary cargo_dict;
+    for (const auto [type, amount]: farm.storage.get_storage()) {
+        Dictionary d;
+        d["amount"] = amount;
+        d["price"] = farm.get_current_price(type);
+        d["supply"] = farm.get_supply(type);
+        d["demand"] = farm.get_demand(type);
+        cargo_dict[type] = d;
+    }
+
+    outer_dict["cargo"] = cargo_dict;
+    outer_dict["level"] = farm.employer.get_level_without_employment();
+    outer_dict["cash"] = farm.capital.get_cash();
+    outer_dict["employment_rate"] = farm.employer.get_employment_rate();
+    
 
     return outer_dict;
 }
@@ -526,7 +555,7 @@ float ProvinceManager::get_average_price(int type) const {
         std::scoped_lock lock(province->m);
         auto& town = province->town;
         
-        auto& sale_history = town.mp.get_market_sale_history_ref(type);
+        auto sale_history = town.mp.get_market_sale_history_ref(type);
         // auto amt = town.mp.get_current_supply(type);
         // auto price = town.mp.get_price(type);
 
