@@ -16,6 +16,7 @@
 [ext_resource type="PackedScene" uid="uid://dgrb15ii6wxaw" path="res://Gui/viewer_station_window.tscn" id="11_1ymii"]
 [ext_resource type="PackedScene" uid="uid://iatfblcckp0p" path="res://Gui/tile_window.tscn" id="12_2khst"]
 [ext_resource type="PackedScene" uid="uid://nsjr55rm7j51" path="res://Gui/town_window.tscn" id="16_ensfa"]
+[ext_resource type="PackedScene" uid="uid://dgujn6mk128lo" path="res://Gui/subsistence_farm_window.tscn" id="17_bjp58"]
 [ext_resource type="PackedScene" path="res://Map/Map_Info/provinces.tscn" id="17_hbmt4"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_wohs4"]
@@ -116,7 +117,6 @@ oversampling_override = 1.0
 
 [node name="factory_window" parent="." unique_id=1264783312 instance=ExtResource("8_nva54")]
 auto_translate_mode = 1
-oversampling_override = 1.0
 
 [node name="factory_recipe_gui" parent="." unique_id=1935623080 instance=ExtResource("9_rhgcu")]
 auto_translate_mode = 1
@@ -130,6 +130,8 @@ oversampling_override = 1.0
 oversampling_override = 1.0
 
 [node name="town_window" parent="." unique_id=1274779730 instance=ExtResource("16_ensfa")]
+
+[node name="subsistence_farm_window" parent="." unique_id=608270904 instance=ExtResource("17_bjp58")]
 
 [node name="Timer" type="Timer" parent="." unique_id=1510684493]
 wait_time = 0.5

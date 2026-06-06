@@ -306,8 +306,16 @@ offset_right = 270.0
 offset_bottom = 28.0
 label_settings = SubResource("LabelSettings_6vqjj")
 
+[node name="SubFarmButton" type="Button" parent="." unique_id=1727994374]
+offset_left = 768.0
+offset_top = 389.0
+offset_right = 865.0
+offset_bottom = 428.0
+text = "Sub Farm"
+
 [connection signal="close_requested" from="." to="." method="_on_close_requested"]
 [connection signal="item_clicked" from="Price_Node/Price_List" to="." method="_on_price_list_item_clicked"]
 [connection signal="mouse_entered" from="Price_Node/Price_List" to="." method="_on_price_list_mouse_entered"]
 [connection signal="mouse_exited" from="Price_Node/Price_List" to="." method="_on_price_list_mouse_exited"]
 [connection signal="popup_requested" from="CargoInfoPopUp" to="." method="_on_cargo_info_pop_up_popup_requested"]
+[connection signal="pressed" from="SubFarmButton" to="." method="_on_sub_farm_button_pressed"]

@@ -306,4 +306,7 @@ func _on_price_list_item_clicked(index: int, _at_position: Vector2, _mouse_butto
 	type_selected = ind_to_type[index]
 	if diff:
 		create_graph_pdh()
-	
+
+func _on_sub_farm_button_pressed() -> void:
+	hide()
+	Utils.world_map.get_node("subsistence_farm_window").open_window(location)

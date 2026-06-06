@@ -6,7 +6,7 @@ static var world_map: TileMapLayer = null
 static var background_music: AudioStreamPlayer = null
 static var unit_map: TileMapLayer = null
 
-static func round(num: float, places: int) -> float:
+static func round(num: float, places: int = 1) -> float:
 	return round(num * pow(10, places)) / pow(10, places)
 
 static func assign_cargo_map(_cargo_map: Node) -> void:
