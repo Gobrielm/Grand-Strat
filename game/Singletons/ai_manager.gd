@@ -23,14 +23,15 @@ static func get_instance() -> ai_manager:
 	return singleton_instance
 
 func create_new_economy_ai(country_id: int) -> int:
-	var ai_id: int = get_unique_id()
-	MoneyController.get_instance().add_peer(ai_id)
-	var new_ai: economy_ai = economy_ai.new(ai_id, country_id)
-	if !country_ais.has(country_id):
-		country_ais[country_id] = {}
-	country_ais[country_id][ai_id] = true
-	ai_instances[ai_id] = new_ai
-	return ai_id
+	return -1
+	#var ai_id: int = get_unique_id()
+	#MoneyController.get_instance().add_peer(ai_id)
+	#var new_ai: economy_ai = economy_ai.new(ai_id, country_id)
+	#if !country_ais.has(country_id):
+		#country_ais[country_id] = {}
+	#country_ais[country_id][ai_id] = true
+	#ai_instances[ai_id] = new_ai
+	#return ai_id
 
 func destory_economy_ai(ai_id: int) -> void:
 	MoneyController.get_instance().delete_peer(ai_id)

@@ -6,8 +6,8 @@ func pop_up_info_window(info: Dictionary, position_to_popup: Vector2) -> void:
 	position = position_to_popup
 	get_node("Name").text = info.type
 	get_node("Price").text = info.price
-	get_node("Quantity").text = info.amount
-	get_node("MarketInfo").text = info.market_info
+	get_node("Supply").text = info.supply
+	get_node("Demand").text = info.demand
 	popup()
 	position = position_to_popup
 

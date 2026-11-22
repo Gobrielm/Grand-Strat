@@ -1,0 +1,58 @@
+#pragma once
+
+#include <unordered_map>
+#include <vector>
+
+#include "classes/base_pop.hpp"
+#include "classes/factory_utility/recipe.hpp"
+
+class Recipe;
+class Town;
+
+class EmployerComponent {
+
+    std::unordered_map<PopTypes, std::vector<int>> employees;
+    std::unordered_map<PopTypes, int> pops_needed;
+
+    
+
+    void remove_pop(int pop_id, PopTypes pop_type);
+
+    public:
+
+    Recipe recipe;
+    std::vector<int> pops_to_fire;
+
+    EmployerComponent();
+    EmployerComponent(Recipe recipe, std::unordered_map<PopTypes, int> p_pops_needed);
+    EmployerComponent(const EmployerComponent& other);
+
+    EmployerComponent& operator=(const EmployerComponent& other);
+    
+    void upgrade();
+    void degrade();
+
+    int get_input(int type) const;
+    int get_output(int type) const;
+
+    bool is_pop_type_needed(PopTypes pop_type) const;
+    void add_pop(BasePop* pop);
+    void add_pop(PopTypes pop_type, int pop_id);
+    
+    int get_employement() const;
+    int get_pops_needed_num() const;
+    float get_employment_rate() const;
+    void queue_employees_to_be_fired();
+
+    double get_level() const;
+    int get_level_without_employment() const;
+
+    std::unordered_map<PopTypes, int> get_pops_needed() const;
+    std::unordered_map<int, PopTypes> get_employee_ids() const;
+    std::vector<int> get_pops_to_fire() const;
+
+    void set_pops_needed(const std::unordered_map<PopTypes, int> new_pops_needed);
+
+    float get_wage(const Town& town, float current_cash) const;
+    float get_theoretical_gross_profit(const Town& town) const;
+};

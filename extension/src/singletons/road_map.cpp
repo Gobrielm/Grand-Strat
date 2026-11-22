@@ -1,5 +1,6 @@
 #include "road_map.hpp"
 #include "terminal_map.hpp"
+#include "classes/map_objects/station.hpp"
 #include <queue>
 
 RoadMap* RoadMap::singleton_instance = nullptr;
@@ -290,7 +291,7 @@ void RoadMap::bfs_and_connect(const Vector2i& tile1, const Vector2i& tile2) {
 void RoadMap::month_tick() {
     if (tiles_changed_this_month.size() != 0) {
         refresh_road_depots();
-        TerminalMap::get_instance()->refresh_road_depots(depots_to_refresh);
+        // TerminalMap::get_instance()->refresh_road_depots(depots_to_refresh);
         depots_to_refresh.clear();
     }
 }
@@ -319,7 +320,7 @@ void RoadMap::refresh_road_depots() {
             Vector2i tile = tiles[i];
             if (!dist_tracker.count(tile) && terminal_map->is_tile_traversable(tile)) {
                 dist_tracker[tile] = dist_tracker[curr] + 1;
-                if (dist_tracker[tile] <= RoadDepot::MAX_SUPPLY_DISTANCE) {
+                if (dist_tracker[tile] <= Station::get_MAX_SUPPLY_DISTANCE(Station::TYPE_OF_STATION::RAIL)) {
                     q.push(tile);
                 }
             }

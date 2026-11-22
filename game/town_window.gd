@@ -2,10 +2,13 @@ extends Window
 var location: Variant = null
 var hold_name: String
 var current_cargo: Dictionary
-var current_prices: Dictionary
-var current_cash: int
+
+var town_info: Dictionary
+var ind_to_type: Array = []
+
 var current_pops: int
 var type_hovered: int = -1
+var type_selected: int = -1
 var inside_price_list: bool = false
 
 const time_every_update: int = 1
@@ -33,13 +36,13 @@ func open_window(new_location: Vector2i) -> void:
 	location = new_location
 	refresh_window()
 	popup()
+	create_graph_pdh()
 
 func refresh_window() -> void:
 	if location != null:
 		request_current_name.rpc_id(1, location)
 		request_current_prices.rpc_id(1, location)
-		request_current_cash.rpc_id(1, location)
-		request_current_pops.rpc_id(1, location)
+		#request_current_pops.rpc_id(1, location)
 		request_factories.rpc_id(1, location)
 
 @rpc("any_peer", "call_local", "unreliable")
@@ -49,13 +52,8 @@ func request_current_name(coords: Vector2i) -> void:
 
 @rpc("any_peer", "call_local", "unreliable")
 func request_current_prices(coords: Vector2i) -> void:
-	var dict: Dictionary = TerminalMap.get_instance().get_local_prices(coords)
+	var dict: Dictionary = ProvinceManager.get_instance().get_town_phps(coords)
 	update_current_prices.rpc_id(multiplayer.get_remote_sender_id(), dict)
-
-@rpc("any_peer", "call_local", "unreliable")
-func request_current_cash(coords: Vector2i) -> void:
-	var _current_cash: int = TerminalMap.get_instance().get_cash_of_firm(coords)
-	update_current_cash.rpc_id(multiplayer.get_remote_sender_id(), _current_cash)
 
 @rpc("any_peer", "call_local", "unreliable")
 func request_current_pops(coords: Vector2i) -> void:
@@ -64,16 +62,8 @@ func request_current_pops(coords: Vector2i) -> void:
 
 @rpc("any_peer", "call_local", "unreliable")
 func request_factories(coords: Vector2i) -> void:
-	var toUpdate: Array[Array] = []
-	var town: Town = TerminalMap.get_instance().get_town(coords)
-	if town != null:
-		for fact: FactoryTemplate in town.get_factories():
-			var details: Array = []
-			details.append(fact.get_level_without_employment())#[0]
-			details.append(fact.get_cash())					   #[1]
-			details.append(fact.get_recipe_as_string())		   #[2]
-			toUpdate.push_back(details)
-	update_factories.rpc_id(multiplayer.get_remote_sender_id(), toUpdate)
+	var factories: Array = ProvinceManager.get_instance().get_town_factories(coords)
+	update_factories.rpc_id(multiplayer.get_remote_sender_id(), factories)
 
 @rpc("authority", "call_local", "unreliable")
 func update_current_name(new_name: String) -> void:
@@ -81,13 +71,8 @@ func update_current_name(new_name: String) -> void:
 	$Name.text = "[center][font_size=30]" + hold_name + "[/font_size][/center]"
 
 @rpc("authority", "call_local", "unreliable")
-func update_current_cash(new_cash: int) -> void:
-	current_cash = new_cash
-	$Cash.text = "$" + str(current_cash)
-
-@rpc("authority", "call_local", "unreliable")
 func update_current_prices(new_prices: Dictionary) -> void:
-	current_prices = new_prices
+	town_info = new_prices
 	display_current_prices()
 
 @rpc("authority", "call_local", "unreliable")
@@ -96,12 +81,12 @@ func update_current_pops(new_pops: int) -> void:
 	$Pops.text = "Pops: " + str(current_pops)
 
 @rpc("authority", "call_local", "unreliable")
-func update_factories(info: Array[Array]) -> void:
+func update_factories(info: Array) -> void:
 	var fact_list: ItemList = $Factory_Node/Factory_List
 	var num: int = 0
-	for fact: Array in info:
-		var text: String = fact[2] + "\n"
-		text += "Level: " + str(fact[0]) + " , Cash: " + str(fact[1])
+	for fact: Dictionary in info:
+		var text: String = fact.recipe + "\n"
+		text += "Level: " + str(fact.level) + " , Cash: " + str(fact.cash)
 		
 		if num < fact_list.item_count:
 			fact_list.set_item_text(num, text)
@@ -114,15 +99,18 @@ func display_current_prices() -> void:
 	var price_list: ItemList = $Price_Node/Price_List
 	var names: Array = CargoInfo.get_instance().get_cargo_array()
 	var num: int = 0
-	for type: int in current_prices:
-		var text: String = names[type] + ": " + str(current_prices[type])
+	ind_to_type.clear()
+	for type: int in town_info:
+		var pdh: PDH = town_info[type]
+		ind_to_type.push_back(type)
+		var text: String = names[type] + ": " + pdh.to_string()
 		if num < price_list.item_count:
 			var prev: String = price_list.get_item_text(num).trim_prefix(names[type] + ": ")
 			price_list.set_item_text(num, text)
 			var prev_price: float = 0.0
 			if prev.is_valid_float():
 				prev_price = float(prev)
-			set_color(num, current_prices[type], prev_price)
+			set_color(num, pdh.price, prev_price)
 		else:
 			price_list.add_item(text, null, false)
 			$Price_Node/Price_List.set_item_tooltip_enabled(num, false)
@@ -141,9 +129,11 @@ func set_color(num: int, price: float, prev_price: float = 0.0) -> void:
 func refresh_hover() -> void:
 	if inside_price_list:
 		var local_pos: Vector2 = $Price_Node/Price_List.get_local_mouse_position()
-		var type: int = $Price_Node/Price_List.get_item_at_position(local_pos, true)
+		var ind: int = $Price_Node/Price_List.get_item_at_position(local_pos, true)
+		if ind == -1:
+			return
 		
-		start_hovering_type(type)
+		start_hovering_type(ind_to_type[ind])
 	else:
 		$CargoInfoPopUp.hide()
 
@@ -153,19 +143,150 @@ func start_hovering_type(type: int) -> void:
 		type_hovered = type
 
 func _on_cargo_info_pop_up_popup_requested() -> void:
-	populate_info_window.rpc_id(1, type_hovered, location)
+	populate_info_window.rpc_id(1, type_hovered)
 
 @rpc("any_peer", "call_local", "unreliable")
-func populate_info_window(type: int, p_location: Vector2i) -> void:
+func populate_info_window(type: int) -> void:
 	var info: Dictionary = {}
-	var terminal_map: TerminalMap = TerminalMap.get_instance()
-	var town: Town = terminal_map.get_town(p_location)
+	var pdh: PDH = town_info[type]
+	
 	info.type = CargoInfo.get_instance().get_cargo_name(type)
 	
-	info.price = "$" + str(Utils.round(town.get_local_price(type), 2))
-	info.amount = "Amount: " + str(Utils.round(town.get_cargo_amount(type), 2))
-	info.market_info = "Supply: " + str(town.get_last_month_supply()[type]) + '\n' + "Demand: " + str(town.get_last_month_demand()[type])
+	info.price = "$" + str(Utils.round(pdh.price, 2))
+	info.supply = "Supply: " + str(pdh.supply)
+	info.demand = "Demand: " + str(pdh.demand)
+	
 	pop_up_info_window.rpc_id(multiplayer.get_remote_sender_id(), info)
+
+func create_graph_pdh() -> void:
+	var graph: ColorRect = $Graph
+	for child: Node in graph.get_children():
+		if (child is ColorRect):
+			graph.remove_child(child)
+			child.free()
+	
+	if type_selected == -1:
+		return
+	
+	graph.get_node("TypeLabel").text = CargoInfo.get_instance().get_cargo_name(type_selected)
+	
+	var price_bounds: Vector2 = Vector2(INF, 0)
+	var amount_bounds: Vector2 = Vector2(INF, 0)
+	
+	var pdh: PDH = town_info[type_selected]
+	for i: int in pdh.sale_history.size():
+		var amt: float = pdh.sale_history[i]
+		if amt == 0: continue
+		var price: float = i / 2.0
+		amount_bounds.x = min(amount_bounds.x, amt)
+		amount_bounds.y = max(amount_bounds.y, amt)
+		price_bounds.x = min(price_bounds.x, price)
+		price_bounds.y = max(price_bounds.y, price)
+	
+	amount_bounds.x *= 0.8
+	price_bounds.x *= 0.8
+	
+	amount_bounds.y *= 1.25
+	price_bounds.y *= 1.25
+	
+	for i: int in pdh.sale_history.size():
+		var amt: float = pdh.sale_history[i]
+		if amt == 0: continue
+		var price: float = i / 2.0
+		var point: Vector2 = Vector2(amt, price)
+		create_point(point, false, price_bounds, amount_bounds)
+	
+	var bottomBorder: ColorRect = $Graph/Borders/BottomBorder
+	var leftBorder: ColorRect = $Graph/Borders/LeftBorder
+	
+	var amt_diff: float = amount_bounds.y - amount_bounds.x
+	(bottomBorder.get_node("1Mark/Label") as Label).text = str(Utils.round(amount_bounds.y, 2))
+	(bottomBorder.get_node("3_4Mark/Label") as Label).text = str(Utils.round(amount_bounds.y - amt_diff * 1/4.0, 2))
+	(bottomBorder.get_node("1_2Mark/Label") as Label).text = str(Utils.round(amount_bounds.y - amt_diff * 1/2.0, 2))
+	(bottomBorder.get_node("1_4Mark/Label") as Label).text = str(Utils.round(amount_bounds.y - amt_diff * 3/4.0, 2))
+	
+	var price_diff: float = price_bounds.y - price_bounds.x
+	(leftBorder.get_node("1Mark/Label") as Label).text = str(Utils.round(price_bounds.y, 2))
+	(leftBorder.get_node("3_4Mark/Label") as Label).text = str(Utils.round(price_bounds.y - price_diff * 1/4.0, 2))
+	(leftBorder.get_node("1_2Mark/Label") as Label).text = str(Utils.round(price_bounds.y - price_diff * 1/2.0, 2))
+	(leftBorder.get_node("1_4Mark/Label") as Label).text = str(Utils.round(price_bounds.y - price_diff * 3/4.0, 2))
+
+func create_graph_pdp() -> void:
+	var graph: ColorRect = $Graph
+	for child: Node in graph.get_children():
+		if (child is ColorRect):
+			graph.remove_child(child)
+			child.free()
+	
+	if type_selected == -1:
+		return
+	
+	graph.get_node("TypeLabel").text = CargoInfo.get_instance().get_cargo_name(type_selected)
+	
+	var price_bounds: Vector2 = Vector2(INF, 0)
+	var amount_bounds: Vector2 = Vector2(INF, 0)
+	
+	var pdp: PDP = town_info[type_selected]
+	for vec: Vector2 in pdp.buy_orders:
+		var amt: float = vec.x
+		var price: float = vec.y
+		amount_bounds.x = min(amount_bounds.x, amt)
+		amount_bounds.y = max(amount_bounds.y, amt)
+		price_bounds.x = min(price_bounds.x, price)
+		price_bounds.y = max(price_bounds.y, price)
+		
+	for vec: Vector2 in pdp.sell_orders:
+		var amt: float = vec.x
+		var price: float = vec.y
+		amount_bounds.x = min(amount_bounds.x, amt)
+		amount_bounds.y = max(amount_bounds.y, amt)
+		price_bounds.x = min(price_bounds.x, price)
+		price_bounds.y = max(price_bounds.y, price)
+	
+	amount_bounds.x *= 0.8
+	price_bounds.x *= 0.8
+	
+	amount_bounds.y *= 1.25
+	price_bounds.y *= 1.25
+	
+	for vec: Vector2 in pdp.buy_orders:
+		create_point(vec, true, price_bounds, amount_bounds)
+	
+	for vec: Vector2 in pdp.sell_orders:
+		create_point(vec, false, price_bounds, amount_bounds)
+	
+	var bottomBorder: ColorRect = $Graph/Borders/BottomBorder
+	var leftBorder: ColorRect = $Graph/Borders/LeftBorder
+	
+	var amt_diff: float = amount_bounds.y - amount_bounds.x
+	(bottomBorder.get_node("1Mark/Label") as Label).text = str(amount_bounds.y)
+	(bottomBorder.get_node("3_4Mark/Label") as Label).text = str(amount_bounds.y - amt_diff * 1/4.0)
+	(bottomBorder.get_node("1_2Mark/Label") as Label).text = str(amount_bounds.y - amt_diff * 1/2.0)
+	(bottomBorder.get_node("1_4Mark/Label") as Label).text = str(amount_bounds.y - amt_diff * 3/4.0)
+	
+	var price_diff: float = price_bounds.y - price_bounds.x
+	(leftBorder.get_node("1Mark/Label") as Label).text = str(Utils.round(price_bounds.y, 2))
+	(leftBorder.get_node("3_4Mark/Label") as Label).text = str(Utils.round(price_bounds.y - price_diff * 1/4.0, 2))
+	(leftBorder.get_node("1_2Mark/Label") as Label).text = str(Utils.round(price_bounds.y - price_diff * 1/2.0, 2))
+	(leftBorder.get_node("1_4Mark/Label") as Label).text = str(Utils.round(price_bounds.y - price_diff * 3/4.0, 2))
+
+func create_point(point: Vector2, buy: bool, price_bounds: Vector2, amount_bounds: Vector2) -> void:
+	var graph: ColorRect = $Graph
+	var graph_size: Vector2 = graph.size
+	#var graph_bl_point: Vector2 = graph.position - Vector2(0, graph_size.y)
+	
+	var point_texture: ColorRect = ColorRect.new()
+	point_texture.size = Vector2(6, 6)
+	
+	point_texture.position -= point_texture.size / 2
+	point_texture.position.y += graph_size.y
+	
+	point_texture.position.x += (point.x - amount_bounds.x) / (amount_bounds.y - amount_bounds.x) * graph_size.x
+	point_texture.position.y -= (point.y - price_bounds.x) / (price_bounds.y - price_bounds.x) * graph_size.y
+	
+	point_texture.color = Color.GREEN if buy else Color.RED
+	
+	graph.add_child(point_texture)
 
 @rpc("authority", "call_local", "unreliable")
 func pop_up_info_window(info: Dictionary) -> void:
@@ -179,3 +300,13 @@ func _on_price_list_mouse_exited() -> void:
 	inside_price_list = false
 	$CargoInfoPopUp.stop_hover()
 	type_hovered = -1
+
+func _on_price_list_item_clicked(index: int, _at_position: Vector2, _mouse_button_index: int) -> void:
+	var diff: bool = type_selected != ind_to_type[index]
+	type_selected = ind_to_type[index]
+	if diff:
+		create_graph_pdh()
+
+func _on_sub_farm_button_pressed() -> void:
+	hide()
+	Utils.world_map.get_node("subsistence_farm_window").open_window(location)

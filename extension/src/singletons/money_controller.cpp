@@ -1,6 +1,7 @@
 
 #include "money_controller.hpp"
 #include <godot_cpp/core/class_db.hpp>
+#include <godot_cpp/classes/ref.hpp>
 
 using namespace godot;
 

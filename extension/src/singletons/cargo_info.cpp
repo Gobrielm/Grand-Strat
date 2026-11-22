@@ -1,6 +1,5 @@
 #include "cargo_info.hpp"
 #include <godot_cpp/core/class_db.hpp>
-#include "../classes/hold.hpp"
 
 using namespace godot;
 
@@ -24,7 +23,6 @@ CargoInfo::CargoInfo() {
         i++;
     }
     create_amount_of_primary_goods();
-    Hold::set_number_of_goods(get_number_of_goods());
 }
 
 CargoInfo::~CargoInfo() {

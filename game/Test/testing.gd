@@ -26,9 +26,9 @@ func test() -> void:
 	#ai_station_and_ai_train_test()
 	#print("-------------------- ✔️")
 	
-	print("econ_ai_test")
-	econ_ai_test()
-	print("-------------------- ✔️")
+	#print("econ_ai_test")
+	#econ_ai_test()
+	#print("-------------------- ✔️")
 	
 	
 
@@ -44,8 +44,8 @@ func build_ai_station(coords: Vector2i, orientation: int) -> void:
 func build_many_rails(start: Vector2i, end: Vector2i) -> void:
 	map.place_to_end_rail(start, end)
 
-func build_ai_train(location: Vector2i) -> ai_train:
-	return train_manager.get_instance().create_ai_train(location, 1)
+#func build_ai_train(location: Vector2i) -> ai_train:
+	#return train_manager.get_instance().create_ai_train(location, 1)
 
 func build_base_factory(coords: Vector2i, cargo_type: int) -> void:
 	cargo_map.create_factory(-1, coords, cargo_map.get_primary_recipe_for_type(cargo_type), 1)
@@ -73,32 +73,32 @@ func runtime_test() -> void:
 	var end: float = Time.get_ticks_msec()
 	print(str((end - start) / 1000) + " Seconds passed")
 
-func train_algorithm_test() -> void:
-	var start: float = Time.get_ticks_msec()
-	var point1: Vector2i = Vector2i(0, 0)
-	var point2: Vector2i = Vector2i(300, 0)
-	
-	var end_stop: Vector2i = Vector2i(300, -50)
-	for i: int in 100:
-		build_many_rails(point1, point2)
-		point2.y = -i
-	point2 = Vector2i(0, -300)
-	for i: int in 300:
-		build_many_rails(point1, point2)
-		point2.x = i
-	var end: float = Time.get_ticks_msec()
-	print(str((end - start) / 1000) + " Seconds passed to build")
-	start = Time.get_ticks_msec()
-	
-	map.create_train(point1)
-	var train_obj: train = map.get_node("Train0")
-	var orientation: Array = rail_placer.get_instance().get_track_connections(end_stop)
-	map.remove_rail(end_stop, orientation.find(true), 0)
-	map.place_rail_general(end_stop, orientation.find(true), 2)
-	train_obj.add_stop(end_stop)
-	train_obj.start_train()
-	end = Time.get_ticks_msec()
-	print(str((end - start) / 1000) + " Seconds passed to pathfind")
+#func train_algorithm_test() -> void:
+	#var start: float = Time.get_ticks_msec()
+	#var point1: Vector2i = Vector2i(0, 0)
+	#var point2: Vector2i = Vector2i(300, 0)
+	#
+	#var end_stop: Vector2i = Vector2i(300, -50)
+	#for i: int in 100:
+		#build_many_rails(point1, point2)
+		#point2.y = -i
+	#point2 = Vector2i(0, -300)
+	#for i: int in 300:
+		#build_many_rails(point1, point2)
+		#point2.x = i
+	#var end: float = Time.get_ticks_msec()
+	#print(str((end - start) / 1000) + " Seconds passed to build")
+	#start = Time.get_ticks_msec()
+	#
+	#map.create_train(point1)
+	#var train_obj: train = map.get_node("Train0")
+	#var orientation: Array = rail_placer.get_instance().get_track_connections(end_stop)
+	#map.remove_rail(end_stop, orientation.find(true), 0)
+	#map.place_rail_general(end_stop, orientation.find(true), 2)
+	#train_obj.add_stop(end_stop)
+	#train_obj.start_train()
+	#end = Time.get_ticks_msec()
+	#print(str((end - start) / 1000) + " Seconds passed to pathfind")
 	
 func ai_rail_test() -> void:
 	
@@ -139,70 +139,70 @@ func ai_rail_test() -> void:
 	build_many_rails(pt5, point3)
 	
 	var start: float = Time.get_ticks_msec()
-	build_ai_train(point1)
-	build_ai_train(point2)
+	#build_ai_train(point1)
+	#build_ai_train(point2)
 	#print(str(train_manager_obj.get_network(train_obj.network_id)))
 	var end: float = Time.get_ticks_msec()
 	print(str((end - start) / 1000) + " Seconds passed to create network")
 
-func ai_station_and_ai_train_test() -> void:
-	var point1: Vector2i = Vector2i(0, 0)
-	var point2: Vector2i = Vector2i(9, 5)
-	var point3: Vector2i = Vector2i(-8, 5)
-	
-	
-	var stat1: Vector2i = Vector2i(2, -1)
-	var stat2: Vector2i = Vector2i(11, 5)
-	var stat3: Vector2i = Vector2i(-11, 5)
-	var stat4: Vector2i = Vector2i(-14, -3)
-	
-	var fact1: Vector2i = Vector2i(3, -1)
-	var fact2: Vector2i = Vector2i(12, 5)
-	var fact3: Vector2i = Vector2i(-12, 5)
-	var town1: Vector2i = Vector2i(-14, -4)
-	
-	build_many_rails(point1, point2)
-	build_many_rails(point2, point3)
-	build_many_rails(point3, point1)
-	build_many_rails(point1, stat4)
-	build_many_rails(point1, stat1)
-	build_many_rails(point2, stat2)
-	build_many_rails(point3, stat3)
-	
-	build_ai_station(stat1, 1)
-	build_ai_station(stat2, 2)
-	build_ai_station(stat3, 1)
-	build_ai_station(stat4, 2)
-	
-	build_base_factory(fact1, 1)
-	build_base_factory(fact2, 5)
-	build_base_factory(fact3, 8)
-	
-	build_town(town1)
-	
-	var station1: AiStation = TerminalMap.get_instance().get_ai_station(stat1)
-	var station2: AiStation = TerminalMap.get_instance().get_ai_station(stat2)
-	var station3: AiStation = TerminalMap.get_instance().get_ai_station(stat3)
-	var station4: AiStation = TerminalMap.get_instance().get_ai_station(stat4)
-	
-	var stations: Array[AiStation] = [station1, station2, station3, station4]
-	for i: int in stations.size():
-		for j: int in range(i, stations.size()):
-			stations[i].add_station(stations[j].location)
-			stations[j].add_station(stations[i].location)
-	var train_obj: ai_train = build_ai_train(point1)
-	train_obj.start_train()
+#func ai_station_and_ai_train_test() -> void:
+	#var point1: Vector2i = Vector2i(0, 0)
+	#var point2: Vector2i = Vector2i(9, 5)
+	#var point3: Vector2i = Vector2i(-8, 5)
+	#
+	#
+	#var stat1: Vector2i = Vector2i(2, -1)
+	#var stat2: Vector2i = Vector2i(11, 5)
+	#var stat3: Vector2i = Vector2i(-11, 5)
+	#var stat4: Vector2i = Vector2i(-14, -3)
+	#
+	#var fact1: Vector2i = Vector2i(3, -1)
+	#var fact2: Vector2i = Vector2i(12, 5)
+	#var fact3: Vector2i = Vector2i(-12, 5)
+	#var town1: Vector2i = Vector2i(-14, -4)
+	#
+	#build_many_rails(point1, point2)
+	#build_many_rails(point2, point3)
+	#build_many_rails(point3, point1)
+	#build_many_rails(point1, stat4)
+	#build_many_rails(point1, stat1)
+	#build_many_rails(point2, stat2)
+	#build_many_rails(point3, stat3)
+	#
+	#build_ai_station(stat1, 1)
+	#build_ai_station(stat2, 2)
+	#build_ai_station(stat3, 1)
+	#build_ai_station(stat4, 2)
+	#
+	#build_base_factory(fact1, 1)
+	#build_base_factory(fact2, 5)
+	#build_base_factory(fact3, 8)
+	#
+	#build_town(town1)
+	#
+	#var station1: AiStation = TerminalMap.get_instance().get_ai_station(stat1)
+	#var station2: AiStation = TerminalMap.get_instance().get_ai_station(stat2)
+	#var station3: AiStation = TerminalMap.get_instance().get_ai_station(stat3)
+	#var station4: AiStation = TerminalMap.get_instance().get_ai_station(stat4)
+	#
+	#var stations: Array[AiStation] = [station1, station2, station3, station4]
+	#for i: int in stations.size():
+		#for j: int in range(i, stations.size()):
+			#stations[i].add_station(stations[j].location)
+			#stations[j].add_station(stations[i].location)
+	#var train_obj: ai_train = build_ai_train(point1)
+	#train_obj.start_train()
 
-func econ_ai_test() -> void:
-	ai_manager.get_instance().create_new_economy_ai(1)
-	
-	var fact1: Vector2i = Vector2i(3, -1)
-	var fact2: Vector2i = Vector2i(12, 5)
-	var fact3: Vector2i = Vector2i(-12, 5)
-	var town1: Vector2i = Vector2i(-14, -4)
-	
-	build_base_factory(fact1, 1)
-	build_base_factory(fact2, 5)
-	build_base_factory(fact3, 8)
-	
-	build_town(town1)
+#func econ_ai_test() -> void:
+	#ai_manager.get_instance().create_new_economy_ai(1)
+	#
+	#var fact1: Vector2i = Vector2i(3, -1)
+	#var fact2: Vector2i = Vector2i(12, 5)
+	#var fact3: Vector2i = Vector2i(-12, 5)
+	#var town1: Vector2i = Vector2i(-14, -4)
+	#
+	#build_base_factory(fact1, 1)
+	#build_base_factory(fact2, 5)
+	#build_base_factory(fact3, 8)
+	#
+	#build_town(town1)

@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=4 uid="uid://dy24s42glgktx"]
+[gd_scene format=4 uid="uid://dy24s42glgktx"]
 
 [ext_resource type="Texture2D" uid="uid://bq1dap6gjpxr7" path="res://Map_Icons/7SEYHd.png" id="1_jgce8"]
 [ext_resource type="PackedScene" uid="uid://c6spn0m6m85vs" path="res://Player/player_camera.tscn" id="2_if10o"]
@@ -61,7 +61,7 @@ terrain_set_0/terrain_0/name = "Hilly"
 terrain_set_0/terrain_0/color = Color(0.5, 0.4375, 0.25, 1)
 sources/1 = SubResource("TileSetAtlasSource_tywjw")
 
-[node name="main_map" type="TileMapLayer"]
+[node name="main_map" type="TileMapLayer" unique_id=2143183748]
 z_index = -1
 z_as_relative = false
 y_sort_enabled = true
@@ -70,27 +70,34 @@ tile_map_data = PackedByteArray("AADz//b/AQAAAAAAAADz//f/AQAAAAAAAADz//7/AQAGAAE
 tile_set = SubResource("TileSet_hlajd")
 script = ExtResource("3_oilk6")
 
-[node name="player_camera" parent="." instance=ExtResource("2_if10o")]
+[node name="player_camera" parent="." unique_id=153273919 instance=ExtResource("2_if10o")]
 
-[node name="Rail_Placer" parent="." instance=ExtResource("6_4lcrx")]
+[node name="Rail_Placer" parent="." unique_id=1854823797 instance=ExtResource("6_4lcrx")]
 
-[node name="unit_creator_window" parent="." instance=ExtResource("9_k4rfp")]
+[node name="unit_creator_window" parent="." unique_id=659278837 instance=ExtResource("9_k4rfp")]
+oversampling_override = 1.0
 position = Vector2i(200, 36)
 
-[node name="unit_info_window" parent="." instance=ExtResource("10_75rfn")]
+[node name="unit_info_window" parent="." unique_id=1416930176 instance=ExtResource("10_75rfn")]
+oversampling_override = 1.0
 position = Vector2i(200, 36)
 
-[node name="depot_window" parent="." instance=ExtResource("8_mxbp3")]
+[node name="depot_window" parent="." unique_id=1330718811 instance=ExtResource("8_mxbp3")]
+oversampling_override = 1.0
 
-[node name="station_window" parent="." instance=ExtResource("9_txwkn")]
+[node name="station_window" parent="." unique_id=197314734 instance=ExtResource("9_txwkn")]
+oversampling_override = 1.0
 
-[node name="factory_window" parent="." instance=ExtResource("9_p8wcw")]
+[node name="factory_window" parent="." unique_id=886097875 instance=ExtResource("9_p8wcw")]
+oversampling_override = 1.0
 
-[node name="factory_recipe_gui" parent="." instance=ExtResource("10_60crw")]
+[node name="factory_recipe_gui" parent="." unique_id=1650043928 instance=ExtResource("10_60crw")]
+oversampling_override = 1.0
 
-[node name="factory_construction_gui" parent="." instance=ExtResource("11_46x22")]
+[node name="factory_construction_gui" parent="." unique_id=1814523115 instance=ExtResource("11_46x22")]
+oversampling_override = 1.0
 
-[node name="Timer" type="Timer" parent="."]
+[node name="Timer" type="Timer" parent="." unique_id=1881590497]
 wait_time = 0.5
 autostart = true
 

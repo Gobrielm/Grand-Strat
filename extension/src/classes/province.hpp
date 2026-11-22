@@ -1,32 +1,74 @@
 #pragma once
 
+#include "province_utility/province_pop_manager.h"
 #include <godot_cpp/classes/object.hpp>
+#include "utility/vector2i_hash.hpp"
+#include "classes/map_objects/town.hpp"
+
+#include <mutex>
 #include <shared_mutex>
 #include <unordered_set>
-#include "../utility/vector2i_hash.hpp"
-#include "factory_template.hpp"
 #include <vector>
 #include <map>
 
 class BasePop;
-class Town;
-enum PopTypes;
+class Factory;
+class Station;
+class TradingSystem;
+class MarketComponent;
+class EmployerComponent;
+class SubsistenceFarm;
+class PopManager;
+class InitialBuilder;
+class ProvinceManager;
+class PositionComponent;
+class MapObjectInfo;
+
+enum class PopTypes: int;
 
 using namespace godot;
 
 class Province : public Object {
     GDCLASS(Province, Object);
+    friend TradingSystem;
+    friend MarketComponent;
+    friend ProvinceManager;
+    friend EmployerComponent;
+    friend PopManager;
+    friend InitialBuilder;
+    friend MapObjectInfo;
+    friend ProvincePopManager;
 
-    mutable std::shared_mutex m;
-    mutable std::shared_mutex pops_lock;
+    mutable std::mutex m;
     int province_id;
     int country_id = -1;
     int population;
     std::vector<Vector2i> tiles;
-    std::unordered_set<Vector2i, godot_helpers::Vector2iHasher> terminal_tiles; //Doesn't 'own' Terminals yet
-    std::unordered_map<Vector2i, Vector2i, godot_helpers::Vector2iHasher> closest_town_to_tile;
 
-    std::unordered_set<int> pops;
+
+    // New Structures
+    
+    // Used to access the top level building on each tile
+    std::unordered_map<Vector2i, PositionComponent, godot_helpers::Vector2iHasher, godot_helpers::Vector2iEqual> position_components;
+    // Used to access the hidden buildings at each tile, ie sub. farms or town factories
+    std::unordered_map<Vector2i, PositionComponent, godot_helpers::Vector2iHasher, godot_helpers::Vector2iEqual> hidden_position_components;
+
+    // Owned objects
+    Town town;
+    ProvincePopManager ppm;
+
+    std::unordered_map<int, std::pair<int, BuildingType>> id_to_vector_position;
+    std::vector<Factory> factories;
+    std::vector<Station> stations;
+    std::vector<SubsistenceFarm> sub_farms;
+
+    // private helper functions
+    Factory& get_factory_unsafe(int pos_id);
+    Station& get_station_unsafe(int pos_id);
+    SubsistenceFarm& get_subsistence_farm_unsafe(int pos_id);
+    PositionComponent get_visible_position_component_unsafe(Vector2i tile) const;
+    PositionComponent get_hidden_position_component_unsafe(Vector2i tile) const;
+    std::pair<CapitalComponent*, StorageComponent*> get_capital_and_storage_components_unsafe(const TradeOrder& order);
 
     protected:
     static void _bind_methods();
@@ -56,32 +98,45 @@ class Province : public Object {
     const std::vector<Vector2i> get_tiles_vector() const;
     std::vector<Vector2i> get_town_centered_tiles() const;
     Vector2i get_random_tile() const;
-    void add_terminal(Vector2i tile);
-    void remove_terminal(Vector2i tile);
-    Array get_terminal_tiles() const;
-    bool has_town() const;
-    const std::unordered_set<Vector2i, godot_helpers::Vector2iHasher>& get_terminal_tiles_set() const;
 
-    //Town Stuff
-    void refresh_closest_town_to_tile();
-    Vector2i get_closest_town_to_tile(Vector2i tile, std::vector<Vector2i> towns);
-    std::vector<Vector2i> get_town_tiles() const;
+    void create_town();
+
+    Factory& add_factory(Factory& factory);
+    Factory& add_hidden_factory(Factory& factory);
+    Station& add_station(Station& station);
+    SubsistenceFarm& add_subsistence_farm(SubsistenceFarm& farm);
+
+    Factory& get_factory(int pos_id);
+    Station& get_station(int pos_id);
+    Town& get_town();
+
+    bool is_building_at_pos(Vector2i pos) const;
+    int get_hidden_buildings_at_pos(Vector2i pos) const;
+
+    BuildingType get_building_type(int pos_id) const;
+    BuildingType get_visible_building_type(Vector2i tile) const;
+
+    PositionComponent get_visible_position_component(Vector2i tile) const;
+
+
+    // void add_terminal(Vector2i tile);
+    // void remove_terminal(Vector2i tile);
+    // Array get_terminal_tiles() const;
+    bool has_town() const;
+    Vector2i get_town_tile() const;
+
+    void init_province();
 
     // === Pops ===
-    // Info Stuff
-    int get_number_of_pops() const;
-    std::unordered_map<PopTypes, size_t> get_pop_type_statistics() const;
 
     // Local Pop Stuff
+    int get_number_of_pops() const;
     void create_pops();
     void create_peasant_pop(Variant culture, Vector2i p_location);
     void create_rural_pop(Variant culture, Vector2i p_location);
-    void create_town_pops(int amount, const std::vector<Vector2i>& towns);
+    void create_town_pops(int amount);
     int create_town_pop(Variant culture, Vector2i p_location);
-    std::vector<int> create_buildings_for_peasants();
+    void create_buildings_for_peasants();
     void employ_peasants();
-    int count_pops() const;
-    Vector2i get_closest_town_tile_to_pop(const Vector2i& pop_location) const;
-    bool has_closest_town_tile_to_pop(const Vector2i& pop_location) const;
     
 };

@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3 uid="uid://dlmwgwie45non"]
+[gd_scene format=3 uid="uid://dlmwgwie45non"]
 
 [ext_resource type="Script" uid="uid://bb01noce8wuix" path="res://Game/map_node.gd" id="1_4blso"]
 [ext_resource type="PackedScene" uid="uid://bpj5gy156fc3x" path="res://Map/Main_Maps/world_map.tscn" id="2_6stc2"]
@@ -155,16 +155,16 @@ tile_size = Vector2i(127, 110)
 sources/0 = SubResource("TileSetAtlasSource_vmahd")
 sources/1 = SubResource("TileSetAtlasSource_hm2cb")
 
-[node name="map_node" type="CanvasGroup"]
+[node name="map_node" type="CanvasGroup" unique_id=1175057756]
 script = ExtResource("1_4blso")
 
-[node name="main_map" parent="." instance=ExtResource("2_6stc2")]
+[node name="main_map" parent="." unique_id=1652611527 instance=ExtResource("2_6stc2")]
 
-[node name="tile_ownership" parent="." instance=ExtResource("3_3b3ai")]
+[node name="tile_ownership" parent="." unique_id=1897848612 instance=ExtResource("3_3b3ai")]
 
-[node name="cargo_map" parent="." instance=ExtResource("4_jxo5k")]
+[node name="cargo_map" parent="." unique_id=378513789 instance=ExtResource("4_jxo5k")]
 
-[node name="background_music" parent="." instance=ExtResource("5_k18o7")]
+[node name="background_music" parent="." unique_id=1301025134 instance=ExtResource("5_k18o7")]
 
-[node name="RoadMap" type="RoadMap" parent="."]
+[node name="RoadMap" type="RoadMap" parent="." unique_id=522230399]
 tile_set = SubResource("TileSet_3hhe8")

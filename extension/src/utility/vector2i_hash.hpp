@@ -4,6 +4,7 @@
 #include <godot_cpp/variant/dictionary.hpp>
 #include <functional>
 #include <unordered_map>
+#include <string>
 
 namespace godot_helpers {
     struct Vector2iHasher {
@@ -11,6 +12,12 @@ namespace godot_helpers {
             size_t h1 = std::hash<int>()(v.x);
             size_t h2 = std::hash<int>()(v.y);
             return h1 ^ (h2 + 0x9e3779b9 + (h1 << 6) + (h1 >> 2));
+        }
+    };
+
+    struct Vector2iEqual {
+        bool operator()(const godot::Vector2i& a, const godot::Vector2i& b) const {
+            return a.x == b.x && a.y == b.y;
         }
     };
 
@@ -63,7 +70,7 @@ namespace godot_helpers {
     godot::Dictionary convert_map_to_dictionary(std::unordered_map<Key, Val, Compare> m) {
         godot::Dictionary d;
         for (const auto& [key, val]: m) {
-            d[key] = val;
+            d.set(key, val);
         }
         return d;
     }

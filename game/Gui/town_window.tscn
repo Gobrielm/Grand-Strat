@@ -1,60 +1,67 @@
-[gd_scene load_steps=3 format=3 uid="uid://nsjr55rm7j51"]
+[gd_scene format=3 uid="uid://nsjr55rm7j51"]
 
 [ext_resource type="Script" uid="uid://fr52bfla55vf" path="res://town_window.gd" id="1_6vqjj"]
 [ext_resource type="PackedScene" uid="uid://b7bmwfo2vrstf" path="res://Gui/cargo_info_pop_up.tscn" id="2_6vqjj"]
 
-[node name="town_window" type="Window"]
+[sub_resource type="LabelSettings" id="LabelSettings_mdfr1"]
+font_size = 12
+font_color = Color(0, 0, 0, 1)
+
+[sub_resource type="LabelSettings" id="LabelSettings_6vqjj"]
+font_color = Color(0, 0, 0, 1)
+
+[node name="town_window" type="Window" unique_id=682905866]
+oversampling_override = 1.0
 initial_position = 1
-size = Vector2i(700, 400)
+size = Vector2i(900, 600)
 script = ExtResource("1_6vqjj")
 
-[node name="Price_Node" type="Control" parent="."]
+[node name="Price_Node" type="Control" parent="." unique_id=1743637053]
 layout_mode = 3
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -87.0
-offset_top = -120.0
-offset_right = 113.0
-offset_bottom = 200.0
+offset_left = -135.23999
+offset_top = -227.5
+offset_right = 64.7594
+offset_bottom = 92.5
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Price_List" type="ItemList" parent="Price_Node"]
+[node name="Price_List" type="ItemList" parent="Price_Node" unique_id=1734694182]
 layout_mode = 0
 offset_right = 200.0
 offset_bottom = 300.0
-focus_mode = 0
 
-[node name="ColorRect" type="ColorRect" parent="Price_Node"]
+[node name="ColorRect" type="ColorRect" parent="Price_Node" unique_id=393186429]
 layout_mode = 0
 offset_top = -40.0
 offset_right = 200.0
 color = Color(0.18359, 0.18359, 0.18359, 1)
 
-[node name="Label" type="Label" parent="Price_Node/ColorRect"]
+[node name="Label" type="Label" parent="Price_Node/ColorRect" unique_id=1530206753]
 layout_mode = 0
 offset_right = 40.0
 offset_bottom = 23.0
 text = "Local Prices:"
 
-[node name="Factory_Node" type="Control" parent="."]
+[node name="Factory_Node" type="Control" parent="." unique_id=171573334]
 layout_mode = 3
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -325.0
-offset_top = -120.0
-offset_right = -129.0
-offset_bottom = 180.0
+offset_left = -375.0
+offset_top = -225.0
+offset_right = -179.0
+offset_bottom = 75.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Factory_List" type="ItemList" parent="Factory_Node"]
+[node name="Factory_List" type="ItemList" parent="Factory_Node" unique_id=158363877]
 layout_mode = 0
 offset_right = 200.0
 offset_bottom = 300.0
@@ -63,41 +70,252 @@ max_text_lines = 2
 auto_height = true
 icon_mode = 0
 
-[node name="ColorRect" type="ColorRect" parent="Factory_Node"]
+[node name="ColorRect" type="ColorRect" parent="Factory_Node" unique_id=1704859239]
 layout_mode = 0
 offset_top = -40.0
 offset_right = 200.0
 color = Color(0.18359, 0.18359, 0.18359, 1)
 
-[node name="Label" type="Label" parent="Factory_Node/ColorRect"]
+[node name="Label" type="Label" parent="Factory_Node/ColorRect" unique_id=1576474803]
 layout_mode = 0
 offset_right = 40.0
 offset_bottom = 23.0
 text = "Factories:"
 
-[node name="Cash" type="Label" parent="."]
-offset_left = 17.0
-offset_top = 5.0
-offset_right = 57.0
-offset_bottom = 28.0
-
-[node name="Pops" type="Label" parent="."]
-offset_left = 536.0
-offset_top = 8.0
-offset_right = 585.0
-offset_bottom = 31.0
+[node name="Pops" type="Label" parent="." unique_id=1321075060]
+offset_left = 29.0
+offset_top = 402.0
+offset_right = 75.0
+offset_bottom = 427.0
 text = "Pops: "
 
-[node name="Name" type="RichTextLabel" parent="."]
+[node name="Name" type="RichTextLabel" parent="." unique_id=979996886]
 offset_right = 750.0
 offset_bottom = 40.0
 bbcode_enabled = true
 scroll_active = false
 
-[node name="CargoInfoPopUp" parent="." instance=ExtResource("2_6vqjj")]
+[node name="CargoInfoPopUp" parent="." unique_id=1041868281 instance=ExtResource("2_6vqjj")]
 visible = false
 
+[node name="Graph" type="ColorRect" parent="." unique_id=233509544]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 99.0
+offset_top = -255.0
+offset_right = 427.0
+offset_bottom = 67.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Borders" type="Control" parent="Graph" unique_id=2086536431]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="LeftBorder" type="ColorRect" parent="Graph/Borders" unique_id=94982272]
+layout_mode = 0
+offset_left = -3.0
+offset_bottom = 322.0
+color = Color(0, 0, 0, 1)
+
+[node name="3_4Mark" type="ColorRect" parent="Graph/Borders/LeftBorder" unique_id=385274012]
+layout_mode = 0
+offset_left = 3.0
+offset_top = 80.0
+offset_right = 10.0
+offset_bottom = 83.0
+color = Color(0, 0, 0, 1)
+
+[node name="Line" type="ColorRect" parent="Graph/Borders/LeftBorder/3_4Mark" unique_id=1691539341]
+layout_mode = 0
+offset_left = 7.0
+offset_right = 328.0
+offset_bottom = 3.0
+color = Color(0.8776157, 0.8776158, 0.87761563, 1)
+
+[node name="Label" type="Label" parent="Graph/Borders/LeftBorder/3_4Mark" unique_id=1578322798]
+layout_mode = 0
+offset_left = 4.0
+offset_top = 4.0
+offset_right = 47.0
+offset_bottom = 27.0
+label_settings = SubResource("LabelSettings_mdfr1")
+
+[node name="1_2Mark" type="ColorRect" parent="Graph/Borders/LeftBorder" unique_id=98662165]
+layout_mode = 0
+offset_left = 3.0
+offset_top = 160.0
+offset_right = 10.0
+offset_bottom = 163.0
+color = Color(0, 0, 0, 1)
+
+[node name="Line" type="ColorRect" parent="Graph/Borders/LeftBorder/1_2Mark" unique_id=2030761520]
+layout_mode = 0
+offset_left = 7.0
+offset_right = 328.0
+offset_bottom = 3.0
+color = Color(0.8776157, 0.8776158, 0.87761563, 1)
+
+[node name="Label" type="Label" parent="Graph/Borders/LeftBorder/1_2Mark" unique_id=1374622878]
+layout_mode = 0
+offset_left = 4.0
+offset_top = 4.0
+offset_right = 47.0
+offset_bottom = 27.0
+label_settings = SubResource("LabelSettings_mdfr1")
+
+[node name="1_4Mark" type="ColorRect" parent="Graph/Borders/LeftBorder" unique_id=502843109]
+layout_mode = 0
+offset_left = 3.0
+offset_top = 240.0
+offset_right = 10.0
+offset_bottom = 243.0
+color = Color(0, 0, 0, 1)
+
+[node name="Line" type="ColorRect" parent="Graph/Borders/LeftBorder/1_4Mark" unique_id=928640664]
+layout_mode = 0
+offset_left = 7.0
+offset_right = 328.0
+offset_bottom = 3.0
+color = Color(0.8776157, 0.8776158, 0.87761563, 1)
+
+[node name="Label" type="Label" parent="Graph/Borders/LeftBorder/1_4Mark" unique_id=1901440634]
+layout_mode = 0
+offset_left = 4.0
+offset_top = 4.0
+offset_right = 47.0
+offset_bottom = 27.0
+label_settings = SubResource("LabelSettings_mdfr1")
+
+[node name="1Mark" type="ColorRect" parent="Graph/Borders/LeftBorder" unique_id=817668153]
+layout_mode = 0
+offset_left = 3.0
+offset_right = 10.0
+offset_bottom = 3.0
+color = Color(0, 0, 0, 1)
+
+[node name="Label" type="Label" parent="Graph/Borders/LeftBorder/1Mark" unique_id=253317390]
+layout_mode = 0
+offset_left = 6.0
+offset_top = 6.0
+offset_right = 49.0
+offset_bottom = 29.0
+label_settings = SubResource("LabelSettings_mdfr1")
+
+[node name="BottomBorder" type="ColorRect" parent="Graph/Borders" unique_id=1923783132]
+layout_mode = 0
+offset_left = -3.0
+offset_top = 322.0
+offset_right = 328.0
+offset_bottom = 326.0
+color = Color(0, 0, 0, 1)
+
+[node name="1_4Mark" type="ColorRect" parent="Graph/Borders/BottomBorder" unique_id=1756418459]
+layout_mode = 0
+offset_left = 80.0
+offset_top = -7.0
+offset_right = 83.0
+color = Color(0, 0, 0, 1)
+
+[node name="Line" type="ColorRect" parent="Graph/Borders/BottomBorder/1_4Mark" unique_id=674752720]
+layout_mode = 0
+offset_top = -315.0
+offset_right = 3.0
+color = Color(0.8776157, 0.8776158, 0.87761563, 1)
+
+[node name="Label" type="Label" parent="Graph/Borders/BottomBorder/1_4Mark" unique_id=176267595]
+layout_mode = 0
+offset_left = -19.0
+offset_top = -17.0
+offset_right = 24.0
+offset_bottom = 6.0
+label_settings = SubResource("LabelSettings_mdfr1")
+
+[node name="1_2Mark" type="ColorRect" parent="Graph/Borders/BottomBorder" unique_id=421767705]
+layout_mode = 0
+offset_left = 160.0
+offset_top = -7.0
+offset_right = 163.0
+color = Color(0, 0, 0, 1)
+
+[node name="Line" type="ColorRect" parent="Graph/Borders/BottomBorder/1_2Mark" unique_id=1976794415]
+layout_mode = 0
+offset_top = -315.0
+offset_right = 3.0
+color = Color(0.8776157, 0.8776158, 0.87761563, 1)
+
+[node name="Label" type="Label" parent="Graph/Borders/BottomBorder/1_2Mark" unique_id=576429395]
+layout_mode = 0
+offset_left = -19.0
+offset_top = -17.0
+offset_right = 24.0
+offset_bottom = 6.0
+label_settings = SubResource("LabelSettings_mdfr1")
+
+[node name="3_4Mark" type="ColorRect" parent="Graph/Borders/BottomBorder" unique_id=672070714]
+layout_mode = 0
+offset_left = 240.0
+offset_top = -7.0
+offset_right = 243.0
+color = Color(0, 0, 0, 1)
+
+[node name="Line" type="ColorRect" parent="Graph/Borders/BottomBorder/3_4Mark" unique_id=462299549]
+layout_mode = 0
+offset_top = -315.0
+offset_right = 3.0
+color = Color(0.8776157, 0.8776158, 0.87761563, 1)
+
+[node name="Label" type="Label" parent="Graph/Borders/BottomBorder/3_4Mark" unique_id=1747493278]
+layout_mode = 0
+offset_left = -19.0
+offset_top = -17.0
+offset_right = 24.0
+offset_bottom = 6.0
+label_settings = SubResource("LabelSettings_mdfr1")
+
+[node name="1Mark" type="ColorRect" parent="Graph/Borders/BottomBorder" unique_id=1417055049]
+layout_mode = 0
+offset_left = 320.0
+offset_top = -7.0
+offset_right = 323.0
+color = Color(0, 0, 0, 1)
+
+[node name="Line" type="ColorRect" parent="Graph/Borders/BottomBorder/1Mark" unique_id=488051570]
+layout_mode = 0
+offset_top = -315.0
+offset_right = 3.0
+color = Color(0.8776157, 0.8776158, 0.87761563, 1)
+
+[node name="Label" type="Label" parent="Graph/Borders/BottomBorder/1Mark" unique_id=848932980]
+layout_mode = 0
+offset_left = -19.0
+offset_top = -17.0
+offset_right = 24.0
+offset_bottom = 6.0
+label_settings = SubResource("LabelSettings_mdfr1")
+
+[node name="TypeLabel" type="Label" parent="Graph" unique_id=582098229]
+layout_mode = 0
+offset_left = 230.0
+offset_top = 5.0
+offset_right = 270.0
+offset_bottom = 28.0
+label_settings = SubResource("LabelSettings_6vqjj")
+
+[node name="SubFarmButton" type="Button" parent="." unique_id=1727994374]
+offset_left = 768.0
+offset_top = 389.0
+offset_right = 865.0
+offset_bottom = 428.0
+text = "Sub Farm"
+
 [connection signal="close_requested" from="." to="." method="_on_close_requested"]
+[connection signal="item_clicked" from="Price_Node/Price_List" to="." method="_on_price_list_item_clicked"]
 [connection signal="mouse_entered" from="Price_Node/Price_List" to="." method="_on_price_list_mouse_entered"]
 [connection signal="mouse_exited" from="Price_Node/Price_List" to="." method="_on_price_list_mouse_exited"]
 [connection signal="popup_requested" from="CargoInfoPopUp" to="." method="_on_cargo_info_pop_up_popup_requested"]
+[connection signal="pressed" from="SubFarmButton" to="." method="_on_sub_farm_button_pressed"]

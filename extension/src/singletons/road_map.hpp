@@ -5,7 +5,8 @@
 #include <godot_cpp/classes/tile_map_layer.hpp>
 #include <godot_cpp/classes/resource_loader.hpp>
 #include <godot_cpp/classes/tile_set_atlas_source.hpp>
-#include "../utility/vector2i_hash.hpp"
+
+#include "utility/vector2i_hash.hpp"
 
 using namespace godot;
 

@@ -76,5 +76,6 @@ func _on_go_button_pressed() -> void:
 
 @rpc("any_peer", "call_local", "unreliable")
 func depart_train(index: int, new_location: Vector2i) -> void:
-	var depot: Terminal = map.get_depot_or_terminal(new_location)
-	depot.leave_depot(index)
+	pass
+	#var depot: Terminal = map.get_depot_or_terminal(new_location)
+	#depot.leave_depot(index)

@@ -1,14 +1,19 @@
 #include "pop_manager.hpp"
 #include "terminal_map.hpp"
 #include "province_manager.hpp"
-#include "../classes/province.hpp"
-#include "../classes/town.hpp"
-#include "../classes/investment_company.hpp"
 #include "cargo_info.hpp"
 #include "recipe_info.hpp"
-#include "terminal_map.hpp"
 #include "money_controller.hpp"
-#include <set>
+#include "data_collector.hpp"
+#include "utility/blocking_thread_pool.h"
+
+#include "classes/province.hpp"
+#include "classes/map_objects/town.hpp"
+#include "classes/components/employer_component.hpp"
+
+#include <godot_cpp/classes/ref.hpp>
+
+#include <queue>
 
 std::shared_ptr<PopManager> PopManager::singleton_instance = nullptr;
 
@@ -22,22 +27,14 @@ void PopManager::cleanup() {
 }
 
 PopManager::PopManager() {
-    thread_pool = new PopManagerThreadPool(8, [this]() { return thread_month_tick_loader(); });
-
-    thread_pool->set_work_function([this] (std::vector<BasePop*>& pops) {
-        month_tick(pops); // use PopManager’s pipeline
-    });
-    for (int i = 0; i < NUMBER_OF_POP_LOCKS; i++) {
-        pop_locks.push_back(new std::shared_mutex);  // constructs a new shared_mutex directly in the vector
-    }
+    std::function f = [this] () {
+        return ProvinceManager::get_instance()->get_provinces_vector();
+    };
+    thread_pool = new BlockingThreadPool(4, f);
 }
 
 PopManager::~PopManager() {
     delete thread_pool;
-    std::scoped_lock sp_pops_lock(m);
-    for (auto& [id, __]: pops) {
-        fire_pop(id);
-    }
 }
 
 std::shared_ptr<PopManager> PopManager::get_instance() {
@@ -45,218 +42,221 @@ std::shared_ptr<PopManager> PopManager::get_instance() {
     return singleton_instance;
 }
 
-int PopManager::thread_month_tick_loader() {
-    refresh_employment_sorted_by_wage();
-    {
-        std::scoped_lock sp_pops_lock(m);
-        for (auto& [id, pop]: pops) {
-            thread_pool->add_work((&pop), pop.get_pop_id() % NUMBER_OF_POP_LOCKS);
-        }
-    }
-    return pops.size();
-}
+// void PopManager::adjust_pop_orders() {
+//     std::function<void(int)> f = [this](int province_id) { this->thread_order_tick(province_id); };
+//     thread_pool->set_work_function(f);
+//     thread_pool->month_tick();
+// }
 
-void PopManager::month_tick() {
+void PopManager::pop_tick() {
+    std::function<void(int)> f = [this](int province_id) { this->thread_trading_tick(province_id); };
+    thread_pool->set_work_function(f);
     thread_pool->month_tick();
 }
+
+// void PopManager::thread_order_tick(int province_id) {
+//     auto pm = ProvinceManager::get_instance();
+//     auto province = pm->get_province(province_id);
+    
+//     std::scoped_lock lock(province->m);
+//     Town& town = province->town;
+//     province->ppm.adjust_pop_orders(town);
+// }
+
 // If full month tick takes a while, all pop group ticks take a while
-void PopManager::month_tick(std::vector<BasePop*>& pop_group) { // Assumes all pops are part of same mutex block
-    auto start_time = std::chrono::high_resolution_clock::now();
-    int mutex_lock_num = get_pop_mutex_number(pop_group.front()->get_pop_id());
-    {
-        // If Pops are never fired or payed, then they will have an inflated wage
-        auto lock = lock_pop_write(mutex_lock_num);
-        for (auto &pop: pop_group) {
-            pop->month_tick();
-            change_pop_unsafe(pop);
-        }
-    }
-    auto time1 = std::chrono::high_resolution_clock::now();
+void PopManager::thread_trading_tick(int province_id) { // Assumes all pops are part of same mutex block
+
+    auto pm = ProvinceManager::get_instance();
+    auto province = pm->get_province(province_id);
     
-    sell_to_pops(pop_group);
-    auto time2 = std::chrono::high_resolution_clock::now();
-    find_employment_for_pops(pop_group);
-    auto time3 = std::chrono::high_resolution_clock::now();
-
-    String x;
-    std::chrono::duration<double> elapsed1 = time1 - start_time;
-    std::chrono::duration<double> elapsed2 = time2 - time1;
-    std::chrono::duration<double> elapsed3 = time3 - time2;
-    if (elapsed1 > elapsed2 && elapsed1 > elapsed3) {
-        x = "Month Tick";
-    } else if (elapsed2 > elapsed1 && elapsed2 > elapsed3) {
-        x = "Sell To Pops";
-    } else {
-        x = "Employment";
-    }
-
-    std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - start_time;
-    if (elapsed.count() > 0.5) {
-        print_line("Pop group " + x + " tick took " + String::num_scientific(elapsed.count()) + " seconds");
-    }
+    std::scoped_lock lock(province->m);
+    province->ppm.pop_tick(province);
 }
 
 
-void PopManager::sell_to_pops(std::vector<BasePop*>& pop_group) {
-    Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
-    std::unordered_map<Vector2i, Vector2i, godot_helpers::Vector2iHasher> location_to_nearest_town;
-    create_pop_location_to_towns(pop_group, location_to_nearest_town);
-    // Get closest town and then use town functions to sell to those pops
-    
-    for (auto& pop: pop_group) {
-        Ref<Town> town = terminal_map->get_town(location_to_nearest_town[pop->get_location()]);
-        if (town.is_null()) {
-            continue;
-        }
-        town->sell_to_pop(pop, *get_lock(pop->get_pop_id()));
-    }
-}
+// void PopManager::sell_to_pops(Province* province, std::unordered_set<int>& pops_to_sell_to) {
+//     Town& town = province->town;
+//     for (int pop_id: pops_to_sell_to) {
+//         auto& pop = pops[pop_id];
+//         town.mp.sell_to_pop(province, pop);
+//     }
+// }
 
-void PopManager::create_pop_location_to_towns(std::vector<BasePop*>& pop_group, std::unordered_map<Vector2i, Vector2i, godot_helpers::Vector2iHasher>& location_to_nearest_town) const { 
-    auto province_manager = ProvinceManager::get_instance(); // Get closest town and then use town functions to sell to those pops 
-    { 
-        for (auto& pop: pop_group) { 
-            Vector2i location = pop->get_location(); // Not locking since its not that important for current info
-            if (location_to_nearest_town.count(location)) continue;
-            auto province = province_manager->get_province(location);
-            if (!province -> has_closest_town_tile_to_pop(location)) continue; // No Towns, ie no place to buy from
-            Vector2i town_tile = province->get_closest_town_tile_to_pop(location); 
-            location_to_nearest_town[location] = town_tile;
-        }
-    }
-}
-Vector2i PopManager::get_town_tile(const BasePop* pop) const {
-    auto province_manager = ProvinceManager::get_instance(); // Get closest town and then use town functions to sell to those pops 
-    Vector2i location = pop->get_location(); // Not locking since its not that important for current info
-    auto province = province_manager->get_province(location);
-    Vector2i town_tile = province->get_closest_town_tile_to_pop(location); 
-    return town_tile;
-}
+// void PopManager::create_pop_location_to_towns(std::vector<BasePop*>& pop_group, std::unordered_map<Vector2i, Vector2i, godot_helpers::Vector2iHasher>& location_to_nearest_town) const { 
+//     auto province_manager = ProvinceManager::get_instance(); // Get closest town and then use town functions to sell to those pops 
+//     { 
+//         for (auto& pop: pop_group) { 
+//             Vector2i location = pop->get_location(); // Not locking since its not that important for current info
+//             if (location_to_nearest_town.count(location)) continue;
+//             auto province = province_manager->get_province(location);
+//             if (!province -> has_closest_town_tile_to_pop(location)) continue; // No Towns, ie no place to buy from
+//             Vector2i town_tile = province->get_closest_town_tile_to_pop(location); 
+//             location_to_nearest_town[location] = town_tile;
+//         }
+//     }
+// }
+// Vector2i PopManager::get_town_tile(const BasePop* pop) const {
+//     auto province_manager = ProvinceManager::get_instance(); // Get closest town and then use town functions to sell to those pops 
+//     Vector2i location = pop->get_location(); // Not locking since its not that important for current info
+//     auto province = province_manager->get_province(location);
+//     Vector2i town_tile = province->get_closest_town_tile_to_pop(location); 
+//     return town_tile;
+// }
 
-void PopManager::change_pop_unsafe(BasePop * pop) {
-    if (pop->will_degrade()) {
-        pop->degrade();
-    } else if (pop->will_upgrade() && rand() % 5 == 0) {
-        int free_jobs = employment_options[pop->get_type()][get_pop_country_id_unsafe(pop)].size();
-        if (free_jobs > 0) pop->upgrade();
-    }
-}
+// void PopManager::change_pop_unsafe(BasePop * pop) {
+//     if (pop->will_degrade()) {
+//         pop->degrade();
+//     } else if (pop->will_upgrade() && rand() % 5 == 0) {
+//         int free_jobs = employment_options[pop->get_type()][get_pop_country_id_unsafe(pop)].size();
+//         if (free_jobs > 0) pop->upgrade();
+//     }
+// }
 
-void PopManager::find_employment_for_pops(std::vector<BasePop*>& pop_group) {
-    int mutex_lock_num = get_pop_mutex_number(pop_group.front()->get_pop_id());
+// void PopManager::find_employment_for_pops(Province* province) {
+//     if (pops_to_employ.size() == 0) return;
 
-    for (auto& pop: pop_group) {
-        PopTypes pop_type = none;
-        {
-            auto lock = lock_pop_read(mutex_lock_num);
-            pop_type = pop->get_type(); // Don't lock since factory will double check if wrong
-            if (!pop->is_seeking_employment()) continue;
-        }
-        employment_finder_helper(pop, pop_type);
-    }
-}
+//     Town& town = province->town;
+//     // Create employment queue
+//     std::priority_queue<std::pair<float, int>> employement_queue;
+//     for (auto& fact: province->factories) {
+//         employement_queue.push(std::make_pair(fact.get_wage(town), fact.position.get_building_id()));
+//     }
+
+//     // Employ Pops
+//     for (int pop_id: pops_to_employ) {
+//         auto& pop = pops[pop_id];
+//         auto pop_type = pop.get_type();
+//         if (!pop.is_seeking_employment()) continue;
+        
+//         while (employement_queue.size() != 0) {
+//             int building_id = employement_queue.top().second;
+//             auto& factory = province->get_factory_unsafe(building_id);
+//             if (!factory.is_hiring(pop_type)) {
+//                 employement_queue.pop();
+//                 continue;
+//             }
+
+//             factory.employ_pop(town, pop);
+//         }
+
+//     }
+// }
+
+// void PopManager::find_employment_for_pops(std::vector<BasePop*>& pop_group) {
+//     int mutex_lock_num = get_pop_mutex_number(pop_group.front()->get_pop_id());
+
+//     for (auto& pop: pop_group) {
+//         PopTypes pop_type = none;
+//         {
+//             auto lock = lock_pop_read(mutex_lock_num);
+//             pop_type = pop->get_type(); // Don't lock since factory will double check if wrong
+//             if (!pop->is_seeking_employment()) continue;
+//         }
+//         employment_finder_helper(pop, pop_type);
+//     }
+// }
 
 // Currently Pops can move and work anywhere in their country with no penalities
 // Also, simple sorting happens by wage, and doesn't consider 
 
 
-void PopManager::employment_finder_helper(BasePop* pop, PopTypes pop_type) {
-    int country_id = get_pop_country_id(pop);
-    if (pop_type == town && pop->get_wealth() > 50000) { // TODO: Using constant money amount
-        bool was_sucessful = employment_for_potential_investor(pop, country_id);
-        if (was_sucessful) return;
-    }
+// void PopManager::employment_finder_helper(BasePop* pop, PopTypes pop_type) {
+//     int country_id = get_pop_country_id(pop);
+//     // if (pop_type == town && pop->get_wealth() > 50000) { // TODO: Using constant money amount
+//     //     bool was_sucessful = employment_for_potential_investor(pop, country_id);
+//     //     if (was_sucessful) return;
+//     // }
 
     
-    auto work = get_first_employment_option(pop_type, country_id);
-    if (work.internal_fact == nullptr) return;
-    while (work.internal_fact != nullptr) {
-        if (!work.internal_fact->is_hiring(pop_type)) { 
-            remove_first_employment_option(pop_type, country_id, work.internal_fact); // Erase from set if not hiring assuming the set only has one pop type allowed
-            work = get_first_employment_option(pop_type, country_id); 
-            continue;
-        }
-        bool is_acceptable = false;
-        {
-            auto lock = lock_pop_read(pop->get_pop_id());
-            is_acceptable = pop->is_wage_acceptable(work.wage);
-        }
+//     auto work = get_first_employment_option(pop_type, country_id);
+//     if (work.internal_fact == nullptr) return;
+//     while (work.internal_fact != nullptr) {
+//         if (!work.internal_fact->is_hiring(pop_type)) { 
+//             remove_first_employment_option(pop_type, country_id, work.internal_fact); // Erase from set if not hiring assuming the set only has one pop type allowed
+//             work = get_first_employment_option(pop_type, country_id); 
+//             continue;
+//         }
+//         bool is_acceptable = false;
+//         {
+//             auto lock = lock_pop_read(pop->get_pop_id());
+//             is_acceptable = pop->is_wage_acceptable(work.wage);
+//         }
 
-        if (is_acceptable) {
-            work.internal_fact->employ_pop(pop, *get_lock(pop->get_pop_id()), pop_type);
-        }
-        break; // Break if found job or not, since wage would only go down
-    }
-}
+//         if (is_acceptable) {
+//             work.internal_fact->employ_pop(pop, *get_lock(pop->get_pop_id()), pop_type);
+//         }
+//         break; // Break if found job or not, since wage would only go down
+//     }
+// }
 
 
-bool PopManager::employment_for_potential_investor(BasePop* pop, int country_id) { // TODO: Test Logic
-    int cargo_type = get_cargo_type_to_build(country_id);
-    if (cargo_type == -1) return false;
-    // print_line(CargoInfo::get_instance()->get_cargo_name(cargo_type));
-    auto terminal_map = TerminalMap::get_instance();
-    Vector2i town_tile;
-    {
-        auto lock = lock_pop_read(pop->get_pop_id());
-        town_tile = pop->get_location();
-    }
-    auto town = terminal_map->get_town(town_tile);
-    ERR_FAIL_COND_V_MSG(town.is_null(), false, "Town Pop not located on Town");
-    Ref<InvestmentCompany> company = town->get_first_invesment_company_looking_for_employees(cargo_type); // Doesn't check for pop_location, migration avoided and searchs country
+// bool PopManager::employment_for_potential_investor(BasePop* pop, int country_id) { // TODO: Test Logic
+//     int cargo_type = get_cargo_type_to_build(country_id);
+//     if (cargo_type == -1) return false;
+//     // print_line(CargoInfo::get_instance()->get_cargo_name(cargo_type));
+//     auto terminal_map = TerminalMap::get_instance();
+//     Vector2i town_tile;
+//     {
+//         auto lock = lock_pop_read(pop->get_pop_id());
+//         town_tile = pop->get_location();
+//     }
+//     auto town = get_town_helper(town_tile);
+//     ERR_FAIL_COND_V_MSG(!town.has_value(), false, "Town Pop not located on Town");
+//     Ref<InvestmentCompany> company = town.value().get_first_invesment_company_looking_for_employees(cargo_type); // Doesn't check for pop_location, migration avoided and searchs country
 
-    if (company.is_null()) {
-        company = InvestmentCompany::create(country_id, town_tile, cargo_type);
-        TerminalMap::get_instance()->create_isolated_company_in_town(company);
-    }
-    float wealth_transfer = 0;
-    {
-        auto lock = lock_pop_write(pop->get_pop_id());
-        wealth_transfer = pop->transfer_wealth();
-    }
-    company->employ_pop(pop->get_pop_id());
-    float wage = company->get_wage();
-    {
-        auto lock = lock_pop_read(pop->get_pop_id());
-        pop->employ(company->get_terminal_id(), wage);
-    }
-    MoneyController::get_instance()->add_money_to_player(company->get_owner_id(), wealth_transfer);
-    return true;
-}
+//     if (company.is_null()) {
+//         company = InvestmentCompany::create(country_id, town_tile, cargo_type);
+//         TerminalMap::get_instance()->create_isolated_company_in_town(company);
+//     }
+//     float wealth_transfer = 0;
+//     {
+//         auto lock = lock_pop_write(pop->get_pop_id());
+//         wealth_transfer = pop->transfer_wealth();
+//     }
+//     company->employ_pop(pop->get_pop_id());
+//     float wage = company->get_wage();
+//     {
+//         auto lock = lock_pop_read(pop->get_pop_id());
+//         pop->employ(company->get_terminal_id(), wage);
+//     }
+//     MoneyController::get_instance()->add_money_to_player(company->get_owner_id(), wealth_transfer);
+//     return true;
+// }
 
-int PopManager::get_cargo_type_to_build(int country_id) const { // TODO: Eventually consider access, volitility, price changing, ect
-    std::unordered_map<int, float> average_prices = ProvinceManager::get_instance()->get_average_country_prices(country_id);
-    if (!average_prices.size()) return -1;
-    auto cmp = [](const std::pair<int, float>& p1,
-                  const std::pair<int, float>& p2) {
-        if (p1.second == p2.second) return p1.first < p2.second;
-        return p1.second > p2.second;
-    };
-    std::set<std::pair<int, float>, decltype(cmp)> s(cmp);
-    for (const auto& [type, price]: average_prices) {
-        const auto recipe = RecipeInfo::get_instance()->get_recipe_for_type(type);
-        if (recipe == nullptr) continue;
-        float exp_profit = get_profit_of_recipe(recipe, average_prices);
-        s.insert({type, exp_profit});
-    }
-    std::vector<int> random_selector = {0, 0, 0, 1, 1, 2, 2, 3, 3, 4};
-    int random = std::min(random_selector[rand() % 10], int(s.size() - 1));
-    const auto& pair_profit = *std::next(s.begin(), random);
-    if (pair_profit.second <= 0) {
-        // print_line(String::num_scientific(pair_profit.second));
-        return -1;
-    } // Shows no profit, maybe not
-    return pair_profit.first;
-}
+// int PopManager::get_cargo_type_to_build(int country_id) const { // TODO: Eventually consider access, volitility, price changing, ect
+//     std::unordered_map<int, float> average_prices = ProvinceManager::get_instance()->get_average_country_prices(country_id);
+//     if (!average_prices.size()) return -1;
+//     auto cmp = [](const std::pair<int, float>& p1,
+//                   const std::pair<int, float>& p2) {
+//         if (p1.second == p2.second) return p1.first < p2.second;
+//         return p1.second > p2.second;
+//     };
+//     std::set<std::pair<int, float>, decltype(cmp)> s(cmp);
+//     for (const auto& [type, price]: average_prices) {
+//         const auto employer_component = RecipeInfo::get_instance()->get_employer_component_for_type(type);
+//         if (employer_component.has_value()) continue;
+//         float exp_profit = get_profit_of_ec(employer_component.value(), average_prices);
+//         s.insert({type, exp_profit});
+//     }
+//     std::vector<int> random_selector = {0, 0, 0, 1, 1, 2, 2, 3, 3, 4};
+//     int random = std::min(random_selector[rand() % 10], int(s.size() - 1));
+//     const auto& pair_profit = *std::next(s.begin(), random);
+//     if (pair_profit.second <= 0) {
+//         // print_line(String::num_scientific(pair_profit.second));
+//         return -1;
+//     } // Shows no profit, maybe not
+//     return pair_profit.first;
+// }
 
-float PopManager::get_profit_of_recipe(const Recipe* recipe, const std::unordered_map<int, float>& average_prices) const {
+float PopManager::get_profit_of_ec(const EmployerComponent ec, const std::unordered_map<int, float>& average_prices) const {
     float profit = 0;
-    for (const auto& [type, amount]: recipe->get_inputs()) {
-        profit -= average_prices.at(type) * amount * 30;
+    for (const auto& [type, amount]: ec.recipe.get_inputs()) {
+        profit -= average_prices.at(type) * amount;
     }
-    for (const auto& [type, amount]: recipe->get_outputs()) {
-        profit += average_prices.at(type) * amount * 30;
+    for (const auto& [type, amount]: ec.recipe.get_outputs()) {
+        profit += average_prices.at(type) * amount;
     }
-    for (const auto& [type, amount_of_pops]: recipe->get_pops_needed()) {
+    for (const auto& [type, amount_of_pops]: ec.get_pops_needed()) {
         for (const auto& [type, amount]: BasePop::get_base_needs(type)) {
             profit -= average_prices.at(type) * amount * amount_of_pops;
         }
@@ -265,295 +265,290 @@ float PopManager::get_profit_of_recipe(const Recipe* recipe, const std::unordere
     return profit;
 }
 
-void PopManager::refresh_employment_sorted_by_wage() {
-    {
-        std::scoped_lock lock(employment_mutex);
-        employment_options.clear();
-    }
-    refresh_rural_employment_sorted_by_wage();
-    refresh_town_employment_sorted_by_wage();
-}
+// void PopManager::refresh_employment_sorted_by_wage() {
+//     {
+//         std::scoped_lock lock(employment_mutex);
+//         employment_options.clear();
+//     }
+//     refresh_rural_employment_sorted_by_wage();
+//     refresh_town_employment_sorted_by_wage();
+// }
 
-void PopManager::refresh_rural_employment_sorted_by_wage() {
-    decltype(employment_options) fresh;
+// void PopManager::refresh_rural_employment_sorted_by_wage() {
+//     decltype(employment_options) fresh;
 
-    auto province_manager = ProvinceManager::get_instance();
-    for (int country_id: province_manager->get_country_ids()) {
-        for (const auto& province_id: province_manager->get_country_provinces(country_id)) {
-            auto province = province_manager->get_province(province_id);
-            for (const auto& tile: province->get_terminal_tiles_set()) {
-                Ref<FactoryTemplate> fact = TerminalMap::get_instance()->get_terminal_as<FactoryTemplate>(tile);
-                if (!fact.is_null() && fact->is_hiring(rural)) {
-                    fresh[rural][country_id].insert(fact);
-                }
-            }
-        }
-    }
+//     auto province_manager = ProvinceManager::get_instance();
+//     for (int country_id: province_manager->get_country_ids()) {
+//         for (const auto& province_id: province_manager->get_country_provinces(country_id)) {
+//             auto province = province_manager->get_province(province_id);
+//             auto& town = province->town;
+//             std::scoped_lock lock(province->m);
 
-    add_local_employment_options(fresh);
-}
+//             for (auto& factory: province->factories) {
+//                 if (factory.is_hiring(rural)) {
+//                     fresh[rural][country_id].insert(std::make_pair(factory.get_wage(town), factory.position.building_id));
+//                 }
+//             }
+//         }
+//     }
 
-void PopManager::refresh_town_employment_sorted_by_wage() {
-    decltype(employment_options) fresh;
+//     add_local_employment_options(fresh);
+// }
 
-    auto province_manager = ProvinceManager::get_instance();
-    for (int country_id: province_manager->get_country_ids()) {
-        for (const auto& province_id: province_manager->get_country_provinces(country_id)) {
-            auto province = province_manager->get_province(province_id);
-            for (const auto& tile: province->get_town_tiles()) {
-                refresh_town_employment_sorted_by_wage_helper(country_id, tile, fresh);
-            }   
-        }
-    }
+// void PopManager::refresh_town_employment_sorted_by_wage() {
+//     decltype(employment_options) fresh;
 
-    add_local_employment_options(fresh);
-}
+//     auto province_manager = ProvinceManager::get_instance();
+//     for (int country_id: province_manager->get_country_ids()) {
+//         for (const auto& province_id: province_manager->get_country_provinces(country_id)) {
+//             auto province = province_manager->get_province(province_id);
+//             for (const auto& tile: province->get_town_tiles()) {
+//                 refresh_town_employment_sorted_by_wage_helper(country_id, tile, fresh);
+//             }   
+//         }
+//     }
 
-using employ_type = std::unordered_map<PopTypes, std::unordered_map<int, std::set<FactoryTemplate::FactoryWageWrapper, FactoryTemplate::FactoryWageWrapper::FactoryWageCompare>>>;
+//     add_local_employment_options(fresh);
+// }
 
-void PopManager::refresh_town_employment_sorted_by_wage_helper(int country_id, const Vector2i& tile, employ_type& local_employment_options) {
-    Ref<Town> town_ref = TerminalMap::get_instance()->get_town(tile);
-    ERR_FAIL_COND_MSG(town_ref.is_null(), "Location sent is to a null town");
-    for (const auto& fact: town_ref->get_employment_sorted_by_wage(town)) {
-        local_employment_options[town][country_id].insert(FactoryTemplate::FactoryWageWrapper(fact));
-    }
-}
+// using employ_type = std::unordered_map<PopTypes, std::unordered_map<int, std::set<FactoryTemplate::FactoryWageWrapper, FactoryTemplate::FactoryWageWrapper::FactoryWageCompare>>>;
 
-void PopManager::add_local_employment_options(employ_type& local_employment_options) {
-    {
-        std::scoped_lock lock(employment_mutex);
-        for (auto& [category, countries] : local_employment_options) {
-            for (auto& [country_id, factories] : countries) {
-                employment_options[category][country_id].insert(
-                    factories.begin(), factories.end()
-                );
-            }
-        }
-    }
-}
+// void PopManager::refresh_town_employment_sorted_by_wage_helper(int country_id, const Vector2i& tile, employ_type& local_employment_options) {
+//     auto town = get_town_helper(tile);
+//     ERR_FAIL_COND_MSG(!town.has_value(), "Location sent is to a null town");
+//     for (const auto& fact: town.value().get_employment_sorted_by_wage(town)) {
+//         local_employment_options[PopTypes::town][country_id].insert(FactoryTemplate::FactoryWageWrapper(fact));
+//     }
+// }
 
-FactoryTemplate::FactoryWageWrapper PopManager::get_first_employment_option(PopTypes pop_type, int country_id) const {
-    std::shared_lock lock(employment_mutex);
-    auto itType = employment_options.find(pop_type);
-    if (itType == employment_options.end()) return FactoryTemplate::FactoryWageWrapper();
-    auto itCountry = itType->second.find(country_id);
-    if (itCountry == itType->second.end() || itCountry->second.empty()) return FactoryTemplate::FactoryWageWrapper();
-    return *(itCountry->second.begin());
-}
+// void PopManager::add_local_employment_options(employ_type& local_employment_options) {
+//     {
+//         std::scoped_lock lock(employment_mutex);
+//         for (auto& [category, countries] : local_employment_options) {
+//             for (auto& [country_id, factories] : countries) {
+//                 employment_options[category][country_id].insert(
+//                     factories.begin(), factories.end()
+//                 );
+//             }
+//         }
+//     }
+// }
 
-void PopManager::remove_first_employment_option(PopTypes pop_type, int country_id, const Ref<FactoryTemplate>& double_check) {
-    std::scoped_lock lock(employment_mutex);
-    if (employment_options.count(pop_type) && employment_options.at(pop_type).count(country_id)) {
-        auto first_it = employment_options.at(pop_type).at(country_id).begin();
-        if (first_it == employment_options.at(pop_type).at(country_id).end()) return;
-        if ((first_it->internal_fact).ptr()->get_terminal_id() == double_check.ptr()->get_terminal_id())
-            employment_options[pop_type][country_id].erase(first_it);
-    }
-}
+// FactoryTemplate::FactoryWageWrapper PopManager::get_first_employment_option(PopTypes pop_type, int country_id) const {
+//     std::shared_lock lock(employment_mutex);
+//     auto itType = employment_options.find(pop_type);
+//     if (itType == employment_options.end()) return FactoryTemplate::FactoryWageWrapper();
+//     auto itCountry = itType->second.find(country_id);
+//     if (itCountry == itType->second.end() || itCountry->second.empty()) return FactoryTemplate::FactoryWageWrapper();
+//     return *(itCountry->second.begin());
+// }
 
-int PopManager::get_pop_mutex_number(int pop_id) const {
-    return pop_id % NUMBER_OF_POP_LOCKS;
-}
+// void PopManager::remove_first_employment_option(PopTypes pop_type, int country_id, const Ref<FactoryTemplate>& double_check) {
+//     std::scoped_lock lock(employment_mutex);
+//     if (employment_options.count(pop_type) && employment_options.at(pop_type).count(country_id)) {
+//         auto first_it = employment_options.at(pop_type).at(country_id).begin();
+//         if (first_it == employment_options.at(pop_type).at(country_id).end()) return;
+//         if ((first_it->internal_fact).ptr()->get_terminal_id() == double_check.ptr()->get_terminal_id())
+//             employment_options[pop_type][country_id].erase(first_it);
+//     }
+// }
 
-std::shared_mutex* PopManager::get_lock(int pop_id) const {
-    return (pop_locks.at(get_pop_mutex_number(pop_id)));
-}
+// const BasePop* PopManager::get_pop(int pop_id) const {
+//     std::shared_lock lock(m);
+//     auto it = pops.find(pop_id);
+//     if (it == pops.end()) {
+//         ERR_FAIL_V_MSG(nullptr, "Pop accessed at invalid id.");
+//     }
+//     return &(it->second);
+// }
 
-std::shared_lock<std::shared_mutex> PopManager::lock_pop_read(int pop_id) const {
-    return std::shared_lock(*pop_locks[get_pop_mutex_number(pop_id)]);
-}
+// BasePop* PopManager::get_pop(int pop_id) {
+//     std::shared_lock lock(m);
+//     auto it = pops.find(pop_id);
+//     if (it == pops.end()) {
+//         ERR_FAIL_V_MSG(nullptr, "Pop accessed at invalid id.");
+//     }
+//     return &(it->second);
+// }
 
-std::unique_lock<std::shared_mutex> PopManager::lock_pop_write(int pop_id) const {
-    return std::unique_lock(*pop_locks[get_pop_mutex_number(pop_id)]);
-}
+// int PopManager::get_pop_country_id(BasePop* pop) const {
+//     Vector2i location;
+//     {
+//         auto lock = lock_pop_read(pop->get_pop_id());
+//         location = pop->get_location();
+//     } 
+//     return ProvinceManager::get_instance()->get_province(location)->get_country_id();
+// }
 
-const BasePop* PopManager::get_pop(int pop_id) const {
-    std::shared_lock lock(m);
-    auto it = pops.find(pop_id);
-    if (it == pops.end()) {
-        ERR_FAIL_V_MSG(nullptr, "Pop accessed at invalid id.");
-    }
-    return &(it->second);
-}
-
-BasePop* PopManager::get_pop(int pop_id) {
-    std::shared_lock lock(m);
-    auto it = pops.find(pop_id);
-    if (it == pops.end()) {
-        ERR_FAIL_V_MSG(nullptr, "Pop accessed at invalid id.");
-    }
-    return &(it->second);
-}
-
-int PopManager::get_pop_country_id(BasePop* pop) const {
-    Vector2i location;
-    {
-        auto lock = lock_pop_read(pop->get_pop_id());
-        location = pop->get_location();
-    } 
-    return ProvinceManager::get_instance()->get_province(location)->get_country_id();
-}
-
-int PopManager::get_pop_country_id_unsafe(BasePop* pop) const {
-    return ProvinceManager::get_instance()->get_province(pop->get_location())->get_country_id();
-}
+// int PopManager::get_pop_country_id_unsafe(BasePop* pop) const {
+//     return ProvinceManager::get_instance()->get_province(pop->get_location())->get_country_id();
+// }
 
 // Pop Utility
-void PopManager::set_pop_location(int pop_id, const Vector2i& location) {
-    auto lock = lock_pop_write(pop_id);
-    get_pop(pop_id)->set_location(location);
-}
+// void PopManager::set_pop_location(int pop_id, const Vector2i& location) {
+//     auto lock = lock_pop_write(pop_id);
+//     get_pop(pop_id)->set_location(location);
+// }
 
-int PopManager::create_pop(Variant culture, const Vector2i& p_location, PopTypes p_pop_type) {
-    int home_prov_id = ProvinceManager::get_instance()->get_province_id(p_location);
-    auto pop = BasePop(home_prov_id, p_location, culture, p_pop_type);
-    int id = pop.get_pop_id();
-    {
-        std::unique_lock lock(m);
-        pops.emplace(id, std::move(pop));
-    }
-    return id;
-}
+// int PopManager::create_pop(Variant culture, const Vector2i p_location, PopTypes p_pop_type) {
+//     int home_prov_id = ProvinceManager::get_instance()->get_province_id(p_location);
+//     auto pop = BasePop(home_prov_id, p_location, culture, p_pop_type);
+//     int id = pop.get_pop_id();
+//     {
+//         std::unique_lock lock(m);
+//         pops.emplace(id, std::move(pop));
+//     }
+//     return id;
+// }
 
-void PopManager::pay_pop(int pop_id, float wage) {
-    auto lock = lock_pop_write(pop_id);
-    get_pop(pop_id)->pay_wage(wage);
-}
+// void PopManager::pay_pop(int pop_id, float wage) {
+//     // auto lock = lock_pop_write(pop_id);
+//     get_pop(pop_id)->pay_wage(wage);
+// }
 
-void PopManager::fire_pop(int pop_id) {
-    auto lock = lock_pop_write(pop_id);
-    get_pop(pop_id)->fire();
-}
+// void PopManager::fire_pop(int pop_id) {
+//     // auto lock = lock_pop_write(pop_id);
+//     get_pop(pop_id)->fire();
+// }
 
-void PopManager::sell_cargo_to_pop(int pop_id, int type, int amount, float price) {
-    auto lock = lock_pop_write(pop_id);
-    get_pop(pop_id)->buy_good(type, amount, price);
-}
+// void PopManager::sell_cargo_to_pop(int pop_id, int type, int amount, float price) {
+//     auto lock = lock_pop_write(pop_id);
+//     get_pop(pop_id)->buy_good(type, amount, price);
+// }
 
-void PopManager::give_pop_cargo(int pop_id, int type, int amount) {
-    auto lock = lock_pop_write(pop_id);
-    get_pop(pop_id)->add_cargo(type, amount);
-}
+// void PopManager::give_pop_cargo(int pop_id, int type, int amount) {
+//     auto lock = lock_pop_write(pop_id);
+//     get_pop(pop_id)->add_cargo(type, amount);
+// }
 
-int PopManager::get_pop_desired(int pop_id, int type, float price) {
-    auto lock = lock_pop_read(pop_id);
-    return get_pop(pop_id)->get_desired(type, price);
-}
+// int PopManager::get_pop_desired(int pop_id, int type, float price) {
+//     auto lock = lock_pop_read(pop_id);
+//     return get_pop(pop_id)->get_desired(type, price);
+// }
 
-void PopManager::pay_pops(int num_to_pay, double for_each) { // TODO: Add thing so only pays pops in country
-    std::shared_lock lock(m);
-    auto it = pops.begin();
-    int total = pops.size();
-    while (num_to_pay > 0 && it != pops.end()) {
-        BasePop& pop = (it)->second;
-        int mult = pop.get_type() == town ? 50: 1; // Town pops get *50 bonus to chance
-        if ((rand() % int((float(total) / num_to_pay) / mult)) == 0) {
-            auto lock = lock_pop_write(it->first);
-            pop.add_wealth_no_change_to_income(for_each);
-            num_to_pay--;
-        }
-        total--;
-        it++;
-    }
-}
+// void PopManager::pay_pops(int num_to_pay, double for_each) { // TODO: Add thing so only pays pops in country
+//     std::shared_lock lock(m);
+//     auto it = pops.begin();
+//     int total = pops.size();
+//     while (num_to_pay > 0 && it != pops.end()) {
+//         BasePop& pop = (it)->second;
+//         int mult = pop.get_type() == PopTypes::town ? 50: 1; // Town pops get *50 bonus to chance
+//         if ((rand() % int((float(total) / num_to_pay) / mult)) == 0) {
+//             auto lock = lock_pop_write(it->first);
+//             pop.add_wealth_no_change_to_income(for_each);
+//             num_to_pay--;
+//         }
+//         total--;
+//         it++;
+//     }
+// }
 
-float PopManager::get_expected_wage(int pop_id) const {
-    ERR_FAIL_COND_V_MSG(!pops.count(pop_id), 0.0, "Pop of id: " + String::num(pop_id) + " does not exist");
-    auto pop = get_pop(pop_id);
-    auto lock = lock_pop_read(pop_id);
-    auto town = TerminalMap::get_instance()->get_town(get_town_tile(pop));
-    if (town.is_null()) return 0.0;
-    return pops.at(pop_id).get_expected_income(town->get_local_prices_map());
-}
+// float PopManager::get_expected_wage(int pop_id) const {
+//     ERR_FAIL_COND_V_MSG(!pops.count(pop_id), 0.0, "Pop of id: " + String::num(pop_id) + " does not exist");
+//     auto pop = get_pop(pop_id);
+//     auto lock = lock_pop_read(pop_id);
+//     auto province = ProvinceManager::get_instance()->get_province(pop->get_location());
+
+//     std::scoped_lock province_lock(province->m);
+//     auto town = province->town;
+//     auto prices = town.mp.get_current_prices();
+
+//     return pops.at(pop_id).get_expected_income(prices);
+// }
 
 //Economy stats
-std::shared_ptr<std::unordered_map<PopStats, float>> PopManager::get_pop_statistics() const {
-    std::shared_ptr<std::unordered_map<PopStats, float>> toReturn = std::make_shared<std::unordered_map<PopStats, float>>();
-    std::shared_lock lock(m);
-    for (const auto& [id, pop] : pops) {
-        auto lock = lock_pop_read(id);
-        if (pop.get_type() == peasant)
-            (*toReturn)[NumOfPeasants]++;
-        if (pop.get_wealth() < 15)
-            (*toReturn)[NumOfBrokePops]++;
-        if (pop.is_starving())
-            (*toReturn)[NumOfStarvingPops]++;
-        if (pop.is_seeking_employment())
-            (*toReturn)[UnemploymentRate]++;
-        if (pop.is_unemployed())
-            (*toReturn)[RealUnemploymentRate]++;
-        (*toReturn)[AveragePopWealth] += pop.get_wealth();
+std::unordered_map<PopStats, double> PopManager::get_pop_statistics() const {
+    auto province_manager = ProvinceManager::get_instance();
+    std::unordered_map<PopStats, double> toReturn;
+    double total_pops = 0;
+    for (auto id: province_manager->get_provinces_vector()) {
+        auto province = province_manager->get_province(id);
+        std::scoped_lock lock(province->m);
+        for (const auto& [stat, x]: province->ppm.get_pop_statistics()) {
+            toReturn[stat] += x;
+        }
+        total_pops += province->ppm.get_number_of_pops();
     }
-    (*toReturn)[UnemploymentRate] /= pops.size();
-    (*toReturn)[RealUnemploymentRate] /= pops.size();
-    (*toReturn)[AveragePopWealth] /= pops.size();
+
+    toReturn[PopStats::AveragePopWealth] = toReturn[PopStats::TotalPopWealth] / total_pops;
+    toReturn[PopStats::UnemploymentRate] = toReturn[PopStats::NumUnemployed] / total_pops;
+    toReturn[PopStats::RealUnemploymentRate] = toReturn[PopStats::NumRealUnemployed] / total_pops;
+    
     return toReturn;
 }
 
-float PopManager::get_average_cash_of_pops() const {
-    std::shared_lock lock(m);
-    double total = 0;
-    for (const auto& [id, pop] : pops) {
-        auto l = lock_pop_read(id);
-        total += pop.get_wealth();
+double PopManager::get_average_cash_of_pops() const {
+    auto province_manager = ProvinceManager::get_instance();
+    long total = 0;
+    long pops = 0;
+
+    for (auto id: province_manager->get_provinces_vector()) {
+        auto province = province_manager->get_province(id);
+        std::scoped_lock lock(province->m);
+        total += province->ppm.get_total_wealth_of_pops();
+        pops += province->ppm.get_number_of_pops();
     }
-    return pops.empty() ? 0.f : float(total / pops.size());
+    
+    return total / double(pops);
 }
 
 int PopManager::get_number_of_broke_pops() const {
+    auto province_manager = ProvinceManager::get_instance();
     int total = 0;
-    std::shared_lock lock(m);
-    for (const auto& [pop_id, pop]: pops) {
-        auto lock = lock_pop_read(pop_id);
-        if (pop.get_wealth() < 15) {
-            total++;
-        }
+    for (auto id: province_manager->get_provinces_vector()) {
+        auto province = province_manager->get_province(id);
+        std::scoped_lock lock(province->m);
+        total += province->ppm.get_number_of_broke_pops();
     }
     return total;
 }
 
 int PopManager::get_number_of_starving_pops() const {
+    auto province_manager = ProvinceManager::get_instance();
     int total = 0;
-    std::shared_lock lock(m);
-    for (const auto& [pop_id, pop]: pops) {
-        auto lock = lock_pop_read(pop_id);
-        if (pop.is_starving()) {
-            total++;
-        }
+    for (auto id: province_manager->get_provinces_vector()) {
+        auto province = province_manager->get_province(id);
+        std::scoped_lock lock(province->m);
+        total += province->ppm.get_number_of_starving_pops();
     }
     return total;
 }
 
-float PopManager::get_unemployment_rate() const {
-    int total = 0;
-    std::shared_lock lock(m);
-    for (const auto& [pop_id, pop]: pops) {
-        auto lock = lock_pop_read(pop_id);
-        if (pop.is_unemployed()) {
-            total++;
-        }
+double PopManager::get_unemployment_rate() const {
+    auto province_manager = ProvinceManager::get_instance();
+    long total = 0;
+    long unemployed = 0;
+    for (auto id: province_manager->get_provinces_vector()) {
+        auto province = province_manager->get_province(id);
+        std::scoped_lock lock(province->m);
+        unemployed += province->ppm.get_number_of_unemployed_pops();
+        total += province->ppm.get_number_of_pops();
     }
-    return total / double(pops.size());
+    return unemployed / double(total);
 }
 
-float PopManager::get_real_unemployment_rate() const {
-    int total = 0;
-    std::shared_lock lock(m);
-    for (const auto& [pop_id, pop]: pops) {
-        auto lock = lock_pop_read(pop_id);
-        if (pop.get_income() == 0) {
-            total++;
-        }
+double PopManager::get_real_unemployment_rate() const {
+    auto province_manager = ProvinceManager::get_instance();
+    long total = 0;
+    long unemployed = 0;
+    for (auto id: province_manager->get_provinces_vector()) {
+        auto province = province_manager->get_province(id);
+        std::scoped_lock lock(province->m);
+        unemployed += province->ppm.get_number_of_real_unemployed_pops();
+        total += province->ppm.get_number_of_pops();
     }
-    return total / double(pops.size());
+    return unemployed / double(total);
 }
 
-std::unordered_map<PopTypes, int> PopManager::get_pop_type_statistics() const {
-    std::unordered_map<PopTypes, int> pop_type_stats;
-    std::shared_lock lock(m);
-    for (const auto& [pop_id, pop]: pops) {
-        auto lock = lock_pop_read(pop_id);
-        pop_type_stats[pop.get_type()]++;
+std::unordered_map<PopTypes, long> PopManager::get_pop_type_statistics() const {
+    auto province_manager = ProvinceManager::get_instance();
+    std::unordered_map<PopTypes, long> pop_type_stats;
+    for (auto id: province_manager->get_provinces_vector()) {
+        auto province = province_manager->get_province(id);
+        std::scoped_lock lock(province->m);
+        for (const auto& [type, x]: province->ppm.get_pop_type_statistics()) {
+            pop_type_stats[type] += x;
+        }
     }
     return pop_type_stats;
 }

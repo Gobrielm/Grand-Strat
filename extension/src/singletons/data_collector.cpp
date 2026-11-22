@@ -38,23 +38,24 @@ DataCollector* DataCollector::get_instance() {
 void DataCollector::month_tick() {
     auto start_time = std::chrono::high_resolution_clock::now();
 
+    auto pop_manager = PopManager::get_instance();
     Ref<TerminalMap> terminal_map = TerminalMap::get_instance();
     Ref<ProvinceManager> province_manager = ProvinceManager::get_instance();
-    auto pop_manager = PopManager::get_instance();
     if (is_collecting_data) {
         auto pops_data = (pop_manager->get_pop_statistics());
 
-        road_depot_data_points.push_back(terminal_map -> get_average_cash_of_road_depot());
-        factory_data_points.push_back(terminal_map -> get_average_cash_of_factory());
-        pops_data_points.push_back((*pops_data)[AveragePopWealth]);
-        factory_ave_level.push_back(terminal_map -> get_average_factory_level());
-        starving_pops.push_back((*pops_data)[NumOfStarvingPops]);
+        subsistence_farm_data_points.push_back(province_manager -> get_average_cash_of_sub_farms());
+        factory_data_points.push_back(province_manager -> get_average_cash_of_factory());
+        pops_data_points.push_back(pops_data[PopStats::AveragePopWealth]);
+        factory_ave_level.push_back(province_manager -> get_average_factory_level());
+        starving_pops.push_back(pops_data[PopStats::NumOfStarvingPops]);
         grain_supply.push_back(0);
         grain_demand.push_back(0);
-        broke_pops.push_back((*pops_data)[NumOfBrokePops]);
-        unemployement_rate.push_back((*pops_data)[UnemploymentRate]);
-        real_unemployement_rate.push_back((*pops_data)[RealUnemploymentRate]);
-        number_of_peasants.push_back((*pops_data)[NumOfPeasants]);
+        broke_pops.push_back(pops_data[PopStats::NumOfBrokePops]);
+        unemployement_rate.push_back(pops_data[PopStats::UnemploymentRate]);
+        real_unemployement_rate.push_back(pops_data[PopStats::RealUnemploymentRate]);
+        number_of_peasants.push_back(pops_data[PopStats::NumOfPeasants]);
+        grain_price.push_back(province_manager -> get_average_price(CargoInfo::get_instance()->get_cargo_type("grain")));
         write_data_to_file();
     }
 
@@ -64,23 +65,24 @@ void DataCollector::month_tick() {
 }
 
 void DataCollector::write_data_to_file() {
-    std::ofstream file("data.xlsx");
+    std::ofstream file("../data.csv");
     file << "Month,";
-    file << "Road Depot Data points,";
-    file << "Factory Data points,";
-    file << "Pops average wealth,";
-    file << "Factory average level,";
-    file << "Grain Demand,";
-    file << "Grain Supply,";
-    file << "Starving pops,";
-    file << "Broke pops,";
-    file << "Unemployment Rate,";
-    file << "Real Unemployment Rate,";
-    file << "Number Of Peasants";
+    file << "SubsistenceFarms,";
+    file << "FactoryDataPoints,";
+    file << "PopsAverageWealth,";
+    file << "FactoryAverageLevel,";
+    file << "GrainDemand,";
+    file << "GrainSupply,";
+    file << "StarvingPops,";
+    file << "BrokePops,";
+    file << "UnemploymentRate,";
+    file << "Real UnemploymentRate,";
+    file << "NumberOfPeasants,";
+    file << "PriceOfGrain";
     file << '\n';
-    for (int i = 0; i < road_depot_data_points.size(); i++) {
+    for (int i = 0; i < subsistence_farm_data_points.size(); i++) {
         file << (i + 1) << ",";
-        file << road_depot_data_points[i] << ",";
+        file << subsistence_farm_data_points[i] << ",";
         file << factory_data_points[i] << ",";
         file << pops_data_points[i] << ",";
         file << factory_ave_level[i] << ",";
@@ -90,7 +92,8 @@ void DataCollector::write_data_to_file() {
         file << broke_pops[i] << ",";
         file << unemployement_rate[i] << ",";
         file << real_unemployement_rate[i] << ",";
-        file << number_of_peasants[i];
+        file << number_of_peasants[i] << ",";
+        file << grain_price[i];
         file << '\n';
     }
     file.close();
@@ -98,12 +101,14 @@ void DataCollector::write_data_to_file() {
 
 void DataCollector::add_demand(int type, float amount) {
     std::scoped_lock lock(m);
-    if (type == 10)
+    if (type == 10) {
         grain_demand.back() += amount;
+    }
 }
 
 void DataCollector::add_supply(int type, float amount) {
     std::scoped_lock lock(m);
-    if (type == 10)
+    if (type == 10) {
         grain_supply.back() += amount;
+    }
 }

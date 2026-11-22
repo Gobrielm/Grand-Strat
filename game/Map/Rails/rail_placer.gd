@@ -93,26 +93,28 @@ func clear_all_temps() -> void:
 	for layer: TileMapLayer in temp_layer_array:
 		layer.clear()
 
-func place_depot(coords: Vector2i, player_id: int) -> void:
-	encode_depot.rpc(coords, player_id)
+#func place_depot(coords: Vector2i, player_id: int) -> void:
+	#encode_depot.rpc(coords, player_id)
 
-@rpc("authority", "call_local", "unreliable")
-func encode_depot(coords: Vector2i, player_id: int) -> void:
-	map_data.get_instance().add_depot(coords, vehicle_depot.new(coords, player_id))
+#@rpc("authority", "call_local", "unreliable")
+#func encode_depot(coords: Vector2i, player_id: int) -> void:
+	#map_data.get_instance().add_depot(coords, vehicle_depot.new(coords, player_id))
 
 func place_station(coords: Vector2i, p_orientation: int, player_id: int) -> void:
-	create_map_tile.rpc(coords, p_orientation, 2)
-	create_map_tile.rpc(coords, (p_orientation + 3) % 6, 2)
-	encode_station.rpc(coords, player_id)
-	var new_station: Station = Station.new(coords, player_id)
-	TerminalMap.get_instance().create_terminal(new_station)
+	pass
+	#create_map_tile.rpc(coords, p_orientation, 2)
+	#create_map_tile.rpc(coords, (p_orientation + 3) % 6, 2)
+	#encode_station.rpc(coords, player_id)
+	#var new_station: Station = Station.new(coords, player_id)
+	#TerminalMap.get_instance().create_terminal(new_station)
 
 func place_ai_station(coords: Vector2i, p_orientation: int, player_id: int) -> void:
-	create_map_tile.rpc(coords, p_orientation, 2)
-	create_map_tile.rpc(coords, (p_orientation + 3) % 6, 2)
-	encode_station.rpc(coords, player_id)
-	var new_station: AiStation = AiStation.new(coords, player_id)
-	TerminalMap.get_instance().create_terminal(new_station)
+	pass
+	#create_map_tile.rpc(coords, p_orientation, 2)
+	#create_map_tile.rpc(coords, (p_orientation + 3) % 6, 2)
+	#encode_station.rpc(coords, player_id)
+	#var new_station: AiStation = AiStation.new(coords, player_id)
+	#TerminalMap.get_instance().create_terminal(new_station)
 
 @rpc("authority", "call_local", "unreliable")
 func encode_station(coords: Vector2i, new_owner: int) -> void:
@@ -126,10 +128,10 @@ func place_tile(coords: Vector2i, p_orientation: int, p_type: int, player_id: in
 		return
 	add_track_connection(coords, p_orientation)
 	create_map_tile.rpc(coords, p_orientation, p_type)
-	if p_type == 1:
-		place_depot(coords, player_id)
-	elif p_type == 2:
-		place_station(coords, p_orientation, player_id)
+	#if p_type == 1:
+		#place_depot(coords, player_id)
+	#elif p_type == 2:
+		#place_station(coords, p_orientation, player_id)
 
 @rpc("authority", "call_local", "unreliable")
 func create_map_tile(coords: Vector2i, new_orientation: int, new_type: int) -> void:
@@ -151,7 +153,7 @@ func place_road_depot(coords: Vector2i, player_id: int) -> void:
 			return
 	var rail_layer: TileMapLayer = get_rail_layer(0)
 	rail_layer.set_cell(coords, 0, Vector2i(0, 3))
-	FactoryCreator.get_instance().create_road_depot(coords, player_id)
+	#FactoryCreator.get_instance().create_road_depot(coords, player_id)
 
 func is_already_built(coords: Vector2i, new_orientation: int) -> bool:
 	var rail_layer: TileMapLayer = get_rail_layer(new_orientation)

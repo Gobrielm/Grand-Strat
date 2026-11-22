@@ -4,7 +4,7 @@ class_name map_data extends Node
 
 var map: TileMapLayer
 
-var depots: Dictionary[Vector2i, Terminal] = {}
+#var depots: Dictionary[Vector2i, Terminal] = {}
 
 var holds: Dictionary = {}
 
@@ -22,30 +22,33 @@ static func get_instance() -> map_data:
 
 # === Terminal Checks ===
 
-func add_depot(coords: Vector2i, depot: Terminal) -> void:
-	mutex.lock()
-	depots[coords] = depot
-	mutex.unlock()
+#func add_depot(coords: Vector2i, depot: Terminal) -> void:
+	#mutex.lock()
+	#depots[coords] = depot
+	#mutex.unlock()
 
 @rpc("authority", "call_remote", "unreliable")
 func client_add_depot(coords: Vector2i, p_owner: int) -> void:
-	depots[coords] = vehicle_depot.new(coords, p_owner)
+	pass
+	#depots[coords] = vehicle_depot.new(coords, p_owner)
 
-func get_depot(coords: Vector2i) -> Terminal:
-	if is_depot(coords):
-		return depots[coords]
-	return null
+#func get_depot(coords: Vector2i) -> Terminal:
+	#if is_depot(coords):
+		#return depots[coords]
+	#return null
 
 func get_depot_name(coords: Vector2i) -> String:
-	if is_depot(coords):
-		return depots[coords].get_depot_name()
+	#if is_depot(coords):
+		#return depots[coords].get_depot_name()
 	return ""
 
 func is_depot(coords: Vector2i) -> bool:
-	return depots.has(coords)
+	return false
+	#return depots.has(coords)
 
 func is_owned_depot(coords: Vector2i, id: int) -> bool:
-	return depots.has(coords) and depots[coords].get_player_owner() == id
+	return false
+	#return depots.has(coords) and depots[coords].get_player_owner() == id
 
 func add_hold(coords: Vector2i, hold_name: String, player_id: int) -> void:
 	mutex.lock()
